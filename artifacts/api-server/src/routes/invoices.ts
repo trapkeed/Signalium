@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import { getAuth } from "@clerk/express";
 import { db, invoicesTable, invoiceItemsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { requireAdmin } from "../middlewares/requireAdmin";
+import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 import { ensureInvoicePdf } from "../lib/payments/invoices";
 import { ObjectStorageService } from "../lib/objectStorage";
 
@@ -40,7 +40,7 @@ router.get("/:id", async (req, res) => {
   try {
     const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
     if (!invoice) return res.status(404).json({ error: "Not found" });
-    if (invoice.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+    if (invoice.userId !== userId && !(await isAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
     const items = await db.select().from(invoiceItemsTable).where(eq(invoiceItemsTable.invoiceId, id));
     return res.json({ ...invoice, items });
   } catch (err) {
@@ -58,7 +58,7 @@ router.get("/:id/pdf", async (req, res) => {
   try {
     const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, id));
     if (!invoice) return res.status(404).json({ error: "Not found" });
-    if (invoice.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+    if (invoice.userId !== userId && !(await isAdmin(userId))) return res.status(403).json({ error: "Forbidden" });
 
     const items = await db.select().from(invoiceItemsTable).where(eq(invoiceItemsTable.invoiceId, id));
     const objectPath = await ensureInvoicePdf(invoice, items);

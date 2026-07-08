@@ -21,6 +21,8 @@ async function syncPayments(rows: Payment[]): Promise<Payment[]> {
 // Public/authenticated-user view — NEVER includes `config` (wallet secrets, API
 // keys, webhook secrets, etc. may live there). Only safe display fields.
 router.get("/providers", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     const rows = await db.select().from(paymentProvidersTable).orderBy(paymentProvidersTable.type);
     const publicRows = rows.map((row) => {
