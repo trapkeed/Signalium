@@ -10,3 +10,4 @@ export * from "./api-keys";
 export * from "./ea-registrations";
 export * from "./ea-builds";
 export * from "./ea-build-audit-log";
+export * from "./symbols";

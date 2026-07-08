@@ -23,6 +23,9 @@ import type {
   ApiKey,
   ApiKeyCreated,
   CreateApiKeyBody,
+  CreateSymbolAliasBody,
+  CreateSymbolBody,
+  CreateSymbolCategoryBody,
   DownloadToken,
   Ea,
   EaBuild,
@@ -30,9 +33,12 @@ import type {
   EaInput,
   EaRegistration,
   EaUpdate,
+  GetSymbolNormalizationLogParams,
   HealthStatus,
   HeartbeatInput,
   HeartbeatResponse,
+  NormalizeSymbol422,
+  NormalizeSymbolBody,
   Payment,
   PaymentIntentInput,
   PaymentIntentResult,
@@ -55,10 +61,18 @@ import type {
   Subscription,
   SubscriptionInput,
   SubscriptionUpdate,
+  Symbol,
+  SymbolAlias,
+  SymbolAliasWithCanonical,
+  SymbolCategory,
+  SymbolNormalizationLogEntry,
+  SymbolNormalizeResult,
+  SymbolWithCategory,
   TelemetryEvent,
   TelemetryInput,
   TestSmtp200,
   TestSmtpBody,
+  UpdateSymbolBody,
   User,
   UserUpdate,
   VerifyApiKey200,
@@ -4664,6 +4678,819 @@ export function useGetEaBuildAudit<TData = Awaited<ReturnType<typeof getEaBuildA
 
 
 
+
+export const getListSymbolsUrl = () => {
+
+
+
+
+  return `/api/symbols`
+}
+
+/**
+ * @summary List all canonical symbols with their categories
+ */
+export const listSymbols = async ( options?: RequestInit): Promise<SymbolWithCategory[]> => {
+
+  return customFetch<SymbolWithCategory[]>(getListSymbolsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolsQueryKey = () => {
+    return [
+    `/api/symbols`
+    ] as const;
+    }
+
+
+export const getListSymbolsQueryOptions = <TData = Awaited<ReturnType<typeof listSymbols>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbols>>> = ({ signal }) => listSymbols({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbols>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolsQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbols>>>
+export type ListSymbolsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all canonical symbols with their categories
+ */
+
+export function useListSymbols<TData = Awaited<ReturnType<typeof listSymbols>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSymbolCategoriesUrl = () => {
+
+
+
+
+  return `/api/symbols/categories`
+}
+
+/**
+ * @summary List symbol categories
+ */
+export const listSymbolCategories = async ( options?: RequestInit): Promise<SymbolCategory[]> => {
+
+  return customFetch<SymbolCategory[]>(getListSymbolCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolCategoriesQueryKey = () => {
+    return [
+    `/api/symbols/categories`
+    ] as const;
+    }
+
+
+export const getListSymbolCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listSymbolCategories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolCategoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbolCategories>>> = ({ signal }) => listSymbolCategories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbolCategories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbolCategories>>>
+export type ListSymbolCategoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List symbol categories
+ */
+
+export function useListSymbolCategories<TData = Awaited<ReturnType<typeof listSymbolCategories>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getNormalizeSymbolUrl = () => {
+
+
+
+
+  return `/api/symbols/normalize`
+}
+
+/**
+ * @summary Normalize a raw EA/broker/platform symbol string to its canonical form
+ */
+export const normalizeSymbol = async (normalizeSymbolBody: NormalizeSymbolBody, options?: RequestInit): Promise<SymbolNormalizeResult> => {
+
+  return customFetch<SymbolNormalizeResult>(getNormalizeSymbolUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(normalizeSymbolBody)
+  }
+);}
+
+
+
+
+
+export const getNormalizeSymbolMutationOptions = <TError = ErrorType<NormalizeSymbol422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof normalizeSymbol>>, TError,{data: BodyType<NormalizeSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof normalizeSymbol>>, TError,{data: BodyType<NormalizeSymbolBody>}, TContext> => {
+
+const mutationKey = ['normalizeSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof normalizeSymbol>>, {data: BodyType<NormalizeSymbolBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  normalizeSymbol(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NormalizeSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof normalizeSymbol>>>
+    export type NormalizeSymbolMutationBody = BodyType<NormalizeSymbolBody>
+    export type NormalizeSymbolMutationError = ErrorType<NormalizeSymbol422>
+
+    /**
+ * @summary Normalize a raw EA/broker/platform symbol string to its canonical form
+ */
+export const useNormalizeSymbol = <TError = ErrorType<NormalizeSymbol422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof normalizeSymbol>>, TError,{data: BodyType<NormalizeSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof normalizeSymbol>>,
+        TError,
+        {data: BodyType<NormalizeSymbolBody>},
+        TContext
+      > => {
+      return useMutation(getNormalizeSymbolMutationOptions(options));
+    }
+
+export const getGetSymbolNormalizationLogUrl = (params?: GetSymbolNormalizationLogParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/symbols/admin/log?${stringifiedParams}` : `/api/symbols/admin/log`
+}
+
+/**
+ * @summary Symbol normalization telemetry log (admin)
+ */
+export const getSymbolNormalizationLog = async (params?: GetSymbolNormalizationLogParams, options?: RequestInit): Promise<SymbolNormalizationLogEntry[]> => {
+
+  return customFetch<SymbolNormalizationLogEntry[]>(getGetSymbolNormalizationLogUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSymbolNormalizationLogQueryKey = (params?: GetSymbolNormalizationLogParams,) => {
+    return [
+    `/api/symbols/admin/log`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSymbolNormalizationLogQueryOptions = <TData = Awaited<ReturnType<typeof getSymbolNormalizationLog>>, TError = ErrorType<unknown>>(params?: GetSymbolNormalizationLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSymbolNormalizationLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSymbolNormalizationLogQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSymbolNormalizationLog>>> = ({ signal }) => getSymbolNormalizationLog(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSymbolNormalizationLog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSymbolNormalizationLogQueryResult = NonNullable<Awaited<ReturnType<typeof getSymbolNormalizationLog>>>
+export type GetSymbolNormalizationLogQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Symbol normalization telemetry log (admin)
+ */
+
+export function useGetSymbolNormalizationLog<TData = Awaited<ReturnType<typeof getSymbolNormalizationLog>>, TError = ErrorType<unknown>>(
+ params?: GetSymbolNormalizationLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSymbolNormalizationLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSymbolNormalizationLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSymbolCategoryUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/categories`
+}
+
+/**
+ * @summary Create a symbol category (admin)
+ */
+export const createSymbolCategory = async (createSymbolCategoryBody: CreateSymbolCategoryBody, options?: RequestInit): Promise<SymbolCategory> => {
+
+  return customFetch<SymbolCategory>(getCreateSymbolCategoryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSymbolCategoryBody)
+  }
+);}
+
+
+
+
+
+export const getCreateSymbolCategoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolCategory>>, TError,{data: BodyType<CreateSymbolCategoryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSymbolCategory>>, TError,{data: BodyType<CreateSymbolCategoryBody>}, TContext> => {
+
+const mutationKey = ['createSymbolCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSymbolCategory>>, {data: BodyType<CreateSymbolCategoryBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSymbolCategory(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSymbolCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof createSymbolCategory>>>
+    export type CreateSymbolCategoryMutationBody = BodyType<CreateSymbolCategoryBody>
+    export type CreateSymbolCategoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a symbol category (admin)
+ */
+export const useCreateSymbolCategory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolCategory>>, TError,{data: BodyType<CreateSymbolCategoryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSymbolCategory>>,
+        TError,
+        {data: BodyType<CreateSymbolCategoryBody>},
+        TContext
+      > => {
+      return useMutation(getCreateSymbolCategoryMutationOptions(options));
+    }
+
+export const getCreateSymbolUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/symbols`
+}
+
+/**
+ * @summary Create a canonical symbol (admin)
+ */
+export const createSymbol = async (createSymbolBody: CreateSymbolBody, options?: RequestInit): Promise<Symbol> => {
+
+  return customFetch<Symbol>(getCreateSymbolUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSymbolBody)
+  }
+);}
+
+
+
+
+
+export const getCreateSymbolMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbol>>, TError,{data: BodyType<CreateSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSymbol>>, TError,{data: BodyType<CreateSymbolBody>}, TContext> => {
+
+const mutationKey = ['createSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSymbol>>, {data: BodyType<CreateSymbolBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSymbol(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof createSymbol>>>
+    export type CreateSymbolMutationBody = BodyType<CreateSymbolBody>
+    export type CreateSymbolMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a canonical symbol (admin)
+ */
+export const useCreateSymbol = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbol>>, TError,{data: BodyType<CreateSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSymbol>>,
+        TError,
+        {data: BodyType<CreateSymbolBody>},
+        TContext
+      > => {
+      return useMutation(getCreateSymbolMutationOptions(options));
+    }
+
+export const getUpdateSymbolUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/symbols/${id}`
+}
+
+/**
+ * @summary Update a canonical symbol (admin)
+ */
+export const updateSymbol = async (id: number,
+    updateSymbolBody: UpdateSymbolBody, options?: RequestInit): Promise<Symbol> => {
+
+  return customFetch<Symbol>(getUpdateSymbolUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateSymbolBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateSymbolMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbol>>, TError,{id: number;data: BodyType<UpdateSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSymbol>>, TError,{id: number;data: BodyType<UpdateSymbolBody>}, TContext> => {
+
+const mutationKey = ['updateSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSymbol>>, {id: number;data: BodyType<UpdateSymbolBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSymbol(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof updateSymbol>>>
+    export type UpdateSymbolMutationBody = BodyType<UpdateSymbolBody>
+    export type UpdateSymbolMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a canonical symbol (admin)
+ */
+export const useUpdateSymbol = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbol>>, TError,{id: number;data: BodyType<UpdateSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSymbol>>,
+        TError,
+        {id: number;data: BodyType<UpdateSymbolBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateSymbolMutationOptions(options));
+    }
+
+export const getDeleteSymbolUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/symbols/${id}`
+}
+
+/**
+ * @summary Delete a canonical symbol and its aliases (admin)
+ */
+export const deleteSymbol = async (id: number, options?: RequestInit): Promise<Symbol> => {
+
+  return customFetch<Symbol>(getDeleteSymbolUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSymbolMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbol>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSymbol>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSymbol>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSymbol(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSymbol>>>
+
+    export type DeleteSymbolMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a canonical symbol and its aliases (admin)
+ */
+export const useDeleteSymbol = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbol>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSymbol>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSymbolMutationOptions(options));
+    }
+
+export const getListSymbolAliasesUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/aliases`
+}
+
+/**
+ * @summary List all symbol aliases (admin)
+ */
+export const listSymbolAliases = async ( options?: RequestInit): Promise<SymbolAliasWithCanonical[]> => {
+
+  return customFetch<SymbolAliasWithCanonical[]>(getListSymbolAliasesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolAliasesQueryKey = () => {
+    return [
+    `/api/symbols/admin/aliases`
+    ] as const;
+    }
+
+
+export const getListSymbolAliasesQueryOptions = <TData = Awaited<ReturnType<typeof listSymbolAliases>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolAliases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolAliasesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbolAliases>>> = ({ signal }) => listSymbolAliases({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbolAliases>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolAliasesQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbolAliases>>>
+export type ListSymbolAliasesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all symbol aliases (admin)
+ */
+
+export function useListSymbolAliases<TData = Awaited<ReturnType<typeof listSymbolAliases>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolAliases>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolAliasesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSymbolAliasUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/aliases`
+}
+
+/**
+ * @summary Add an alias mapping to a canonical symbol (admin)
+ */
+export const createSymbolAlias = async (createSymbolAliasBody: CreateSymbolAliasBody, options?: RequestInit): Promise<SymbolAlias> => {
+
+  return customFetch<SymbolAlias>(getCreateSymbolAliasUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSymbolAliasBody)
+  }
+);}
+
+
+
+
+
+export const getCreateSymbolAliasMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolAlias>>, TError,{data: BodyType<CreateSymbolAliasBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSymbolAlias>>, TError,{data: BodyType<CreateSymbolAliasBody>}, TContext> => {
+
+const mutationKey = ['createSymbolAlias'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSymbolAlias>>, {data: BodyType<CreateSymbolAliasBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSymbolAlias(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSymbolAliasMutationResult = NonNullable<Awaited<ReturnType<typeof createSymbolAlias>>>
+    export type CreateSymbolAliasMutationBody = BodyType<CreateSymbolAliasBody>
+    export type CreateSymbolAliasMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add an alias mapping to a canonical symbol (admin)
+ */
+export const useCreateSymbolAlias = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolAlias>>, TError,{data: BodyType<CreateSymbolAliasBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSymbolAlias>>,
+        TError,
+        {data: BodyType<CreateSymbolAliasBody>},
+        TContext
+      > => {
+      return useMutation(getCreateSymbolAliasMutationOptions(options));
+    }
+
+export const getDeleteSymbolAliasUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/aliases/${id}`
+}
+
+/**
+ * @summary Delete a symbol alias (admin)
+ */
+export const deleteSymbolAlias = async (id: number, options?: RequestInit): Promise<SymbolAlias> => {
+
+  return customFetch<SymbolAlias>(getDeleteSymbolAliasUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSymbolAliasMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolAlias>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolAlias>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSymbolAlias'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSymbolAlias>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSymbolAlias(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSymbolAliasMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSymbolAlias>>>
+
+    export type DeleteSymbolAliasMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a symbol alias (admin)
+ */
+export const useDeleteSymbolAlias = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolAlias>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSymbolAlias>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSymbolAliasMutationOptions(options));
+    }
 
 export const getGetStatsOverviewUrl = () => {
 

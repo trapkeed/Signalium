@@ -32,6 +32,8 @@ tags:
     description: EA terminal registration operations
   - name: ea-builds
     description: Per-user EA build generation, download, and audit operations
+  - name: symbols
+    description: Universal symbol normalization, canonical registry, and alias management
 paths:
   /healthz:
     get:
@@ -1170,6 +1172,255 @@ paths:
                 items:
                   $ref: "#/components/schemas/EaBuildAuditEntry"
 
+  /symbols:
+    get:
+      operationId: listSymbols
+      tags: [symbols]
+      summary: List all canonical symbols with their categories
+      responses:
+        "200":
+          description: Symbols
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SymbolWithCategory"
+
+  /symbols/categories:
+    get:
+      operationId: listSymbolCategories
+      tags: [symbols]
+      summary: List symbol categories
+      responses:
+        "200":
+          description: Symbol categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SymbolCategory"
+
+  /symbols/normalize:
+    post:
+      operationId: normalizeSymbol
+      tags: [symbols]
+      summary: Normalize a raw EA/broker/platform symbol string to its canonical form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input:
+                  type: string
+                source:
+                  type: string
+                  enum: [ea, platform, trainer, admin_test]
+      responses:
+        "200":
+          description: Normalized symbol
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolNormalizeResult"
+        "422":
+          description: Unknown symbol
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  rawInput:
+                    type: string
+
+  /symbols/admin/log:
+    get:
+      operationId: getSymbolNormalizationLog
+      tags: [symbols]
+      summary: Symbol normalization telemetry log (admin)
+      parameters:
+        - name: unresolvedOnly
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Normalization log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SymbolNormalizationLogEntry"
+
+  /symbols/admin/categories:
+    post:
+      operationId: createSymbolCategory
+      tags: [symbols]
+      summary: Create a symbol category (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolCategory"
+
+  /symbols/admin/symbols:
+    post:
+      operationId: createSymbol
+      tags: [symbols]
+      summary: Create a canonical symbol (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [canonicalSymbol, displayName, categoryId]
+              properties:
+                canonicalSymbol:
+                  type: string
+                displayName:
+                  type: string
+                categoryId:
+                  type: integer
+                enabled:
+                  type: boolean
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Symbol"
+
+  /symbols/admin/symbols/{id}:
+    patch:
+      operationId: updateSymbol
+      tags: [symbols]
+      summary: Update a canonical symbol (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                categoryId:
+                  type: integer
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Symbol"
+    delete:
+      operationId: deleteSymbol
+      tags: [symbols]
+      summary: Delete a canonical symbol and its aliases (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Symbol"
+
+  /symbols/admin/aliases:
+    get:
+      operationId: listSymbolAliases
+      tags: [symbols]
+      summary: List all symbol aliases (admin)
+      responses:
+        "200":
+          description: Aliases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SymbolAliasWithCanonical"
+    post:
+      operationId: createSymbolAlias
+      tags: [symbols]
+      summary: Add an alias mapping to a canonical symbol (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alias, canonicalSymbol]
+              properties:
+                alias:
+                  type: string
+                canonicalSymbol:
+                  type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolAlias"
+
+  /symbols/admin/aliases/{id}:
+    delete:
+      operationId: deleteSymbolAlias
+      tags: [symbols]
+      summary: Delete a symbol alias (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolAlias"
+
   /stats/overview:
     get:
       operationId: getStatsOverview
@@ -1930,5 +2181,123 @@ components:
         detail:
           type: object
           additionalProperties: true
+        createdAt:
+          type: string
+
+    SymbolCategory:
+      type: object
+      required: [id, name, slug, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        createdAt:
+          type: string
+
+    Symbol:
+      type: object
+      required: [id, canonicalSymbol, displayName, categoryId, enabled, createdAt]
+      properties:
+        id:
+          type: integer
+        canonicalSymbol:
+          type: string
+        displayName:
+          type: string
+        categoryId:
+          type: integer
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+
+    SymbolWithCategory:
+      type: object
+      required: [id, canonicalSymbol, displayName, enabled, categoryId, categoryName, categorySlug]
+      properties:
+        id:
+          type: integer
+        canonicalSymbol:
+          type: string
+        displayName:
+          type: string
+        enabled:
+          type: boolean
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        categorySlug:
+          type: string
+
+    SymbolAlias:
+      type: object
+      required: [id, alias, symbolId, source, createdAt]
+      properties:
+        id:
+          type: integer
+        alias:
+          type: string
+        symbolId:
+          type: integer
+        source:
+          type: string
+          enum: [admin, ea, broker]
+        createdBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    SymbolAliasWithCanonical:
+      type: object
+      required: [id, alias, source, createdAt, symbolId, canonicalSymbol]
+      properties:
+        id:
+          type: integer
+        alias:
+          type: string
+        source:
+          type: string
+          enum: [admin, ea, broker]
+        createdBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        symbolId:
+          type: integer
+        canonicalSymbol:
+          type: string
+
+    SymbolNormalizeResult:
+      type: object
+      required: [rawInput, canonicalSymbol, symbolId]
+      properties:
+        rawInput:
+          type: string
+        canonicalSymbol:
+          type: string
+        symbolId:
+          type: integer
+
+    SymbolNormalizationLogEntry:
+      type: object
+      required: [id, rawInput, resolved, source, createdAt]
+      properties:
+        id:
+          type: integer
+        rawInput:
+          type: string
+        resolvedSymbolId:
+          type: ["integer", "null"]
+        resolved:
+          type: boolean
+        source:
+          type: string
+          enum: [ea, platform, trainer, admin_test]
+        userId:
+          type: ["string", "null"]
         createdAt:
           type: string

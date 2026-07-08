@@ -1358,6 +1358,193 @@ export const GetEaBuildAuditResponse = zod.array(GetEaBuildAuditResponseItem)
 
 
 /**
+ * @summary List all canonical symbols with their categories
+ */
+export const ListSymbolsResponseItem = zod.object({
+  "id": zod.number(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "enabled": zod.boolean(),
+  "categoryId": zod.number(),
+  "categoryName": zod.string(),
+  "categorySlug": zod.string()
+})
+export const ListSymbolsResponse = zod.array(ListSymbolsResponseItem)
+
+
+/**
+ * @summary List symbol categories
+ */
+export const ListSymbolCategoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListSymbolCategoriesResponse = zod.array(ListSymbolCategoriesResponseItem)
+
+
+/**
+ * @summary Normalize a raw EA/broker/platform symbol string to its canonical form
+ */
+export const NormalizeSymbolBody = zod.object({
+  "input": zod.string(),
+  "source": zod.enum(['ea', 'platform', 'trainer', 'admin_test']).optional()
+})
+
+export const NormalizeSymbolResponse = zod.object({
+  "rawInput": zod.string(),
+  "canonicalSymbol": zod.string(),
+  "symbolId": zod.number()
+})
+
+
+/**
+ * @summary Symbol normalization telemetry log (admin)
+ */
+export const GetSymbolNormalizationLogQueryParams = zod.object({
+  "unresolvedOnly": zod.enum(['true', 'false']).optional()
+})
+
+export const GetSymbolNormalizationLogResponseItem = zod.object({
+  "id": zod.number(),
+  "rawInput": zod.string(),
+  "resolvedSymbolId": zod.number().nullish(),
+  "resolved": zod.boolean(),
+  "source": zod.enum(['ea', 'platform', 'trainer', 'admin_test']),
+  "userId": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetSymbolNormalizationLogResponse = zod.array(GetSymbolNormalizationLogResponseItem)
+
+
+/**
+ * @summary Create a symbol category (admin)
+ */
+export const CreateSymbolCategoryBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string()
+})
+
+export const CreateSymbolCategoryResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Create a canonical symbol (admin)
+ */
+export const CreateSymbolBody = zod.object({
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "categoryId": zod.number(),
+  "enabled": zod.boolean().optional()
+})
+
+export const CreateSymbolResponse = zod.object({
+  "id": zod.number(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "categoryId": zod.number(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a canonical symbol (admin)
+ */
+export const UpdateSymbolParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSymbolBody = zod.object({
+  "displayName": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "enabled": zod.boolean().optional()
+})
+
+export const UpdateSymbolResponse = zod.object({
+  "id": zod.number(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "categoryId": zod.number(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a canonical symbol and its aliases (admin)
+ */
+export const DeleteSymbolParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSymbolResponse = zod.object({
+  "id": zod.number(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "categoryId": zod.number(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List all symbol aliases (admin)
+ */
+export const ListSymbolAliasesResponseItem = zod.object({
+  "id": zod.number(),
+  "alias": zod.string(),
+  "source": zod.enum(['admin', 'ea', 'broker']),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "symbolId": zod.number(),
+  "canonicalSymbol": zod.string()
+})
+export const ListSymbolAliasesResponse = zod.array(ListSymbolAliasesResponseItem)
+
+
+/**
+ * @summary Add an alias mapping to a canonical symbol (admin)
+ */
+export const CreateSymbolAliasBody = zod.object({
+  "alias": zod.string(),
+  "canonicalSymbol": zod.string()
+})
+
+export const CreateSymbolAliasResponse = zod.object({
+  "id": zod.number(),
+  "alias": zod.string(),
+  "symbolId": zod.number(),
+  "source": zod.enum(['admin', 'ea', 'broker']),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a symbol alias (admin)
+ */
+export const DeleteSymbolAliasParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSymbolAliasResponse = zod.object({
+  "id": zod.number(),
+  "alias": zod.string(),
+  "symbolId": zod.number(),
+  "source": zod.enum(['admin', 'ea', 'broker']),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Get platform overview stats (admin)
  */
 export const GetStatsOverviewResponse = zod.object({

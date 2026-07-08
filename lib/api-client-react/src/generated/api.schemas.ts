@@ -636,6 +636,99 @@ export interface EaBuildAuditEntry {
   createdAt: string;
 }
 
+export interface SymbolCategory {
+  id: number;
+  name: string;
+  slug: string;
+  createdAt: string;
+}
+
+export interface Symbol {
+  id: number;
+  canonicalSymbol: string;
+  displayName: string;
+  categoryId: number;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface SymbolWithCategory {
+  id: number;
+  canonicalSymbol: string;
+  displayName: string;
+  enabled: boolean;
+  categoryId: number;
+  categoryName: string;
+  categorySlug: string;
+}
+
+export type SymbolAliasSource = typeof SymbolAliasSource[keyof typeof SymbolAliasSource];
+
+
+export const SymbolAliasSource = {
+  admin: 'admin',
+  ea: 'ea',
+  broker: 'broker',
+} as const;
+
+export interface SymbolAlias {
+  id: number;
+  alias: string;
+  symbolId: number;
+  source: SymbolAliasSource;
+  /** @nullable */
+  createdBy?: string | null;
+  createdAt: string;
+}
+
+export type SymbolAliasWithCanonicalSource = typeof SymbolAliasWithCanonicalSource[keyof typeof SymbolAliasWithCanonicalSource];
+
+
+export const SymbolAliasWithCanonicalSource = {
+  admin: 'admin',
+  ea: 'ea',
+  broker: 'broker',
+} as const;
+
+export interface SymbolAliasWithCanonical {
+  id: number;
+  alias: string;
+  source: SymbolAliasWithCanonicalSource;
+  /** @nullable */
+  createdBy?: string | null;
+  createdAt: string;
+  symbolId: number;
+  canonicalSymbol: string;
+}
+
+export interface SymbolNormalizeResult {
+  rawInput: string;
+  canonicalSymbol: string;
+  symbolId: number;
+}
+
+export type SymbolNormalizationLogEntrySource = typeof SymbolNormalizationLogEntrySource[keyof typeof SymbolNormalizationLogEntrySource];
+
+
+export const SymbolNormalizationLogEntrySource = {
+  ea: 'ea',
+  platform: 'platform',
+  trainer: 'trainer',
+  admin_test: 'admin_test',
+} as const;
+
+export interface SymbolNormalizationLogEntry {
+  id: number;
+  rawInput: string;
+  /** @nullable */
+  resolvedSymbolId?: number | null;
+  resolved: boolean;
+  source: SymbolNormalizationLogEntrySource;
+  /** @nullable */
+  userId?: string | null;
+  createdAt: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -673,5 +766,60 @@ export type RegisterEaTerminalBody = {
   brokerServer?: string;
   terminalBuild?: string;
   platformVersion?: string;
+};
+
+export type NormalizeSymbolBodySource = typeof NormalizeSymbolBodySource[keyof typeof NormalizeSymbolBodySource];
+
+
+export const NormalizeSymbolBodySource = {
+  ea: 'ea',
+  platform: 'platform',
+  trainer: 'trainer',
+  admin_test: 'admin_test',
+} as const;
+
+export type NormalizeSymbolBody = {
+  input: string;
+  source?: NormalizeSymbolBodySource;
+};
+
+export type NormalizeSymbol422 = {
+  error?: string;
+  rawInput?: string;
+};
+
+export type GetSymbolNormalizationLogParams = {
+unresolvedOnly?: GetSymbolNormalizationLogUnresolvedOnly;
+};
+
+export type GetSymbolNormalizationLogUnresolvedOnly = typeof GetSymbolNormalizationLogUnresolvedOnly[keyof typeof GetSymbolNormalizationLogUnresolvedOnly];
+
+
+export const GetSymbolNormalizationLogUnresolvedOnly = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type CreateSymbolCategoryBody = {
+  name: string;
+  slug: string;
+};
+
+export type CreateSymbolBody = {
+  canonicalSymbol: string;
+  displayName: string;
+  categoryId: number;
+  enabled?: boolean;
+};
+
+export type UpdateSymbolBody = {
+  displayName?: string;
+  categoryId?: number;
+  enabled?: boolean;
+};
+
+export type CreateSymbolAliasBody = {
+  alias: string;
+  canonicalSymbol: string;
 };
 

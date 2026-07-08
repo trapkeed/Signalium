@@ -13,6 +13,7 @@ import {
   Wallet,
   Mail,
   Cpu,
+  Coins,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const ADMIN_ITEMS = [
   { href: "/admin/smtp", label: "SMTP", icon: Mail },
   { href: "/admin/api-keys", label: "API Keys", icon: Key },
   { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
+  { href: "/admin/symbols", label: "Symbols", icon: Coins },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
