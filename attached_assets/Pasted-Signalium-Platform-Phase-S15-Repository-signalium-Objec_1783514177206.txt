@@ -1,0 +1,376 @@
+Signalium Platform Phase S15
+Repository: signalium
+
+Objective:
+
+Transform Signalium into an enterprise-grade fintech platform with a futuristic technology startup design language.
+
+The design philosophy is:
+
+Premium.
+Minimal.
+Modern.
+Professional.
+Trustworthy.
+
+Avoid:
+
+* AI slop
+* excessive animations
+* crowded dashboards
+* developer terminology
+* technical research jargon
+* cryptocurrency influencer aesthetics
+
+The product should feel closer to:
+
+institutional fintech software
+
+than
+
+retail AI trading bots.
+
+---
+
+## DESIGN LANGUAGE
+
+Design style:
+
+* futuristic
+* premium
+* enterprise
+* minimalistic
+* elegant
+* high contrast
+* mobile first
+* responsive
+
+Visual inspiration:
+
+modern fintech startups,
+premium SaaS products,
+institutional trading software.
+
+Avoid cyberpunk aesthetics.
+
+Avoid neon overload.
+
+Avoid hacker themes.
+
+Use restrained futuristic design.
+
+---
+
+## COLOR SYSTEM
+
+Primary colors:
+
+deep navy
+graphite
+dark slate
+white
+silver accents
+
+Accent colors:
+
+gold
+electric blue
+
+Use accent colors sparingly.
+
+Avoid rainbow dashboards.
+
+---
+
+## TYPOGRAPHY
+
+Use modern professional typography.
+
+Large spacing.
+
+Readable hierarchy.
+
+Strong contrast.
+
+Comfortable mobile reading.
+
+---
+
+## LANDING PAGE
+
+Landing page objective:
+
+convert visitors into subscribers.
+
+Do not expose internal architecture.
+
+Do not expose:
+
+* model versions
+* datasets
+* QDE internals
+* trainer infrastructure
+* deployment architecture
+* research terminology
+
+Public messaging should focus on:
+
+* professional market intelligence
+* autonomous trading
+* institutional-grade analysis
+* capital preservation
+* disciplined execution
+
+---
+
+## HERO SECTION
+
+Create a premium hero section.
+
+Use realistic imagery.
+
+Prefer:
+
+* professional traders
+* trading desks
+* modern offices
+* financial technology environments
+* global market visuals
+
+Avoid:
+
+* robots
+* holograms
+* generic AI artwork
+* floating brains
+* glowing circuits
+
+Hero section should communicate:
+
+confidence,
+professionalism,
+technology,
+trust.
+
+---
+
+## LANDING PAGE CONTENT
+
+Sections:
+
+1.
+
+Hero
+
+2.
+
+How Signalium Works
+
+3.
+
+Manual Trading Mode
+
+4.
+
+Autonomous Trading Mode
+
+5.
+
+Supported Markets
+
+* Forex
+* Metals
+* Indices
+
+6.
+
+Subscription Plans
+
+Starter
+Professional
+Enterprise
+
+7.
+
+Security and Infrastructure
+
+8.
+
+Frequently Asked Questions
+
+9.
+
+Call To Action
+
+---
+
+## PUBLIC INFORMATION POLICY
+
+Public pages must never expose:
+
+* research systems
+* trainer architecture
+* internal APIs
+* developer information
+* infrastructure details
+* experimental features
+
+Developer information belongs only to:
+
+Admin areas.
+
+---
+
+## RESPONSIVE DESIGN
+
+Support:
+
+mobile
+tablet
+desktop
+ultrawide displays
+
+Mobile experience is first-class.
+
+No desktop-only layouts.
+
+No horizontal scrolling.
+
+All actions reachable with thumb navigation.
+
+---
+
+## ACCOUNT MANAGEMENT
+
+Users can manage:
+
+* profile information
+* password
+* email
+* two factor authentication
+* billing information
+* API keys
+* MT5 accounts
+* EA downloads
+* subscriptions
+* invoices
+* active sessions
+* security history
+
+---
+
+## SECURITY FEATURES
+
+Add:
+
+* two factor authentication
+* active session management
+* device management
+* login history
+* suspicious login alerts
+* API key rotation
+* account lock protection
+
+---
+
+## ADMIN SEO SYSTEM
+
+Create enterprise SEO management.
+
+Admins can manage:
+
+* meta titles
+* meta descriptions
+* canonical URLs
+* OG titles
+* OG descriptions
+* OG images
+* Twitter cards
+* structured data
+* robots.txt
+* sitemap.xml
+* schema markup
+* redirects
+* hreflang
+* index rules
+
+SEO generation should support automation.
+
+---
+
+## MEDIA MANAGEMENT
+
+Admins can manage:
+
+* favicon
+* logos
+* hero images
+* social previews
+* marketing assets
+
+Support existing assets where possible.
+
+---
+
+## ADDITIONAL FEATURES
+
+Add:
+
+* notification center
+* announcement system
+* maintenance banner system
+* referral program support
+* audit logs
+* support tickets
+* knowledge base
+* contact system
+* status page
+* feature flags
+* dark mode
+* accessibility support
+* localization support
+
+---
+
+## ADMIN PANEL
+
+Admins can manage:
+
+* subscriptions
+* symbols
+* brokers
+* data providers
+* SMTP
+* payments
+* users
+* EA builds
+* announcements
+* SEO
+* media
+* support
+* feature flags
+
+---
+
+## GOAL
+
+Signalium should feel like:
+
+a premium institutional fintech platform,
+
+not
+
+an AI experiment.
+
+Generate:
+
+* design system
+* component library
+* responsive layout system
+* accessibility standards
+* branding guide
+* SEO architecture
+* frontend architecture report
+* page map
+* navigation structure
+* user journey report
