@@ -74,19 +74,22 @@ export function attachEaGateway(server: HttpServer) {
     const hardwareId = url.searchParams.get("hardwareId");
 
     if (!apiKey || !hardwareId) {
-      ws.close(4001, "apiKey and hardwareId query params are required");
+      safeSend(ws, { type: "error", code: "INVALID_API_KEY", message: "apiKey and hardwareId query params are required" });
+      ws.close(4001, "INVALID_API_KEY");
       return;
     }
 
     const auth = await resolveApiKeyAuth(apiKey, hardwareId);
     if ("error" in auth) {
-      ws.close(4001, auth.error);
+      safeSend(ws, { type: "error", code: auth.code, message: auth.error });
+      ws.close(4001, auth.code);
       return;
     }
 
     const apiAccess = await checkApiAccess(auth.userId);
     if (!apiAccess.allowed) {
-      ws.close(4003, `${apiAccess.code}: ${apiAccess.message}`);
+      safeSend(ws, { type: "error", code: apiAccess.code, message: apiAccess.message });
+      ws.close(4003, apiAccess.code);
       return;
     }
 

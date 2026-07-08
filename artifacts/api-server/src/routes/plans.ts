@@ -8,6 +8,7 @@ import {
   UpdatePlanParams,
   DeletePlanParams,
 } from "@workspace/api-zod";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   const parsed = CreatePlanBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
@@ -60,7 +61,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireAdmin, async (req, res) => {
   const params = UpdatePlanParams.safeParse({ id: Number(req.params.id) });
   const body = UpdatePlanBody.safeParse(req.body);
   if (!params.success || !body.success) return res.status(400).json({ error: "Invalid request" });
@@ -78,7 +79,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   const parsed = DeletePlanParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 

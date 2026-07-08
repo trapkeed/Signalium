@@ -135,7 +135,17 @@ All access decisions (manual/autonomous mode, EA generation, API access, symbol/
 ## Keep OpenAPI response schemas in sync with handwritten route handlers
 Routes that return plain object literals (not validated by a zod response schema) can silently drift from the OpenAPI schema declared for that endpoint — nothing enforces the match at build time. When adding an endpoint like this, write the return shape and the OpenAPI schema together and diff them by eye before moving on.
 
-**Why:** caught mid-session building `/subscriptions/me/entitlements` — the first implementation used different field names (`manualAccess`/`hasSubscription`) than the OpenAPI schema already written (`manualAllowed`/`status: "none"`), which would have shipped a frontend type mismatch since nothing type-checks response bodies against the spec.
+**Why:** hit this building a new summary endpoint — the first implementation used different field names than the OpenAPI schema already written, which would have shipped a frontend type mismatch since nothing type-checks response bodies against the spec.
+
+## New config-mutation endpoints need admin protection checked explicitly, not assumed
+When adding new POST/PATCH/DELETE routes for anything that controls platform-wide policy (plan capabilities, feature flags, pricing, etc.), explicitly verify `requireAdmin` is applied — don't assume it carried over from a similar existing route. Grep for the middleware on the new route before finishing, since a missing import silently leaves the endpoint open to any caller.
+
+**Why:** caught by code review — new plan-capability mutation routes (`autonomousAllowed`, `apiAccessAllowed`, limits) shipped without `requireAdmin`, letting any caller rewrite platform-wide entitlement policy.
+
+## EA-facing auth failures need a `code` field alongside the message
+Any auth/entitlement rejection surfaced to EA clients (HTTP JSON body or WS `type: "error"` frame) must include a stable machine-readable `code` (e.g. `INVALID_API_KEY`, `API_KEY_EXPIRED`, `API_KEY_SUSPENDED`), not just a human-readable message — EAs need to branch on this programmatically (retry vs. stop vs. prompt re-auth).
+
+**Why:** caught by code review — API key auth failures returned only `{error: string}}`, so the `INVALID_API_KEY`-style codes used elsewhere in the entitlement system weren't reachable from the earliest rejection point in the EA auth chain.
 
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
