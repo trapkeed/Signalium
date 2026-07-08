@@ -13,6 +13,8 @@ import {
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { logger } from "./logger";
 
+type DbOrTx = Pick<typeof db, "insert" | "select" | "update">;
+
 /**
  * ─── EntitlementEngine ──────────────────────────────────────────────────────
  *
@@ -86,8 +88,9 @@ async function logEvent(
   fromStatus: string | null,
   toStatus: string | null,
   detail?: Record<string, unknown>,
+  client: DbOrTx = db,
 ): Promise<void> {
-  await db.insert(subscriptionEventsTable).values({ subscriptionId, userId, eventType, fromStatus, toStatus, detail });
+  await client.insert(subscriptionEventsTable).values({ subscriptionId, userId, eventType, fromStatus, toStatus, detail });
 }
 
 /**

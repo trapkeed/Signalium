@@ -5,6 +5,8 @@ import { db, invoicesTable, invoiceItemsTable, type Invoice, type PaymentProvide
 import { objectStorageClient, ObjectStorageService } from "../objectStorage";
 import { logger } from "../logger";
 
+type DbOrTx = Pick<typeof db, "insert" | "select" | "update">;
+
 /**
  * Auto-invoicing: every subscription-affecting payment event (create,
  * renew, upgrade, downgrade) gets exactly one invoice. The PDF is rendered
@@ -37,10 +39,10 @@ function generateInvoiceNumber(): string {
   return `INV-${yyyymm}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
-export async function createInvoice(input: CreateInvoiceInput): Promise<Invoice> {
+export async function createInvoice(input: CreateInvoiceInput, client: DbOrTx = db): Promise<Invoice> {
   const amount = input.items.reduce((sum, item) => sum + item.unitAmount * (item.quantity ?? 1), 0);
 
-  const [invoice] = await db.insert(invoicesTable).values({
+  const [invoice] = await client.insert(invoicesTable).values({
     invoiceNumber: generateInvoiceNumber(),
     userId: input.userId,
     subscriptionId: input.subscriptionId,
@@ -56,7 +58,7 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<Invoice>
   }).returning();
 
   if (input.items.length > 0) {
-    await db.insert(invoiceItemsTable).values(
+    await client.insert(invoiceItemsTable).values(
       input.items.map((item) => ({
         invoiceId: invoice.id,
         description: item.description,

@@ -102,7 +102,14 @@ export const invoicesTable = pgTable("invoices", {
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  // At most one invoice per payment (NULLs — e.g. manually-issued invoices
+  // with no linked payment — are exempt under standard SQL unique
+  // semantics). This is also what makes `applySuccessfulPayment` safe to
+  // retry: a second attempt to invoice the same payment fails the insert
+  // instead of silently double-billing.
+  paymentIdUnique: unique().on(table.paymentId),
+}));
 
 export const invoiceItemsTable = pgTable("invoice_items", {
   id: serial("id").primaryKey(),

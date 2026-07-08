@@ -47,9 +47,16 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
       payloadHash,
       status: "received",
     });
-  } catch {
-    // Unique constraint violation on (provider, externalId) — already seen this event.
-    dedupInserted = false;
+  } catch (err) {
+    // Only a Postgres unique-violation (23505) on (provider, externalId) means
+    // "already seen this event" — any other error (connection drop, schema
+    // issue, etc.) must propagate instead of being silently treated as a
+    // successful dedup, or real failures would get swallowed as fake 200s.
+    if ((err as { code?: string })?.code === "23505") {
+      dedupInserted = false;
+    } else {
+      throw err;
+    }
   }
 
   if (!dedupInserted) {

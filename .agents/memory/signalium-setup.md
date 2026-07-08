@@ -162,6 +162,16 @@ Any "list configured providers/integrations" endpoint (payment providers, data p
 
 **Why:** caught by code review on the payments provider list endpoint, which was unauthenticated and returned full `config` (live API keys/webhook secrets) to anyone; the fix mirrors an existing public/admin split already used for data providers.
 
+## Multi-step payment/subscription mutations must be one DB transaction
+Any function that flips a payment/record status to a terminal state AND then does dependent writes (subscription upsert, event-log rows, invoice creation) must wrap the whole thing in `db.transaction(async (tx) => {...})`, passing `tx` through to every helper (event logger, invoice creator) instead of the module-level `db`. A leading `if (status === "confirmed") return` guard is only a valid idempotency/dedup check if a prior failed attempt is guaranteed to have rolled back everything — otherwise a mid-function crash leaves the status flipped but downstream writes (subscription, invoice) permanently missing, with the guard now blocking all retries.
+
+**Why:** caught by code review on `applySuccessfulPayment` — it set payment status to "confirmed" as the very first write, then did subscription/invoice writes after, non-transactionally; any failure between those steps produced a payment marked confirmed with no subscription or invoice, and the status guard prevented any repair on retry.
+
+## Webhook/event dedup via unique-constraint insert must check the DB error code
+When using "try insert into a uniquely-constrained table, catch = already processed" as a dedup pattern, the catch block must check for the specific error (Postgres unique-violation code `23505` on the `pg` driver, `err.code`) before treating it as "already seen". A bare `catch { dedupInserted = false }` silently reclassifies any DB error (connection drop, schema mismatch, etc.) as a successful dedup, returning a false 200 to the webhook sender and swallowing the real failure.
+
+**Why:** caught by code review on the payment webhook handler's dedup insert into `webhook_events`.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 
