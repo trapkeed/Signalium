@@ -1066,6 +1066,8 @@ export interface SeoSettings {
   sitemapEnabled: boolean;
   /** @nullable */
   siteUrl?: string | null;
+  /** @nullable */
+  faviconUrl?: string | null;
   updatedAt: string;
 }
 
@@ -1073,6 +1075,14 @@ export interface SeoSettingsInput {
   robotsTxt?: string;
   sitemapEnabled?: boolean;
   siteUrl?: string;
+  faviconUrl?: string;
+}
+
+export interface SeoSettingsPublic {
+  /** @nullable */
+  faviconUrl?: string | null;
+  /** @nullable */
+  siteUrl?: string | null;
 }
 
 export type MediaAssetCategory = typeof MediaAssetCategory[keyof typeof MediaAssetCategory];

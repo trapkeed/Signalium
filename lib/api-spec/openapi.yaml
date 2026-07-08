@@ -2059,6 +2059,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/SeoSettings"
 
+  /seo/settings/public:
+    get:
+      tags: [seo]
+      operationId: getSeoSettingsPublic
+      summary: Get the public subset of SEO settings (favicon, site URL)
+      responses:
+        "200":
+          description: Public SEO settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoSettingsPublic"
+
   /seo/robots.txt:
     get:
       tags: [seo]
@@ -3447,6 +3460,8 @@ components:
           type: boolean
         siteUrl:
           type: ["string", "null"]
+        faviconUrl:
+          type: ["string", "null"]
         updatedAt:
           type: string
 
@@ -3459,6 +3474,16 @@ components:
           type: boolean
         siteUrl:
           type: string
+        faviconUrl:
+          type: string
+
+    SeoSettingsPublic:
+      type: object
+      properties:
+        faviconUrl:
+          type: ["string", "null"]
+        siteUrl:
+          type: ["string", "null"]
 
     MediaAsset:
       type: object

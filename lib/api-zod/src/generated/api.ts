@@ -2228,6 +2228,7 @@ export const GetSeoSettingsResponse = zod.object({
   "robotsTxt": zod.string(),
   "sitemapEnabled": zod.boolean(),
   "siteUrl": zod.string().nullish(),
+  "faviconUrl": zod.string().nullish(),
   "updatedAt": zod.string()
 })
 
@@ -2238,7 +2239,8 @@ export const GetSeoSettingsResponse = zod.object({
 export const UpdateSeoSettingsBody = zod.object({
   "robotsTxt": zod.string().optional(),
   "sitemapEnabled": zod.boolean().optional(),
-  "siteUrl": zod.string().optional()
+  "siteUrl": zod.string().optional(),
+  "faviconUrl": zod.string().optional()
 })
 
 export const UpdateSeoSettingsResponse = zod.object({
@@ -2246,7 +2248,17 @@ export const UpdateSeoSettingsResponse = zod.object({
   "robotsTxt": zod.string(),
   "sitemapEnabled": zod.boolean(),
   "siteUrl": zod.string().nullish(),
+  "faviconUrl": zod.string().nullish(),
   "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get the public subset of SEO settings (favicon, site URL)
+ */
+export const GetSeoSettingsPublicResponse = zod.object({
+  "faviconUrl": zod.string().nullish(),
+  "siteUrl": zod.string().nullish()
 })
 
 

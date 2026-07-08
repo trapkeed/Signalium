@@ -61,6 +61,10 @@ export const seoSettingsTable = pgTable("seo_settings", {
   robotsTxt: text("robots_txt").notNull().default("User-agent: *\nAllow: /\n"),
   sitemapEnabled: boolean("sitemap_enabled").notNull().default(true),
   siteUrl: text("site_url"),
+  // Object-storage-backed URL (e.g. "/api/storage/objects/uploads/<id>") for
+  // the site favicon, admin-editable from the Media Library. Falls back to
+  // the static /favicon.svg link in index.html when unset.
+  faviconUrl: text("favicon_url"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

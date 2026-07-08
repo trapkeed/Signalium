@@ -102,6 +102,7 @@ export * from './seoRedirectInput';
 export * from './seoRedirectUpdate';
 export * from './seoSettings';
 export * from './seoSettingsInput';
+export * from './seoSettingsPublic';
 export * from './smtpSettings';
 export * from './smtpSettingsInput';
 export * from './smtpSettingsUpdate';

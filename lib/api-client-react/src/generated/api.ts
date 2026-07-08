@@ -77,6 +77,7 @@ import type {
   SeoRedirectUpdate,
   SeoSettings,
   SeoSettingsInput,
+  SeoSettingsPublic,
   SmtpSettings,
   SmtpSettingsInput,
   SmtpSettingsUpdate,
@@ -8063,6 +8064,83 @@ export const useUpdateSeoSettings = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdateSeoSettingsMutationOptions(options));
     }
+
+export const getGetSeoSettingsPublicUrl = () => {
+
+
+
+
+  return `/api/seo/settings/public`
+}
+
+/**
+ * @summary Get the public subset of SEO settings (favicon, site URL)
+ */
+export const getSeoSettingsPublic = async ( options?: RequestInit): Promise<SeoSettingsPublic> => {
+
+  return customFetch<SeoSettingsPublic>(getGetSeoSettingsPublicUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSeoSettingsPublicQueryKey = () => {
+    return [
+    `/api/seo/settings/public`
+    ] as const;
+    }
+
+
+export const getGetSeoSettingsPublicQueryOptions = <TData = Awaited<ReturnType<typeof getSeoSettingsPublic>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoSettingsPublic>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSeoSettingsPublicQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSeoSettingsPublic>>> = ({ signal }) => getSeoSettingsPublic({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSeoSettingsPublic>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSeoSettingsPublicQueryResult = NonNullable<Awaited<ReturnType<typeof getSeoSettingsPublic>>>
+export type GetSeoSettingsPublicQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the public subset of SEO settings (favicon, site URL)
+ */
+
+export function useGetSeoSettingsPublic<TData = Awaited<ReturnType<typeof getSeoSettingsPublic>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoSettingsPublic>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSeoSettingsPublicQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetRobotsTxtUrl = () => {
 

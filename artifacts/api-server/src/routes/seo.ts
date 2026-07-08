@@ -205,6 +205,19 @@ router.delete("/redirects/:id", requireAdmin, async (req, res) => {
 // Settings (singleton: robots.txt content, sitemap toggle, site URL)
 // ---------------------------------------------------------------------------
 
+// GET /seo/settings/public — public: the small subset of settings the
+// frontend needs to render for every visitor (e.g. the dynamic favicon),
+// none of which is sensitive (robots.txt/sitemap are already public routes).
+router.get("/settings/public", async (req, res) => {
+  try {
+    const settings = await getOrCreateSettings();
+    return res.json({ faviconUrl: settings?.faviconUrl ?? null, siteUrl: settings?.siteUrl ?? null });
+  } catch (err) {
+    req.log.error(err, "Failed to get public SEO settings");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /seo/settings — admin: get site-wide SEO settings
 router.get("/settings", requireAdmin, async (req, res) => {
   try {

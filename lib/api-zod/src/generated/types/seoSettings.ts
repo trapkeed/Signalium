@@ -12,5 +12,7 @@ export interface SeoSettings {
   sitemapEnabled: boolean;
   /** @nullable */
   siteUrl?: string | null;
+  /** @nullable */
+  faviconUrl?: string | null;
   updatedAt: string;
 }

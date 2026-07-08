@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { ObjectPermission } from "../lib/objectAcl";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -13,11 +14,14 @@ const objectStorageService = new ObjectStorageService();
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
+ * Request a presigned URL for file upload. Restricted to admins — this
+ * project's only current caller is the admin media library, and issuing
+ * presigned upload URLs to arbitrary unauthenticated callers would let
+ * anyone write files into our bucket.
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
  * Then uploads the file directly to the returned presigned URL.
  */
-router.post("/storage/uploads/request-url", async (req: Request, res: Response) => {
+router.post("/storage/uploads/request-url", requireAdmin, async (req: Request, res: Response) => {
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Missing or invalid required fields" });

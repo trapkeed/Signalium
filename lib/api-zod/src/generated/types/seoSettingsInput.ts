@@ -10,4 +10,5 @@ export interface SeoSettingsInput {
   robotsTxt?: string;
   sitemapEnabled?: boolean;
   siteUrl?: string;
+  faviconUrl?: string;
 }

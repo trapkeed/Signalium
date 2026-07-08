@@ -11,9 +11,9 @@ import {
   useGetSeoSettings,
   useUpdateSeoSettings,
 } from "@workspace/api-client-react";
-import type { SeoPage, SeoRedirect } from "@workspace/api-client-react";
+import type { SeoPage, SeoRedirect, HreflangEntry } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Trash2, Globe, ArrowRightLeft, FileCode, ExternalLink } from "lucide-react";
+import { Search, Plus, Trash2, Globe, ArrowRightLeft, FileCode, ExternalLink, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ type PageForm = {
   structuredData: string;
   noIndex: boolean;
   noFollow: boolean;
+  hreflang: HreflangEntry[];
 };
 
 const EMPTY_PAGE_FORM: PageForm = {
@@ -56,6 +57,7 @@ const EMPTY_PAGE_FORM: PageForm = {
   structuredData: "",
   noIndex: false,
   noFollow: false,
+  hreflang: [],
 };
 
 function pageToForm(p: SeoPage): PageForm {
@@ -74,6 +76,7 @@ function pageToForm(p: SeoPage): PageForm {
     structuredData: p.structuredData ?? "",
     noIndex: p.noIndex,
     noFollow: p.noFollow,
+    hreflang: p.hreflang ?? [],
   };
 }
 
@@ -93,6 +96,7 @@ function formToPayload(f: PageForm) {
     structuredData: f.structuredData || undefined,
     noIndex: f.noIndex,
     noFollow: f.noFollow,
+    hreflang: f.hreflang.filter((h) => h.lang.trim() && h.url.trim()),
   };
 }
 
@@ -161,6 +165,21 @@ function PagesTab() {
 
   function field<K extends keyof PageForm>(key: K, value: PageForm[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function addHreflang() {
+    setForm((f) => ({ ...f, hreflang: [...f.hreflang, { lang: "", url: "" }] }));
+  }
+
+  function updateHreflang(index: number, patch: Partial<HreflangEntry>) {
+    setForm((f) => ({
+      ...f,
+      hreflang: f.hreflang.map((h, i) => (i === index ? { ...h, ...patch } : h)),
+    }));
+  }
+
+  function removeHreflang(index: number) {
+    setForm((f) => ({ ...f, hreflang: f.hreflang.filter((_, i) => i !== index) }));
   }
 
   return (
@@ -296,6 +315,45 @@ function PagesTab() {
               <Switch checked={form.noFollow} onCheckedChange={(v) => field("noFollow", v)} />
               <Label className="text-sm">No Follow</Label>
             </div>
+
+            <div className="col-span-2 border-t border-border pt-3 mt-1 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground">
+                <Languages className="w-3.5 h-3.5" /> Hreflang Alternates
+              </div>
+              <Button type="button" variant="outline" size="sm" className="rounded-sm text-xs gap-1" onClick={addHreflang}>
+                <Plus className="w-3.5 h-3.5" /> Add
+              </Button>
+            </div>
+            {form.hreflang.length === 0 ? (
+              <div className="col-span-2 text-xs text-muted-foreground font-mono">
+                No alternate-language versions configured for this page.
+              </div>
+            ) : (
+              form.hreflang.map((entry, i) => (
+                <div key={i} className="col-span-2 flex items-center gap-2">
+                  <Input
+                    value={entry.lang}
+                    onChange={(e) => updateHreflang(i, { lang: e.target.value })}
+                    placeholder="en-US"
+                    className="rounded-sm font-mono text-sm w-28 shrink-0"
+                  />
+                  <Input
+                    value={entry.url}
+                    onChange={(e) => updateHreflang(i, { url: e.target.value })}
+                    placeholder="https://signalium.com/en/dashboard"
+                    className="rounded-sm font-mono text-sm flex-1"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive h-8 w-8 p-0 rounded-sm shrink-0"
+                    onClick={() => removeHreflang(i)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowForm(false)} className="rounded-sm">Cancel</Button>
@@ -460,10 +518,12 @@ function SettingsTab() {
   const updateSettings = useUpdateSeoSettings();
   const [robotsTxt, setRobotsTxt] = useState<string | null>(null);
   const [siteUrl, setSiteUrl] = useState<string | null>(null);
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
   const [sitemapEnabled, setSitemapEnabled] = useState<boolean | null>(null);
 
   const effectiveRobotsTxt = robotsTxt ?? settings?.robotsTxt ?? "";
   const effectiveSiteUrl = siteUrl ?? settings?.siteUrl ?? "";
+  const effectiveFaviconUrl = faviconUrl ?? settings?.faviconUrl ?? "";
   const effectiveSitemapEnabled = sitemapEnabled ?? settings?.sitemapEnabled ?? true;
 
   async function handleSave() {
@@ -472,12 +532,14 @@ function SettingsTab() {
         data: {
           robotsTxt: effectiveRobotsTxt,
           siteUrl: effectiveSiteUrl || undefined,
+          faviconUrl: effectiveFaviconUrl || undefined,
           sitemapEnabled: effectiveSitemapEnabled,
         },
       });
       toast({ title: "SEO settings saved" });
       setRobotsTxt(null);
       setSiteUrl(null);
+      setFaviconUrl(null);
       setSitemapEnabled(null);
       refetch();
     } catch (err) {
@@ -503,6 +565,23 @@ function SettingsTab() {
             placeholder="https://signalium.com"
             className="rounded-sm font-mono text-sm"
           />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Favicon URL</Label>
+          <div className="flex items-center gap-3">
+            {effectiveFaviconUrl ? (
+              <img src={effectiveFaviconUrl} alt="Favicon preview" className="w-6 h-6 rounded-sm border border-border object-contain" />
+            ) : null}
+            <Input
+              value={effectiveFaviconUrl}
+              onChange={(e) => setFaviconUrl(e.target.value)}
+              placeholder="/favicon.svg or an uploaded media URL"
+              className="rounded-sm font-mono text-sm"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Upload an icon in the Media Library, copy its URL, and paste it here. Leave blank to use the default site favicon.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Switch checked={effectiveSitemapEnabled} onCheckedChange={(v) => setSitemapEnabled(v)} />
