@@ -53,7 +53,10 @@ export type Subscription = typeof subscriptionsTable.$inferSelect;
 // starting, expiry, renewal) so the full story of a subscription is visible.
 export const subscriptionEventsTable = pgTable("subscription_events", {
   id: serial("id").primaryKey(),
-  subscriptionId: integer("subscription_id").notNull().references(() => subscriptionsTable.id),
+  // Nullable: a PAYMENT_FAILED event can happen on a user's very first
+  // payment attempt, before any subscription row exists yet to attach it
+  // to. All other event types always have a real subscription.
+  subscriptionId: integer("subscription_id").references(() => subscriptionsTable.id),
   userId: text("user_id").notNull(),
   eventType: text("event_type", {
     enum: [

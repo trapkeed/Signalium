@@ -172,6 +172,11 @@ When using "try insert into a uniquely-constrained table, catch = already proces
 
 **Why:** caught by code review on the payment webhook handler's dedup insert into `webhook_events`, first for the error-code check, then again for the fact that a "failed" row could never be retried, permanently stranding a payment as unconfirmed after any transient error.
 
+## Failure events can predate the entity they'd normally attach to
+When logging a "this action failed" event into an FK-linked event log (e.g. a payment failure logged against a subscription), don't assume the FK target already exists — a first-ever attempt can fail before the entity it would have created is ever inserted. Make the FK column nullable and resolve a best-effort existing entity at log time (e.g. look up the user's current subscription by status) rather than skipping the log entry when none is found.
+
+**Why:** caught by code review — `applyFailedPayment` only logged `PAYMENT_FAILED` when the payment row already had a `subscriptionId`, which is only ever set after a *successful* confirmation, so the most common failure case (a user's very first payment attempt failing) silently produced no audit trail at all.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 

@@ -113,7 +113,12 @@ export async function applySuccessfulPayment(paymentId: number): Promise<Payment
   });
 }
 
-/** Applies a FAILED payment: marks it failed and logs the event if it's tied to a subscription attempt. */
+/**
+ * Applies a FAILED payment: marks it failed and always logs PAYMENT_FAILED
+ * to the event log — even for a user's very first payment attempt, before
+ * any subscription exists yet, so failure auditability doesn't depend on
+ * an unrelated subscription having already been created.
+ */
 export async function applyFailedPayment(paymentId: number, notes?: string): Promise<Payment | null> {
   const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, paymentId));
   if (!payment) return null;
@@ -124,11 +129,16 @@ export async function applyFailedPayment(paymentId: number, notes?: string): Pro
     .where(eq(paymentsTable.id, paymentId))
     .returning();
 
-  if (failed.subscriptionId) {
-    await logSubscriptionEvent(failed.subscriptionId, failed.userId, "PAYMENT_FAILED", null, null, {
-      paymentId: failed.id, notes: notes ?? null,
-    });
+  let subscriptionId = failed.subscriptionId;
+  if (!subscriptionId) {
+    const [existing] = await db.select().from(subscriptionsTable)
+      .where(and(eq(subscriptionsTable.userId, failed.userId), inArray(subscriptionsTable.status, ["active", "grace_period", "pending_payment"])));
+    subscriptionId = existing?.id ?? null;
   }
+
+  await logSubscriptionEvent(subscriptionId, failed.userId, "PAYMENT_FAILED", null, null, {
+    paymentId: failed.id, notes: notes ?? null,
+  });
   return failed;
 }
 

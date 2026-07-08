@@ -82,7 +82,7 @@ function deny(code: EntitlementDenialCode, message: string): EntitlementDenial {
 }
 
 async function logEvent(
-  subscriptionId: number,
+  subscriptionId: number | null,
   userId: string,
   eventType: SubscriptionEvent["eventType"],
   fromStatus: string | null,
