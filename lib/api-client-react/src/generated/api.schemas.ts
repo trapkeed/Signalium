@@ -1967,6 +1967,48 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
+export type UserTradingSettingsTradingMode = typeof UserTradingSettingsTradingMode[keyof typeof UserTradingSettingsTradingMode];
+
+
+export const UserTradingSettingsTradingMode = {
+  manual: 'manual',
+  autonomous: 'autonomous',
+} as const;
+
+export type UserTradingSettingsRiskMode = typeof UserTradingSettingsRiskMode[keyof typeof UserTradingSettingsRiskMode];
+
+
+export const UserTradingSettingsRiskMode = {
+  manual: 'manual',
+  qde: 'qde',
+} as const;
+
+export interface UserTradingSettings {
+  userId: string;
+  tradingMode: UserTradingSettingsTradingMode;
+  riskMode: UserTradingSettingsRiskMode;
+  /** @nullable */
+  updatedAt?: string | null;
+}
+
+export interface UserSymbol {
+  id: number;
+  userId: string;
+  symbolId: number;
+  createdAt: string;
+  canonicalSymbol: string;
+  displayName: string;
+  enabled: boolean;
+  categoryId: number;
+  categoryName: string;
+  categorySlug: string;
+}
+
+export interface EntitlementError {
+  error: string;
+  code: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -2060,6 +2102,36 @@ export type CreateSymbolAliasBody = {
   alias: string;
   canonicalSymbol: string;
   brokerId?: number;
+};
+
+export type AddUserSymbolBody = {
+  symbolId: number;
+};
+
+export type RemoveUserSymbol200 = {
+  id: number;
+  symbolId: number;
+};
+
+export type UpdateTradingSettingsBodyTradingMode = typeof UpdateTradingSettingsBodyTradingMode[keyof typeof UpdateTradingSettingsBodyTradingMode];
+
+
+export const UpdateTradingSettingsBodyTradingMode = {
+  manual: 'manual',
+  autonomous: 'autonomous',
+} as const;
+
+export type UpdateTradingSettingsBodyRiskMode = typeof UpdateTradingSettingsBodyRiskMode[keyof typeof UpdateTradingSettingsBodyRiskMode];
+
+
+export const UpdateTradingSettingsBodyRiskMode = {
+  manual: 'manual',
+  qde: 'qde',
+} as const;
+
+export type UpdateTradingSettingsBody = {
+  tradingMode?: UpdateTradingSettingsBodyTradingMode;
+  riskMode?: UpdateTradingSettingsBodyRiskMode;
 };
 
 export type CreateBrokerBody = {

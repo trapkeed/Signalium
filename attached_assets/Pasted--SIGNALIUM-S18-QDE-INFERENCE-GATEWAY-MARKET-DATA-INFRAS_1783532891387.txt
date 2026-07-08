@@ -1,0 +1,495 @@
+# SIGNALIUM S18 — QDE INFERENCE GATEWAY, MARKET DATA INFRASTRUCTURE AND RUNTIME INTELLIGENCE LAYER
+
+Repository:
+signalium
+
+Related Repository:
+signalium-trainer
+
+Objective:
+
+Create the runtime infrastructure that allows the Signalium Quant Decision Engine (QDE) to continuously observe markets, generate decisions, manage positions, and communicate with EAs in real time.
+
+The QDE must operate as a professional trader rather than as a signal generator.
+
+---
+
+1. DATA PROVIDER ABSTRACTION LAYER
+
+---
+
+Implement provider abstraction.
+
+No provider may be hardcoded.
+
+Supported provider types:
+
+* Live market providers
+* Historical providers
+* Economic calendar providers
+* News providers
+* Sentiment providers
+
+Initial configuration:
+
+Historical:
+
+* Tiingo
+
+Live:
+
+* OANDA
+
+Future providers may include:
+
+* TwelveData
+* Polygon
+* AlphaVantage
+* Finnhub
+* DXFeed
+* Interactive Brokers
+* MetaTrader Gateway
+
+Tables:
+
+data_providers
+provider_credentials
+provider_status
+provider_capabilities
+provider_symbol_mappings
+
+Administrators can:
+
+* add provider
+* disable provider
+* rotate credentials
+* set provider priority
+* define fallback providers
+
+---
+
+2. UNIVERSAL MARKET NORMALIZATION ENGINE
+
+---
+
+Create a normalization pipeline.
+
+Every provider outputs data differently.
+
+The QDE only consumes canonical data.
+
+Canonical structure:
+
+symbol
+timestamp_utc
+open
+high
+low
+close
+volume
+spread
+session
+provider_id
+
+Timezone standard:
+
+UTC only.
+
+Storage format:
+
+Parquet for historical.
+Redis for live cache.
+
+Normalization includes:
+
+* timezone conversion
+* decimal normalization
+* spread normalization
+* broker suffix removal
+* symbol canonicalization
+
+The QDE must never know:
+
+EURUSD.pro
+EURUSDm
+EURUSD.a
+
+Only:
+
+EURUSD
+
+---
+
+3. MULTI-TIMEFRAME SNAPSHOT GENERATION
+
+---
+
+Generate synchronized snapshots.
+
+Supported timeframes:
+
+M1
+M5
+M15
+M30
+H1
+H4
+D1
+
+Each inference request receives:
+
+HTF context
+MTF context
+LTF context
+
+Example:
+
+HTF:
+H4 trend structure
+
+MTF:
+H1 momentum structure
+
+LTF:
+M1 execution context
+
+The QDE receives all simultaneously.
+
+No separate model calls.
+
+---
+
+4. MARKET SNAPSHOT OBJECT
+
+---
+
+Create canonical MarketSnapshot objects.
+
+Example contents:
+
+symbol
+timestamp
+OHLC arrays
+volume profile
+spread
+session state
+microstructure metrics
+portfolio exposure
+open position state
+correlation state
+economic events
+news sentiment
+market quality metrics
+
+The MarketSnapshot becomes the model's perception layer.
+
+Everything the QDE knows originates here.
+
+---
+
+5. LIVE MARKET INGESTION PIPELINE
+
+---
+
+Implement continuous ingestion workers.
+
+Responsibilities:
+
+* fetch prices
+* fetch candles
+* fetch spreads
+* detect missing bars
+* repair gaps
+* update Redis cache
+* create snapshots
+
+Target latency:
+
+<500ms
+
+Polling intervals:
+
+M1:
+5 seconds
+
+M5:
+30 seconds
+
+Higher timeframes:
+event driven updates
+
+---
+
+6. INFERENCE GATEWAY
+
+---
+
+Create inference APIs between:
+
+signalium
+and
+signalium-trainer
+
+Endpoints:
+
+POST /qde/inference
+
+POST /qde/review-position
+
+POST /qde/manual-analysis
+
+POST /qde/portfolio-review
+
+POST /qde/reasoning
+
+The trainer returns:
+
+direction
+confidence
+risk_signal
+size_signal
+entry_urgency
+exit_horizon
+reasoning
+warnings
+
+No business logic exists in signalium.
+
+Signalium only forwards requests.
+
+---
+
+7. CONTINUOUS MARKET OBSERVATION ENGINE
+
+---
+
+The QDE must operate continuously.
+
+Manual Mode:
+
+Inference only when requested.
+
+Autonomous Mode:
+
+The QDE monitors markets continuously.
+
+For each subscribed symbol:
+
+observe
+evaluate
+wait
+observe
+evaluate
+wait
+
+When probability exceeds threshold:
+
+generate opportunity
+
+No opportunities may be missed.
+
+The QDE behaves like a professional discretionary trader.
+
+---
+
+8. OPPORTUNITY STATE MACHINE
+
+---
+
+Implement setup memory.
+
+States:
+
+WATCHING
+
+BUILDING_CONTEXT
+
+PREPARING_ENTRY
+
+ENTRY_WINDOW
+
+POSITION_ACTIVE
+
+MANAGING_POSITION
+
+EXIT_PREPARATION
+
+EXITED
+
+COOLDOWN
+
+The QDE remembers unfinished setups.
+
+The model does not forget context after every candle.
+
+---
+
+9. POSITION REVIEW API
+
+---
+
+When an EA reports an open position:
+
+QDE receives:
+
+entry price
+current price
+profit
+drawdown
+duration
+spread
+slippage
+swap
+commission
+
+The model re-evaluates:
+
+hold
+trim
+add
+close
+
+The model remains active throughout the trade lifecycle.
+
+---
+
+10. DYNAMIC CONFIDENCE EVOLUTION
+
+---
+
+Confidence must evolve.
+
+Example:
+
+Entry:
+82%
+
+15 minutes later:
+61%
+
+45 minutes later:
+39%
+
+The QDE may decide:
+
+close immediately
+
+Likewise:
+
+Entry:
+68%
+
+Later:
+91%
+
+The model may:
+
+add exposure
+
+Confidence becomes dynamic state rather than static prediction.
+
+---
+
+11. MARKET MEMORY
+
+---
+
+Create runtime memory.
+
+Store:
+
+failed setups
+successful setups
+regime transitions
+session behavior
+volatility behavior
+
+The QDE remembers:
+
+"last time Gold behaved this way."
+
+This is runtime memory.
+
+Training memory remains in signalium-trainer.
+
+---
+
+12. LATENCY TARGETS
+
+---
+
+Manual analysis:
+
+<2 seconds
+
+Position review:
+
+<1 second
+
+Autonomous polling:
+
+<500ms processing
+
+Inference:
+
+<300ms
+
+---
+
+13. ADMIN CONTROLS
+
+---
+
+Admins can:
+
+* disable symbols
+* disable providers
+* force model version
+* pause autonomous trading
+* place symbols into maintenance mode
+* disable inference
+* switch live provider
+* enable fallback providers
+
+---
+
+14. SYSTEM BOUNDARIES
+
+---
+
+Signalium:
+
+* authentication
+* subscriptions
+* dashboards
+* payments
+* EA provisioning
+* API gateway
+
+Signalium Trainer:
+
+* QDE inference
+* memory
+* learning
+* model management
+* research
+
+EA:
+
+* execution
+* telemetry
+* synchronization
+
+The QDE remains the sole decision maker.
+
+No rule engine may override the model.
+
+No provider logic may leak into the model.
+
+The model sees only normalized market reality.
+
+Implement production-ready code only.
+Avoid placeholders.
+Avoid mocks.
+Maintain complete auditability.
+Maintain horizontal scalability.

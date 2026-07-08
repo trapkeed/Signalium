@@ -6,6 +6,7 @@ import Subscriptions from "@/pages/subscriptions";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
 import EaBuilds from "@/pages/ea-builds";
+import Trading from "@/pages/trading";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 
 export default function Account() {
@@ -28,6 +29,7 @@ export default function Account() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys &amp; MT5</TabsTrigger>
             <TabsTrigger value="ea-builds">EA Builds</TabsTrigger>
+            <TabsTrigger value="trading">Trading</TabsTrigger>
             {referralsEnabled && <TabsTrigger value="referrals">Referrals</TabsTrigger>}
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
@@ -65,6 +67,10 @@ export default function Account() {
 
           <TabsContent value="ea-builds" className="mt-6">
             <EaBuilds embedded />
+          </TabsContent>
+
+          <TabsContent value="trading" className="mt-6">
+            <Trading embedded />
           </TabsContent>
 
           {referralsEnabled && (

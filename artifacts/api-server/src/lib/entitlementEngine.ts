@@ -6,6 +6,7 @@ import {
   eaRegistrationsTable,
   apiKeysTable,
   positionTelemetryTable,
+  userSymbolsTable,
   type Subscription,
   type Plan,
   type SubscriptionEvent,
@@ -272,6 +273,34 @@ export async function checkSymbolLimit(userId: string, symbol: string | null | u
 
   if (!distinctSymbols.has(symbol) && distinctSymbols.size >= plan.maxSymbols) {
     return deny("SYMBOL_LIMIT_REACHED", `Plan allows at most ${plan.maxSymbols} distinct symbol(s).`);
+  }
+  return allow();
+}
+
+/**
+ * Checks whether the user can add one more symbol to their monitored set,
+ * based on the count of rows in user_symbols (not telemetry-derived).
+ * Used by POST /symbols/user before inserting.
+ */
+export async function checkUserSymbolLimit(userId: string): Promise<EntitlementResult> {
+  const snapshot = await resolveCurrentSubscription(userId);
+  if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
+  const denial = statusDenial(snapshot.subscription.status);
+  if (denial) return denial;
+
+  const { plan } = snapshot;
+  if (plan.maxSymbols == null) return allow();
+
+  const rows = await db
+    .select({ id: userSymbolsTable.id })
+    .from(userSymbolsTable)
+    .where(eq(userSymbolsTable.userId, userId));
+
+  if (rows.length >= plan.maxSymbols) {
+    return deny(
+      "SYMBOL_LIMIT_REACHED",
+      `Your plan allows at most ${plan.maxSymbols} monitored symbol(s). Remove one to add another.`,
+    );
   }
   return allow();
 }

@@ -50,6 +50,8 @@ tags:
     description: Admin-authored announcements, fanned out to users' notification centers and optionally shown as banners.
   - name: maintenance-banner
     description: Site-wide maintenance banner scheduling and display.
+  - name: trading
+    description: User trading mode selection, symbol monitoring preferences, and risk management settings.
 paths:
   /healthz:
     get:
@@ -1729,6 +1731,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SymbolAlias"
+
+  /symbols/user:
+    get:
+      operationId: listUserSymbols
+      tags: [trading]
+      summary: List symbols the user has selected to monitor
+      responses:
+        "200":
+          description: User's monitored symbol list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserSymbol"
+    post:
+      operationId: addUserSymbol
+      tags: [trading]
+      summary: Add a symbol to the user's monitored set
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbolId]
+              properties:
+                symbolId:
+                  type: integer
+      responses:
+        "201":
+          description: Symbol added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSymbol"
+        "200":
+          description: Symbol already in monitored set (returned as-is)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSymbol"
+        "403":
+          description: Symbol limit reached for current plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementError"
+
+  /symbols/user/{symbolId}:
+    delete:
+      operationId: removeUserSymbol
+      tags: [trading]
+      summary: Remove a symbol from the user's monitored set
+      parameters:
+        - name: symbolId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Symbol removed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, symbolId]
+                properties:
+                  id:
+                    type: integer
+                  symbolId:
+                    type: integer
+        "404":
+          description: Symbol not in monitored set
+
+  /trading-settings:
+    get:
+      operationId: getTradingSettings
+      tags: [trading]
+      summary: Get the current user's trading mode and risk preferences
+      responses:
+        "200":
+          description: Trading settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTradingSettings"
+    put:
+      operationId: updateTradingSettings
+      tags: [trading]
+      summary: Update trading mode (manual/autonomous) and/or risk mode (manual/qde)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tradingMode:
+                  type: string
+                  enum: [manual, autonomous]
+                riskMode:
+                  type: string
+                  enum: [manual, qde]
+      responses:
+        "200":
+          description: Updated trading settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTradingSettings"
+        "403":
+          description: Autonomous mode not permitted on current plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementError"
 
   /brokers:
     get:
@@ -5919,4 +6039,53 @@ components:
           additionalProperties: true
           nullable: true
         createdAt:
+          type: string
+
+    UserTradingSettings:
+      type: object
+      required: [userId, tradingMode, riskMode]
+      properties:
+        userId:
+          type: string
+        tradingMode:
+          type: string
+          enum: [manual, autonomous]
+        riskMode:
+          type: string
+          enum: [manual, qde]
+        updatedAt:
+          type: ["string", "null"]
+
+    UserSymbol:
+      type: object
+      required: [id, userId, symbolId, createdAt, canonicalSymbol, displayName, enabled, categoryId, categoryName, categorySlug]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        symbolId:
+          type: integer
+        createdAt:
+          type: string
+        canonicalSymbol:
+          type: string
+        displayName:
+          type: string
+        enabled:
+          type: boolean
+        categoryId:
+          type: integer
+        categoryName:
+          type: string
+        categorySlug:
+          type: string
+
+    EntitlementError:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
           type: string

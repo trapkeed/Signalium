@@ -2167,6 +2167,85 @@ export const DeleteSymbolAliasResponse = zod.object({
 
 
 /**
+ * @summary List symbols the user has selected to monitor
+ */
+export const ListUserSymbolsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbolId": zod.number(),
+  "createdAt": zod.string(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "enabled": zod.boolean(),
+  "categoryId": zod.number(),
+  "categoryName": zod.string(),
+  "categorySlug": zod.string()
+})
+export const ListUserSymbolsResponse = zod.array(ListUserSymbolsResponseItem)
+
+
+/**
+ * @summary Add a symbol to the user's monitored set
+ */
+export const AddUserSymbolBody = zod.object({
+  "symbolId": zod.number()
+})
+
+export const AddUserSymbolResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbolId": zod.number(),
+  "createdAt": zod.string(),
+  "canonicalSymbol": zod.string(),
+  "displayName": zod.string(),
+  "enabled": zod.boolean(),
+  "categoryId": zod.number(),
+  "categoryName": zod.string(),
+  "categorySlug": zod.string()
+})
+
+
+/**
+ * @summary Remove a symbol from the user's monitored set
+ */
+export const RemoveUserSymbolParams = zod.object({
+  "symbolId": zod.coerce.number()
+})
+
+export const RemoveUserSymbolResponse = zod.object({
+  "id": zod.number(),
+  "symbolId": zod.number()
+})
+
+
+/**
+ * @summary Get the current user's trading mode and risk preferences
+ */
+export const GetTradingSettingsResponse = zod.object({
+  "userId": zod.string(),
+  "tradingMode": zod.enum(['manual', 'autonomous']),
+  "riskMode": zod.enum(['manual', 'qde']),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update trading mode (manual/autonomous) and/or risk mode (manual/qde)
+ */
+export const UpdateTradingSettingsBody = zod.object({
+  "tradingMode": zod.enum(['manual', 'autonomous']).optional(),
+  "riskMode": zod.enum(['manual', 'qde']).optional()
+})
+
+export const UpdateTradingSettingsResponse = zod.object({
+  "userId": zod.string(),
+  "tradingMode": zod.enum(['manual', 'autonomous']),
+  "riskMode": zod.enum(['manual', 'qde']),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
  * @summary List active brokers (any authenticated user)
  */
 export const ListBrokersResponseItem = zod.object({

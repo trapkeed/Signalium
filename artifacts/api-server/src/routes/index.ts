@@ -31,6 +31,7 @@ import dataProvidersRouter from "./data-providers";
 import featureFlagsRouter from "./feature-flags";
 import invoicesRouter from "./invoices";
 import paymentWebhooksRouter from "./payment-webhooks";
+import tradingSettingsRouter from "./trading-settings";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -72,5 +73,6 @@ router.use("/audit-log", auditLogRouter);
 router.use("/brokers", brokersRouter);
 router.use("/data-providers", dataProvidersRouter);
 router.use("/feature-flags", featureFlagsRouter);
+router.use("/trading-settings", tradingSettingsRouter);
 
 export default router;

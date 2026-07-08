@@ -24,3 +24,4 @@ export * from "./audit-log";
 export * from "./brokers";
 export * from "./data-providers";
 export * from "./feature-flags";
+export * from "./trading";

@@ -177,6 +177,18 @@ When logging a "this action failed" event into an FK-linked event log (e.g. a pa
 
 **Why:** caught by code review — `applyFailedPayment` only logged `PAYMENT_FAILED` when the payment row already had a `subscriptionId`, which is only ever set after a *successful* confirmation, so the most common failure case (a user's very first payment attempt failing) silently produced no audit trail at all.
 
+## Idempotent add-to-set endpoints must check for duplicates before limit enforcement
+For "add item to user's set" routes (e.g. POST /symbols/user), always check whether the (userId, itemId) pair already exists BEFORE running the plan-limit check. If it already exists, return 200 with the existing row — never 403. Running the limit check first causes the endpoint to 403 on idempotent re-adds when the user is already at cap, which is both wrong and a bad UX.
+
+**Why:** caught by architect review on POST /symbols/user — the original order was: verify symbol exists → check limit → insert with onConflictDoNothing. A user at max who re-clicks a symbol they already monitor got SYMBOL_LIMIT_REACHED instead of idempotent success.
+
+**How to apply:** query for the existing row first; return it immediately if found; only then enforce the limit and insert.
+
+## Trading control plane: new tables and route layout
+`user_trading_settings` (PK: userId, columns: tradingMode manual/autonomous, riskMode manual/qde, updatedAt) and `user_symbols` (userId + symbolId FK, unique constraint) live in `lib/db/src/schema/trading.ts`. Route for trading settings is `artifacts/api-server/src/routes/trading-settings.ts`, mounted at `/trading-settings`. User symbol selection endpoints are in `artifacts/api-server/src/routes/symbols.ts` at `/symbols/user`. `checkUserSymbolLimit` in entitlementEngine counts rows in `user_symbols` (not telemetry) — separate from the older `checkSymbolLimit` which was telemetry-derived.
+
+**Why:** keeping user-declared intent (what symbols to monitor) separate from telemetry-derived data (what symbols have actually been traded) makes each check precise for its use case.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 

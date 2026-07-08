@@ -24,6 +24,7 @@ import type {
   ActiveMaintenanceBanner,
   ActiveSession,
   ActiveStatus,
+  AddUserSymbolBody,
   AdminStatus,
   Announcement,
   AnnouncementInput,
@@ -50,6 +51,7 @@ import type {
   EaInput,
   EaRegistration,
   EaUpdate,
+  EntitlementError,
   EntitlementSummary,
   ErrorEnvelope,
   ExtendSubscriptionBody,
@@ -105,6 +107,7 @@ import type {
   RefundPaymentBody,
   RegisterEaTerminalBody,
   RejectPaymentBody,
+  RemoveUserSymbol200,
   RequestSupportTicketAttachmentUploadUrl200,
   ResolveSeoPageParams,
   RevokeAccountSession200,
@@ -162,9 +165,12 @@ import type {
   UpdateMeBody,
   UpdatePlatformStatusBody,
   UpdateSymbolBody,
+  UpdateTradingSettingsBody,
   UploadUrlRequest,
   UploadUrlResponse,
   User,
+  UserSymbol,
+  UserTradingSettings,
   UserUpdate,
   VerifyApiKey200,
   VerifyApiKeyBody
@@ -6698,6 +6704,373 @@ export const useDeleteSymbolAlias = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteSymbolAliasMutationOptions(options));
+    }
+
+export const getListUserSymbolsUrl = () => {
+
+
+
+
+  return `/api/symbols/user`
+}
+
+/**
+ * @summary List symbols the user has selected to monitor
+ */
+export const listUserSymbols = async ( options?: RequestInit): Promise<UserSymbol[]> => {
+
+  return customFetch<UserSymbol[]>(getListUserSymbolsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUserSymbolsQueryKey = () => {
+    return [
+    `/api/symbols/user`
+    ] as const;
+    }
+
+
+export const getListUserSymbolsQueryOptions = <TData = Awaited<ReturnType<typeof listUserSymbols>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUserSymbolsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUserSymbols>>> = ({ signal }) => listUserSymbols({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUserSymbols>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUserSymbolsQueryResult = NonNullable<Awaited<ReturnType<typeof listUserSymbols>>>
+export type ListUserSymbolsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List symbols the user has selected to monitor
+ */
+
+export function useListUserSymbols<TData = Awaited<ReturnType<typeof listUserSymbols>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUserSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUserSymbolsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddUserSymbolUrl = () => {
+
+
+
+
+  return `/api/symbols/user`
+}
+
+/**
+ * @summary Add a symbol to the user's monitored set
+ */
+export const addUserSymbol = async (addUserSymbolBody: AddUserSymbolBody, options?: RequestInit): Promise<UserSymbol> => {
+
+  return customFetch<UserSymbol>(getAddUserSymbolUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(addUserSymbolBody)
+  }
+);}
+
+
+
+
+
+export const getAddUserSymbolMutationOptions = <TError = ErrorType<EntitlementError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserSymbol>>, TError,{data: BodyType<AddUserSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addUserSymbol>>, TError,{data: BodyType<AddUserSymbolBody>}, TContext> => {
+
+const mutationKey = ['addUserSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addUserSymbol>>, {data: BodyType<AddUserSymbolBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addUserSymbol(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddUserSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof addUserSymbol>>>
+    export type AddUserSymbolMutationBody = BodyType<AddUserSymbolBody>
+    export type AddUserSymbolMutationError = ErrorType<EntitlementError>
+
+    /**
+ * @summary Add a symbol to the user's monitored set
+ */
+export const useAddUserSymbol = <TError = ErrorType<EntitlementError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addUserSymbol>>, TError,{data: BodyType<AddUserSymbolBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addUserSymbol>>,
+        TError,
+        {data: BodyType<AddUserSymbolBody>},
+        TContext
+      > => {
+      return useMutation(getAddUserSymbolMutationOptions(options));
+    }
+
+export const getRemoveUserSymbolUrl = (symbolId: number,) => {
+
+
+
+
+  return `/api/symbols/user/${symbolId}`
+}
+
+/**
+ * @summary Remove a symbol from the user's monitored set
+ */
+export const removeUserSymbol = async (symbolId: number, options?: RequestInit): Promise<RemoveUserSymbol200> => {
+
+  return customFetch<RemoveUserSymbol200>(getRemoveUserSymbolUrl(symbolId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveUserSymbolMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserSymbol>>, TError,{symbolId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeUserSymbol>>, TError,{symbolId: number}, TContext> => {
+
+const mutationKey = ['removeUserSymbol'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeUserSymbol>>, {symbolId: number}> = (props) => {
+          const {symbolId} = props ?? {};
+
+          return  removeUserSymbol(symbolId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveUserSymbolMutationResult = NonNullable<Awaited<ReturnType<typeof removeUserSymbol>>>
+
+    export type RemoveUserSymbolMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove a symbol from the user's monitored set
+ */
+export const useRemoveUserSymbol = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeUserSymbol>>, TError,{symbolId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeUserSymbol>>,
+        TError,
+        {symbolId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveUserSymbolMutationOptions(options));
+    }
+
+export const getGetTradingSettingsUrl = () => {
+
+
+
+
+  return `/api/trading-settings`
+}
+
+/**
+ * @summary Get the current user's trading mode and risk preferences
+ */
+export const getTradingSettings = async ( options?: RequestInit): Promise<UserTradingSettings> => {
+
+  return customFetch<UserTradingSettings>(getGetTradingSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTradingSettingsQueryKey = () => {
+    return [
+    `/api/trading-settings`
+    ] as const;
+    }
+
+
+export const getGetTradingSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getTradingSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTradingSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTradingSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTradingSettings>>> = ({ signal }) => getTradingSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTradingSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTradingSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getTradingSettings>>>
+export type GetTradingSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current user's trading mode and risk preferences
+ */
+
+export function useGetTradingSettings<TData = Awaited<ReturnType<typeof getTradingSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTradingSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTradingSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateTradingSettingsUrl = () => {
+
+
+
+
+  return `/api/trading-settings`
+}
+
+/**
+ * @summary Update trading mode (manual/autonomous) and/or risk mode (manual/qde)
+ */
+export const updateTradingSettings = async (updateTradingSettingsBody: UpdateTradingSettingsBody, options?: RequestInit): Promise<UserTradingSettings> => {
+
+  return customFetch<UserTradingSettings>(getUpdateTradingSettingsUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateTradingSettingsBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateTradingSettingsMutationOptions = <TError = ErrorType<EntitlementError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTradingSettings>>, TError,{data: BodyType<UpdateTradingSettingsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTradingSettings>>, TError,{data: BodyType<UpdateTradingSettingsBody>}, TContext> => {
+
+const mutationKey = ['updateTradingSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTradingSettings>>, {data: BodyType<UpdateTradingSettingsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateTradingSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTradingSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateTradingSettings>>>
+    export type UpdateTradingSettingsMutationBody = BodyType<UpdateTradingSettingsBody>
+    export type UpdateTradingSettingsMutationError = ErrorType<EntitlementError>
+
+    /**
+ * @summary Update trading mode (manual/autonomous) and/or risk mode (manual/qde)
+ */
+export const useUpdateTradingSettings = <TError = ErrorType<EntitlementError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTradingSettings>>, TError,{data: BodyType<UpdateTradingSettingsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTradingSettings>>,
+        TError,
+        {data: BodyType<UpdateTradingSettingsBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateTradingSettingsMutationOptions(options));
     }
 
 export const getListBrokersUrl = () => {

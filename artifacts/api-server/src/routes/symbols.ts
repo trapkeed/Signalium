@@ -6,10 +6,12 @@ import {
   symbolCategoriesTable,
   symbolAliasesTable,
   symbolNormalizationLogTable,
+  userSymbolsTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { normalizeSymbol, invalidateSymbolCache, listSymbolsWithCategories } from "../lib/symbolNormalizer";
+import { checkUserSymbolLimit } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -73,6 +75,159 @@ router.post("/normalize", async (req, res) => {
     return res.json({ rawInput: input, canonicalSymbol: result.canonicalSymbol, symbolId: result.symbolId });
   } catch (err) {
     req.log.error(err, "Failed to normalize symbol");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── User symbol subscriptions ───────────────────────────────────────────────
+
+// List symbols the user has selected to monitor.
+router.get("/user", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const rows = await db
+      .select({
+        id: userSymbolsTable.id,
+        userId: userSymbolsTable.userId,
+        symbolId: userSymbolsTable.symbolId,
+        createdAt: userSymbolsTable.createdAt,
+        canonicalSymbol: symbolsTable.canonicalSymbol,
+        displayName: symbolsTable.displayName,
+        enabled: symbolsTable.enabled,
+        categoryId: symbolCategoriesTable.id,
+        categoryName: symbolCategoriesTable.name,
+        categorySlug: symbolCategoriesTable.slug,
+      })
+      .from(userSymbolsTable)
+      .innerJoin(symbolsTable, eq(userSymbolsTable.symbolId, symbolsTable.id))
+      .innerJoin(symbolCategoriesTable, eq(symbolsTable.categoryId, symbolCategoriesTable.id))
+      .where(eq(userSymbolsTable.userId, userId))
+      .orderBy(symbolCategoriesTable.name, symbolsTable.canonicalSymbol);
+    return res.json(rows);
+  } catch (err) {
+    req.log.error(err, "Failed to list user symbols");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Add a symbol to the user's monitored set.
+router.post("/user", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { symbolId } = req.body as { symbolId?: number };
+  if (!symbolId || typeof symbolId !== "number") {
+    return res.status(400).json({ error: "'symbolId' (integer) is required" });
+  }
+
+  // Verify symbol exists and is enabled
+  const [symbol] = await db
+    .select()
+    .from(symbolsTable)
+    .where(and(eq(symbolsTable.id, symbolId), eq(symbolsTable.enabled, true)));
+  if (!symbol) return res.status(404).json({ error: "Symbol not found or disabled" });
+
+  // Check for an existing subscription first — re-adding an already-monitored
+  // symbol must return the existing row (idempotent 200) rather than 403.
+  const [alreadyExists] = await db
+    .select({
+      id: userSymbolsTable.id,
+      userId: userSymbolsTable.userId,
+      symbolId: userSymbolsTable.symbolId,
+      createdAt: userSymbolsTable.createdAt,
+      canonicalSymbol: symbolsTable.canonicalSymbol,
+      displayName: symbolsTable.displayName,
+      enabled: symbolsTable.enabled,
+      categoryId: symbolCategoriesTable.id,
+      categoryName: symbolCategoriesTable.name,
+      categorySlug: symbolCategoriesTable.slug,
+    })
+    .from(userSymbolsTable)
+    .innerJoin(symbolsTable, eq(userSymbolsTable.symbolId, symbolsTable.id))
+    .innerJoin(symbolCategoriesTable, eq(symbolsTable.categoryId, symbolCategoriesTable.id))
+    .where(and(eq(userSymbolsTable.userId, userId), eq(userSymbolsTable.symbolId, symbolId)));
+
+  if (alreadyExists) return res.status(200).json(alreadyExists);
+
+  // Only enforce the plan limit for genuinely new additions
+  const access = await checkUserSymbolLimit(userId);
+  if (!access.allowed) {
+    return res.status(403).json({ error: access.message, code: access.code });
+  }
+
+  try {
+    const [row] = await db
+      .insert(userSymbolsTable)
+      .values({ userId, symbolId })
+      .returning();
+
+    if (!row) {
+      // Shouldn't happen after the duplicate-check above, but guard anyway
+      const [existing] = await db
+        .select({
+          id: userSymbolsTable.id,
+          userId: userSymbolsTable.userId,
+          symbolId: userSymbolsTable.symbolId,
+          createdAt: userSymbolsTable.createdAt,
+          canonicalSymbol: symbolsTable.canonicalSymbol,
+          displayName: symbolsTable.displayName,
+          enabled: symbolsTable.enabled,
+          categoryId: symbolCategoriesTable.id,
+          categoryName: symbolCategoriesTable.name,
+          categorySlug: symbolCategoriesTable.slug,
+        })
+        .from(userSymbolsTable)
+        .innerJoin(symbolsTable, eq(userSymbolsTable.symbolId, symbolsTable.id))
+        .innerJoin(symbolCategoriesTable, eq(symbolsTable.categoryId, symbolCategoriesTable.id))
+        .where(and(eq(userSymbolsTable.userId, userId), eq(userSymbolsTable.symbolId, symbolId)));
+      return res.status(200).json(existing);
+    }
+
+    const [full] = await db
+      .select({
+        id: userSymbolsTable.id,
+        userId: userSymbolsTable.userId,
+        symbolId: userSymbolsTable.symbolId,
+        createdAt: userSymbolsTable.createdAt,
+        canonicalSymbol: symbolsTable.canonicalSymbol,
+        displayName: symbolsTable.displayName,
+        enabled: symbolsTable.enabled,
+        categoryId: symbolCategoriesTable.id,
+        categoryName: symbolCategoriesTable.name,
+        categorySlug: symbolCategoriesTable.slug,
+      })
+      .from(userSymbolsTable)
+      .innerJoin(symbolsTable, eq(userSymbolsTable.symbolId, symbolsTable.id))
+      .innerJoin(symbolCategoriesTable, eq(symbolsTable.categoryId, symbolCategoriesTable.id))
+      .where(eq(userSymbolsTable.id, row.id));
+    return res.status(201).json(full);
+  } catch (err) {
+    req.log.error(err, "Failed to add user symbol");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Remove a symbol from the user's monitored set.
+router.delete("/user/:symbolId", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const symbolId = Number(req.params.symbolId);
+  if (!Number.isInteger(symbolId)) {
+    return res.status(400).json({ error: "Invalid symbolId" });
+  }
+
+  try {
+    const [deleted] = await db
+      .delete(userSymbolsTable)
+      .where(and(eq(userSymbolsTable.userId, userId), eq(userSymbolsTable.symbolId, symbolId)))
+      .returning();
+    if (!deleted) return res.status(404).json({ error: "Symbol not in your monitored set" });
+    return res.json({ id: deleted.id, symbolId: deleted.symbolId });
+  } catch (err) {
+    req.log.error(err, "Failed to remove user symbol");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
