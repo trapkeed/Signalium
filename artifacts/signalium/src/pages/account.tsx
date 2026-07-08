@@ -1,6 +1,7 @@
 import { useUser, UserProfile } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SecurityTab } from "@/components/account/security-tab";
+import { ReferralsTab } from "@/components/account/referrals-tab";
 import Subscriptions from "@/pages/subscriptions";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
@@ -25,6 +26,7 @@ export default function Account() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys &amp; MT5</TabsTrigger>
             <TabsTrigger value="ea-builds">EA Builds</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
 
@@ -61,6 +63,10 @@ export default function Account() {
 
           <TabsContent value="ea-builds" className="mt-6">
             <EaBuilds embedded />
+          </TabsContent>
+
+          <TabsContent value="referrals" className="mt-6">
+            <ReferralsTab />
           </TabsContent>
 
           <TabsContent value="security" className="mt-6 max-w-4xl">

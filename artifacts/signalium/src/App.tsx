@@ -47,6 +47,9 @@ import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
 import { useSeoHead } from "@/hooks/use-seo-head";
 import { useSeoRedirects } from "@/hooks/use-seo-redirects";
+import { REFERRAL_CODE_STORAGE_KEY } from "@/lib/referral";
+import AdminReferrals from "@/pages/admin/referrals";
+import AdminAuditLog from "@/pages/admin/audit-log";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
@@ -175,6 +178,19 @@ function SeoHeadManager() {
   return null;
 }
 
+/** Captures ?ref=CODE from the URL (e.g. a referral link) into localStorage
+ * so it survives the sign-up flow and can be attributed on first login. */
+function ReferralCaptureManager() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref && ref.trim()) {
+      localStorage.setItem(REFERRAL_CODE_STORAGE_KEY, ref.trim());
+    }
+  }, []);
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -191,6 +207,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <SeoHeadManager />
+        <ReferralCaptureManager />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
@@ -233,6 +250,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/contact"><ProtectedRoute component={AdminContact} /></Route>
             <Route path="/admin/knowledge-base"><ProtectedRoute component={AdminKnowledgeBase} /></Route>
             <Route path="/admin/status"><ProtectedRoute component={AdminStatusPage} /></Route>
+            <Route path="/admin/referrals"><ProtectedRoute component={AdminReferrals} /></Route>
+            <Route path="/admin/audit-log"><ProtectedRoute component={AdminAuditLog} /></Route>
 
             <Route component={NotFound} />
           </Switch>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { REFERRAL_CODE_STORAGE_KEY } from "@/lib/referral";
 
 /**
  * Wraps signed-in app content. Syncs the current Clerk session into our
@@ -39,11 +40,16 @@ export function AccountGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id || syncedForUserId.current === user.id) return;
     syncedForUserId.current = user.id;
-    syncLogin.mutate(undefined, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetAccountSecurityStatusQueryKey() });
+    const referralCode = localStorage.getItem(REFERRAL_CODE_STORAGE_KEY) || undefined;
+    syncLogin.mutate(
+      { data: referralCode ? { referralCode } : undefined },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetAccountSecurityStatusQueryKey() });
+          if (referralCode) localStorage.removeItem(REFERRAL_CODE_STORAGE_KEY);
+        },
       },
-    });
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 

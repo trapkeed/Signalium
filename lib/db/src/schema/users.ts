@@ -9,6 +9,10 @@ export const usersTable = pgTable("users", {
   lastName: text("last_name"),
   role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
   isActive: boolean("is_active").notNull().default(true),
+  // Unique shareable code for the referral program. Generated the first time
+  // the user's row is provisioned (see account-security.ts sync-login, which
+  // doubles as our user-provisioning hook since there is no signup webhook).
+  referralCode: text("referral_code").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

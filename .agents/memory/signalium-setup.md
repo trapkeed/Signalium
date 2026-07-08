@@ -104,3 +104,18 @@ When esbuild-bundling a standalone script (e.g. a data migration) that imports `
 Admin announcements resolve their audience (all users vs plan tier, via active subscriptions joined to plans) once at publish time, writing one notification row per matching user. Users who join/upgrade after publish do not retroactively receive it.
 
 **Why:** simpler mental model and matches "notification" semantics (a point-in-time event); live-updating would require re-computing audience membership continuously and handling partial delivery.
+
+## Adding a NOT NULL UNIQUE column to a non-empty table via drizzle-kit
+`drizzle-kit push` prompts interactively (TTY) when adding a NOT NULL/UNIQUE column to a table with existing rows, which fails in this non-interactive environment. Fix: manually backfill via raw SQL first (`ALTER TABLE ... ADD COLUMN` nullable, `UPDATE` to set values per row, then `ALTER COLUMN ... SET NOT NULL` and `ADD UNIQUE CONSTRAINT`), then run `drizzle-kit push` again — it will see the column already matches and skip the prompt.
+
+**Why:** hit this adding `referral_code` to `users` (1 pre-existing row); the automated push has no way to answer the "how should existing rows be filled" prompt.
+
+## Orval/zod v3: nullable object schemas
+In `openapi.yaml`, do NOT declare a nullable object field as `type: ["object", "null"]` — orval+zod v3 doesn't support the array-of-types syntax and generated code fails to build. Use `type: object` with `nullable: true` and explicit `additionalProperties: true` instead.
+
+**Why:** hit this adding the audit log `detail` field (arbitrary JSON, nullable); matches the pattern already used elsewhere in the spec for open-ended nullable objects.
+
+## Referral attribution point
+Referral attribution happens exactly once, at first-ever user-row provisioning (inside the existing sync-login lazy-provisioning path, since there's no signup webhook available). The referred code is captured client-side from a `?ref=` URL param into localStorage, sent on the next login call, and cleared after use. Self-referral is guarded explicitly even though structurally near-impossible; duplicate referral is prevented by a DB unique index on `referredUserId`, not application logic.
+
+**Why:** provisioning-time is the only point the backend can be certain "this is a brand-new user" — attributing later would need extra state to detect first-vs-repeat login.

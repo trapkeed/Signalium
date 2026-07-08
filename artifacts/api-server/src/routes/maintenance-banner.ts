@@ -1,7 +1,9 @@
 import { Router } from "express";
+import { getAuth } from "@clerk/express";
 import { db, maintenanceBannerTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -39,6 +41,9 @@ router.get("/", requireAdmin, async (req, res) => {
 
 // PATCH /maintenance-banner — admin: update config
 router.patch("/", requireAdmin, async (req, res) => {
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     await getOrCreateBanner();
     const [banner] = await db
@@ -46,6 +51,12 @@ router.patch("/", requireAdmin, async (req, res) => {
       .set({ ...req.body, updatedAt: new Date() })
       .where(eq(maintenanceBannerTable.id, 1))
       .returning();
+
+    await logAudit(actorUserId, "maintenance_banner.updated", "maintenance_banner", "1", {
+      isEnabled: banner.isEnabled,
+      message: banner.message,
+    });
+
     return res.json(banner);
   } catch (err) {
     req.log.error(err, "Failed to update maintenance banner");

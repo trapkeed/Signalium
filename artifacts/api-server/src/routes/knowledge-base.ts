@@ -1,7 +1,9 @@
 import { Router } from "express";
+import { getAuth } from "@clerk/express";
 import { db, kbCategoriesTable, kbArticlesTable } from "@workspace/db";
 import { and, asc, desc, eq, ilike, or } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -144,9 +146,27 @@ router.patch("/admin/articles/:id", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
+    const [before] = await db.select().from(kbArticlesTable).where(eq(kbArticlesTable.id, id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+
     const [article] = await db.update(kbArticlesTable).set({ ...req.body, updatedAt: new Date() }).where(eq(kbArticlesTable.id, id)).returning();
     if (!article) return res.status(404).json({ error: "Not found" });
+
+    const status = req.body?.status as string | undefined;
+    if (status && status !== before.status && (status === "published" || before.status === "published")) {
+      await logAudit(
+        actorUserId,
+        status === "published" ? "knowledge_base.published" : "knowledge_base.unpublished",
+        "knowledge_base_article",
+        String(article.id),
+        { title: article.title, from: before.status, to: status },
+      );
+    }
+
     return res.json(article);
   } catch (err) {
     req.log.error(err, "Failed to update KB article");

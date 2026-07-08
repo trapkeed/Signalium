@@ -1647,6 +1647,16 @@ paths:
       operationId: syncLogin
       tags: [account]
       summary: Sync the current Clerk session into login history, running suspicious-login detection
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                referralCode:
+                  type: string
+                  description: Optional referral code captured at signup, attributed on first-ever provisioning of this user.
       responses:
         "200":
           description: Synced
@@ -2925,6 +2935,91 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /referrals/me:
+    get:
+      operationId: getMyReferrals
+      tags: [referrals]
+      summary: Current user's referral code and referral activity
+      responses:
+        "200":
+          description: Referral summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralSummary"
+
+  /referrals/admin:
+    get:
+      operationId: listAllReferrals
+      tags: [referrals]
+      summary: Platform-wide referral activity (admin)
+      responses:
+        "200":
+          description: Referral activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReferralActivity"
+
+  /referrals/admin/leaderboard:
+    get:
+      operationId: getReferralLeaderboard
+      tags: [referrals]
+      summary: Top referrers by referral count (admin)
+      responses:
+        "200":
+          description: Referral leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReferralLeaderboardEntry"
+
+  /audit-log:
+    get:
+      operationId: listAuditLog
+      tags: [audit-log]
+      summary: Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: actorUserId
+          in: query
+          schema:
+            type: string
+        - name: targetType
+          in: query
+          schema:
+            type: string
+        - name: targetId
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
 
 components:
   schemas:
@@ -4727,3 +4822,119 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatusIncident"
+
+    ReferredUserSummary:
+      type: object
+      required: [id, referredUserId, createdAt, email, firstName, lastName]
+      properties:
+        id:
+          type: integer
+        referredUserId:
+          type: string
+        createdAt:
+          type: string
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+
+    ReferralSummary:
+      type: object
+      required: [referralCode, referralCount, referrals]
+      properties:
+        referralCode:
+          type: string
+        referralCount:
+          type: integer
+        referrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferredUserSummary"
+
+    ReferralActivity:
+      type: object
+      required:
+        - id
+        - referralCode
+        - createdAt
+        - referrerUserId
+        - referredUserId
+        - referrerEmail
+        - referrerFirstName
+        - referrerLastName
+        - referredEmail
+        - referredFirstName
+        - referredLastName
+      properties:
+        id:
+          type: integer
+        referralCode:
+          type: string
+        createdAt:
+          type: string
+        referrerUserId:
+          type: string
+        referredUserId:
+          type: string
+        referrerEmail:
+          type: ["string", "null"]
+        referrerFirstName:
+          type: ["string", "null"]
+        referrerLastName:
+          type: ["string", "null"]
+        referredEmail:
+          type: ["string", "null"]
+        referredFirstName:
+          type: ["string", "null"]
+        referredLastName:
+          type: ["string", "null"]
+
+    ReferralLeaderboardEntry:
+      type: object
+      required: [userId, referralCount, email, firstName, lastName]
+      properties:
+        userId:
+          type: string
+        referralCount:
+          type: integer
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+
+    AuditLogEntry:
+      type: object
+      required: [id, actorUserId, action, targetType, targetId, createdAt]
+      properties:
+        id:
+          type: integer
+        actorUserId:
+          type: string
+        action:
+          type: string
+          enum:
+            - user.role_changed
+            - user.deactivated
+            - user.activated
+            - subscription.overridden
+            - payment.overridden
+            - announcement.published
+            - announcement.unpublished
+            - knowledge_base.published
+            - knowledge_base.unpublished
+            - maintenance_banner.updated
+            - referral.removed
+        targetType:
+          type: string
+        targetId:
+          type: string
+        detail:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string

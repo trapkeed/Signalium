@@ -1803,6 +1803,10 @@ export const GetRuntimeSummaryResponse = zod.object({
 /**
  * @summary Sync the current Clerk session into login history, running suspicious-login detection
  */
+export const SyncLoginBody = zod.object({
+  "referralCode": zod.string().optional().describe('Optional referral code captured at signup, attributed on first-ever provisioning of this user.')
+})
+
 export const SyncLoginResponse = zod.object({
   "event": zod.object({
   "id": zod.number(),
@@ -3099,5 +3103,78 @@ export const DeleteStatusIncidentParams = zod.object({
 })
 
 export const DeleteStatusIncidentResponse = zod.void()
+
+
+/**
+ * @summary Current user's referral code and referral activity
+ */
+export const GetMyReferralsResponse = zod.object({
+  "referralCode": zod.string(),
+  "referralCount": zod.number(),
+  "referrals": zod.array(zod.object({
+  "id": zod.number(),
+  "referredUserId": zod.string(),
+  "createdAt": zod.string(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Platform-wide referral activity (admin)
+ */
+export const ListAllReferralsResponseItem = zod.object({
+  "id": zod.number(),
+  "referralCode": zod.string(),
+  "createdAt": zod.string(),
+  "referrerUserId": zod.string(),
+  "referredUserId": zod.string(),
+  "referrerEmail": zod.string().nullable(),
+  "referrerFirstName": zod.string().nullable(),
+  "referrerLastName": zod.string().nullable(),
+  "referredEmail": zod.string().nullable(),
+  "referredFirstName": zod.string().nullable(),
+  "referredLastName": zod.string().nullable()
+})
+export const ListAllReferralsResponse = zod.array(ListAllReferralsResponseItem)
+
+
+/**
+ * @summary Top referrers by referral count (admin)
+ */
+export const GetReferralLeaderboardResponseItem = zod.object({
+  "userId": zod.string(),
+  "referralCount": zod.number(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable()
+})
+export const GetReferralLeaderboardResponse = zod.array(GetReferralLeaderboardResponseItem)
+
+
+/**
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ */
+export const ListAuditLogQueryParams = zod.object({
+  "action": zod.coerce.string().optional(),
+  "actorUserId": zod.coerce.string().optional(),
+  "targetType": zod.coerce.string().optional(),
+  "targetId": zod.coerce.string().optional(),
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const ListAuditLogResponseItem = zod.object({
+  "id": zod.number(),
+  "actorUserId": zod.string(),
+  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed']),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string()
+})
+export const ListAuditLogResponse = zod.array(ListAuditLogResponseItem)
 
 

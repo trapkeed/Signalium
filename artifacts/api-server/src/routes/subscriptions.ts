@@ -8,6 +8,8 @@ import {
   UpdateSubscriptionParams,
   CancelSubscriptionParams,
 } from "@workspace/api-zod";
+import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -99,12 +101,18 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireAdmin, async (req, res) => {
   const params = UpdateSubscriptionParams.safeParse({ id: Number(req.params.id) });
   const body = UpdateSubscriptionBody.safeParse(req.body);
   if (!params.success || !body.success) return res.status(400).json({ error: "Invalid request" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
+    const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, params.data.id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+
     const updateData: Record<string, unknown> = {};
     if (body.data.planId !== undefined) updateData.planId = body.data.planId;
     if (body.data.status !== undefined) updateData.status = body.data.status;
@@ -115,6 +123,12 @@ router.patch("/:id", async (req, res) => {
       .where(eq(subscriptionsTable.id, params.data.id))
       .returning();
     if (!sub) return res.status(404).json({ error: "Not found" });
+
+    await logAudit(actorUserId, "subscription.overridden", "subscription", String(sub.id), {
+      userId: sub.userId,
+      before: { planId: before.planId, status: before.status, endsAt: before.endsAt },
+      after: { planId: sub.planId, status: sub.status, endsAt: sub.endsAt },
+    });
 
     const [subWithPlan] = await db
       .select({

@@ -10,6 +10,7 @@ import {
 } from "@workspace/db";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -98,6 +99,9 @@ router.post("/:id/publish", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     const [announcement] = await db.select().from(announcementsTable).where(eq(announcementsTable.id, id));
     if (!announcement) return res.status(404).json({ error: "Not found" });
@@ -120,6 +124,13 @@ router.post("/:id/publish", requireAdmin, async (req, res) => {
       .set({ status: "published", publishedAt: new Date(), updatedAt: new Date() })
       .where(eq(announcementsTable.id, id))
       .returning();
+
+    await logAudit(actorUserId, "announcement.published", "announcement", String(updated.id), {
+      title: updated.title,
+      audience: updated.audience,
+      notifiedUsers: userIds.length,
+    });
+
     return res.json(updated);
   } catch (err) {
     req.log.error(err, "Failed to publish announcement");
@@ -134,6 +145,9 @@ router.post("/:id/retract", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     const [announcement] = await db
       .update(announcementsTable)
@@ -141,6 +155,11 @@ router.post("/:id/retract", requireAdmin, async (req, res) => {
       .where(eq(announcementsTable.id, id))
       .returning();
     if (!announcement) return res.status(404).json({ error: "Not found" });
+
+    await logAudit(actorUserId, "announcement.unpublished", "announcement", String(announcement.id), {
+      title: announcement.title,
+    });
+
     return res.json(announcement);
   } catch (err) {
     req.log.error(err, "Failed to retract announcement");

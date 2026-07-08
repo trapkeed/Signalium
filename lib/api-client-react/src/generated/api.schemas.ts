@@ -1587,6 +1587,84 @@ export interface AdminStatus {
   incidents: StatusIncident[];
 }
 
+export interface ReferredUserSummary {
+  id: number;
+  referredUserId: string;
+  createdAt: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+}
+
+export interface ReferralSummary {
+  referralCode: string;
+  referralCount: number;
+  referrals: ReferredUserSummary[];
+}
+
+export interface ReferralActivity {
+  id: number;
+  referralCode: string;
+  createdAt: string;
+  referrerUserId: string;
+  referredUserId: string;
+  /** @nullable */
+  referrerEmail: string | null;
+  /** @nullable */
+  referrerFirstName: string | null;
+  /** @nullable */
+  referrerLastName: string | null;
+  /** @nullable */
+  referredEmail: string | null;
+  /** @nullable */
+  referredFirstName: string | null;
+  /** @nullable */
+  referredLastName: string | null;
+}
+
+export interface ReferralLeaderboardEntry {
+  userId: string;
+  referralCount: number;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+}
+
+export type AuditLogEntryAction = typeof AuditLogEntryAction[keyof typeof AuditLogEntryAction];
+
+
+export const AuditLogEntryAction = {
+  userrole_changed: 'user.role_changed',
+  userdeactivated: 'user.deactivated',
+  useractivated: 'user.activated',
+  subscriptionoverridden: 'subscription.overridden',
+  paymentoverridden: 'payment.overridden',
+  announcementpublished: 'announcement.published',
+  announcementunpublished: 'announcement.unpublished',
+  knowledge_basepublished: 'knowledge_base.published',
+  knowledge_baseunpublished: 'knowledge_base.unpublished',
+  maintenance_bannerupdated: 'maintenance_banner.updated',
+  referralremoved: 'referral.removed',
+} as const;
+
+export type AuditLogEntryDetail = { [key: string]: unknown } | null;
+
+export interface AuditLogEntry {
+  id: number;
+  actorUserId: string;
+  action: AuditLogEntryAction;
+  targetType: string;
+  targetId: string;
+  detail?: AuditLogEntryDetail;
+  createdAt: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -1690,6 +1768,11 @@ export type RedeliverAction200 = {
   delivered: boolean;
 };
 
+export type SyncLoginBody = {
+  /** Optional referral code captured at signup, attributed on first-ever provisioning of this user. */
+  referralCode?: string;
+};
+
 export type SyncLogin200 = {
   event: LoginEvent;
   locked: boolean;
@@ -1789,5 +1872,14 @@ export const UpdatePlatformStatusBodyStatus = {
 
 export type UpdatePlatformStatusBody = {
   status: UpdatePlatformStatusBodyStatus;
+};
+
+export type ListAuditLogParams = {
+action?: string;
+actorUserId?: string;
+targetType?: string;
+targetId?: string;
+from?: string;
+to?: string;
 };
 

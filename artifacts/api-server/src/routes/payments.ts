@@ -3,6 +3,8 @@ import { getAuth } from "@clerk/express";
 import { db, paymentsTable, paymentProvidersTable, subscriptionsTable, plansTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import crypto from "crypto";
+import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -18,7 +20,7 @@ router.get("/providers", async (req, res) => {
   }
 });
 
-router.post("/providers", async (req, res) => {
+router.post("/providers", requireAdmin, async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
@@ -57,7 +59,7 @@ router.get("/providers/:id", async (req, res) => {
   }
 });
 
-router.patch("/providers/:id", async (req, res) => {
+router.patch("/providers/:id", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -80,7 +82,7 @@ router.patch("/providers/:id", async (req, res) => {
   }
 });
 
-router.delete("/providers/:id", async (req, res) => {
+router.delete("/providers/:id", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
@@ -180,9 +182,12 @@ router.post("/:id/submit", async (req, res) => {
 });
 
 // Admin: confirm payment → activate subscription
-router.post("/:id/confirm", async (req, res) => {
+router.post("/:id/confirm", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const [payment] = await db.update(paymentsTable)
@@ -190,6 +195,13 @@ router.post("/:id/confirm", async (req, res) => {
       .where(eq(paymentsTable.id, id))
       .returning();
     if (!payment) return res.status(404).json({ error: "Not found" });
+
+    await logAudit(actorUserId, "payment.overridden", "payment", String(payment.id), {
+      userId: payment.userId,
+      action: "confirm",
+      amount: payment.amount,
+      currency: payment.currency,
+    });
 
     const meta = payment.metadata as Record<string, unknown>;
     const planId = typeof meta.planId === "number" ? meta.planId : null;
@@ -220,9 +232,12 @@ router.post("/:id/confirm", async (req, res) => {
 });
 
 // Admin: reject payment
-router.post("/:id/reject", async (req, res) => {
+router.post("/:id/reject", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
 
   const body = req.body as { notes?: string };
   const patch: Record<string, unknown> = { status: "failed", updatedAt: new Date() };
@@ -234,6 +249,13 @@ router.post("/:id/reject", async (req, res) => {
       .where(eq(paymentsTable.id, id))
       .returning();
     if (!payment) return res.status(404).json({ error: "Not found" });
+
+    await logAudit(actorUserId, "payment.overridden", "payment", String(payment.id), {
+      userId: payment.userId,
+      action: "reject",
+      notes: body.notes ?? null,
+    });
+
     return res.json(payment);
   } catch (err) {
     req.log.error(err, "Failed to reject payment");

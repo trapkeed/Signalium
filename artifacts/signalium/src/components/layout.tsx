@@ -23,6 +23,8 @@ import {
   AlertTriangle,
   LifeBuoy,
   BookOpen,
+  Gift,
+  ScrollText,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -57,6 +59,8 @@ const ADMIN_ITEMS = [
   { href: "/admin/contact", label: "Contact Messages", icon: Mail },
   { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
   { href: "/admin/status", label: "Platform Status", icon: Activity },
+  { href: "/admin/referrals", label: "Referrals", icon: Gift },
+  { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
 ];
 
 function Logo() {

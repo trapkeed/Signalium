@@ -30,6 +30,7 @@ import type {
   AnnouncementUpdate,
   ApiKey,
   ApiKeyCreated,
+  AuditLogEntry,
   ContactMessage,
   ContactMessageInput,
   CreateApiKeyBody,
@@ -57,6 +58,7 @@ import type {
   KbCategoryInput,
   KbCategoryWithCount,
   ListAllSupportTicketsParams,
+  ListAuditLogParams,
   ListKbArticlesParams,
   ListMediaAssetsParams,
   LockAccount200,
@@ -83,6 +85,9 @@ import type {
   PositionTelemetryInput,
   QdeStatsOverview,
   RedeliverAction200,
+  ReferralActivity,
+  ReferralLeaderboardEntry,
+  ReferralSummary,
   RegisterEaTerminalBody,
   RejectPaymentBody,
   RequestSupportTicketAttachmentUploadUrl200,
@@ -126,6 +131,7 @@ import type {
   SymbolNormalizeResult,
   SymbolWithCategory,
   SyncLogin200,
+  SyncLoginBody,
   TelemetryEvent,
   TelemetryInput,
   TestSmtp200,
@@ -6477,14 +6483,14 @@ export const getSyncLoginUrl = () => {
 /**
  * @summary Sync the current Clerk session into login history, running suspicious-login detection
  */
-export const syncLogin = async ( options?: RequestInit): Promise<SyncLogin200> => {
+export const syncLogin = async (syncLoginBody?: SyncLoginBody, options?: RequestInit): Promise<SyncLogin200> => {
 
   return customFetch<SyncLogin200>(getSyncLoginUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncLoginBody)
   }
 );}
 
@@ -6493,8 +6499,8 @@ export const syncLogin = async ( options?: RequestInit): Promise<SyncLogin200> =
 
 
 export const getSyncLoginMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,{data?: BodyType<SyncLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,{data?: BodyType<SyncLoginBody>}, TContext> => {
 
 const mutationKey = ['syncLogin'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -6506,10 +6512,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncLogin>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncLogin>>, {data?: BodyType<SyncLoginBody>}> = (props) => {
+          const {data} = props ?? {};
 
-
-          return  syncLogin(requestOptions)
+          return  syncLogin(data,requestOptions)
         }
 
 
@@ -6520,18 +6526,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SyncLoginMutationResult = NonNullable<Awaited<ReturnType<typeof syncLogin>>>
-
+    export type SyncLoginMutationBody = BodyType<SyncLoginBody> | undefined
     export type SyncLoginMutationError = ErrorType<unknown>
 
     /**
  * @summary Sync the current Clerk session into login history, running suspicious-login detection
  */
 export const useSyncLogin = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,{data?: BodyType<SyncLoginBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof syncLogin>>,
         TError,
-        void,
+        {data?: BodyType<SyncLoginBody>},
         TContext
       > => {
       return useMutation(getSyncLoginMutationOptions(options));
@@ -11671,4 +11677,319 @@ export const useDeleteStatusIncident = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteStatusIncidentMutationOptions(options));
     }
+
+export const getGetMyReferralsUrl = () => {
+
+
+
+
+  return `/api/referrals/me`
+}
+
+/**
+ * @summary Current user's referral code and referral activity
+ */
+export const getMyReferrals = async ( options?: RequestInit): Promise<ReferralSummary> => {
+
+  return customFetch<ReferralSummary>(getGetMyReferralsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyReferralsQueryKey = () => {
+    return [
+    `/api/referrals/me`
+    ] as const;
+    }
+
+
+export const getGetMyReferralsQueryOptions = <TData = Awaited<ReturnType<typeof getMyReferrals>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReferrals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyReferralsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyReferrals>>> = ({ signal }) => getMyReferrals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyReferrals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyReferralsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyReferrals>>>
+export type GetMyReferralsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current user's referral code and referral activity
+ */
+
+export function useGetMyReferrals<TData = Awaited<ReturnType<typeof getMyReferrals>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyReferrals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyReferralsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAllReferralsUrl = () => {
+
+
+
+
+  return `/api/referrals/admin`
+}
+
+/**
+ * @summary Platform-wide referral activity (admin)
+ */
+export const listAllReferrals = async ( options?: RequestInit): Promise<ReferralActivity[]> => {
+
+  return customFetch<ReferralActivity[]>(getListAllReferralsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllReferralsQueryKey = () => {
+    return [
+    `/api/referrals/admin`
+    ] as const;
+    }
+
+
+export const getListAllReferralsQueryOptions = <TData = Awaited<ReturnType<typeof listAllReferrals>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllReferrals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllReferralsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllReferrals>>> = ({ signal }) => listAllReferrals({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllReferrals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllReferralsQueryResult = NonNullable<Awaited<ReturnType<typeof listAllReferrals>>>
+export type ListAllReferralsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Platform-wide referral activity (admin)
+ */
+
+export function useListAllReferrals<TData = Awaited<ReturnType<typeof listAllReferrals>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllReferrals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllReferralsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetReferralLeaderboardUrl = () => {
+
+
+
+
+  return `/api/referrals/admin/leaderboard`
+}
+
+/**
+ * @summary Top referrers by referral count (admin)
+ */
+export const getReferralLeaderboard = async ( options?: RequestInit): Promise<ReferralLeaderboardEntry[]> => {
+
+  return customFetch<ReferralLeaderboardEntry[]>(getGetReferralLeaderboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReferralLeaderboardQueryKey = () => {
+    return [
+    `/api/referrals/admin/leaderboard`
+    ] as const;
+    }
+
+
+export const getGetReferralLeaderboardQueryOptions = <TData = Awaited<ReturnType<typeof getReferralLeaderboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReferralLeaderboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReferralLeaderboard>>> = ({ signal }) => getReferralLeaderboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReferralLeaderboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReferralLeaderboardQueryResult = NonNullable<Awaited<ReturnType<typeof getReferralLeaderboard>>>
+export type GetReferralLeaderboardQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Top referrers by referral count (admin)
+ */
+
+export function useGetReferralLeaderboard<TData = Awaited<ReturnType<typeof getReferralLeaderboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReferralLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReferralLeaderboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAuditLogUrl = (params?: ListAuditLogParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/audit-log?${stringifiedParams}` : `/api/audit-log`
+}
+
+/**
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ */
+export const listAuditLog = async (params?: ListAuditLogParams, options?: RequestInit): Promise<AuditLogEntry[]> => {
+
+  return customFetch<AuditLogEntry[]>(getListAuditLogUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAuditLogQueryKey = (params?: ListAuditLogParams,) => {
+    return [
+    `/api/audit-log`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAuditLogQueryOptions = <TData = Awaited<ReturnType<typeof listAuditLog>>, TError = ErrorType<unknown>>(params?: ListAuditLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAuditLogQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditLog>>> = ({ signal }) => listAuditLog(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAuditLog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAuditLogQueryResult = NonNullable<Awaited<ReturnType<typeof listAuditLog>>>
+export type ListAuditLogQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ */
+
+export function useListAuditLog<TData = Awaited<ReturnType<typeof listAuditLog>>, TError = ErrorType<unknown>>(
+ params?: ListAuditLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAuditLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAuditLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

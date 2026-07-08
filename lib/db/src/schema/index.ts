@@ -19,3 +19,5 @@ export * from "./notifications";
 export * from "./support";
 export * from "./knowledge-base";
 export * from "./status";
+export * from "./referrals";
+export * from "./audit-log";

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
-import { db, loginEventsTable, accountSecurityTable, usersTable } from "@workspace/db";
+import { db, loginEventsTable, accountSecurityTable, usersTable, referralsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import crypto from "crypto";
 import { sendMail } from "../lib/mailer";
+import { generateUniqueReferralCode } from "../lib/referrals";
 
 const router = Router();
 
@@ -22,6 +23,53 @@ async function getOrCreateSecurity(userId: string) {
   return created;
 }
 
+/**
+ * Lazily provisions the `users` row for a Clerk-authenticated caller the
+ * first time we ever see them (there is no signup webhook — see sync-login
+ * below for why). No-op if the row already exists. On first-ever creation,
+ * attributes a referral if a valid, non-self referral code was supplied —
+ * this is the only moment attribution can happen, since it is the only time
+ * we know "this is a brand-new user".
+ */
+async function ensureUserProvisioned(userId: string, referralCodeInput?: string | null) {
+  const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+  if (existing) return existing;
+
+  const clerkUser = await clerkClient.users.getUser(userId);
+  const email = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+    ?? clerkUser.emailAddresses[0]?.emailAddress
+    ?? "";
+  const referralCode = await generateUniqueReferralCode();
+
+  const [created] = await db.insert(usersTable).values({
+    id: userId,
+    email,
+    firstName: clerkUser.firstName,
+    lastName: clerkUser.lastName,
+    referralCode,
+  }).onConflictDoNothing().returning();
+
+  // A concurrent request may have won the race and created the row first;
+  // fall back to reading it so callers always get a row back.
+  const user = created ?? (await db.select().from(usersTable).where(eq(usersTable.id, userId)))[0];
+
+  const trimmedInput = referralCodeInput?.trim().toUpperCase();
+  if (created && trimmedInput) {
+    const [referrer] = await db.select().from(usersTable).where(eq(usersTable.referralCode, trimmedInput));
+    // Self-referral is structurally impossible here (a brand-new user cannot
+    // yet know their own code), but guard explicitly for defense in depth.
+    if (referrer && referrer.id !== userId) {
+      await db.insert(referralsTable).values({
+        referrerUserId: referrer.id,
+        referredUserId: userId,
+        referralCode: trimmedInput,
+      }).onConflictDoNothing();
+    }
+  }
+
+  return user;
+}
+
 // POST /account/sync-login — client-triggered session sync. Frontend calls
 // this once per detected Clerk session (see ClerkQueryClientCacheInvalidator /
 // App mount). Replit-managed Clerk has no dashboard/webhook access, so this
@@ -30,8 +78,11 @@ async function getOrCreateSecurity(userId: string) {
 router.post("/sync-login", async (req, res) => {
   const { userId, sessionId } = getAuth(req);
   if (!userId || !sessionId) return res.status(401).json({ error: "Unauthorized" });
+  const { referralCode } = (req.body ?? {}) as { referralCode?: string };
 
   try {
+    await ensureUserProvisioned(userId, referralCode);
+
     const [existing] = await db.select().from(loginEventsTable).where(eq(loginEventsTable.clerkSessionId, sessionId));
     if (existing) {
       const security = await getOrCreateSecurity(userId);

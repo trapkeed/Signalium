@@ -24,6 +24,8 @@ import supportTicketsRouter from "./support-tickets";
 import contactRouter from "./contact";
 import knowledgeBaseRouter from "./knowledge-base";
 import statusRouter from "./status";
+import referralsRouter from "./referrals";
+import auditLogRouter from "./audit-log";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -54,5 +56,7 @@ router.use("/support/tickets", supportTicketsRouter);
 router.use("/contact", contactRouter);
 router.use("/kb", knowledgeBaseRouter);
 router.use("/status", statusRouter);
+router.use("/referrals", referralsRouter);
+router.use("/audit-log", auditLogRouter);
 
 export default router;

@@ -1,7 +1,10 @@
 import { Router } from "express";
+import { getAuth } from "@clerk/express";
 import { db, usersTable, subscriptionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { GetUserParams, UpdateUserParams, UpdateUserBody } from "@workspace/api-zod";
+import { requireAdmin } from "../middlewares/requireAdmin";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -44,17 +47,31 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireAdmin, async (req, res) => {
   const params = UpdateUserParams.safeParse({ id: req.params.id });
   const body = UpdateUserBody.safeParse(req.body);
   if (!params.success || !body.success) return res.status(400).json({ error: "Invalid request" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
+    const [before] = await db.select().from(usersTable).where(eq(usersTable.id, params.data.id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+
     const [user] = await db.update(usersTable)
       .set({ ...body.data })
       .where(eq(usersTable.id, params.data.id))
       .returning();
     if (!user) return res.status(404).json({ error: "Not found" });
+
+    if (body.data.role !== undefined && body.data.role !== before.role) {
+      await logAudit(actorUserId, "user.role_changed", "user", user.id, { from: before.role, to: user.role });
+    }
+    if (body.data.isActive !== undefined && body.data.isActive !== before.isActive) {
+      await logAudit(actorUserId, body.data.isActive ? "user.activated" : "user.deactivated", "user", user.id, {});
+    }
+
     return res.json({ ...user, subscriptionStatus: null });
   } catch (err) {
     req.log.error(err, "Failed to update user");
