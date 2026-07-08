@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type RevokeApiKey200 = {
-  ok?: boolean;
+export type SecurityReportMultiHardwareAnomaliesItem = {
+  apiKeyId?: number;
+  distinctHardwareCount?: number;
 };

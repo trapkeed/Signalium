@@ -53,4 +53,11 @@ When artifacts fail to start after an environment reset/restore, check in this o
 **Why:** node_modules, secrets, and DB schema are all environment-local state that doesn't survive a fresh clone/restore, even though code and lockfile do.
 
 ## API key auth for EAs
-Keys stored hashed (SHA-256). Full key shown once on creation. EA runtime calls `POST /api/api-keys/verify` with `x-api-key` header. Route checks hash match + active subscription. Returns `{ ok, userId, keyId }`.
+Keys stored hashed (SHA-256), never in plaintext. Full key shown once on creation/rotation. `status` enum (active/revoked/expired/suspended) replaces old boolean `isActive`; expiry is checked lazily (flipped to `expired` on next verify/register call, not via a cron job). EA registration is a separate `ea_registrations` table keyed on (apiKeyId, hardwareId) so one key supports multiple terminals, VPS migration, and hardware replacement via upsert. `requireAdmin`/`isAdmin` middleware (checks `users.role === "admin"`) gates admin-only key actions (list-all, suspend, reactivate, security-report); revoke/rotate/registrations allow owner-or-admin.
+
+**Why:** requirements explicitly called for multi-terminal support without re-issuing keys, and for admins to disable a compromised key without permanently revoking it (suspend vs revoke are distinct states).
+
+## Orval + zod v3 vs empty-object OpenAPI schemas
+An OpenAPI array item schema of bare `type: object` with no `properties` makes orval emit `zod.looseObject({})`, which doesn't exist in the installed zod v3 (only zod v4 has it) — causes a `tsc` error in generated code. Fix: always give object schemas explicit `properties`, even if minimal.
+
+**Why:** hit this when adding a security-report endpoint with placeholder object items; codegen succeeded but `typecheck:libs` failed on the generated file.

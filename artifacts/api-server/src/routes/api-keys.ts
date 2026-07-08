@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { db, apiKeysTable, subscriptionsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, apiKeysTable, eaRegistrationsTable } from "@workspace/db";
+import { eq, and, count } from "drizzle-orm";
 import crypto from "crypto";
+import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
 
@@ -10,60 +11,64 @@ function hashKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
 }
 
+function generateRawKey(): { rawKey: string; keyHash: string; keyPrefix: string } {
+  const rawKey = `sig_${crypto.randomBytes(32).toString("hex")}`;
+  return { rawKey, keyHash: hashKey(rawKey), keyPrefix: rawKey.slice(0, 12) + "..." };
+}
+
+/** Lazily flips an ACTIVE key to EXPIRED if its expiry has passed. Returns the (possibly updated) row. */
+async function withLazyExpiry<T extends { id: number; status: string; expiresAt: Date | null }>(key: T): Promise<T> {
+  if (key.status === "active" && key.expiresAt && key.expiresAt.getTime() < Date.now()) {
+    const [updated] = await db.update(apiKeysTable)
+      .set({ status: "expired" })
+      .where(eq(apiKeysTable.id, key.id))
+      .returning();
+    return updated as unknown as T;
+  }
+  return key;
+}
+
+// ─── User-facing ────────────────────────────────────────────────────────────
+
 // List current user's API keys
 router.get("/", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const keys = await db.select({
-      id: apiKeysTable.id,
-      name: apiKeysTable.name,
-      keyPrefix: apiKeysTable.keyPrefix,
-      isActive: apiKeysTable.isActive,
-      lastUsedAt: apiKeysTable.lastUsedAt,
-      createdAt: apiKeysTable.createdAt,
-    }).from(apiKeysTable).where(eq(apiKeysTable.userId, userId));
-    return res.json(keys);
+    const keys = await db.select().from(apiKeysTable).where(eq(apiKeysTable.userId, userId));
+    const withExpiry = await Promise.all(keys.map(withLazyExpiry));
+    return res.json(withExpiry);
   } catch (err) {
     req.log.error(err, "Failed to list API keys");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Create a new API key — requires active subscription
+// Create a new API key
 router.post("/", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  const { name } = req.body as { name?: string };
+  const { name, expiresInDays } = req.body as { name?: string; expiresInDays?: number };
   if (!name) return res.status(400).json({ error: "name required" });
 
   try {
-    // Verify active subscription
-    const [sub] = await db.select().from(subscriptionsTable)
-      .where(and(eq(subscriptionsTable.userId, userId), eq(subscriptionsTable.status, "active")));
-    if (!sub) return res.status(403).json({ error: "Active subscription required to generate API keys" });
-
-    const rawKey = `sig_${crypto.randomBytes(32).toString("hex")}`;
-    const keyHash = hashKey(rawKey);
-    const keyPrefix = rawKey.slice(0, 12) + "...";
+    const { rawKey, keyHash, keyPrefix } = generateRawKey();
+    const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) : null;
 
     const [keyRow] = await db.insert(apiKeysTable).values({
       userId,
       name,
       keyHash,
       keyPrefix,
-      isActive: true,
+      status: "active",
+      expiresAt,
     }).returning();
 
     // Return full key ONCE — never stored in plaintext
     return res.status(201).json({
-      id: keyRow.id,
-      name: keyRow.name,
+      ...keyRow,
       key: rawKey,
-      keyPrefix: keyRow.keyPrefix,
-      isActive: keyRow.isActive,
-      createdAt: keyRow.createdAt,
       warning: "Save this key — it will not be shown again.",
     });
   } catch (err) {
@@ -72,22 +77,83 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Revoke an API key
-router.delete("/:id", async (req, res) => {
+// Revoke an API key (owner or admin)
+router.post("/:id/revoke", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   try {
+    const [existing] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, id));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    if (existing.userId !== userId && !(await isAdmin(userId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const [key] = await db.update(apiKeysTable)
-      .set({ isActive: false })
-      .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.userId, userId)))
+      .set({ status: "revoked" })
+      .where(eq(apiKeysTable.id, id))
       .returning();
-    if (!key) return res.status(404).json({ error: "Not found" });
-    return res.json({ ok: true });
+    return res.json(key);
   } catch (err) {
     req.log.error(err, "Failed to revoke API key");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Rotate an API key — same id/registrations, new secret (owner or admin)
+router.post("/:id/rotate", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [existing] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, id));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    if (existing.userId !== userId && !(await isAdmin(userId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (existing.status === "revoked") {
+      return res.status(400).json({ error: "Cannot rotate a revoked key — create a new one instead" });
+    }
+
+    const { rawKey, keyHash, keyPrefix } = generateRawKey();
+    const [key] = await db.update(apiKeysTable)
+      .set({ keyHash, keyPrefix, status: "active" })
+      .where(eq(apiKeysTable.id, id))
+      .returning();
+
+    return res.json({
+      ...key,
+      key: rawKey,
+      warning: "Save this key — it will not be shown again. Existing EA terminals must be updated with the new key.",
+    });
+  } catch (err) {
+    req.log.error(err, "Failed to rotate API key");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// List registrations (terminals) for a key (owner or admin)
+router.get("/:id/registrations", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [existing] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, id));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    if (existing.userId !== userId && !(await isAdmin(userId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const registrations = await db.select().from(eaRegistrationsTable).where(eq(eaRegistrationsTable.apiKeyId, id));
+    return res.json(registrations);
+  } catch (err) {
+    req.log.error(err, "Failed to list EA registrations");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -100,20 +166,133 @@ router.post("/verify", async (req, res) => {
 
   try {
     const keyHash = hashKey(apiKey);
-    const [key] = await db.select().from(apiKeysTable)
-      .where(and(eq(apiKeysTable.keyHash, keyHash), eq(apiKeysTable.isActive, true)));
-    if (!key) return res.status(401).json({ error: "Invalid or inactive API key" });
+    const [key] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.keyHash, keyHash));
+    if (!key) return res.status(401).json({ error: "Invalid API key" });
 
-    // Check subscription is still active
-    const [sub] = await db.select().from(subscriptionsTable)
-      .where(and(eq(subscriptionsTable.userId, key.userId), eq(subscriptionsTable.status, "active")));
-    if (!sub) return res.status(403).json({ error: "No active subscription for this key" });
+    const current = await withLazyExpiry(key);
+    if (current.status !== "active") {
+      return res.status(401).json({ error: `API key is ${current.status}` });
+    }
 
     await db.update(apiKeysTable).set({ lastUsedAt: new Date() }).where(eq(apiKeysTable.id, key.id));
 
-    return res.json({ ok: true, userId: key.userId, keyId: key.id });
+    return res.json({ ok: true, userId: key.userId, keyId: key.id, status: current.status });
   } catch (err) {
     req.log.error(err, "Failed to verify API key");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Admin ──────────────────────────────────────────────────────────────────
+
+// List all API keys across all users, with terminal usage counts
+router.get("/all", requireAdmin, async (req, res) => {
+  try {
+    const keys = await db.select().from(apiKeysTable);
+    const withExpiry = await Promise.all(keys.map(withLazyExpiry));
+
+    const withUsage = await Promise.all(withExpiry.map(async (key) => {
+      const [{ registrationCount }] = await db.select({ registrationCount: count() })
+        .from(eaRegistrationsTable)
+        .where(eq(eaRegistrationsTable.apiKeyId, key.id));
+      return { ...key, registrationCount };
+    }));
+
+    return res.json(withUsage);
+  } catch (err) {
+    req.log.error(err, "Failed to list all API keys");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Suspend a key (disable a suspected-compromised key without permanently revoking it)
+router.post("/:id/suspend", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [key] = await db.update(apiKeysTable)
+      .set({ status: "suspended" })
+      .where(eq(apiKeysTable.id, id))
+      .returning();
+    if (!key) return res.status(404).json({ error: "Not found" });
+    return res.json(key);
+  } catch (err) {
+    req.log.error(err, "Failed to suspend API key");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Reactivate a suspended key
+router.post("/:id/reactivate", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [existing] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, id));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    if (existing.status !== "suspended") {
+      return res.status(400).json({ error: "Only suspended keys can be reactivated" });
+    }
+
+    const [key] = await db.update(apiKeysTable)
+      .set({ status: "active" })
+      .where(eq(apiKeysTable.id, id))
+      .returning();
+    return res.json(key);
+  } catch (err) {
+    req.log.error(err, "Failed to reactivate API key");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Security report — status breakdown, expiring-soon keys, multi-hardware anomalies
+router.get("/security-report", requireAdmin, async (req, res) => {
+  try {
+    const keys = await db.select().from(apiKeysTable);
+    const withExpiry = await Promise.all(keys.map(withLazyExpiry));
+
+    const statusBreakdown = withExpiry.reduce((acc: Record<string, number>, k) => {
+      acc[k.status] = (acc[k.status] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiringSoon = withExpiry.filter(
+      (k) => k.status === "active" && k.expiresAt && k.expiresAt.getTime() < sevenDaysFromNow.getTime(),
+    );
+
+    const staleThreshold = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const staleActiveKeys = withExpiry.filter(
+      (k) => k.status === "active" && (!k.lastUsedAt || k.lastUsedAt.getTime() < staleThreshold.getTime()),
+    );
+
+    const registrations = await db.select().from(eaRegistrationsTable);
+    const hardwareByKey = registrations.reduce((acc: Record<number, Set<string>>, r) => {
+      if (!r.isActive) return acc;
+      acc[r.apiKeyId] ??= new Set();
+      acc[r.apiKeyId].add(r.hardwareId);
+      return acc;
+    }, {});
+
+    // Flag keys active on an unusually high number of distinct terminals (possible sharing/leak)
+    const MULTI_HARDWARE_THRESHOLD = 3;
+    const multiHardwareAnomalies = Object.entries(hardwareByKey)
+      .filter(([, hardwareIds]) => hardwareIds.size >= MULTI_HARDWARE_THRESHOLD)
+      .map(([apiKeyId, hardwareIds]) => ({
+        apiKeyId: Number(apiKeyId),
+        distinctHardwareCount: hardwareIds.size,
+      }));
+
+    return res.json({
+      totalKeys: withExpiry.length,
+      statusBreakdown,
+      expiringSoon: expiringSoon.map((k) => ({ id: k.id, name: k.name, userId: k.userId, expiresAt: k.expiresAt })),
+      staleActiveKeys: staleActiveKeys.map((k) => ({ id: k.id, name: k.name, userId: k.userId, lastUsedAt: k.lastUsedAt })),
+      multiHardwareAnomalies,
+    });
+  } catch (err) {
+    req.log.error(err, "Failed to build security report");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

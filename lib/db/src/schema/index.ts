@@ -7,3 +7,4 @@ export * from "./runtime";
 export * from "./payments";
 export * from "./smtp";
 export * from "./api-keys";
+export * from "./ea-registrations";

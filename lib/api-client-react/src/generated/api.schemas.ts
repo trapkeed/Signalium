@@ -472,24 +472,94 @@ export interface SmtpSettingsUpdate {
   isActive?: boolean;
 }
 
+export type ApiKeyStatus = typeof ApiKeyStatus[keyof typeof ApiKeyStatus];
+
+
+export const ApiKeyStatus = {
+  active: 'active',
+  revoked: 'revoked',
+  expired: 'expired',
+  suspended: 'suspended',
+} as const;
+
 export interface ApiKey {
   id: number;
+  userId: string;
   name: string;
   keyPrefix: string;
-  isActive: boolean;
+  status: ApiKeyStatus;
+  /** @nullable */
+  expiresAt?: string | null;
   /** @nullable */
   lastUsedAt?: string | null;
   createdAt: string;
+  /** Only present on admin list endpoint */
+  registrationCount?: number;
 }
 
 export interface ApiKeyCreated {
   id: number;
+  userId: string;
   name: string;
   key: string;
   keyPrefix: string;
-  isActive: boolean;
+  status: ApiKeyStatus;
+  /** @nullable */
+  expiresAt?: string | null;
   createdAt: string;
   warning: string;
+}
+
+export interface EaRegistration {
+  id: number;
+  apiKeyId: number;
+  /** Only present on the user's own registrations listing */
+  apiKeyName?: string;
+  hardwareId: string;
+  /** @nullable */
+  mt5Account?: string | null;
+  /** @nullable */
+  brokerName?: string | null;
+  /** @nullable */
+  brokerServer?: string | null;
+  /** @nullable */
+  terminalBuild?: string | null;
+  /** @nullable */
+  platformVersion?: string | null;
+  isActive: boolean;
+  registeredAt: string;
+  lastSeenAt: string;
+}
+
+export type SecurityReportStatusBreakdown = {[key: string]: number};
+
+export type SecurityReportExpiringSoonItem = {
+  id?: number;
+  name?: string;
+  userId?: string;
+  /** @nullable */
+  expiresAt?: string | null;
+};
+
+export type SecurityReportStaleActiveKeysItem = {
+  id?: number;
+  name?: string;
+  userId?: string;
+  /** @nullable */
+  lastUsedAt?: string | null;
+};
+
+export type SecurityReportMultiHardwareAnomaliesItem = {
+  apiKeyId?: number;
+  distinctHardwareCount?: number;
+};
+
+export interface SecurityReport {
+  totalKeys: number;
+  statusBreakdown: SecurityReportStatusBreakdown;
+  expiringSoon: SecurityReportExpiringSoonItem[];
+  staleActiveKeys: SecurityReportStaleActiveKeysItem[];
+  multiHardwareAnomalies: SecurityReportMultiHardwareAnomaliesItem[];
 }
 
 export type RejectPaymentBody = {
@@ -507,10 +577,7 @@ export type TestSmtp200 = {
 
 export type CreateApiKeyBody = {
   name: string;
-};
-
-export type RevokeApiKey200 = {
-  ok?: boolean;
+  expiresInDays?: number;
 };
 
 export type VerifyApiKeyBody = {
@@ -521,5 +588,16 @@ export type VerifyApiKey200 = {
   ok: boolean;
   userId: string;
   keyId?: number;
+  status?: ApiKeyStatus;
+};
+
+export type RegisterEaTerminalBody = {
+  apiKey?: string;
+  hardwareId: string;
+  mt5Account?: string;
+  brokerName?: string;
+  brokerServer?: string;
+  terminalBuild?: string;
+  platformVersion?: string;
 };
 

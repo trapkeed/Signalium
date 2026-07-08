@@ -885,11 +885,14 @@ export const DeleteSmtpSettingsResponse = zod.void()
  */
 export const ListApiKeysResponseItem = zod.object({
   "id": zod.number(),
+  "userId": zod.string(),
   "name": zod.string(),
   "keyPrefix": zod.string(),
-  "isActive": zod.boolean(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
   "lastUsedAt": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "registrationCount": zod.number().optional().describe('Only present on admin list endpoint')
 })
 export const ListApiKeysResponse = zod.array(ListApiKeysResponseItem)
 
@@ -898,30 +901,167 @@ export const ListApiKeysResponse = zod.array(ListApiKeysResponseItem)
  * @summary Create a new API key
  */
 export const CreateApiKeyBody = zod.object({
-  "name": zod.string()
+  "name": zod.string(),
+  "expiresInDays": zod.number().optional()
 })
 
 export const CreateApiKeyResponse = zod.object({
   "id": zod.number(),
+  "userId": zod.string(),
   "name": zod.string(),
   "key": zod.string(),
   "keyPrefix": zod.string(),
-  "isActive": zod.boolean(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "warning": zod.string()
 })
 
 
 /**
- * @summary Revoke an API key
+ * @summary List all API keys across all users (admin)
+ */
+export const ListAllApiKeysResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "keyPrefix": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
+  "lastUsedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "registrationCount": zod.number().optional().describe('Only present on admin list endpoint')
+})
+export const ListAllApiKeysResponse = zod.array(ListAllApiKeysResponseItem)
+
+
+/**
+ * @summary Security report — status breakdown, expiring/stale keys, multi-hardware anomalies (admin)
+ */
+export const GetApiKeySecurityReportResponse = zod.object({
+  "totalKeys": zod.number(),
+  "statusBreakdown": zod.record(zod.string(), zod.number()),
+  "expiringSoon": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "expiresAt": zod.string().nullish()
+})),
+  "staleActiveKeys": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "lastUsedAt": zod.string().nullish()
+})),
+  "multiHardwareAnomalies": zod.array(zod.object({
+  "apiKeyId": zod.number().optional(),
+  "distinctHardwareCount": zod.number().optional()
+}))
+})
+
+
+/**
+ * @summary Revoke an API key (owner or admin)
  */
 export const RevokeApiKeyParams = zod.object({
   "id": zod.coerce.number()
 })
 
 export const RevokeApiKeyResponse = zod.object({
-  "ok": zod.boolean().optional()
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "keyPrefix": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
+  "lastUsedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "registrationCount": zod.number().optional().describe('Only present on admin list endpoint')
 })
+
+
+/**
+ * @summary Rotate an API key's secret, keeping its id and registrations (owner or admin)
+ */
+export const RotateApiKeyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RotateApiKeyResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "key": zod.string(),
+  "keyPrefix": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "warning": zod.string()
+})
+
+
+/**
+ * @summary Suspend a suspected-compromised key without permanently revoking it (admin)
+ */
+export const SuspendApiKeyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SuspendApiKeyResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "keyPrefix": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
+  "lastUsedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "registrationCount": zod.number().optional().describe('Only present on admin list endpoint')
+})
+
+
+/**
+ * @summary Reactivate a suspended key (admin)
+ */
+export const ReactivateApiKeyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReactivateApiKeyResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "keyPrefix": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']),
+  "expiresAt": zod.string().nullish(),
+  "lastUsedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "registrationCount": zod.number().optional().describe('Only present on admin list endpoint')
+})
+
+
+/**
+ * @summary List EA terminal registrations for a key (owner or admin)
+ */
+export const ListApiKeyRegistrationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListApiKeyRegistrationsResponseItem = zod.object({
+  "id": zod.number(),
+  "apiKeyId": zod.number(),
+  "apiKeyName": zod.string().optional().describe('Only present on the user\'s own registrations listing'),
+  "hardwareId": zod.string(),
+  "mt5Account": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "registeredAt": zod.string(),
+  "lastSeenAt": zod.string()
+})
+export const ListApiKeyRegistrationsResponse = zod.array(ListApiKeyRegistrationsResponseItem)
 
 
 /**
@@ -934,7 +1074,80 @@ export const VerifyApiKeyBody = zod.object({
 export const VerifyApiKeyResponse = zod.object({
   "ok": zod.boolean(),
   "userId": zod.string(),
-  "keyId": zod.number().optional()
+  "keyId": zod.number().optional(),
+  "status": zod.enum(['active', 'revoked', 'expired', 'suspended']).optional()
+})
+
+
+/**
+ * @summary List the current user's EA terminal registrations (across all their API keys)
+ */
+export const ListMyEaRegistrationsResponseItem = zod.object({
+  "id": zod.number(),
+  "apiKeyId": zod.number(),
+  "apiKeyName": zod.string().optional().describe('Only present on the user\'s own registrations listing'),
+  "hardwareId": zod.string(),
+  "mt5Account": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "registeredAt": zod.string(),
+  "lastSeenAt": zod.string()
+})
+export const ListMyEaRegistrationsResponse = zod.array(ListMyEaRegistrationsResponseItem)
+
+
+/**
+ * @summary Register (or refresh) an EA terminal — called by the EA on startup using its API key
+ */
+export const RegisterEaTerminalBody = zod.object({
+  "apiKey": zod.string().optional(),
+  "hardwareId": zod.string(),
+  "mt5Account": zod.string().optional(),
+  "brokerName": zod.string().optional(),
+  "brokerServer": zod.string().optional(),
+  "terminalBuild": zod.string().optional(),
+  "platformVersion": zod.string().optional()
+})
+
+export const RegisterEaTerminalResponse = zod.object({
+  "id": zod.number(),
+  "apiKeyId": zod.number(),
+  "apiKeyName": zod.string().optional().describe('Only present on the user\'s own registrations listing'),
+  "hardwareId": zod.string(),
+  "mt5Account": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "registeredAt": zod.string(),
+  "lastSeenAt": zod.string()
+})
+
+
+/**
+ * @summary Deactivate a specific EA terminal (hardware replacement, decommission) — owner or admin
+ */
+export const DeactivateEaRegistrationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeactivateEaRegistrationResponse = zod.object({
+  "id": zod.number(),
+  "apiKeyId": zod.number(),
+  "apiKeyName": zod.string().optional().describe('Only present on the user\'s own registrations listing'),
+  "hardwareId": zod.string(),
+  "mt5Account": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "registeredAt": zod.string(),
+  "lastSeenAt": zod.string()
 })
 
 

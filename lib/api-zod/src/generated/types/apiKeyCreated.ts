@@ -5,13 +5,17 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ApiKeyStatus } from './apiKeyStatus';
 
 export interface ApiKeyCreated {
   id: number;
+  userId: string;
   name: string;
   key: string;
   keyPrefix: string;
-  isActive: boolean;
+  status: ApiKeyStatus;
+  /** @nullable */
+  expiresAt?: string | null;
   createdAt: string;
   warning: string;
 }

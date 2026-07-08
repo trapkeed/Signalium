@@ -1,0 +1,151 @@
+Signalium Platform Phase S10
+Repository: signalium
+
+Objective:
+
+Transform Signalium into the runtime and orchestration layer between:
+
+- Users
+- QDE Trainer
+- MT5 EAs
+- Brokers
+- Research Lab
+
+Signalium is not the intelligence.
+
+Signalium is the operating system around the intelligence.
+
+--------------------------------------------------
+TRADING MODES
+--------------------------------------------------
+
+Implement two trading modes.
+
+1.
+
+MANUAL MODE
+
+2.
+
+AUTONOMOUS MODE
+
+--------------------------------------------------
+MANUAL MODE
+--------------------------------------------------
+
+User selects symbol.
+
+Signalium requests analysis from trainer.
+
+Trainer returns:
+
+- direction
+- confidence
+- risk signal
+- entry urgency
+- expected hold duration
+- suggested stop
+- suggested target
+- reasoning
+- market context
+
+Signalium displays analysis.
+
+User trades manually.
+
+No EA required.
+
+--------------------------------------------------
+AUTONOMOUS MODE
+--------------------------------------------------
+
+User selects symbols.
+
+QDE continuously monitors markets.
+
+When opportunities appear:
+
+Signalium forwards decisions to EA.
+
+EA executes trades.
+
+EA continuously streams telemetry back.
+
+QDE continuously manages positions.
+
+User becomes portfolio owner.
+
+QDE becomes trader.
+
+--------------------------------------------------
+SUPPORTED ASSET CLASSES
+--------------------------------------------------
+
+Enable:
+
+FOREX
+
+METALS
+
+INDICES
+
+Disable:
+
+CRYPTO
+COMMODITIES
+STOCKS
+
+Admins may enable additional categories later.
+
+No hardcoded lists.
+
+--------------------------------------------------
+ADMIN SYMBOL MANAGEMENT
+--------------------------------------------------
+
+Create symbol management system.
+
+Admins may:
+
+- add symbols
+- disable symbols
+- enable symbols
+- modify metadata
+- assign categories
+
+Required fields:
+
+symbol_id
+canonical_symbol
+display_name
+category
+enabled
+trainer_supported
+ea_supported
+
+Examples:
+
+XAUUSD
+EURUSD
+US30
+NAS100
+
+--------------------------------------------------
+NO HARDCODED SYMBOLS
+--------------------------------------------------
+
+Every symbol comes from database.
+
+Frontend never contains hardcoded lists.
+
+Trainer never contains hardcoded lists.
+
+EA never contains hardcoded lists.
+
+--------------------------------------------------
+GENERATE:
+
+- database schema
+- admin interfaces
+- APIs
+- permissions

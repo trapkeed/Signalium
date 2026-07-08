@@ -5,9 +5,11 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ApiKeyStatus } from './apiKeyStatus';
 
 export type VerifyApiKey200 = {
   ok: boolean;
   userId: string;
   keyId?: number;
+  status?: ApiKeyStatus;
 };

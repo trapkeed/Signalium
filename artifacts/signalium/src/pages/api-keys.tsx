@@ -1,30 +1,131 @@
 import { useState } from "react";
-import { useListApiKeys, useCreateApiKey, useRevokeApiKey } from "@workspace/api-client-react";
+import {
+  useListApiKeys,
+  useCreateApiKey,
+  useRevokeApiKey,
+  useRotateApiKey,
+  useListApiKeyRegistrations,
+  useDeactivateEaRegistration,
+} from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Plus, Trash2, Copy, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { Key, Plus, Trash2, Copy, AlertTriangle, CheckCircle, Clock, RotateCw, Monitor, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
+
+type ApiKeyStatus = "active" | "revoked" | "expired" | "suspended";
+
+const STATUS_STYLES: Record<ApiKeyStatus, string> = {
+  active: "text-primary",
+  revoked: "text-muted-foreground",
+  expired: "text-yellow-500",
+  suspended: "text-destructive",
+};
+
+const STATUS_ICONS: Record<ApiKeyStatus, typeof CheckCircle> = {
+  active: CheckCircle,
+  revoked: XCircle,
+  expired: Clock,
+  suspended: AlertTriangle,
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = (status as ApiKeyStatus) in STATUS_STYLES ? (status as ApiKeyStatus) : "revoked";
+  const Icon = STATUS_ICONS[s];
+  return (
+    <span className={cn("flex items-center gap-1 text-xs font-mono", STATUS_STYLES[s])}>
+      <Icon className="w-3 h-3" /> {status}
+    </span>
+  );
+}
+
+function TerminalsRow({ apiKeyId }: { apiKeyId: number }) {
+  const { toast } = useToast();
+  const { data: registrations = [], refetch } = useListApiKeyRegistrations(apiKeyId);
+  const deactivate = useDeactivateEaRegistration();
+
+  async function handleDeactivate(id: number) {
+    try {
+      await deactivate.mutateAsync({ id });
+      toast({ title: "Terminal deactivated" });
+      refetch();
+    } catch {
+      toast({ title: "Failed to deactivate terminal", variant: "destructive" });
+    }
+  }
+
+  if (registrations.length === 0) {
+    return (
+      <div className="px-4 py-4 text-xs text-muted-foreground font-mono">
+        No EA terminals registered with this key yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-3 flex flex-col gap-2">
+      {registrations.map((reg) => (
+        <div key={reg.id} className="flex items-center justify-between gap-3 border border-border rounded-sm px-3 py-2 bg-background/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <Monitor className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <div className="text-xs font-mono truncate">
+                {reg.mt5Account ?? "unknown account"} · {reg.brokerName ?? "unknown broker"}
+              </div>
+              <div className="text-[11px] text-muted-foreground font-mono truncate">
+                hw:{reg.hardwareId.slice(0, 12)} · build {reg.terminalBuild ?? "?"} · seen {new Date(reg.lastSeenAt).toLocaleString()}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {reg.isActive ? (
+              <>
+                <span className="text-xs text-primary font-mono">active</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive h-6 w-6 p-0 rounded-sm"
+                  onClick={() => handleDeactivate(reg.id)}
+                  title="Deactivate terminal (hardware replacement, decommission)"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground font-mono">inactive</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function ApiKeys() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyExpiry, setNewKeyExpiry] = useState("");
   const [revealedKey, setRevealedKey] = useState<{ key: string; name: string } | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const { data: keys = [], refetch } = useListApiKeys();
   const createKey = useCreateApiKey();
   const revokeKey = useRevokeApiKey();
+  const rotateKey = useRotateApiKey();
 
   async function handleCreate() {
     if (!newKeyName.trim()) return;
     try {
-      const result = await createKey.mutateAsync({ data: { name: newKeyName.trim() } });
-      setRevealedKey({ key: (result as any).key, name: (result as any).name });
+      const expiresInDays = newKeyExpiry.trim() ? Number(newKeyExpiry.trim()) : undefined;
+      const result = await createKey.mutateAsync({ data: { name: newKeyName.trim(), expiresInDays } });
+      setRevealedKey({ key: result.key, name: result.name });
       setIsCreating(false);
       setNewKeyName("");
+      setNewKeyExpiry("");
       refetch();
     } catch {
       toast({ title: "Failed to create API key", variant: "destructive" });
@@ -38,6 +139,16 @@ export default function ApiKeys() {
       refetch();
     } catch {
       toast({ title: "Failed to revoke API key", variant: "destructive" });
+    }
+  }
+
+  async function handleRotate(id: number) {
+    try {
+      const result = await rotateKey.mutateAsync({ id });
+      setRevealedKey({ key: result.key, name: result.name });
+      refetch();
+    } catch {
+      toast({ title: "Failed to rotate API key", variant: "destructive" });
     }
   }
 
@@ -61,15 +172,16 @@ export default function ApiKeys() {
         </Button>
       </div>
 
-      <div className="p-8 max-w-3xl flex flex-col gap-6">
+      <div className="p-8 max-w-4xl flex flex-col gap-6">
         {/* Info box */}
         <div className="border border-border bg-card rounded-sm p-4">
           <div className="flex items-start gap-3">
             <Key className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div className="text-sm text-muted-foreground leading-relaxed">
-              Each API key is unique to your account. Use it in your EA to authenticate with the Signalium runtime.
-              Set the key in your EA's input parameters as <code className="font-mono text-xs bg-secondary px-1 py-0.5 rounded">ApiKey</code>.
-              Active subscription is required to generate and use API keys.
+              Each API key can be used across multiple EA terminals — VPS migrations and hardware
+              replacements don't require a new key. Register your EA with{" "}
+              <code className="font-mono text-xs bg-secondary px-1 py-0.5 rounded">ApiKey</code> and it
+              will show up below as a terminal you can manage individually.
             </div>
           </div>
         </div>
@@ -82,8 +194,8 @@ export default function ApiKeys() {
                 <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Name</th>
                 <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Key</th>
                 <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Expires</th>
                 <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Last Used</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Created</th>
                 <th />
               </tr>
             </thead>
@@ -96,44 +208,65 @@ export default function ApiKeys() {
                 </tr>
               ) : (
                 keys.map((key) => (
-                  <tr key={key.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
-                    <td className="px-4 py-3 font-medium">{key.name}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{key.keyPrefix}</td>
-                    <td className="px-4 py-3">
-                      {key.isActive ? (
-                        <span className="flex items-center gap-1 text-xs text-primary font-mono">
-                          <CheckCircle className="w-3 h-3" /> active
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                          revoked
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                      {key.lastUsedAt ? (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(key.lastUsedAt).toLocaleDateString()}
-                        </span>
-                      ) : "never"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                      {key.createdAt ? new Date(key.createdAt).toLocaleDateString() : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {key.isActive && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
-                          onClick={() => handleRevoke(key.id)}
+                  <>
+                    <tr key={key.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                      <td className="px-4 py-3 font-medium">
+                        <button
+                          className="flex items-center gap-1.5"
+                          onClick={() => setExpandedId(expandedId === key.id ? null : key.id)}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
+                          {expandedId === key.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          {key.name}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{key.keyPrefix}</td>
+                      <td className="px-4 py-3"><StatusBadge status={key.status} /></td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                        {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "never"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                        {key.lastUsedAt ? (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(key.lastUsedAt).toLocaleDateString()}
+                          </span>
+                        ) : "never"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 justify-end">
+                          {key.status !== "revoked" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 rounded-sm"
+                              onClick={() => handleRotate(key.id)}
+                              title="Rotate key (keeps registered terminals)"
+                            >
+                              <RotateCw className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {key.status !== "revoked" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                              onClick={() => handleRevoke(key.id)}
+                              title="Revoke key"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedId === key.id && (
+                      <tr className="bg-secondary/10">
+                        <td colSpan={6} className="p-0">
+                          <TerminalsRow apiKeyId={key.id} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))
               )}
             </tbody>
@@ -158,6 +291,16 @@ export default function ApiKeys() {
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Expires in (days, optional)</Label>
+              <Input
+                value={newKeyExpiry}
+                onChange={(e) => setNewKeyExpiry(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="Leave empty for no expiry"
+                className="rounded-sm font-mono"
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+              />
+            </div>
             <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-sm">
               <AlertTriangle className="w-4 h-4 text-yellow-500" />
               <AlertDescription className="text-xs text-muted-foreground">
@@ -178,7 +321,7 @@ export default function ApiKeys() {
       <Dialog open={!!revealedKey} onOpenChange={() => setRevealedKey(null)}>
         <DialogContent className="bg-card border-border rounded-sm max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-mono text-primary">Your New API Key</DialogTitle>
+            <DialogTitle className="font-mono text-primary">Your API Key</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-sm">

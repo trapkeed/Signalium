@@ -21,6 +21,7 @@ import AdminSubscriptions from "@/pages/admin/subscriptions";
 import AdminEas from "@/pages/admin/eas";
 import AdminPayments from "@/pages/admin/payments";
 import AdminSmtp from "@/pages/admin/smtp";
+import AdminApiKeys from "@/pages/admin/api-keys";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
 
@@ -181,6 +182,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/eas"><ProtectedRoute component={AdminEas} /></Route>
             <Route path="/admin/payments"><ProtectedRoute component={AdminPayments} /></Route>
             <Route path="/admin/smtp"><ProtectedRoute component={AdminSmtp} /></Route>
+            <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
 
             <Route component={NotFound} />
           </Switch>

@@ -9,6 +9,7 @@ import statsRouter from "./stats";
 import paymentsRouter from "./payments";
 import smtpRouter from "./smtp";
 import apiKeysRouter from "./api-keys";
+import eaRegistrationsRouter from "./ea-registrations";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/stats", statsRouter);
 router.use("/payments", paymentsRouter);
 router.use("/smtp", smtpRouter);
 router.use("/api-keys", apiKeysRouter);
+router.use("/ea-registrations", eaRegistrationsRouter);
 
 export default router;

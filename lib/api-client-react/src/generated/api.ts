@@ -26,6 +26,7 @@ import type {
   DownloadToken,
   Ea,
   EaInput,
+  EaRegistration,
   EaUpdate,
   HealthStatus,
   HeartbeatInput,
@@ -40,10 +41,11 @@ import type {
   Plan,
   PlanInput,
   PlanUpdate,
+  RegisterEaTerminalBody,
   RejectPaymentBody,
-  RevokeApiKey200,
   RuntimeStatus,
   RuntimeSummary,
+  SecurityReport,
   SmtpSettings,
   SmtpSettingsInput,
   SmtpSettingsUpdate,
@@ -3258,23 +3260,177 @@ export const useCreateApiKey = <TError = ErrorType<unknown>,
       return useMutation(getCreateApiKeyMutationOptions(options));
     }
 
+export const getListAllApiKeysUrl = () => {
+
+
+
+
+  return `/api/api-keys/all`
+}
+
+/**
+ * @summary List all API keys across all users (admin)
+ */
+export const listAllApiKeys = async ( options?: RequestInit): Promise<ApiKey[]> => {
+
+  return customFetch<ApiKey[]>(getListAllApiKeysUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllApiKeysQueryKey = () => {
+    return [
+    `/api/api-keys/all`
+    ] as const;
+    }
+
+
+export const getListAllApiKeysQueryOptions = <TData = Awaited<ReturnType<typeof listAllApiKeys>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllApiKeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllApiKeysQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllApiKeys>>> = ({ signal }) => listAllApiKeys({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllApiKeys>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllApiKeysQueryResult = NonNullable<Awaited<ReturnType<typeof listAllApiKeys>>>
+export type ListAllApiKeysQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all API keys across all users (admin)
+ */
+
+export function useListAllApiKeys<TData = Awaited<ReturnType<typeof listAllApiKeys>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllApiKeys>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllApiKeysQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetApiKeySecurityReportUrl = () => {
+
+
+
+
+  return `/api/api-keys/security-report`
+}
+
+/**
+ * @summary Security report — status breakdown, expiring/stale keys, multi-hardware anomalies (admin)
+ */
+export const getApiKeySecurityReport = async ( options?: RequestInit): Promise<SecurityReport> => {
+
+  return customFetch<SecurityReport>(getGetApiKeySecurityReportUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiKeySecurityReportQueryKey = () => {
+    return [
+    `/api/api-keys/security-report`
+    ] as const;
+    }
+
+
+export const getGetApiKeySecurityReportQueryOptions = <TData = Awaited<ReturnType<typeof getApiKeySecurityReport>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiKeySecurityReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiKeySecurityReportQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiKeySecurityReport>>> = ({ signal }) => getApiKeySecurityReport({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiKeySecurityReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetApiKeySecurityReportQueryResult = NonNullable<Awaited<ReturnType<typeof getApiKeySecurityReport>>>
+export type GetApiKeySecurityReportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Security report — status breakdown, expiring/stale keys, multi-hardware anomalies (admin)
+ */
+
+export function useGetApiKeySecurityReport<TData = Awaited<ReturnType<typeof getApiKeySecurityReport>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getApiKeySecurityReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetApiKeySecurityReportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getRevokeApiKeyUrl = (id: number,) => {
 
 
 
 
-  return `/api/api-keys/${id}`
+  return `/api/api-keys/${id}/revoke`
 }
 
 /**
- * @summary Revoke an API key
+ * @summary Revoke an API key (owner or admin)
  */
-export const revokeApiKey = async (id: number, options?: RequestInit): Promise<RevokeApiKey200> => {
+export const revokeApiKey = async (id: number, options?: RequestInit): Promise<ApiKey> => {
 
-  return customFetch<RevokeApiKey200>(getRevokeApiKeyUrl(id),
+  return customFetch<ApiKey>(getRevokeApiKeyUrl(id),
   {
     ...options,
-    method: 'DELETE'
+    method: 'POST'
 
 
   }
@@ -3316,7 +3472,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RevokeApiKeyMutationError = ErrorType<unknown>
 
     /**
- * @summary Revoke an API key
+ * @summary Revoke an API key (owner or admin)
  */
 export const useRevokeApiKey = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -3328,6 +3484,296 @@ export const useRevokeApiKey = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getRevokeApiKeyMutationOptions(options));
     }
+
+export const getRotateApiKeyUrl = (id: number,) => {
+
+
+
+
+  return `/api/api-keys/${id}/rotate`
+}
+
+/**
+ * @summary Rotate an API key's secret, keeping its id and registrations (owner or admin)
+ */
+export const rotateApiKey = async (id: number, options?: RequestInit): Promise<ApiKeyCreated> => {
+
+  return customFetch<ApiKeyCreated>(getRotateApiKeyUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRotateApiKeyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rotateApiKey>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['rotateApiKey'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rotateApiKey>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  rotateApiKey(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RotateApiKeyMutationResult = NonNullable<Awaited<ReturnType<typeof rotateApiKey>>>
+
+    export type RotateApiKeyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Rotate an API key's secret, keeping its id and registrations (owner or admin)
+ */
+export const useRotateApiKey = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rotateApiKey>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRotateApiKeyMutationOptions(options));
+    }
+
+export const getSuspendApiKeyUrl = (id: number,) => {
+
+
+
+
+  return `/api/api-keys/${id}/suspend`
+}
+
+/**
+ * @summary Suspend a suspected-compromised key without permanently revoking it (admin)
+ */
+export const suspendApiKey = async (id: number, options?: RequestInit): Promise<ApiKey> => {
+
+  return customFetch<ApiKey>(getSuspendApiKeyUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSuspendApiKeyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof suspendApiKey>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['suspendApiKey'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suspendApiKey>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  suspendApiKey(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuspendApiKeyMutationResult = NonNullable<Awaited<ReturnType<typeof suspendApiKey>>>
+
+    export type SuspendApiKeyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Suspend a suspected-compromised key without permanently revoking it (admin)
+ */
+export const useSuspendApiKey = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof suspendApiKey>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getSuspendApiKeyMutationOptions(options));
+    }
+
+export const getReactivateApiKeyUrl = (id: number,) => {
+
+
+
+
+  return `/api/api-keys/${id}/reactivate`
+}
+
+/**
+ * @summary Reactivate a suspended key (admin)
+ */
+export const reactivateApiKey = async (id: number, options?: RequestInit): Promise<ApiKey> => {
+
+  return customFetch<ApiKey>(getReactivateApiKeyUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getReactivateApiKeyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactivateApiKey>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['reactivateApiKey'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactivateApiKey>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  reactivateApiKey(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactivateApiKeyMutationResult = NonNullable<Awaited<ReturnType<typeof reactivateApiKey>>>
+
+    export type ReactivateApiKeyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reactivate a suspended key (admin)
+ */
+export const useReactivateApiKey = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateApiKey>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactivateApiKey>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getReactivateApiKeyMutationOptions(options));
+    }
+
+export const getListApiKeyRegistrationsUrl = (id: number,) => {
+
+
+
+
+  return `/api/api-keys/${id}/registrations`
+}
+
+/**
+ * @summary List EA terminal registrations for a key (owner or admin)
+ */
+export const listApiKeyRegistrations = async (id: number, options?: RequestInit): Promise<EaRegistration[]> => {
+
+  return customFetch<EaRegistration[]>(getListApiKeyRegistrationsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListApiKeyRegistrationsQueryKey = (id: number,) => {
+    return [
+    `/api/api-keys/${id}/registrations`
+    ] as const;
+    }
+
+
+export const getListApiKeyRegistrationsQueryOptions = <TData = Awaited<ReturnType<typeof listApiKeyRegistrations>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listApiKeyRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListApiKeyRegistrationsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listApiKeyRegistrations>>> = ({ signal }) => listApiKeyRegistrations(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listApiKeyRegistrations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListApiKeyRegistrationsQueryResult = NonNullable<Awaited<ReturnType<typeof listApiKeyRegistrations>>>
+export type ListApiKeyRegistrationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List EA terminal registrations for a key (owner or admin)
+ */
+
+export function useListApiKeyRegistrations<TData = Awaited<ReturnType<typeof listApiKeyRegistrations>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listApiKeyRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListApiKeyRegistrationsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getVerifyApiKeyUrl = () => {
 
@@ -3398,6 +3844,225 @@ export const useVerifyApiKey = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getVerifyApiKeyMutationOptions(options));
+    }
+
+export const getListMyEaRegistrationsUrl = () => {
+
+
+
+
+  return `/api/ea-registrations`
+}
+
+/**
+ * @summary List the current user's EA terminal registrations (across all their API keys)
+ */
+export const listMyEaRegistrations = async ( options?: RequestInit): Promise<EaRegistration[]> => {
+
+  return customFetch<EaRegistration[]>(getListMyEaRegistrationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyEaRegistrationsQueryKey = () => {
+    return [
+    `/api/ea-registrations`
+    ] as const;
+    }
+
+
+export const getListMyEaRegistrationsQueryOptions = <TData = Awaited<ReturnType<typeof listMyEaRegistrations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEaRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyEaRegistrationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyEaRegistrations>>> = ({ signal }) => listMyEaRegistrations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyEaRegistrations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyEaRegistrationsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyEaRegistrations>>>
+export type ListMyEaRegistrationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current user's EA terminal registrations (across all their API keys)
+ */
+
+export function useListMyEaRegistrations<TData = Awaited<ReturnType<typeof listMyEaRegistrations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEaRegistrations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyEaRegistrationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterEaTerminalUrl = () => {
+
+
+
+
+  return `/api/ea-registrations`
+}
+
+/**
+ * @summary Register (or refresh) an EA terminal — called by the EA on startup using its API key
+ */
+export const registerEaTerminal = async (registerEaTerminalBody: RegisterEaTerminalBody, options?: RequestInit): Promise<EaRegistration> => {
+
+  return customFetch<EaRegistration>(getRegisterEaTerminalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(registerEaTerminalBody)
+  }
+);}
+
+
+
+
+
+export const getRegisterEaTerminalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerEaTerminal>>, TError,{data: BodyType<RegisterEaTerminalBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerEaTerminal>>, TError,{data: BodyType<RegisterEaTerminalBody>}, TContext> => {
+
+const mutationKey = ['registerEaTerminal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerEaTerminal>>, {data: BodyType<RegisterEaTerminalBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerEaTerminal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterEaTerminalMutationResult = NonNullable<Awaited<ReturnType<typeof registerEaTerminal>>>
+    export type RegisterEaTerminalMutationBody = BodyType<RegisterEaTerminalBody>
+    export type RegisterEaTerminalMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Register (or refresh) an EA terminal — called by the EA on startup using its API key
+ */
+export const useRegisterEaTerminal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerEaTerminal>>, TError,{data: BodyType<RegisterEaTerminalBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerEaTerminal>>,
+        TError,
+        {data: BodyType<RegisterEaTerminalBody>},
+        TContext
+      > => {
+      return useMutation(getRegisterEaTerminalMutationOptions(options));
+    }
+
+export const getDeactivateEaRegistrationUrl = (id: number,) => {
+
+
+
+
+  return `/api/ea-registrations/${id}/deactivate`
+}
+
+/**
+ * @summary Deactivate a specific EA terminal (hardware replacement, decommission) — owner or admin
+ */
+export const deactivateEaRegistration = async (id: number, options?: RequestInit): Promise<EaRegistration> => {
+
+  return customFetch<EaRegistration>(getDeactivateEaRegistrationUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeactivateEaRegistrationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateEaRegistration>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateEaRegistration>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deactivateEaRegistration'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateEaRegistration>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deactivateEaRegistration(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateEaRegistrationMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateEaRegistration>>>
+
+    export type DeactivateEaRegistrationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Deactivate a specific EA terminal (hardware replacement, decommission) — owner or admin
+ */
+export const useDeactivateEaRegistration = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateEaRegistration>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateEaRegistration>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeactivateEaRegistrationMutationOptions(options));
     }
 
 export const getGetStatsOverviewUrl = () => {

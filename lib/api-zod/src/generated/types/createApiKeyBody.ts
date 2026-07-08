@@ -8,4 +8,5 @@
 
 export type CreateApiKeyBody = {
   name: string;
+  expiresInDays?: number;
 };

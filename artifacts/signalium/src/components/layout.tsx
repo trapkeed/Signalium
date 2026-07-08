@@ -32,6 +32,7 @@ const ADMIN_ITEMS = [
   { href: "/admin/eas", label: "EAs", icon: Database },
   { href: "/admin/payments", label: "Payments", icon: Wallet },
   { href: "/admin/smtp", label: "SMTP", icon: Mail },
+  { href: "/admin/api-keys", label: "API Keys", icon: Key },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {

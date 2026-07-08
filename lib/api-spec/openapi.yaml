@@ -28,6 +28,8 @@ tags:
     description: SMTP configuration operations
   - name: api-keys
     description: API key management operations
+  - name: ea-registrations
+    description: EA terminal registration operations
 paths:
   /healthz:
     get:
@@ -796,6 +798,8 @@ paths:
               properties:
                 name:
                   type: string
+                expiresInDays:
+                  type: integer
       responses:
         "201":
           description: API key created (full key shown once)
@@ -804,11 +808,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiKeyCreated"
 
-  /api-keys/{id}:
-    delete:
+  /api-keys/all:
+    get:
+      operationId: listAllApiKeys
+      tags: [api-keys]
+      summary: List all API keys across all users (admin)
+      responses:
+        "200":
+          description: API keys with usage counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+
+  /api-keys/security-report:
+    get:
+      operationId: getApiKeySecurityReport
+      tags: [api-keys]
+      summary: Security report — status breakdown, expiring/stale keys, multi-hardware anomalies (admin)
+      responses:
+        "200":
+          description: Security report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityReport"
+
+  /api-keys/{id}/revoke:
+    post:
       operationId: revokeApiKey
       tags: [api-keys]
-      summary: Revoke an API key
+      summary: Revoke an API key (owner or admin)
       parameters:
         - name: id
           in: path
@@ -821,10 +853,85 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
+                $ref: "#/components/schemas/ApiKey"
+
+  /api-keys/{id}/rotate:
+    post:
+      operationId: rotateApiKey
+      tags: [api-keys]
+      summary: Rotate an API key's secret, keeping its id and registrations (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rotated (full new key shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreated"
+
+  /api-keys/{id}/suspend:
+    post:
+      operationId: suspendApiKey
+      tags: [api-keys]
+      summary: Suspend a suspected-compromised key without permanently revoking it (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+
+  /api-keys/{id}/reactivate:
+    post:
+      operationId: reactivateApiKey
+      tags: [api-keys]
+      summary: Reactivate a suspended key (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+
+  /api-keys/{id}/registrations:
+    get:
+      operationId: listApiKeyRegistrations
+      tags: [api-keys]
+      summary: List EA terminal registrations for a key (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: EA registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaRegistration"
 
   /api-keys/verify:
     post:
@@ -854,6 +961,75 @@ paths:
                     type: string
                   keyId:
                     type: integer
+                  status:
+                    $ref: "#/components/schemas/ApiKeyStatus"
+
+  /ea-registrations:
+    get:
+      operationId: listMyEaRegistrations
+      tags: [ea-registrations]
+      summary: List the current user's EA terminal registrations (across all their API keys)
+      responses:
+        "200":
+          description: EA registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaRegistration"
+    post:
+      operationId: registerEaTerminal
+      tags: [ea-registrations]
+      summary: Register (or refresh) an EA terminal — called by the EA on startup using its API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hardwareId]
+              properties:
+                apiKey:
+                  type: string
+                hardwareId:
+                  type: string
+                mt5Account:
+                  type: string
+                brokerName:
+                  type: string
+                brokerServer:
+                  type: string
+                terminalBuild:
+                  type: string
+                platformVersion:
+                  type: string
+      responses:
+        "201":
+          description: Registration created or refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EaRegistration"
+
+  /ea-registrations/{id}/deactivate:
+    patch:
+      operationId: deactivateEaRegistration
+      tags: [ea-registrations]
+      summary: Deactivate a specific EA terminal (hardware replacement, decommission) — owner or admin
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EaRegistration"
 
   /stats/overview:
     get:
@@ -1406,38 +1582,129 @@ components:
         isActive:
           type: boolean
 
+    ApiKeyStatus:
+      type: string
+      enum: [active, revoked, expired, suspended]
+
     ApiKey:
       type: object
-      required: [id, name, keyPrefix, isActive, createdAt]
+      required: [id, userId, name, keyPrefix, status, createdAt]
       properties:
         id:
           type: integer
+        userId:
+          type: string
         name:
           type: string
         keyPrefix:
           type: string
-        isActive:
-          type: boolean
+        status:
+          $ref: "#/components/schemas/ApiKeyStatus"
+        expiresAt:
+          type: ["string", "null"]
         lastUsedAt:
           type: ["string", "null"]
         createdAt:
           type: string
+        registrationCount:
+          type: integer
+          description: Only present on admin list endpoint
 
     ApiKeyCreated:
       type: object
-      required: [id, name, key, keyPrefix, isActive, createdAt, warning]
+      required: [id, userId, name, key, keyPrefix, status, createdAt, warning]
       properties:
         id:
           type: integer
+        userId:
+          type: string
         name:
           type: string
         key:
           type: string
         keyPrefix:
           type: string
-        isActive:
-          type: boolean
+        status:
+          $ref: "#/components/schemas/ApiKeyStatus"
+        expiresAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         warning:
           type: string
+
+    EaRegistration:
+      type: object
+      required: [id, apiKeyId, hardwareId, isActive, registeredAt, lastSeenAt]
+      properties:
+        id:
+          type: integer
+        apiKeyId:
+          type: integer
+        apiKeyName:
+          type: string
+          description: Only present on the user's own registrations listing
+        hardwareId:
+          type: string
+        mt5Account:
+          type: ["string", "null"]
+        brokerName:
+          type: ["string", "null"]
+        brokerServer:
+          type: ["string", "null"]
+        terminalBuild:
+          type: ["string", "null"]
+        platformVersion:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        registeredAt:
+          type: string
+        lastSeenAt:
+          type: string
+
+    SecurityReport:
+      type: object
+      required: [totalKeys, statusBreakdown, expiringSoon, staleActiveKeys, multiHardwareAnomalies]
+      properties:
+        totalKeys:
+          type: integer
+        statusBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        expiringSoon:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              userId:
+                type: string
+              expiresAt:
+                type: ["string", "null"]
+        staleActiveKeys:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              userId:
+                type: string
+              lastUsedAt:
+                type: ["string", "null"]
+        multiHardwareAnomalies:
+          type: array
+          items:
+            type: object
+            properties:
+              apiKeyId:
+                type: integer
+              distinctHardwareCount:
+                type: integer
