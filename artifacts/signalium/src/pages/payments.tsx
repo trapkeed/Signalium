@@ -1,10 +1,18 @@
 import { useState } from "react";
-import { useListMyPayments, useListPlans, useListPaymentProviders, useCreatePaymentIntent, useSubmitPaymentProof } from "@workspace/api-client-react";
+import {
+  useListMyPayments,
+  useListMyInvoices,
+  useListPlans,
+  useListPaymentProviders,
+  useCreatePaymentIntent,
+  useSubmitPaymentProof,
+} from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, CreditCard, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Copy } from "lucide-react";
+import { Wallet, CreditCard, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Copy, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG = {
@@ -14,6 +22,13 @@ const STATUS_CONFIG = {
   failed: { label: "Failed", icon: XCircle, color: "text-destructive" },
   expired: { label: "Expired", icon: XCircle, color: "text-muted-foreground" },
   refunded: { label: "Refunded", icon: ArrowRight, color: "text-muted-foreground" },
+};
+
+const INVOICE_STATUS_COLOR: Record<string, string> = {
+  draft: "text-muted-foreground",
+  issued: "text-blue-400",
+  paid: "text-primary",
+  void: "text-destructive",
 };
 
 const isUsdt = (type: string) => type.startsWith("usdt_");
@@ -47,6 +62,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
   const [txHash, setTxHash] = useState("");
 
   const { data: payments = [], refetch } = useListMyPayments();
+  const { data: invoices = [] } = useListMyInvoices();
   const { data: plans = [] } = useListPlans();
   const { data: providers = [] } = useListPaymentProviders();
   const createIntent = useCreatePaymentIntent();
@@ -55,11 +71,12 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
   const activePlans = plans.filter((p) => p.isActive);
   const activeProviders = providers.filter((p) => p.isActive && p.connectable);
 
-  async function handleCreateIntent() {
-    if (!selectedPlan || !selectedProvider) return;
+  async function handleCreateIntent(providerId?: number) {
+    const resolvedProvider = providerId ?? selectedProvider;
+    if (!selectedPlan || !resolvedProvider) return;
     try {
       const result = await createIntent.mutateAsync({
-        data: { planId: selectedPlan, providerId: selectedProvider },
+        data: { planId: selectedPlan, providerId: resolvedProvider },
       });
       const intent = result as PaymentIntent;
       const instructions = intent.provider.instructions ?? {};
@@ -83,10 +100,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
       return;
     }
     try {
-      await submitProof.mutateAsync({
-        id: activeIntent.payment.id,
-        data: { txHash },
-      });
+      await submitProof.mutateAsync({ id: activeIntent.payment.id, data: { txHash } });
       toast({ title: "Payment proof submitted — pending admin confirmation" });
       setStep("list");
       setActiveIntent(null);
@@ -94,6 +108,25 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
       refetch();
     } catch {
       toast({ title: "Failed to submit proof", variant: "destructive" });
+    }
+  }
+
+  async function handleDownloadInvoice(id: number, invoiceNumber: string) {
+    try {
+      const res = await fetch(
+        `${(import.meta as any).env?.BASE_URL ?? "/"}api/invoices/${id}/pdf`,
+        { credentials: "include" },
+      );
+      if (!res.ok) throw new Error("failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${invoiceNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: "Failed to download invoice", variant: "destructive" });
     }
   }
 
@@ -117,7 +150,14 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
               className={`border rounded-lg p-5 text-left transition-all hover:border-primary/50 ${selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
             >
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{TIER_LABELS[plan.tier] ?? plan.tier}</div>
-              <div className="text-2xl font-bold tabular-nums mb-1">${plan.priceMonthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+              <div className="text-2xl font-bold tabular-nums mb-1">
+                {plan.promoPriceMonthly != null ? (
+                  <><span className="text-primary">${plan.promoPriceMonthly}</span><span className="text-base font-normal text-muted-foreground line-through ml-1">${plan.priceMonthly}</span></>
+                ) : (
+                  <>${plan.priceMonthly}</>
+                )}
+                <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              </div>
               <div className="text-sm text-muted-foreground">{plan.name}</div>
               {plan.features && (plan.features as string[]).length > 0 && (
                 <ul className="mt-3 space-y-1">
@@ -144,16 +184,14 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
         </div>
         <div className={embedded ? "max-w-xl flex flex-col gap-4" : "p-8 max-w-xl flex flex-col gap-4"}>
           {activeProviders.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">
-              No payment methods available. Please contact support.
-            </div>
+            <div className="text-center py-12 text-muted-foreground text-sm">No payment methods available. Please contact support.</div>
           ) : (
             activeProviders.map((provider) => {
               const Icon = isUsdt(provider.type) ? Wallet : CreditCard;
               return (
                 <button
                   key={provider.id}
-                  onClick={() => { setSelectedProvider(provider.id); handleCreateIntent(); }}
+                  onClick={() => { setSelectedProvider(provider.id); handleCreateIntent(provider.id); }}
                   className="border border-border rounded-lg p-5 text-left transition-all hover:border-primary/50 hover:bg-primary/5 bg-card flex items-center gap-4"
                 >
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -188,7 +226,6 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
           {!embedded && <h1 className="text-2xl font-bold tracking-tight">Complete Payment</h1>}
         </div>
         <div className={embedded ? "max-w-xl flex flex-col gap-5" : "p-8 max-w-xl flex flex-col gap-5"}>
-          {/* Reference */}
           <div className="border border-border rounded-lg p-4 bg-card flex flex-col gap-1">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</div>
             <div className="flex items-center gap-2">
@@ -198,16 +235,12 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
               </button>
             </div>
           </div>
-
-          {/* Amount */}
           <div className="border border-border rounded-lg p-4 bg-card">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Amount Due</div>
             <div className="text-2xl font-bold tabular-nums">
               {isUSDT ? `${activeIntent.payment.amount} USDT` : `$${activeIntent.payment.amount}`}
             </div>
           </div>
-
-          {/* Instructions */}
           {isUSDT && wallet && (
             <div className="border border-border rounded-lg p-4 bg-card flex flex-col gap-3">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment Instructions</div>
@@ -225,20 +258,10 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
               {note && <div className="text-xs text-muted-foreground">{note}</div>}
             </div>
           )}
-
-          {/* TX hash input */}
           <div className="flex flex-col gap-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Transaction Hash
-            </Label>
-            <Input
-              value={txHash}
-              onChange={(e) => setTxHash(e.target.value)}
-              placeholder={isUSDT ? "0x... or TXID" : "Reference number"}
-              className="rounded-lg font-mono text-sm"
-            />
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Transaction Hash</Label>
+            <Input value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder={isUSDT ? "0x... or TXID" : "Reference number"} className="rounded-lg font-mono text-sm" />
           </div>
-
           <Button onClick={handleSubmitProof} disabled={submitProof.isPending || !txHash.trim()} className="rounded-lg">
             {submitProof.isPending ? "Submitting..." : "Submit Payment Proof"}
           </Button>
@@ -252,71 +275,137 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
     );
   }
 
-  // Default: payment history
+  // Default: payment history + invoices
   return (
     <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
       <div className={cn("flex items-center justify-between", embedded ? "mb-4" : "border-b border-border px-8 py-6")}>
         {!embedded && (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
-            <p className="text-sm text-muted-foreground mt-1">Payment history and new payments</p>
+            <p className="text-sm text-muted-foreground mt-1">Payment history and invoices</p>
           </div>
         )}
         <Button onClick={() => setStep("choose-plan")} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
-          <Plus className="w-4 h-4" />
+          <PlusIcon className="w-4 h-4" />
           New Payment
         </Button>
       </div>
 
       <div className={embedded ? "max-w-4xl" : "p-8 max-w-4xl"}>
-        <div className="border border-border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    No payments yet. Start your subscription to get access.
-                  </td>
-                </tr>
-              ) : (
-                payments.map((p) => {
-                  const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
-                  const Icon = cfg.icon;
-                  return (
-                    <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? `#${p.id}`}</td>
-                      <td className="px-4 py-3 font-bold tabular-nums">${p.amount}</td>
-                      <td className="px-4 py-3">
-                        <span className={`flex items-center gap-1.5 text-xs font-semibold ${cfg.color}`}>
-                          <Icon className="w-3.5 h-3.5" /> {cfg.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
-                      </td>
+        <Tabs defaultValue="payments">
+          <TabsList className="rounded-lg mb-6 bg-secondary/50 border border-border">
+            <TabsTrigger value="payments" className="rounded-lg text-sm">Payments</TabsTrigger>
+            <TabsTrigger value="invoices" className="rounded-lg text-sm flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> Invoices
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="payments">
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/30">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-          </div>
-        </div>
+                  </thead>
+                  <tbody>
+                    {payments.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                          No payments yet. Start your subscription to get access.
+                        </td>
+                      </tr>
+                    ) : (
+                      payments.map((p) => {
+                        const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
+                        const Icon = cfg.icon;
+                        return (
+                          <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? `#${p.id}`}</td>
+                            <td className="px-4 py-3 font-bold tabular-nums">${p.amount}</td>
+                            <td className="px-4 py-3">
+                              <span className={`flex items-center gap-1.5 text-xs font-semibold ${cfg.color}`}>
+                                <Icon className="w-3.5 h-3.5" /> {cfg.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                              {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="invoices">
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/30">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Invoice #</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reason</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Issued</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                          <div className="flex flex-col items-center gap-2">
+                            <FileText className="w-6 h-6 opacity-40" />
+                            No invoices yet.
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      invoices.map((inv: any) => (
+                        <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.invoiceNumber}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.reason.replace(/_/g, " ")}</td>
+                          <td className="px-4 py-3 font-bold tabular-nums">${inv.amount} {inv.currency}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-semibold ${INVOICE_STATUS_COLOR[inv.status] ?? "text-muted-foreground"}`}>{inv.status}</span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                            {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString() : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs rounded-lg px-2 gap-1"
+                              onClick={() => handleDownloadInvoice(inv.id, inv.invoiceNumber)}
+                            >
+                              <Download className="w-3.5 h-3.5" /> PDF
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 }
 
-function Plus({ className }: { className?: string }) {
+function PlusIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />

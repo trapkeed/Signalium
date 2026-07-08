@@ -8,7 +8,7 @@ import {
   useDeactivateEaRegistration,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Plus, Trash2, Copy, AlertTriangle, CheckCircle, Clock, RotateCw, Monitor, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Key, Plus, Trash2, Copy, AlertTriangle, CheckCircle, Clock, RotateCw, Monitor, XCircle, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,6 +104,18 @@ function TerminalsRow({ apiKeyId }: { apiKeyId: number }) {
   );
 }
 
+/** Extract a human-readable message from a failed mutation error response. */
+function parseApiError(err: unknown): { message: string; code?: string } {
+  if (err && typeof err === "object") {
+    const e = err as any;
+    // Axios-style: e.response.data
+    if (e.response?.data?.error) return { message: e.response.data.error, code: e.response.data.code };
+    // Fetch-style: e.message
+    if (e.message) return { message: e.message };
+  }
+  return { message: "An unexpected error occurred" };
+}
+
 export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
@@ -111,6 +123,7 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
   const [newKeyExpiry, setNewKeyExpiry] = useState("");
   const [revealedKey, setRevealedKey] = useState<{ key: string; name: string } | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [entitlementError, setEntitlementError] = useState<string | null>(null);
 
   const { data: keys = [], refetch } = useListApiKeys();
   const createKey = useCreateApiKey();
@@ -119,6 +132,7 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
 
   async function handleCreate() {
     if (!newKeyName.trim()) return;
+    setEntitlementError(null);
     try {
       const expiresInDays = newKeyExpiry.trim() ? Number(newKeyExpiry.trim()) : undefined;
       const result = await createKey.mutateAsync({ data: { name: newKeyName.trim(), expiresInDays } });
@@ -127,8 +141,14 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
       setNewKeyName("");
       setNewKeyExpiry("");
       refetch();
-    } catch {
-      toast({ title: "Failed to create API key", variant: "destructive" });
+    } catch (err) {
+      const { message, code } = parseApiError(err);
+      if (code === "API_ACCESS_DENIED" || code === "NO_ACTIVE_SUBSCRIPTION" || code === "SUBSCRIPTION_EXPIRED" || code === "SUBSCRIPTION_SUSPENDED") {
+        setEntitlementError(message);
+        setIsCreating(false);
+      } else {
+        toast({ title: "Failed to create API key", description: message, variant: "destructive" });
+      }
     }
   }
 
@@ -147,8 +167,13 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
       const result = await rotateKey.mutateAsync({ id });
       setRevealedKey({ key: result.key, name: result.name });
       refetch();
-    } catch {
-      toast({ title: "Failed to rotate API key", variant: "destructive" });
+    } catch (err) {
+      const { message, code } = parseApiError(err);
+      if (code === "API_ACCESS_DENIED" || code === "NO_ACTIVE_SUBSCRIPTION" || code === "SUBSCRIPTION_EXPIRED" || code === "SUBSCRIPTION_SUSPENDED") {
+        setEntitlementError(message);
+      } else {
+        toast({ title: "Failed to rotate API key", description: message, variant: "destructive" });
+      }
     }
   }
 
@@ -167,7 +192,7 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
           </p>
         </div>
       )}
-      <Button onClick={() => setIsCreating(true)} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
+      <Button onClick={() => { setEntitlementError(null); setIsCreating(true); }} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
         <Plus className="w-4 h-4" />
         New API Key
       </Button>
@@ -179,6 +204,18 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
       {header}
 
       <div className={embedded ? "max-w-4xl flex flex-col gap-6" : "p-8 max-w-4xl flex flex-col gap-6"}>
+        {/* Entitlement error banner */}
+        {entitlementError && (
+          <Alert className="border-destructive/30 bg-destructive/5 rounded-lg">
+            <Lock className="w-4 h-4 text-destructive" />
+            <AlertDescription className="text-sm text-destructive">
+              {entitlementError}
+              {" "}
+              <a href="/subscriptions" className="underline font-medium">Manage your subscription →</a>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Info box */}
         <div className="border border-border bg-card rounded-lg p-4">
           <div className="flex items-start gap-3">
@@ -195,89 +232,89 @@ export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {
         {/* Keys table */}
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Used</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {keys.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    No API keys yet. Generate one to connect your EA.
-                  </td>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Used</th>
+                  <th />
                 </tr>
-              ) : (
-                keys.map((key) => (
-                  <>
-                    <tr key={key.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
-                      <td className="px-4 py-3 font-medium">
-                        <button
-                          className="flex items-center gap-1.5"
-                          onClick={() => setExpandedId(expandedId === key.id ? null : key.id)}
-                        >
-                          {expandedId === key.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                          {key.name}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{key.keyPrefix}</td>
-                      <td className="px-4 py-3"><StatusBadge status={key.status} /></td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                        {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "never"}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
-                        {key.lastUsedAt ? (
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {new Date(key.lastUsedAt).toLocaleDateString()}
-                          </span>
-                        ) : "never"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1 justify-end">
-                          {key.status !== "revoked" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 rounded-lg"
-                              onClick={() => handleRotate(key.id)}
-                              title="Rotate key (keeps registered terminals)"
-                            >
-                              <RotateCw className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                          {key.status !== "revoked" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-lg"
-                              onClick={() => handleRevoke(key.id)}
-                              title="Revoke key"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedId === key.id && (
-                      <tr className="bg-secondary/10">
-                        <td colSpan={6} className="p-0">
-                          <TerminalsRow apiKeyId={key.id} />
+              </thead>
+              <tbody>
+                {keys.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                      No API keys yet. Generate one to connect your EA.
+                    </td>
+                  </tr>
+                ) : (
+                  keys.map((key) => (
+                    <>
+                      <tr key={key.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                        <td className="px-4 py-3 font-medium">
+                          <button
+                            className="flex items-center gap-1.5"
+                            onClick={() => setExpandedId(expandedId === key.id ? null : key.id)}
+                          >
+                            {expandedId === key.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            {key.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{key.keyPrefix}</td>
+                        <td className="px-4 py-3"><StatusBadge status={key.status} /></td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                          {key.expiresAt ? new Date(key.expiresAt).toLocaleDateString() : "never"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                          {key.lastUsedAt ? (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date(key.lastUsedAt).toLocaleDateString()}
+                            </span>
+                          ) : "never"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 justify-end">
+                            {key.status !== "revoked" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 rounded-lg"
+                                onClick={() => handleRotate(key.id)}
+                                title="Rotate key (keeps registered terminals)"
+                              >
+                                <RotateCw className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            {key.status !== "revoked" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-lg"
+                                onClick={() => handleRevoke(key.id)}
+                                title="Revoke key"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
-                    )}
-                  </>
-                ))
-              )}
-            </tbody>
-          </table>
+                      {expandedId === key.id && (
+                        <tr className="bg-secondary/10">
+                          <td colSpan={6} className="p-0">
+                            <TerminalsRow apiKeyId={key.id} />
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

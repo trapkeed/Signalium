@@ -1,0 +1,430 @@
+# SIGNALIUM S17 — EA PROVISIONING, API AUTHENTICATION AND AUTONOMOUS TRADING CONTROL PLANE
+
+Repository: signalium
+
+Objective:
+Implement the infrastructure that allows Signalium users to operate in either Manual Trading Mode or Fully Autonomous Trading Mode using a uniquely generated MT5 Expert Advisor that communicates securely with the Signalium Quant Decision Engine (QDE).
+
+The Signalium platform remains the front office.
+The Signalium Trainer remains the brain.
+The EA becomes the execution arm.
+
+────────────────────────
+
+1. USER TRADING MODES
+   ────────────────────────
+
+Implement two mutually exclusive trading modes:
+
+### Manual Mode
+
+The user receives:
+
+* market context
+* directional bias
+* confidence score
+* reasoning
+* entry zones
+* invalidation levels
+* projected hold duration
+* probability estimates
+
+The user places and manages trades manually.
+
+Signalium does not send execution instructions to the EA.
+
+---
+
+### Fully Autonomous Mode
+
+The user authorizes Signalium to manage trading.
+
+The QDE:
+
+* monitors markets continuously
+* identifies opportunities
+* sends trade instructions
+* manages open trades
+* closes trades
+* scales positions
+* exits early if conditions deteriorate
+* protects capital during regime changes
+* avoids unnecessary drawdown
+
+The EA becomes execution-only.
+
+The EA never makes trading decisions.
+
+The QDE remains the sole decision maker.
+
+────────────────────────
+2. USER SYMBOL SELECTION
+────────────────────────
+
+Users must explicitly select symbols they wish the QDE to monitor.
+
+No automatic monitoring of all assets.
+
+Supported asset classes:
+
+* Forex
+* Metals
+* Indices
+
+Examples:
+
+Forex:
+EURUSD
+GBPUSD
+USDJPY
+AUDUSD
+USDCAD
+
+Metals:
+XAUUSD
+XAGUSD
+
+Indices:
+US30
+NAS100
+SPX500
+GER40
+UK100
+
+Administrators can:
+
+* add symbols
+* disable symbols
+* archive symbols
+* edit symbol metadata
+* change category
+* enable regional broker aliases
+
+Database tables:
+
+symbols
+symbol_aliases
+symbol_categories
+broker_symbol_mapping
+
+────────────────────────
+3. UNIVERSAL SYMBOL NORMALIZATION
+────────────────────────
+
+Implement universal symbol normalization.
+
+Examples:
+
+XAUUSD
+XAUUSD.a
+XAUUSDm
+XAUUSD.pro
+GOLD
+GOLDmicro
+XAUUSD_RAW
+
+All resolve internally to:
+
+XAUUSD
+
+Examples:
+
+EURUSD
+EURUSD.pro
+EURUSDm
+EURUSD.a
+EURUSDecn
+
+All resolve to:
+
+EURUSD
+
+Normalization must exist in:
+
+* backend
+* API layer
+* EA
+* trainer
+* live execution pipeline
+
+The QDE must never know broker-specific names.
+
+The QDE only sees canonical symbols.
+
+────────────────────────
+4. USER GENERATED API KEYS
+────────────────────────
+
+Remove license key concepts completely.
+
+Users authenticate EAs using API keys.
+
+Workflow:
+
+User dashboard:
+Generate API Key
+
+Example:
+
+sig_live_xxxxxxxxxxxxxx
+
+The API key is:
+
+* unique per user
+* revocable
+* rotatable
+* scoped
+* auditable
+
+Store hashed only.
+
+Never store plaintext.
+
+Allow:
+
+* regenerate key
+* disable key
+* expiration dates
+* IP restrictions
+* usage logs
+
+Tables:
+
+api_keys
+api_key_usage
+api_key_permissions
+
+────────────────────────
+5. UNIQUE EA GENERATION
+────────────────────────
+
+Each user receives a unique EA package.
+
+Naming convention:
+
+Signalium_Brian_MT5.ex5
+Signalium_John_MT5.ex5
+
+Generated dynamically using:
+
+platform prefix
+user name
+build version
+subscription tier
+
+The EA contains:
+
+* API endpoint
+* API key placeholder
+* polling interval
+* build version
+* supported symbols
+
+No trading logic exists inside the EA.
+
+The EA only:
+
+* receives instructions
+* executes instructions
+* reports positions
+* reports account state
+
+────────────────────────
+6. EA TO SERVER COMMUNICATION
+────────────────────────
+
+Polling interval:
+
+15 seconds default.
+
+Configurable by admin.
+
+EA sends:
+
+* account balance
+* equity
+* free margin
+* margin level
+* open positions
+* floating profit/loss
+* current stop loss
+* current take profit
+* current spread
+* broker symbol
+* execution status
+
+The server returns:
+
+NO_ACTION
+
+OPEN_BUY
+
+OPEN_SELL
+
+MODIFY_POSITION
+
+PARTIAL_CLOSE
+
+MOVE_SL
+
+MOVE_TP
+
+FULL_CLOSE
+
+SCALE_IN
+
+REDUCE_EXPOSURE
+
+────────────────────────
+7. POSITION TELEMETRY LOOP
+────────────────────────
+
+The EA must continuously report:
+
+* unrealized PnL
+* drawdown
+* duration
+* current spread
+* swap
+* commissions
+* slippage
+* fill quality
+
+This information is forwarded to the trainer.
+
+The QDE uses this information to:
+
+* reassess confidence
+* update probability estimates
+* detect reversals
+* identify deteriorating setups
+* optimize exits
+
+This creates continuous trade awareness.
+
+The model remains alive throughout the trade.
+
+────────────────────────
+8. AUTONOMOUS RISK MANAGEMENT
+────────────────────────
+
+Users may select:
+
+Manual Risk
+
+or
+
+QDE Risk Management
+
+When QDE Risk Management is enabled:
+
+The model controls:
+
+* risk percentage
+* exposure
+* position size
+* scaling decisions
+* drawdown management
+
+Users are not required to specify risk values.
+
+The QDE dynamically adapts risk according to:
+
+* confidence
+* volatility
+* market quality
+* portfolio exposure
+* account health
+
+────────────────────────
+9. SUBSCRIPTION ENFORCEMENT
+────────────────────────
+
+Starter:
+
+* Manual Mode only
+
+Professional:
+
+* Manual Mode
+* Autonomous Mode
+* EA access
+
+Enterprise:
+
+* Multiple EAs
+* Portfolio trading
+* Multi-account support
+* Priority infrastructure
+
+If subscription expires:
+
+* API key disabled
+* EA requests rejected
+* Autonomous trading halted
+* Manual dashboard access restricted according to plan rules
+
+────────────────────────
+10. AUDITABILITY
+────────────────────────
+
+Every autonomous action must be stored.
+
+Tables:
+
+trade_decisions
+ea_actions
+position_updates
+model_reasoning
+execution_history
+
+Administrators can reconstruct:
+
+Market State
+→ QDE Decision
+→ API Response
+→ EA Action
+→ Position Outcome
+
+This creates institutional-grade traceability.
+
+────────────────────────
+11. ARCHITECTURAL RULES
+────────────────────────
+
+Signalium Platform:
+
+* user management
+* subscriptions
+* billing
+* EA generation
+* dashboards
+* account management
+* API gateway
+
+Signalium Trainer:
+
+* training
+* inference
+* memory
+* research
+* validation
+* retraining
+* model evolution
+
+MT5 EA:
+
+* execution only
+
+The QDE remains:
+
+* the only trader
+* the only strategist
+* the only risk manager
+* the only decision maker
+
+No rule engine may override QDE decisions.
+
+Implement production-ready code only.
+Avoid placeholders and mock implementations.
+Maintain complete auditability and horizontal scalability.

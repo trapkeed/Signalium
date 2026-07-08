@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ScrollText, Plus, Trash2, Pencil, Zap, Bot, Terminal, Microscope } from "lucide-react";
+import { ScrollText, Plus, Trash2, Pencil, Zap, Bot, Terminal, Microscope, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +44,9 @@ type PlanFormState = {
   apiAccessAllowed: boolean;
   researchAccess: boolean;
   isActive: boolean;
+  promoPriceMonthly: string;
+  promoLabel: string;
+  regionalPricing: string;
 };
 
 const EMPTY_FORM: PlanFormState = {
@@ -58,7 +61,19 @@ const EMPTY_FORM: PlanFormState = {
   apiAccessAllowed: true,
   researchAccess: true,
   isActive: true,
+  promoPriceMonthly: "",
+  promoLabel: "",
+  regionalPricing: "",
 };
+
+function parseRegionalPricing(raw: string): Record<string, number> | undefined {
+  if (!raw.trim()) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) return parsed;
+  } catch {}
+  return undefined;
+}
 
 function PlanFormDialog({
   trigger,
@@ -75,11 +90,24 @@ function PlanFormDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<PlanFormState>(initial);
+  const [regionalError, setRegionalError] = useState("");
 
   async function handleSubmit() {
     if (!form.name || !form.priceMonthly) return;
-    await onSubmit(form);
-    setOpen(false);
+    if (form.regionalPricing.trim()) {
+      const parsed = parseRegionalPricing(form.regionalPricing);
+      if (!parsed) {
+        setRegionalError('Invalid JSON — use {"US": 49, "EU": 45} format');
+        return;
+      }
+    }
+    setRegionalError("");
+    try {
+      await onSubmit(form);
+      setOpen(false);
+    } catch {
+      // onSubmit shows its own toast; keep dialog open so the user can correct or retry
+    }
   }
 
   return (
@@ -87,7 +115,7 @@ function PlanFormDialog({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (o) setForm(initial);
+        if (o) { setForm(initial); setRegionalError(""); }
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -160,6 +188,46 @@ function PlanFormDialog({
             </div>
           </div>
 
+          {/* Promotional pricing */}
+          <div className="border-t border-border pt-3 mt-1">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" /> Promotional Pricing
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-mono text-muted-foreground">Promo price / month (blank = none)</Label>
+                <Input
+                  type="number"
+                  value={form.promoPriceMonthly}
+                  onChange={(e) => setForm((f) => ({ ...f, promoPriceMonthly: e.target.value }))}
+                  placeholder="29"
+                  className="rounded-sm font-mono text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-mono text-muted-foreground">Promo label</Label>
+                <Input
+                  value={form.promoLabel}
+                  onChange={(e) => setForm((f) => ({ ...f, promoLabel: e.target.value }))}
+                  placeholder='e.g. "Limited time — 40% off"'
+                  className="rounded-sm font-mono text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5 mt-3">
+              <Label className="text-xs font-mono text-muted-foreground">Regional pricing (JSON, blank = none)</Label>
+              <Input
+                value={form.regionalPricing}
+                onChange={(e) => { setForm((f) => ({ ...f, regionalPricing: e.target.value })); setRegionalError(""); }}
+                placeholder='{"NG": 19, "KE": 22}'
+                className={`rounded-sm font-mono text-sm ${regionalError ? "border-destructive" : ""}`}
+              />
+              {regionalError && <p className="text-xs text-destructive">{regionalError}</p>}
+              <p className="text-xs text-muted-foreground">Keys are region/country codes; values are USD prices that override the base price for users in that region.</p>
+            </div>
+          </div>
+
+          {/* Entitlements */}
           <div className="border-t border-border pt-3 mt-1">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Entitlements — read by the EntitlementEngine
@@ -242,12 +310,16 @@ export default function AdminPlans() {
           apiAccessAllowed: values.apiAccessAllowed,
           researchAccess: values.researchAccess,
           isActive: values.isActive,
+          promoPriceMonthly: values.promoPriceMonthly ? Number(values.promoPriceMonthly) : undefined,
+          promoLabel: values.promoLabel || undefined,
+          regionalPricing: parseRegionalPricing(values.regionalPricing),
         },
       });
       toast({ title: "Plan created" });
       invalidate();
     } catch (err: any) {
       toast({ title: "Failed to create plan", description: err?.message, variant: "destructive" });
+      throw err;
     }
   }
 
@@ -267,12 +339,16 @@ export default function AdminPlans() {
           apiAccessAllowed: values.apiAccessAllowed,
           researchAccess: values.researchAccess,
           isActive: values.isActive,
+          promoPriceMonthly: values.promoPriceMonthly ? Number(values.promoPriceMonthly) : undefined,
+          promoLabel: values.promoLabel || undefined,
+          regionalPricing: parseRegionalPricing(values.regionalPricing),
         },
       });
       toast({ title: "Plan updated" });
       invalidate();
     } catch (err: any) {
       toast({ title: "Failed to update plan", description: err?.message, variant: "destructive" });
+      throw err;
     }
   }
 
@@ -314,17 +390,17 @@ export default function AdminPlans() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                {["Plan", "Price", "Max EAs", "Max Symbols", "Capabilities", "Status", ""].map((h) => (
+                {["Plan", "Price", "Promo", "Max EAs", "Max Symbols", "Capabilities", "Status", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">Loading...</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">Loading...</td></tr>
               ) : plans.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
                     <div className="flex flex-col items-center gap-2">
                       <ScrollText className="w-5 h-5" />
                       No plans yet
@@ -339,6 +415,16 @@ export default function AdminPlans() {
                       <div className="text-xs text-muted-foreground capitalize">{plan.tier}</div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">${plan.priceMonthly}/mo</td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      {plan.promoPriceMonthly != null ? (
+                        <div>
+                          <span className="text-primary">${plan.promoPriceMonthly}/mo</span>
+                          {plan.promoLabel && <div className="text-muted-foreground text-[10px] leading-tight">{plan.promoLabel}</div>}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{plan.maxEas ?? "Unlimited"}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{plan.maxSymbols ?? "Unlimited"}</td>
                     <td className="px-4 py-3">
@@ -379,6 +465,11 @@ export default function AdminPlans() {
                             apiAccessAllowed: plan.apiAccessAllowed ?? true,
                             researchAccess: plan.researchAccess ?? true,
                             isActive: plan.isActive,
+                            promoPriceMonthly: plan.promoPriceMonthly != null ? String(plan.promoPriceMonthly) : "",
+                            promoLabel: plan.promoLabel ?? "",
+                            regionalPricing: plan.regionalPricing && Object.keys(plan.regionalPricing).length > 0
+                              ? JSON.stringify(plan.regionalPricing, null, 0)
+                              : "",
                           }}
                           trigger={
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-sm" title="Edit" aria-label={`Edit ${plan.name}`}>

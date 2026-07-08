@@ -4,6 +4,7 @@ import {
   useConfirmPayment,
   useRejectPayment,
   useReportPaymentConfirmations,
+  useRefundPayment,
   useListPaymentProvidersAdmin,
   useCreatePaymentProvider,
   useUpdatePaymentProvider,
@@ -11,7 +12,7 @@ import {
   useListAllInvoices,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Clock, AlertCircle, Plus, Trash2, Settings2, Wallet, CreditCard, FileText, Download, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, Plus, Trash2, Settings2, Wallet, CreditCard, FileText, Download, AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,7 @@ const STATUS_CONFIG = {
   confirmed: { label: "Confirmed", icon: CheckCircle, color: "text-primary" },
   failed: { label: "Failed", icon: XCircle, color: "text-destructive" },
   expired: { label: "Expired", icon: XCircle, color: "text-muted-foreground" },
-  refunded: { label: "Refunded", icon: Clock, color: "text-muted-foreground" },
+  refunded: { label: "Refunded", icon: RotateCcw, color: "text-muted-foreground" },
 };
 
 const PROVIDER_TYPES = ["usdt_trc20", "usdt_erc20", "usdt_bep20", "stripe", "paypal", "flutterwave"] as const;
@@ -38,12 +39,8 @@ const PROVIDER_LABELS: Record<string, string> = {
   flutterwave: "Flutterwave",
 };
 const PROVIDER_ICONS: Record<string, typeof Wallet> = {
-  usdt_trc20: Wallet,
-  usdt_erc20: Wallet,
-  usdt_bep20: Wallet,
-  stripe: CreditCard,
-  paypal: CreditCard,
-  flutterwave: CreditCard,
+  usdt_trc20: Wallet, usdt_erc20: Wallet, usdt_bep20: Wallet,
+  stripe: CreditCard, paypal: CreditCard, flutterwave: CreditCard,
 };
 const isUsdt = (type: string) => type.startsWith("usdt_");
 
@@ -65,6 +62,8 @@ export default function AdminPayments() {
   const [rejectNotes, setRejectNotes] = useState("");
   const [confirmationsDialogId, setConfirmationsDialogId] = useState<number | null>(null);
   const [confirmationsValue, setConfirmationsValue] = useState("");
+  const [refundDialogId, setRefundDialogId] = useState<number | null>(null);
+  const [refundNotes, setRefundNotes] = useState("");
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
   const [editProviderId, setEditProviderId] = useState<number | null>(null);
   const [providerForm, setProviderForm] = useState<ProviderForm>({
@@ -77,6 +76,7 @@ export default function AdminPayments() {
   const confirmPayment = useConfirmPayment();
   const rejectPayment = useRejectPayment();
   const reportConfirmations = useReportPaymentConfirmations();
+  const refundPayment = useRefundPayment();
   const createProvider = useCreatePaymentProvider();
   const updateProvider = useUpdatePaymentProvider();
   const deleteProvider = useDeletePaymentProvider();
@@ -119,6 +119,19 @@ export default function AdminPayments() {
       refetchPayments();
     } catch {
       toast({ title: "Failed to update confirmations", variant: "destructive" });
+    }
+  }
+
+  async function handleRefund() {
+    if (!refundDialogId) return;
+    try {
+      await refundPayment.mutateAsync({ id: refundDialogId, data: { notes: refundNotes || undefined } });
+      toast({ title: "Payment refunded" });
+      setRefundDialogId(null);
+      setRefundNotes("");
+      refetchPayments();
+    } catch {
+      toast({ title: "Failed to refund payment", variant: "destructive" });
     }
   }
 
@@ -194,7 +207,6 @@ export default function AdminPayments() {
   }
 
   const pendingPayments = payments.filter((p) => p.status === "pending" || p.status === "confirming");
-  const allPayments = payments;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -219,16 +231,16 @@ export default function AdminPayments() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/30">
-                    {["ID", "User", "Amount", "Network", "TX Hash", "Confirmations", "Status", "Date", "Actions"].map((h) => (
+                    {["ID", "User", "Amount", "Network", "TX Hash", "Conf.", "Status", "Date", "Actions"].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {allPayments.length === 0 ? (
+                  {payments.length === 0 ? (
                     <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No payments yet</td></tr>
                   ) : (
-                    allPayments.map((p) => {
+                    payments.map((p) => {
                       const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
                       const Icon = cfg.icon;
                       return (
@@ -250,26 +262,32 @@ export default function AdminPayments() {
                             {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
                           </td>
                           <td className="px-4 py-3">
-                            {(p.status === "pending" || p.status === "confirming") && (
-                              <div className="flex gap-1 flex-wrap">
-                                {p.network && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 text-xs rounded-sm px-2 font-mono"
-                                    onClick={() => { setConfirmationsDialogId(p.id); setConfirmationsValue(String(p.confirmations ?? 0)); }}
-                                  >
-                                    Confirmations
+                            <div className="flex gap-1 flex-wrap">
+                              {(p.status === "pending" || p.status === "confirming") && (
+                                <>
+                                  {p.network && (
+                                    <Button size="sm" variant="outline" className="h-7 text-xs rounded-sm px-2 font-mono"
+                                      onClick={() => { setConfirmationsDialogId(p.id); setConfirmationsValue(String(p.confirmations ?? 0)); }}>
+                                      Confs
+                                    </Button>
+                                  )}
+                                  <Button size="sm" className="h-7 text-xs rounded-sm px-2 font-mono" onClick={() => handleConfirm(p.id)}>
+                                    Confirm
                                   </Button>
-                                )}
-                                <Button size="sm" className="h-7 text-xs rounded-sm px-2 font-mono" onClick={() => handleConfirm(p.id)}>
-                                  Confirm
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs rounded-sm px-2 text-destructive hover:text-destructive"
+                                    onClick={() => { setRejectDialogId(p.id); setRejectNotes(""); }}>
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                              {p.status === "confirmed" && (
+                                <Button size="sm" variant="ghost"
+                                  className="h-7 text-xs rounded-sm px-2 font-mono text-muted-foreground hover:text-foreground"
+                                  onClick={() => { setRefundDialogId(p.id); setRefundNotes(""); }}>
+                                  <RotateCcw className="w-3 h-3 mr-1" /> Refund
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-7 text-xs rounded-sm px-2 text-destructive hover:text-destructive" onClick={() => { setRejectDialogId(p.id); setRejectNotes(""); }}>
-                                  Reject
-                                </Button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -378,9 +396,7 @@ export default function AdminPayments() {
       {/* Reject dialog */}
       <Dialog open={!!rejectDialogId} onOpenChange={() => setRejectDialogId(null)}>
         <DialogContent className="bg-card border-border rounded-sm max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-mono">Reject Payment #{rejectDialogId}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="font-mono">Reject Payment #{rejectDialogId}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
             <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Reason (optional)</Label>
             <Input value={rejectNotes} onChange={(e) => setRejectNotes(e.target.value)} placeholder="e.g. Invalid transaction hash" className="rounded-sm" />
@@ -397,24 +413,11 @@ export default function AdminPayments() {
       {/* Confirmations dialog */}
       <Dialog open={!!confirmationsDialogId} onOpenChange={() => setConfirmationsDialogId(null)}>
         <DialogContent className="bg-card border-border rounded-sm max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-mono">Report Confirmations — Payment #{confirmationsDialogId}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="font-mono">Report Confirmations — Payment #{confirmationsDialogId}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-2">
-            <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-              On-chain confirmations observed
-            </Label>
-            <Input
-              type="number"
-              min={0}
-              value={confirmationsValue}
-              onChange={(e) => setConfirmationsValue(e.target.value)}
-              placeholder="0"
-              className="rounded-sm font-mono"
-            />
-            <p className="text-xs text-muted-foreground">
-              USDT confirmations are not monitored automatically — check the relevant block explorer and report the count here. Reaching the required threshold auto-confirms the payment.
-            </p>
+            <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">On-chain confirmations observed</Label>
+            <Input type="number" min={0} value={confirmationsValue} onChange={(e) => setConfirmationsValue(e.target.value)} placeholder="0" className="rounded-sm font-mono" />
+            <p className="text-xs text-muted-foreground">Check the relevant block explorer and report the count here. Reaching the required threshold auto-confirms the payment.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmationsDialogId(null)} className="rounded-sm">Cancel</Button>
@@ -425,21 +428,36 @@ export default function AdminPayments() {
         </DialogContent>
       </Dialog>
 
+      {/* Refund dialog */}
+      <Dialog open={!!refundDialogId} onOpenChange={() => setRefundDialogId(null)}>
+        <DialogContent className="bg-card border-border rounded-sm max-w-sm">
+          <DialogHeader><DialogTitle className="font-mono">Refund Payment #{refundDialogId}</DialogTitle></DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Notes (optional)</Label>
+            <Input value={refundNotes} onChange={(e) => setRefundNotes(e.target.value)} placeholder="e.g. User requested refund within 7 days" className="rounded-sm" />
+            <p className="text-xs text-muted-foreground">
+              This marks the payment as refunded and logs the event. The user's subscription status is <strong>not</strong> automatically modified — use the Subscriptions panel to cancel or suspend access separately.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialogId(null)} className="rounded-sm">Cancel</Button>
+            <Button variant="destructive" onClick={handleRefund} disabled={refundPayment.isPending} className="rounded-sm font-mono">
+              {refundPayment.isPending ? "Refunding..." : "Mark as Refunded"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Provider dialog */}
       <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
         <DialogContent className="bg-card border-border rounded-sm max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-mono">{editProviderId ? "Edit Provider" : "New Payment Provider"}</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="font-mono">{editProviderId ? "Edit Provider" : "New Payment Provider"}</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-4 py-2 max-h-[70vh] overflow-y-auto">
             {!editProviderId && (
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Type</Label>
-                <select
-                  value={providerForm.type}
-                  onChange={(e) => setProviderForm((f) => ({ ...f, type: e.target.value }))}
-                  className="bg-input border border-border rounded-sm px-3 py-2 text-sm font-mono"
-                >
+                <select value={providerForm.type} onChange={(e) => setProviderForm((f) => ({ ...f, type: e.target.value }))}
+                  className="bg-input border border-border rounded-sm px-3 py-2 text-sm font-mono">
                   {PROVIDER_TYPES.map((t) => <option key={t} value={t}>{PROVIDER_LABELS[t]}</option>)}
                 </select>
               </div>
@@ -448,8 +466,6 @@ export default function AdminPayments() {
               <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Display Name</Label>
               <Input value={providerForm.name} onChange={(e) => setProviderForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. USDT TRC-20" className="rounded-sm font-mono text-sm" />
             </div>
-
-            {/* USDT fields */}
             {isUsdt(providerForm.type) && (
               <>
                 <div className="flex flex-col gap-1.5">
@@ -464,33 +480,18 @@ export default function AdminPayments() {
                   <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Memo Instructions</Label>
                   <Input value={providerForm.memo ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, memo: e.target.value }))} placeholder="e.g. Include reference number as memo" className="rounded-sm text-sm" />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  On-chain confirmations are not monitored automatically. An admin must verify transactions on a block explorer and report confirmations from the Payments tab.
-                </p>
+                <p className="text-xs text-muted-foreground">On-chain confirmations are not monitored automatically. An admin must verify transactions on a block explorer and report confirmations from the Payments tab.</p>
               </>
             )}
-
-            {/* Stripe/PayPal/Flutterwave: credentials are environment secrets, not
-                stored in this DB config — never collect them here, so nothing
-                secret-like ends up in a payment_providers row. */}
             {providerForm.type === "stripe" && (
-              <p className="text-xs text-muted-foreground">
-                Stripe is configured via the <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> environment secrets, not through this form. Connect the Stripe integration and set those secrets to make Stripe connectable.
-              </p>
+              <p className="text-xs text-muted-foreground">Stripe is configured via the <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> environment secrets, not through this form.</p>
             )}
-
             {providerForm.type === "paypal" && (
-              <p className="text-xs text-muted-foreground">
-                PayPal is configured via the <code className="font-mono">PAYPAL_CLIENT_ID</code>, <code className="font-mono">PAYPAL_CLIENT_SECRET</code>, and <code className="font-mono">PAYPAL_WEBHOOK_ID</code> environment secrets, not through this form. Connect the PayPal integration and set those secrets to make PayPal connectable.
-              </p>
+              <p className="text-xs text-muted-foreground">PayPal is configured via the <code className="font-mono">PAYPAL_CLIENT_ID</code>, <code className="font-mono">PAYPAL_CLIENT_SECRET</code>, and <code className="font-mono">PAYPAL_WEBHOOK_ID</code> environment secrets, not through this form.</p>
             )}
-
             {providerForm.type === "flutterwave" && (
-              <p className="text-xs text-muted-foreground">
-                Flutterwave is configured via the <code className="font-mono">FLUTTERWAVE_SECRET_KEY</code> and <code className="font-mono">FLUTTERWAVE_WEBHOOK_HASH</code> environment secrets, not through this form (Replit has no first-party Flutterwave connector). Set those secrets to make Flutterwave connectable.
-              </p>
+              <p className="text-xs text-muted-foreground">Flutterwave is configured via the <code className="font-mono">FLUTTERWAVE_SECRET_KEY</code> and <code className="font-mono">FLUTTERWAVE_WEBHOOK_HASH</code> environment secrets, not through this form.</p>
             )}
-
             <div className="flex items-center gap-3">
               <Switch checked={providerForm.isActive} onCheckedChange={(v) => setProviderForm((f) => ({ ...f, isActive: v }))} />
               <Label className="text-sm">Active (visible to users)</Label>

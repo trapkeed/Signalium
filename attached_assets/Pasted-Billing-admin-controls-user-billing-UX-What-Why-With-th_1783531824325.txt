@@ -1,0 +1,29 @@
+Billing admin controls & user billing UX
+What & Why
+With the entitlement engine and provider/invoicing infrastructure in place, this task completes the admin and user-facing surface: promotional/regional plan pricing, refunds, manual subscription extension/suspension, promotional credits, and a proper user-facing upgrade/downgrade + invoice/payment-method experience — matching the admin panel and frontend capabilities the spec calls for.
+
+Done looks like
+Admins can create promotional plan variants and regional pricing, disable a plan, and edit prices/limits/feature access from the existing plan admin page.
+Admins can refund a payment, suspend an account, manually extend a subscription, and issue a promotional credit, each producing an audit-log entry.
+Users can upgrade or downgrade their plan from the subscriptions page, see their full subscription history, view and download invoices as PDFs, and manage saved payment methods.
+API key generation/rotation/revocation correctly reflects current entitlement status (e.g. blocked when there's no eligible active plan), reusing the existing API key UI.
+Out of scope
+Entitlement engine internals, provider adapters, and invoice generation logic themselves (already built) — this task only surfaces and operates on them.
+Any change to authentication or a UI redesign outside the billing/admin pages being extended.
+New payment provider integrations beyond what's already wired up.
+Steps
+Extend the admin plan management UI/API to support promotional plan variants and regional pricing tied to the existing plans model, plus editing feature/limit fields introduced by the entitlement-engine task.
+Add admin actions for refunding a payment, suspending or extending a subscription, and issuing promotional credit — each going through logAudit.
+Build the user-facing upgrade/downgrade flow on the subscriptions page against the entitlement-aware plans, plus a subscription history view.
+Add an invoice list with PDF download and payment-method management to the user payments page.
+Verify the API key create/rotate/revoke flows correctly block or allow actions based on current entitlement status.
+Relevant files
+artifacts/signalium/src/pages/admin/subscriptions.tsx
+artifacts/signalium/src/pages/admin/payments.tsx
+artifacts/signalium/src/pages/subscriptions.tsx
+artifacts/signalium/src/pages/payments.tsx
+artifacts/signalium/src/pages/api-keys.tsx
+artifacts/api-server/src/routes/plans.ts
+Dependencies
+
+Payment providers, USDT networks & invoicing
