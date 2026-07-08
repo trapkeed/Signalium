@@ -1132,6 +1132,155 @@ export interface MediaAssetInput {
   altText?: string;
 }
 
+export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
+
+
+export const NotificationType = {
+  announcement: 'announcement',
+  system: 'system',
+  security: 'security',
+  billing: 'billing',
+} as const;
+
+export interface Notification {
+  id: number;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  /** @nullable */
+  body?: string | null;
+  /** @nullable */
+  link?: string | null;
+  /** @nullable */
+  announcementId?: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export type AnnouncementAudience = typeof AnnouncementAudience[keyof typeof AnnouncementAudience];
+
+
+export const AnnouncementAudience = {
+  all: 'all',
+  plan_tier: 'plan_tier',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AnnouncementPlanTier = typeof AnnouncementPlanTier[keyof typeof AnnouncementPlanTier] | null;
+
+
+export const AnnouncementPlanTier = {
+  starter: 'starter',
+  professional: 'professional',
+  enterprise: 'enterprise',
+} as const;
+
+export type AnnouncementStatus = typeof AnnouncementStatus[keyof typeof AnnouncementStatus];
+
+
+export const AnnouncementStatus = {
+  draft: 'draft',
+  published: 'published',
+  retracted: 'retracted',
+} as const;
+
+export interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  audience: AnnouncementAudience;
+  /** @nullable */
+  planTier?: AnnouncementPlanTier;
+  showAsBanner: boolean;
+  status: AnnouncementStatus;
+  /** @nullable */
+  publishedAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AnnouncementInputAudience = typeof AnnouncementInputAudience[keyof typeof AnnouncementInputAudience];
+
+
+export const AnnouncementInputAudience = {
+  all: 'all',
+  plan_tier: 'plan_tier',
+} as const;
+
+export type AnnouncementInputPlanTier = typeof AnnouncementInputPlanTier[keyof typeof AnnouncementInputPlanTier];
+
+
+export const AnnouncementInputPlanTier = {
+  starter: 'starter',
+  professional: 'professional',
+  enterprise: 'enterprise',
+} as const;
+
+export interface AnnouncementInput {
+  title: string;
+  body: string;
+  audience?: AnnouncementInputAudience;
+  planTier?: AnnouncementInputPlanTier;
+  showAsBanner?: boolean;
+  expiresAt?: string;
+}
+
+export type AnnouncementUpdateAudience = typeof AnnouncementUpdateAudience[keyof typeof AnnouncementUpdateAudience];
+
+
+export const AnnouncementUpdateAudience = {
+  all: 'all',
+  plan_tier: 'plan_tier',
+} as const;
+
+export type AnnouncementUpdatePlanTier = typeof AnnouncementUpdatePlanTier[keyof typeof AnnouncementUpdatePlanTier];
+
+
+export const AnnouncementUpdatePlanTier = {
+  starter: 'starter',
+  professional: 'professional',
+  enterprise: 'enterprise',
+} as const;
+
+export interface AnnouncementUpdate {
+  title?: string;
+  body?: string;
+  audience?: AnnouncementUpdateAudience;
+  planTier?: AnnouncementUpdatePlanTier;
+  showAsBanner?: boolean;
+  expiresAt?: string;
+}
+
+export interface MaintenanceBanner {
+  id: number;
+  isEnabled: boolean;
+  message: string;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  endsAt?: string | null;
+  updatedAt: string;
+}
+
+export interface MaintenanceBannerInput {
+  isEnabled?: boolean;
+  message?: string;
+  startsAt?: string;
+  endsAt?: string;
+}
+
+export interface ActiveMaintenanceBanner {
+  message: string;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  endsAt?: string | null;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -1277,4 +1426,8 @@ export const ListMediaAssetsCategory = {
   marketing: 'marketing',
   other: 'other',
 } as const;
+
+export type GetUnreadNotificationCount200 = {
+  count: number;
+};
 

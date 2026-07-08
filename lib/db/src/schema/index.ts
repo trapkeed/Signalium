@@ -15,3 +15,4 @@ export * from "./qde";
 export * from "./security";
 export * from "./seo";
 export * from "./media";
+export * from "./notifications";

@@ -2330,3 +2330,247 @@ export const DeleteMediaAssetParams = zod.object({
 export const DeleteMediaAssetResponse = zod.void()
 
 
+/**
+ * @summary List the current user's notifications, newest first (authenticated)
+ */
+export const ListNotificationsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "type": zod.enum(['announcement', 'system', 'security', 'billing']),
+  "title": zod.string(),
+  "body": zod.string().nullish(),
+  "link": zod.string().nullish(),
+  "announcementId": zod.number().nullish(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
+
+/**
+ * @summary Get the current user's unread notification count (authenticated)
+ */
+export const GetUnreadNotificationCountResponse = zod.object({
+  "count": zod.number()
+})
+
+
+/**
+ * @summary Mark a single notification as read (authenticated)
+ */
+export const MarkNotificationReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkNotificationReadResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "type": zod.enum(['announcement', 'system', 'security', 'billing']),
+  "title": zod.string(),
+  "body": zod.string().nullish(),
+  "link": zod.string().nullish(),
+  "announcementId": zod.number().nullish(),
+  "isRead": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Mark all of the current user's notifications as read (authenticated)
+ */
+export const MarkAllNotificationsReadResponse = zod.void()
+
+
+/**
+ * @summary List all announcements (admin)
+ */
+export const ListAnnouncementsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAnnouncementsResponse = zod.array(ListAnnouncementsResponseItem)
+
+
+/**
+ * @summary Create a draft announcement (admin)
+ */
+export const CreateAnnouncementBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']).optional(),
+  "planTier": zod.enum(['starter', 'professional', 'enterprise']).optional(),
+  "showAsBanner": zod.boolean().optional(),
+  "expiresAt": zod.string().optional()
+})
+
+export const CreateAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List active banner-eligible announcements visible to the current user (authenticated)
+ */
+export const ListAnnouncementBannersResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAnnouncementBannersResponse = zod.array(ListAnnouncementBannersResponseItem)
+
+
+/**
+ * @summary Update an announcement (admin)
+ */
+export const UpdateAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAnnouncementBody = zod.object({
+  "title": zod.string().optional(),
+  "body": zod.string().optional(),
+  "audience": zod.enum(['all', 'plan_tier']).optional(),
+  "planTier": zod.enum(['starter', 'professional', 'enterprise']).optional(),
+  "showAsBanner": zod.boolean().optional(),
+  "expiresAt": zod.string().optional()
+})
+
+export const UpdateAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an announcement (admin)
+ */
+export const DeleteAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteAnnouncementResponse = zod.void()
+
+
+/**
+ * @summary Publish an announcement, fanning it out to its audience's notification centers (admin)
+ */
+export const PublishAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PublishAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Retract a published announcement's banner (admin)
+ */
+export const RetractAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RetractAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['all', 'plan_tier']),
+  "planTier": zod.union([zod.literal('starter'),zod.literal('professional'),zod.literal('enterprise'),zod.literal(null)]).nullish(),
+  "showAsBanner": zod.boolean(),
+  "status": zod.enum(['draft', 'published', 'retracted']),
+  "publishedAt": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get the maintenance banner configuration (admin)
+ */
+export const GetMaintenanceBannerResponse = zod.object({
+  "id": zod.number(),
+  "isEnabled": zod.boolean(),
+  "message": zod.string(),
+  "startsAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update the maintenance banner configuration (admin)
+ */
+export const UpdateMaintenanceBannerBody = zod.object({
+  "isEnabled": zod.boolean().optional(),
+  "message": zod.string().optional(),
+  "startsAt": zod.string().optional(),
+  "endsAt": zod.string().optional()
+})
+
+export const UpdateMaintenanceBannerResponse = zod.object({
+  "id": zod.number(),
+  "isEnabled": zod.boolean(),
+  "message": zod.string(),
+  "startsAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get the maintenance banner if it is currently active (public)
+ */
+export const GetActiveMaintenanceBannerResponse = zod.union([zod.object({
+  "message": zod.string(),
+  "startsAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish()
+}),zod.null()])
+
+

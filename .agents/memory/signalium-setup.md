@@ -99,3 +99,8 @@ When reusing an existing full-page component (own header/title + outer `flex-1 o
 When esbuild-bundling a standalone script (e.g. a data migration) that imports `objectStorageClient`, bundling `@google-cloud/storage` causes `TypeError: Expected signal to be an instanceof AbortSignal` on upload — the bundle creates a duplicate `AbortSignal` realm that fails gaxios's `instanceof` check. Add `"@google-cloud/*"` to esbuild's `external` array (matching `build.mjs`'s existing list) and run the output with plain `node`.
 
 **Why:** api-server's own `build.mjs` already externalizes this for the same reason; ad-hoc bundling commands must mirror that externals list or hit the same bug.
+
+## Announcement fan-out is a one-time snapshot, not live
+Admin announcements resolve their audience (all users vs plan tier, via active subscriptions joined to plans) once at publish time, writing one notification row per matching user. Users who join/upgrade after publish do not retroactively receive it.
+
+**Why:** simpler mental model and matches "notification" semantics (a point-in-time event); live-updating would require re-computing audience membership continuously and handling partial delivery.

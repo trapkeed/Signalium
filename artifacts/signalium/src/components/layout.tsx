@@ -19,9 +19,14 @@ import {
   X,
   Search,
   Image,
+  Megaphone,
+  AlertTriangle,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/notification-bell";
+import { MaintenanceBanner } from "@/components/maintenance-banner";
+import { AnnouncementBanners } from "@/components/announcement-banners";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,6 +48,8 @@ const ADMIN_ITEMS = [
   { href: "/admin/qde", label: "QDE Loop", icon: Radio },
   { href: "/admin/seo", label: "SEO", icon: Search },
   { href: "/admin/media", label: "Media Library", icon: Image },
+  { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { href: "/admin/maintenance-banner", label: "Maintenance Banner", icon: AlertTriangle },
 ];
 
 function Logo() {
@@ -176,13 +183,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-4 border-b border-border bg-card/95 backdrop-blur">
         <Logo />
-        <button
-          onClick={() => setMobileNavOpen(true)}
-          className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/60"
-          aria-label="Open navigation"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 -mr-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary/60"
+            aria-label="Open navigation"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}
@@ -207,6 +217,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 pt-14 lg:pt-0">
+        <div className="hidden lg:flex h-14 items-center justify-end px-6 border-b border-border shrink-0">
+          <NotificationBell />
+        </div>
+        <MaintenanceBanner />
+        <AnnouncementBanners />
         {children}
       </main>
     </div>

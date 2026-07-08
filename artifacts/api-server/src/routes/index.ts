@@ -17,6 +17,9 @@ import accountSecurityRouter from "./account-security";
 import storageRouter from "./storage";
 import seoRouter from "./seo";
 import mediaRouter from "./media";
+import notificationsRouter from "./notifications";
+import announcementsRouter from "./announcements";
+import maintenanceBannerRouter from "./maintenance-banner";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -40,5 +43,8 @@ router.use("/qde", qdeRouter);
 router.use(storageRouter);
 router.use("/seo", seoRouter);
 router.use("/media", mediaRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/announcements", announcementsRouter);
+router.use("/maintenance-banner", maintenanceBannerRouter);
 
 export default router;

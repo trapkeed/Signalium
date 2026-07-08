@@ -30,6 +30,8 @@ import AdminSymbols from "@/pages/admin/symbols";
 import AdminQde from "@/pages/admin/qde";
 import AdminSeo from "@/pages/admin/seo";
 import AdminMedia from "@/pages/admin/media";
+import AdminAnnouncements from "@/pages/admin/announcements";
+import AdminMaintenanceBanner from "@/pages/admin/maintenance-banner";
 
 import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
@@ -208,6 +210,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
             <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>
             <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>
+            <Route path="/admin/announcements"><ProtectedRoute component={AdminAnnouncements} /></Route>
+            <Route path="/admin/maintenance-banner"><ProtectedRoute component={AdminMaintenanceBanner} /></Route>
 
             <Route component={NotFound} />
           </Switch>
