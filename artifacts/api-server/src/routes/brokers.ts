@@ -15,7 +15,9 @@ router.get("/", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const brokers = await db.select().from(brokersTable).orderBy(brokersTable.name);
+    const brokers = await db.select().from(brokersTable)
+      .where(eq(brokersTable.isActive, true))
+      .orderBy(brokersTable.name);
     return res.json(brokers);
   } catch (err) {
     req.log.error(err, "Failed to list brokers");

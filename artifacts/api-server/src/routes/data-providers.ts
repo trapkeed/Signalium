@@ -12,7 +12,9 @@ router.get("/", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const providers = await db.select().from(dataProvidersTable).orderBy(dataProvidersTable.name);
+    const providers = await db.select().from(dataProvidersTable)
+      .where(eq(dataProvidersTable.isActive, true))
+      .orderBy(dataProvidersTable.name);
     return res.json(providers);
   } catch (err) {
     req.log.error(err, "Failed to list data providers");

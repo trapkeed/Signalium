@@ -6,7 +6,7 @@ import {
   useDeleteDataProvider,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Database, Plus, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Database, Plus, Pencil, Trash2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +73,78 @@ function AddDataProviderDialog() {
           </DialogClose>
           <Button onClick={handleSubmit} disabled={createProvider.isPending} className="rounded-sm font-mono text-xs">
             Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditDataProviderDialog({ provider }: { provider: { id: number; name: string; slug: string; apiEndpoint?: string | null } }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(provider.name);
+  const [slug, setSlug] = useState(provider.slug);
+  const [apiEndpoint, setApiEndpoint] = useState(provider.apiEndpoint ?? "");
+  const updateProvider = useUpdateDataProvider();
+
+  async function handleSubmit() {
+    if (!name || !slug) return;
+    try {
+      await updateProvider.mutateAsync({ id: provider.id, data: { name, slug, apiEndpoint: apiEndpoint || undefined } });
+      toast({ title: "Data provider updated" });
+      setOpen(false);
+    } catch (err: any) {
+      toast({ title: "Failed to update data provider", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setName(provider.name);
+          setSlug(provider.slug);
+          setApiEndpoint(provider.apiEndpoint ?? "");
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 rounded-sm"
+          aria-label={`Edit ${provider.name}`}
+        >
+          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-sm">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-base">Edit Data Provider</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-provider-name-${provider.id}`} className="text-xs font-mono text-muted-foreground">Name</Label>
+            <Input id={`edit-provider-name-${provider.id}`} value={name} onChange={(e) => setName(e.target.value)} className="rounded-sm font-mono text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-provider-slug-${provider.id}`} className="text-xs font-mono text-muted-foreground">Slug</Label>
+            <Input id={`edit-provider-slug-${provider.id}`} value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} className="rounded-sm font-mono text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-provider-endpoint-${provider.id}`} className="text-xs font-mono text-muted-foreground">API Endpoint (optional)</Label>
+            <Input id={`edit-provider-endpoint-${provider.id}`} value={apiEndpoint} onChange={(e) => setApiEndpoint(e.target.value)} className="rounded-sm font-mono text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost" className="rounded-sm font-mono text-xs">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleSubmit} disabled={updateProvider.isPending} className="rounded-sm font-mono text-xs">
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -154,15 +226,18 @@ export default function AdminDataProviders() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
-                        onClick={() => handleDelete(p.id)}
-                        aria-label={`Delete ${p.name}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <EditDataProviderDialog provider={p} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                          onClick={() => handleDelete(p.id)}
+                          aria-label={`Delete ${p.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))

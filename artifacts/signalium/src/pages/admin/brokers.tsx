@@ -6,7 +6,7 @@ import {
   useDeleteBroker,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Plus, Trash2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,6 +73,78 @@ function AddBrokerDialog() {
           </DialogClose>
           <Button onClick={handleSubmit} disabled={createBroker.isPending} className="rounded-sm font-mono text-xs">
             Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditBrokerDialog({ broker }: { broker: { id: number; name: string; slug: string; website?: string | null } }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(broker.name);
+  const [slug, setSlug] = useState(broker.slug);
+  const [website, setWebsite] = useState(broker.website ?? "");
+  const updateBroker = useUpdateBroker();
+
+  async function handleSubmit() {
+    if (!name || !slug) return;
+    try {
+      await updateBroker.mutateAsync({ id: broker.id, data: { name, slug, website: website || undefined } });
+      toast({ title: "Broker updated" });
+      setOpen(false);
+    } catch (err: any) {
+      toast({ title: "Failed to update broker", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setName(broker.name);
+          setSlug(broker.slug);
+          setWebsite(broker.website ?? "");
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 rounded-sm"
+          aria-label={`Edit ${broker.name}`}
+        >
+          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-sm">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-base">Edit Broker</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-broker-name-${broker.id}`} className="text-xs font-mono text-muted-foreground">Name</Label>
+            <Input id={`edit-broker-name-${broker.id}`} value={name} onChange={(e) => setName(e.target.value)} className="rounded-sm font-mono text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-broker-slug-${broker.id}`} className="text-xs font-mono text-muted-foreground">Slug</Label>
+            <Input id={`edit-broker-slug-${broker.id}`} value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} className="rounded-sm font-mono text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`edit-broker-website-${broker.id}`} className="text-xs font-mono text-muted-foreground">Website (optional)</Label>
+            <Input id={`edit-broker-website-${broker.id}`} value={website} onChange={(e) => setWebsite(e.target.value)} className="rounded-sm font-mono text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost" className="rounded-sm font-mono text-xs">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleSubmit} disabled={updateBroker.isPending} className="rounded-sm font-mono text-xs">
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -167,15 +239,18 @@ export default function AdminBrokers() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
-                        onClick={() => handleDelete(b.id)}
-                        aria-label={`Delete ${b.name}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <EditBrokerDialog broker={b} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                          onClick={() => handleDelete(b.id)}
+                          aria-label={`Delete ${b.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
