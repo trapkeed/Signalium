@@ -516,6 +516,429 @@ export const UpdateUserResponse = zod.object({
 
 
 /**
+ * @summary List payment providers
+ */
+export const ListPaymentProvidersResponseItem = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "name": zod.string(),
+  "isActive": zod.boolean(),
+  "config": zod.record(zod.string(), zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListPaymentProvidersResponse = zod.array(ListPaymentProvidersResponseItem)
+
+
+/**
+ * @summary Create a payment provider (admin)
+ */
+export const CreatePaymentProviderBody = zod.object({
+  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "name": zod.string(),
+  "isActive": zod.boolean().optional(),
+  "config": zod.record(zod.string(), zod.string()).optional()
+})
+
+export const CreatePaymentProviderResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "name": zod.string(),
+  "isActive": zod.boolean(),
+  "config": zod.record(zod.string(), zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get a payment provider
+ */
+export const GetPaymentProviderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetPaymentProviderResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "name": zod.string(),
+  "isActive": zod.boolean(),
+  "config": zod.record(zod.string(), zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a payment provider (admin)
+ */
+export const UpdatePaymentProviderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdatePaymentProviderBody = zod.object({
+  "name": zod.string().optional(),
+  "isActive": zod.boolean().optional(),
+  "config": zod.record(zod.string(), zod.string()).optional()
+})
+
+export const UpdatePaymentProviderResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "name": zod.string(),
+  "isActive": zod.boolean(),
+  "config": zod.record(zod.string(), zod.string()),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a payment provider (admin)
+ */
+export const DeletePaymentProviderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeletePaymentProviderResponse = zod.void()
+
+
+/**
+ * @summary List current user's payments
+ */
+export const ListMyPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListMyPaymentsResponse = zod.array(ListMyPaymentsResponseItem)
+
+
+/**
+ * @summary List all payments (admin)
+ */
+export const ListAllPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListAllPaymentsResponse = zod.array(ListAllPaymentsResponseItem)
+
+
+/**
+ * @summary Create a payment intent
+ */
+export const CreatePaymentIntentBody = zod.object({
+  "planId": zod.number(),
+  "providerId": zod.number()
+})
+
+export const CreatePaymentIntentResponse = zod.object({
+  "payment": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+}),
+  "provider": zod.object({
+  "type": zod.string().optional(),
+  "name": zod.string().optional(),
+  "instructions": zod.record(zod.string(), zod.string()).optional()
+})
+})
+
+
+/**
+ * @summary Submit transaction hash / proof
+ */
+export const SubmitPaymentProofParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SubmitPaymentProofBody = zod.object({
+  "txHash": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const SubmitPaymentProofResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Confirm payment and activate subscription (admin)
+ */
+export const ConfirmPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ConfirmPaymentResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Reject a payment (admin)
+ */
+export const RejectPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RejectPaymentBody = zod.object({
+  "notes": zod.string().optional()
+})
+
+export const RejectPaymentResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "reference": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Get active SMTP settings (admin)
+ */
+export const GetSmtpSettingsResponse = zod.object({
+  "id": zod.number(),
+  "host": zod.string(),
+  "port": zod.number(),
+  "username": zod.string(),
+  "password": zod.string().optional(),
+  "fromEmail": zod.string(),
+  "fromName": zod.string(),
+  "useTls": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Create SMTP configuration (admin)
+ */
+export const CreateSmtpSettingsBody = zod.object({
+  "host": zod.string(),
+  "port": zod.number().optional(),
+  "username": zod.string(),
+  "password": zod.string(),
+  "fromEmail": zod.string(),
+  "fromName": zod.string().optional(),
+  "useTls": zod.boolean().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateSmtpSettingsResponse = zod.object({
+  "id": zod.number(),
+  "host": zod.string(),
+  "port": zod.number(),
+  "username": zod.string(),
+  "password": zod.string().optional(),
+  "fromEmail": zod.string(),
+  "fromName": zod.string(),
+  "useTls": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary List all SMTP configurations (admin)
+ */
+export const ListSmtpSettingsResponseItem = zod.object({
+  "id": zod.number(),
+  "host": zod.string(),
+  "port": zod.number(),
+  "username": zod.string(),
+  "password": zod.string().optional(),
+  "fromEmail": zod.string(),
+  "fromName": zod.string(),
+  "useTls": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const ListSmtpSettingsResponse = zod.array(ListSmtpSettingsResponseItem)
+
+
+/**
+ * @summary Test active SMTP configuration (admin)
+ */
+export const TestSmtpBody = zod.object({
+  "to": zod.string()
+})
+
+export const TestSmtpResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Update SMTP configuration (admin)
+ */
+export const UpdateSmtpSettingsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSmtpSettingsBody = zod.object({
+  "host": zod.string().optional(),
+  "port": zod.number().optional(),
+  "username": zod.string().optional(),
+  "password": zod.string().optional(),
+  "fromEmail": zod.string().optional(),
+  "fromName": zod.string().optional(),
+  "useTls": zod.boolean().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateSmtpSettingsResponse = zod.object({
+  "id": zod.number(),
+  "host": zod.string(),
+  "port": zod.number(),
+  "username": zod.string(),
+  "password": zod.string().optional(),
+  "fromEmail": zod.string(),
+  "fromName": zod.string(),
+  "useTls": zod.boolean(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete SMTP configuration (admin)
+ */
+export const DeleteSmtpSettingsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSmtpSettingsResponse = zod.void()
+
+
+/**
+ * @summary List current user's API keys
+ */
+export const ListApiKeysResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "keyPrefix": zod.string(),
+  "isActive": zod.boolean(),
+  "lastUsedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListApiKeysResponse = zod.array(ListApiKeysResponseItem)
+
+
+/**
+ * @summary Create a new API key
+ */
+export const CreateApiKeyBody = zod.object({
+  "name": zod.string()
+})
+
+export const CreateApiKeyResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "key": zod.string(),
+  "keyPrefix": zod.string(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "warning": zod.string()
+})
+
+
+/**
+ * @summary Revoke an API key
+ */
+export const RevokeApiKeyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RevokeApiKeyResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Verify an API key (used by EA runtime)
+ */
+export const VerifyApiKeyBody = zod.object({
+  "key": zod.string().optional()
+})
+
+export const VerifyApiKeyResponse = zod.object({
+  "ok": zod.boolean(),
+  "userId": zod.string(),
+  "keyId": zod.number().optional()
+})
+
+
+/**
  * @summary Get platform overview stats (admin)
  */
 export const GetStatsOverviewResponse = zod.object({

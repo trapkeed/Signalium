@@ -334,3 +334,192 @@ export interface RuntimeSummary {
   lastActivity?: string | null;
 }
 
+export type PaymentProviderType = typeof PaymentProviderType[keyof typeof PaymentProviderType];
+
+
+export const PaymentProviderType = {
+  usdt: 'usdt',
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+} as const;
+
+export type PaymentProviderConfig = {[key: string]: string};
+
+export interface PaymentProvider {
+  id: number;
+  type: PaymentProviderType;
+  name: string;
+  isActive: boolean;
+  config: PaymentProviderConfig;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type PaymentProviderInputType = typeof PaymentProviderInputType[keyof typeof PaymentProviderInputType];
+
+
+export const PaymentProviderInputType = {
+  usdt: 'usdt',
+  card: 'card',
+  bank_transfer: 'bank_transfer',
+} as const;
+
+export type PaymentProviderInputConfig = {[key: string]: string};
+
+export interface PaymentProviderInput {
+  type: PaymentProviderInputType;
+  name: string;
+  isActive?: boolean;
+  config?: PaymentProviderInputConfig;
+}
+
+export type PaymentProviderUpdateConfig = {[key: string]: string};
+
+export interface PaymentProviderUpdate {
+  name?: string;
+  isActive?: boolean;
+  config?: PaymentProviderUpdateConfig;
+}
+
+export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
+
+
+export const PaymentStatus = {
+  pending: 'pending',
+  submitted: 'submitted',
+  confirmed: 'confirmed',
+  failed: 'failed',
+  refunded: 'refunded',
+} as const;
+
+export interface Payment {
+  id: number;
+  userId: string;
+  /** @nullable */
+  subscriptionId?: number | null;
+  providerId: number;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  txHash?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  confirmedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface PaymentIntentInput {
+  planId: number;
+  providerId: number;
+}
+
+export type PaymentIntentResultProviderInstructions = {[key: string]: string};
+
+export type PaymentIntentResultProvider = {
+  type?: string;
+  name?: string;
+  instructions?: PaymentIntentResultProviderInstructions;
+};
+
+export interface PaymentIntentResult {
+  payment: Payment;
+  provider: PaymentIntentResultProvider;
+}
+
+export interface PaymentProofInput {
+  txHash?: string;
+  notes?: string;
+}
+
+export interface SmtpSettings {
+  id: number;
+  host: string;
+  port: number;
+  username: string;
+  password?: string;
+  fromEmail: string;
+  fromName: string;
+  useTls: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SmtpSettingsInput {
+  host: string;
+  port?: number;
+  username: string;
+  password: string;
+  fromEmail: string;
+  fromName?: string;
+  useTls?: boolean;
+  isActive?: boolean;
+}
+
+export interface SmtpSettingsUpdate {
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  fromEmail?: string;
+  fromName?: string;
+  useTls?: boolean;
+  isActive?: boolean;
+}
+
+export interface ApiKey {
+  id: number;
+  name: string;
+  keyPrefix: string;
+  isActive: boolean;
+  /** @nullable */
+  lastUsedAt?: string | null;
+  createdAt: string;
+}
+
+export interface ApiKeyCreated {
+  id: number;
+  name: string;
+  key: string;
+  keyPrefix: string;
+  isActive: boolean;
+  createdAt: string;
+  warning: string;
+}
+
+export type RejectPaymentBody = {
+  notes?: string;
+};
+
+export type TestSmtpBody = {
+  to: string;
+};
+
+export type TestSmtp200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type CreateApiKeyBody = {
+  name: string;
+};
+
+export type RevokeApiKey200 = {
+  ok?: boolean;
+};
+
+export type VerifyApiKeyBody = {
+  key?: string;
+};
+
+export type VerifyApiKey200 = {
+  ok: boolean;
+  userId: string;
+  keyId?: number;
+};
+

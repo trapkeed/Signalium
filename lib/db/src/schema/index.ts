@@ -4,3 +4,6 @@ export * from "./eas";
 export * from "./telemetry";
 export * from "./users";
 export * from "./runtime";
+export * from "./payments";
+export * from "./smtp";
+export * from "./api-keys";

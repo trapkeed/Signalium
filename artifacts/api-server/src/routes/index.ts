@@ -6,6 +6,9 @@ import easRouter from "./eas";
 import runtimeRouter from "./runtime";
 import usersRouter from "./users";
 import statsRouter from "./stats";
+import paymentsRouter from "./payments";
+import smtpRouter from "./smtp";
+import apiKeysRouter from "./api-keys";
 
 const router: IRouter = Router();
 
@@ -16,5 +19,8 @@ router.use("/eas", easRouter);
 router.use("/runtime", runtimeRouter);
 router.use("/users", usersRouter);
 router.use("/stats", statsRouter);
+router.use("/payments", paymentsRouter);
+router.use("/smtp", smtpRouter);
+router.use("/api-keys", apiKeysRouter);
 
 export default router;

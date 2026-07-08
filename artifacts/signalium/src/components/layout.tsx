@@ -9,6 +9,9 @@ import {
   Shield,
   Users,
   Database,
+  Key,
+  Wallet,
+  Mail,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -18,6 +21,8 @@ const NAV_ITEMS = [
   { href: "/ea", label: "EA Library", icon: Box },
   { href: "/runtime", label: "Runtime", icon: Activity },
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { href: "/payments", label: "Payments", icon: Wallet },
+  { href: "/api-keys", label: "API Keys", icon: Key },
 ];
 
 const ADMIN_ITEMS = [
@@ -25,6 +30,8 @@ const ADMIN_ITEMS = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/admin/eas", label: "EAs", icon: Database },
+  { href: "/admin/payments", label: "Payments", icon: Wallet },
+  { href: "/admin/smtp", label: "SMTP", icon: Mail },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
