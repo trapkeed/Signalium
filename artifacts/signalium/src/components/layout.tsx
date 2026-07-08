@@ -14,6 +14,7 @@ import {
   Mail,
   Cpu,
   Coins,
+  Radio,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ const ADMIN_ITEMS = [
   { href: "/admin/api-keys", label: "API Keys", icon: Key },
   { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
   { href: "/admin/symbols", label: "Symbols", icon: Coins },
+  { href: "/admin/qde", label: "QDE Loop", icon: Radio },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {

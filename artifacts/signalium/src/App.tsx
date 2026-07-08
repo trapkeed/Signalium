@@ -27,6 +27,7 @@ import ApiKeys from "@/pages/api-keys";
 import EaBuilds from "@/pages/ea-builds";
 import AdminEaBuilds from "@/pages/admin/ea-builds";
 import AdminSymbols from "@/pages/admin/symbols";
+import AdminQde from "@/pages/admin/qde";
 
 import { AppLayout } from "@/components/layout";
 
@@ -189,6 +190,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
             <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
             <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
+            <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
 
             <Route component={NotFound} />
           </Switch>

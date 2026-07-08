@@ -729,6 +729,140 @@ export interface SymbolNormalizationLogEntry {
   createdAt: string;
 }
 
+export interface PositionTelemetryInput {
+  symbol?: string;
+  balance: number;
+  equity: number;
+  margin: number;
+  freeMargin: number;
+  openPositions: number;
+  floatingPnl: number;
+  entryPrice?: number;
+  currentPrice?: number;
+  spread?: number;
+  swap?: number;
+  commission?: number;
+  drawdown?: number;
+  tradeAgeSeconds?: number;
+}
+
+export interface PositionTelemetry {
+  id: number;
+  userId: string;
+  apiKeyId: number;
+  eaRegistrationId: number;
+  /** @nullable */
+  symbol?: string | null;
+  balance: number;
+  equity: number;
+  margin: number;
+  freeMargin: number;
+  openPositions: number;
+  floatingPnl: number;
+  /** @nullable */
+  entryPrice?: number | null;
+  /** @nullable */
+  currentPrice?: number | null;
+  /** @nullable */
+  spread?: number | null;
+  /** @nullable */
+  swap?: number | null;
+  /** @nullable */
+  commission?: number | null;
+  /** @nullable */
+  drawdown?: number | null;
+  /** @nullable */
+  tradeAgeSeconds?: number | null;
+  receivedAt: string;
+}
+
+export type TrainerActionAction = typeof TrainerActionAction[keyof typeof TrainerActionAction];
+
+
+export const TrainerActionAction = {
+  HOLD: 'HOLD',
+  ADD: 'ADD',
+  REDUCE: 'REDUCE',
+  TRAIL: 'TRAIL',
+  BREAKEVEN: 'BREAKEVEN',
+  LOCK_PROFIT: 'LOCK_PROFIT',
+  CLOSE: 'CLOSE',
+} as const;
+
+export type TrainerActionStatus = typeof TrainerActionStatus[keyof typeof TrainerActionStatus];
+
+
+export const TrainerActionStatus = {
+  queued: 'queued',
+  delivered: 'delivered',
+  acknowledged: 'acknowledged',
+  failed: 'failed',
+} as const;
+
+export interface TrainerAction {
+  id: number;
+  userId: string;
+  apiKeyId: number;
+  eaRegistrationId: number;
+  telemetryId: number;
+  /** @nullable */
+  symbol?: string | null;
+  action: TrainerActionAction;
+  /** @nullable */
+  reasoning?: string | null;
+  status: TrainerActionStatus;
+  retryCount: number;
+  createdAt: string;
+  /** @nullable */
+  deliveredAt?: string | null;
+  /** @nullable */
+  acknowledgedAt?: string | null;
+}
+
+export type EaConnectionTransport = typeof EaConnectionTransport[keyof typeof EaConnectionTransport];
+
+
+export const EaConnectionTransport = {
+  websocket: 'websocket',
+  http_poll: 'http_poll',
+} as const;
+
+export type EaConnectionStatus = typeof EaConnectionStatus[keyof typeof EaConnectionStatus];
+
+
+export const EaConnectionStatus = {
+  connected: 'connected',
+  disconnected: 'disconnected',
+} as const;
+
+export interface EaConnection {
+  id: number;
+  userId: string;
+  apiKeyId: number;
+  eaRegistrationId: number;
+  connectionId: string;
+  transport: EaConnectionTransport;
+  status: EaConnectionStatus;
+  connectedAt: string;
+  /** @nullable */
+  disconnectedAt?: string | null;
+  /** @nullable */
+  lastMessageAt?: string | null;
+  messageCount: number;
+  isLive?: boolean;
+}
+
+export type QdeStatsOverviewActionBreakdownLast5Min = {[key: string]: number};
+
+export interface QdeStatsOverview {
+  liveConnections: number;
+  registeredTerminals: number;
+  telemetryLast5Min: number;
+  actionBreakdownLast5Min: QdeStatsOverviewActionBreakdownLast5Min;
+  queueDepth: number;
+  actionsWithRetries: number;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -821,5 +955,14 @@ export type UpdateSymbolBody = {
 export type CreateSymbolAliasBody = {
   alias: string;
   canonicalSymbol: string;
+};
+
+export type SubmitEaTelemetry201 = {
+  telemetryId: number;
+  action: TrainerAction;
+};
+
+export type RedeliverAction200 = {
+  delivered: boolean;
 };
 

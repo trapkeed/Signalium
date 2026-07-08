@@ -34,6 +34,8 @@ tags:
     description: Per-user EA build generation, download, and audit operations
   - name: symbols
     description: Universal symbol normalization, canonical registry, and alias management
+  - name: qde
+    description: EA <-> Platform <-> Trainer (QDE) telemetry and action loop, plus observability
 paths:
   /healthz:
     get:
@@ -1421,6 +1423,185 @@ paths:
               schema:
                 $ref: "#/components/schemas/SymbolAlias"
 
+  /qde/telemetry:
+    post:
+      operationId: submitEaTelemetry
+      tags: [qde]
+      summary: EA -> Platform telemetry ingest (HTTP fallback for the WebSocket channel)
+      description: Authenticated via x-api-key / x-hardware-id headers, not a Clerk session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PositionTelemetryInput"
+      responses:
+        "201":
+          description: Telemetry recorded and a trainer action produced
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [telemetryId, action]
+                properties:
+                  telemetryId:
+                    type: integer
+                  action:
+                    $ref: "#/components/schemas/TrainerAction"
+        "202":
+          description: Telemetry recorded but the trainer was unavailable
+        "400":
+          description: Invalid telemetry payload
+        "401":
+          description: Unauthorized
+    get:
+      operationId: listOwnTelemetry
+      tags: [qde]
+      summary: List the current user's recent position telemetry
+      responses:
+        "200":
+          description: Telemetry frames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PositionTelemetry"
+
+  /qde/actions/pending:
+    get:
+      operationId: getPendingActions
+      tags: [qde]
+      summary: Poll fallback for queued trainer actions (offline handling)
+      description: Authenticated via x-api-key / x-hardware-id headers.
+      responses:
+        "200":
+          description: Queued actions, now marked delivered
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainerAction"
+
+  /qde/actions/{id}/ack:
+    post:
+      operationId: acknowledgeAction
+      tags: [qde]
+      summary: EA acknowledges it applied an action
+      description: Authenticated via x-api-key / x-hardware-id headers.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainerAction"
+        "404":
+          description: Not found
+
+  /qde/actions:
+    get:
+      operationId: listOwnActions
+      tags: [qde]
+      summary: List the current user's recent trainer actions
+      responses:
+        "200":
+          description: Trainer actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainerAction"
+
+  /qde/admin/connections:
+    get:
+      operationId: listEaConnections
+      tags: [qde]
+      summary: EA WebSocket connection lifecycle log (admin)
+      responses:
+        "200":
+          description: Connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaConnection"
+
+  /qde/admin/telemetry:
+    get:
+      operationId: listAllTelemetry
+      tags: [qde]
+      summary: All users' recent position telemetry (admin)
+      responses:
+        "200":
+          description: Telemetry frames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PositionTelemetry"
+
+  /qde/admin/actions:
+    get:
+      operationId: listAllActions
+      tags: [qde]
+      summary: All users' recent trainer actions (admin)
+      responses:
+        "200":
+          description: Trainer actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainerAction"
+
+  /qde/admin/stats/overview:
+    get:
+      operationId: getQdeStatsOverview
+      tags: [qde]
+      summary: QDE loop observability dashboard stats (admin)
+      responses:
+        "200":
+          description: Overview stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QdeStatsOverview"
+
+  /qde/admin/actions/{id}/redeliver:
+    post:
+      operationId: redeliverAction
+      tags: [qde]
+      summary: Force a redelivery attempt for a queued action (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Redelivery attempted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [delivered]
+                properties:
+                  delivered:
+                    type: boolean
+
   /stats/overview:
     get:
       operationId: getStatsOverview
@@ -2301,3 +2482,162 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+
+    PositionTelemetryInput:
+      type: object
+      required: [balance, equity, margin, freeMargin, openPositions, floatingPnl]
+      properties:
+        symbol:
+          type: string
+        balance:
+          type: number
+        equity:
+          type: number
+        margin:
+          type: number
+        freeMargin:
+          type: number
+        openPositions:
+          type: integer
+        floatingPnl:
+          type: number
+        entryPrice:
+          type: number
+        currentPrice:
+          type: number
+        spread:
+          type: number
+        swap:
+          type: number
+        commission:
+          type: number
+        drawdown:
+          type: number
+        tradeAgeSeconds:
+          type: integer
+
+    PositionTelemetry:
+      type: object
+      required: [id, userId, apiKeyId, eaRegistrationId, balance, equity, margin, freeMargin, openPositions, floatingPnl, receivedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        apiKeyId:
+          type: integer
+        eaRegistrationId:
+          type: integer
+        symbol:
+          type: ["string", "null"]
+        balance:
+          type: number
+        equity:
+          type: number
+        margin:
+          type: number
+        freeMargin:
+          type: number
+        openPositions:
+          type: integer
+        floatingPnl:
+          type: number
+        entryPrice:
+          type: ["number", "null"]
+        currentPrice:
+          type: ["number", "null"]
+        spread:
+          type: ["number", "null"]
+        swap:
+          type: ["number", "null"]
+        commission:
+          type: ["number", "null"]
+        drawdown:
+          type: ["number", "null"]
+        tradeAgeSeconds:
+          type: ["integer", "null"]
+        receivedAt:
+          type: string
+
+    TrainerAction:
+      type: object
+      required: [id, userId, apiKeyId, eaRegistrationId, telemetryId, action, status, retryCount, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        apiKeyId:
+          type: integer
+        eaRegistrationId:
+          type: integer
+        telemetryId:
+          type: integer
+        symbol:
+          type: ["string", "null"]
+        action:
+          type: string
+          enum: [HOLD, ADD, REDUCE, TRAIL, BREAKEVEN, LOCK_PROFIT, CLOSE]
+        reasoning:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [queued, delivered, acknowledged, failed]
+        retryCount:
+          type: integer
+        createdAt:
+          type: string
+        deliveredAt:
+          type: ["string", "null"]
+        acknowledgedAt:
+          type: ["string", "null"]
+
+    EaConnection:
+      type: object
+      required: [id, userId, apiKeyId, eaRegistrationId, connectionId, transport, status, connectedAt, messageCount]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        apiKeyId:
+          type: integer
+        eaRegistrationId:
+          type: integer
+        connectionId:
+          type: string
+        transport:
+          type: string
+          enum: [websocket, http_poll]
+        status:
+          type: string
+          enum: [connected, disconnected]
+        connectedAt:
+          type: string
+        disconnectedAt:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: ["string", "null"]
+        messageCount:
+          type: integer
+        isLive:
+          type: boolean
+
+    QdeStatsOverview:
+      type: object
+      required: [liveConnections, registeredTerminals, telemetryLast5Min, actionBreakdownLast5Min, queueDepth, actionsWithRetries]
+      properties:
+        liveConnections:
+          type: integer
+        registeredTerminals:
+          type: integer
+        telemetryLast5Min:
+          type: integer
+        actionBreakdownLast5Min:
+          type: object
+          additionalProperties:
+            type: integer
+        queueDepth:
+          type: integer
+        actionsWithRetries:
+          type: integer

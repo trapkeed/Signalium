@@ -1545,6 +1545,235 @@ export const DeleteSymbolAliasResponse = zod.object({
 
 
 /**
+ * Authenticated via x-api-key / x-hardware-id headers, not a Clerk session.
+ * @summary EA -> Platform telemetry ingest (HTTP fallback for the WebSocket channel)
+ */
+export const SubmitEaTelemetryBody = zod.object({
+  "symbol": zod.string().optional(),
+  "balance": zod.number(),
+  "equity": zod.number(),
+  "margin": zod.number(),
+  "freeMargin": zod.number(),
+  "openPositions": zod.number(),
+  "floatingPnl": zod.number(),
+  "entryPrice": zod.number().optional(),
+  "currentPrice": zod.number().optional(),
+  "spread": zod.number().optional(),
+  "swap": zod.number().optional(),
+  "commission": zod.number().optional(),
+  "drawdown": zod.number().optional(),
+  "tradeAgeSeconds": zod.number().optional()
+})
+
+export const SubmitEaTelemetryResponse = zod.object({
+  "telemetryId": zod.number(),
+  "action": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "telemetryId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "reasoning": zod.string().nullish(),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "retryCount": zod.number(),
+  "createdAt": zod.string(),
+  "deliveredAt": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish()
+})
+})
+
+
+/**
+ * @summary List the current user's recent position telemetry
+ */
+export const ListOwnTelemetryResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "balance": zod.number(),
+  "equity": zod.number(),
+  "margin": zod.number(),
+  "freeMargin": zod.number(),
+  "openPositions": zod.number(),
+  "floatingPnl": zod.number(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "spread": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "drawdown": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "receivedAt": zod.string()
+})
+export const ListOwnTelemetryResponse = zod.array(ListOwnTelemetryResponseItem)
+
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * @summary Poll fallback for queued trainer actions (offline handling)
+ */
+export const GetPendingActionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "telemetryId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "reasoning": zod.string().nullish(),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "retryCount": zod.number(),
+  "createdAt": zod.string(),
+  "deliveredAt": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish()
+})
+export const GetPendingActionsResponse = zod.array(GetPendingActionsResponseItem)
+
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * @summary EA acknowledges it applied an action
+ */
+export const AcknowledgeActionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AcknowledgeActionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "telemetryId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "reasoning": zod.string().nullish(),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "retryCount": zod.number(),
+  "createdAt": zod.string(),
+  "deliveredAt": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary List the current user's recent trainer actions
+ */
+export const ListOwnActionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "telemetryId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "reasoning": zod.string().nullish(),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "retryCount": zod.number(),
+  "createdAt": zod.string(),
+  "deliveredAt": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish()
+})
+export const ListOwnActionsResponse = zod.array(ListOwnActionsResponseItem)
+
+
+/**
+ * @summary EA WebSocket connection lifecycle log (admin)
+ */
+export const ListEaConnectionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "connectionId": zod.string(),
+  "transport": zod.enum(['websocket', 'http_poll']),
+  "status": zod.enum(['connected', 'disconnected']),
+  "connectedAt": zod.string(),
+  "disconnectedAt": zod.string().nullish(),
+  "lastMessageAt": zod.string().nullish(),
+  "messageCount": zod.number(),
+  "isLive": zod.boolean().optional()
+})
+export const ListEaConnectionsResponse = zod.array(ListEaConnectionsResponseItem)
+
+
+/**
+ * @summary All users' recent position telemetry (admin)
+ */
+export const ListAllTelemetryResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "balance": zod.number(),
+  "equity": zod.number(),
+  "margin": zod.number(),
+  "freeMargin": zod.number(),
+  "openPositions": zod.number(),
+  "floatingPnl": zod.number(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "spread": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "drawdown": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "receivedAt": zod.string()
+})
+export const ListAllTelemetryResponse = zod.array(ListAllTelemetryResponseItem)
+
+
+/**
+ * @summary All users' recent trainer actions (admin)
+ */
+export const ListAllActionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "telemetryId": zod.number(),
+  "symbol": zod.string().nullish(),
+  "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "reasoning": zod.string().nullish(),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "retryCount": zod.number(),
+  "createdAt": zod.string(),
+  "deliveredAt": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish()
+})
+export const ListAllActionsResponse = zod.array(ListAllActionsResponseItem)
+
+
+/**
+ * @summary QDE loop observability dashboard stats (admin)
+ */
+export const GetQdeStatsOverviewResponse = zod.object({
+  "liveConnections": zod.number(),
+  "registeredTerminals": zod.number(),
+  "telemetryLast5Min": zod.number(),
+  "actionBreakdownLast5Min": zod.record(zod.string(), zod.number()),
+  "queueDepth": zod.number(),
+  "actionsWithRetries": zod.number()
+})
+
+
+/**
+ * @summary Force a redelivery attempt for a queued action (admin)
+ */
+export const RedeliverActionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RedeliverActionResponse = zod.object({
+  "delivered": zod.boolean()
+})
+
+
+/**
  * @summary Get platform overview stats (admin)
  */
 export const GetStatsOverviewResponse = zod.object({

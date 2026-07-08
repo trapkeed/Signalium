@@ -72,6 +72,14 @@ For files generated server-side (not user-uploaded), write/read directly via `ob
 
 **Why:** used for EA build binaries (`eaBuilder.ts`) — the presigned-upload template assumes a browser-initiated PUT, which doesn't apply when the API server itself produces the file.
 
+## api-server dev script is build+start, not a watcher
+`pnpm --filter @workspace/api-server run dev` runs `build && start` once — it does NOT watch for file changes. Always call `restart_workflow` on "artifacts/api-server: API Server" after editing api-server source, before testing via curl/WS scripts, or you'll be testing stale code.
+
+## ws library: attach listeners before any await in "connection" handler
+`WebSocketServer` "connection" handlers that do async work (DB lookups, auth) before calling `ws.on("message", ...)` can silently drop the client's first frame if it arrives before the listener is attached — `EventEmitter.emit` with no listener just no-ops, frames aren't buffered. Fix: call `ws.pause()` as the very first line of the handler, do all async setup, attach all listeners, then `ws.resume()` at the end.
+
+**Why:** hit this in the QDE EA gateway (`eaGateway.ts`) — a test client sending telemetry immediately on `open` got no response; the server's own auth/DB-insert awaits ran before `ws.on("message")` was registered, dropping the frame.
+
 ## Symbol normalization approach
 Broker/EA symbol variants (e.g. `XAUUSD.a`, `XAUUSDm`, `GOLD`) are normalized via an in-memory Map cache (canonical symbols + aliases, lowercased keys) loaded from `symbols`/`symbol_aliases` tables, with iterative suffix-stripping (`.a`, `.pro`, `m`, `micro`, etc.) as a fallback before declaring a symbol unknown. Cache is invalidated on every admin write, not TTL-based.
 

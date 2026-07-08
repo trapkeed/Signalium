@@ -12,6 +12,7 @@ import apiKeysRouter from "./api-keys";
 import eaRegistrationsRouter from "./ea-registrations";
 import eaBuildsRouter from "./ea-builds";
 import symbolsRouter from "./symbols";
+import qdeRouter from "./qde";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use("/api-keys", apiKeysRouter);
 router.use("/ea-registrations", eaRegistrationsRouter);
 router.use("/ea-builds", eaBuildsRouter);
 router.use("/symbols", symbolsRouter);
+router.use("/qde", qdeRouter);
 
 export default router;
