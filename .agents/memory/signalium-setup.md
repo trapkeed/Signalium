@@ -94,3 +94,8 @@ Any middleware enforcing a security control (account lock, suspension, ban) that
 When reusing an existing full-page component (own header/title + outer `flex-1 overflow-y-auto` wrapper) inside a tabbed/consolidated page, add an `embedded?: boolean` prop to that component that suppresses its own page header and outer scroll/padding wrapper, rather than just nesting it as-is. Nesting as-is causes duplicate headers and nested scroll containers.
 
 **Why:** caught by architect review when consolidating Subscriptions/Payments/ApiKeys/EaBuilds into a single Account & Security page — each had its own `<h1>` + full-bleed wrapper meant for standalone routing.
+
+## One-off scripts using object storage: externalize @google-cloud/storage when bundling
+When esbuild-bundling a standalone script (e.g. a data migration) that imports `objectStorageClient`, bundling `@google-cloud/storage` causes `TypeError: Expected signal to be an instanceof AbortSignal` on upload — the bundle creates a duplicate `AbortSignal` realm that fails gaxios's `instanceof` check. Add `"@google-cloud/*"` to esbuild's `external` array (matching `build.mjs`'s existing list) and run the output with plain `node`.
+
+**Why:** api-server's own `build.mjs` already externalizes this for the same reason; ad-hoc bundling commands must mirror that externals list or hit the same bug.

@@ -17,6 +17,8 @@ import {
   Radio,
   Menu,
   X,
+  Search,
+  Image,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,8 @@ const ADMIN_ITEMS = [
   { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
   { href: "/admin/symbols", label: "Symbols", icon: Coins },
   { href: "/admin/qde", label: "QDE Loop", icon: Radio },
+  { href: "/admin/seo", label: "SEO", icon: Search },
+  { href: "/admin/media", label: "Media Library", icon: Image },
 ];
 
 function Logo() {

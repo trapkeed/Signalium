@@ -14,6 +14,9 @@ import eaBuildsRouter from "./ea-builds";
 import symbolsRouter from "./symbols";
 import qdeRouter from "./qde";
 import accountSecurityRouter from "./account-security";
+import storageRouter from "./storage";
+import seoRouter from "./seo";
+import mediaRouter from "./media";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -34,5 +37,8 @@ router.use("/ea-registrations", eaRegistrationsRouter);
 router.use("/ea-builds", eaBuildsRouter);
 router.use("/symbols", symbolsRouter);
 router.use("/qde", qdeRouter);
+router.use(storageRouter);
+router.use("/seo", seoRouter);
+router.use("/media", mediaRouter);
 
 export default router;

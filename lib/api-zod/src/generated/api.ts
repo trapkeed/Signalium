@@ -1909,3 +1909,412 @@ export const UnlockAccountResponse = zod.object({
 })
 
 
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+ * metadata here, then uploads the file directly to the returned URL.
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+}).optional()
+})
+
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicObjectResponse = zod.unknown()
+
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetStorageObjectResponse = zod.unknown()
+
+
+/**
+ * @summary List all page SEO configs (admin)
+ */
+export const ListSeoPagesResponseItem = zod.object({
+  "id": zod.number(),
+  "path": zod.string(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "canonicalUrl": zod.string().nullish(),
+  "ogTitle": zod.string().nullish(),
+  "ogDescription": zod.string().nullish(),
+  "ogImage": zod.string().nullish(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']),
+  "twitterTitle": zod.string().nullish(),
+  "twitterDescription": zod.string().nullish(),
+  "twitterImage": zod.string().nullish(),
+  "structuredData": zod.string().nullish().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})),
+  "noIndex": zod.boolean(),
+  "noFollow": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListSeoPagesResponse = zod.array(ListSeoPagesResponseItem)
+
+
+/**
+ * @summary Create a page SEO config (admin)
+ */
+export const CreateSeoPageBody = zod.object({
+  "path": zod.string(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "canonicalUrl": zod.string().optional(),
+  "ogTitle": zod.string().optional(),
+  "ogDescription": zod.string().optional(),
+  "ogImage": zod.string().optional(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']).optional(),
+  "twitterTitle": zod.string().optional(),
+  "twitterDescription": zod.string().optional(),
+  "twitterImage": zod.string().optional(),
+  "structuredData": zod.string().optional().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})).optional(),
+  "noIndex": zod.boolean().optional(),
+  "noFollow": zod.boolean().optional()
+})
+
+export const CreateSeoPageResponse = zod.object({
+  "id": zod.number(),
+  "path": zod.string(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "canonicalUrl": zod.string().nullish(),
+  "ogTitle": zod.string().nullish(),
+  "ogDescription": zod.string().nullish(),
+  "ogImage": zod.string().nullish(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']),
+  "twitterTitle": zod.string().nullish(),
+  "twitterDescription": zod.string().nullish(),
+  "twitterImage": zod.string().nullish(),
+  "structuredData": zod.string().nullish().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})),
+  "noIndex": zod.boolean(),
+  "noFollow": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Resolve SEO config for a route path (public)
+ */
+export const ResolveSeoPageQueryParams = zod.object({
+  "path": zod.coerce.string()
+})
+
+export const ResolveSeoPageResponse = zod.union([zod.object({
+  "id": zod.number(),
+  "path": zod.string(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "canonicalUrl": zod.string().nullish(),
+  "ogTitle": zod.string().nullish(),
+  "ogDescription": zod.string().nullish(),
+  "ogImage": zod.string().nullish(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']),
+  "twitterTitle": zod.string().nullish(),
+  "twitterDescription": zod.string().nullish(),
+  "twitterImage": zod.string().nullish(),
+  "structuredData": zod.string().nullish().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})),
+  "noIndex": zod.boolean(),
+  "noFollow": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),zod.null()])
+
+
+/**
+ * @summary Update a page SEO config (admin)
+ */
+export const UpdateSeoPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSeoPageBody = zod.object({
+  "path": zod.string().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "canonicalUrl": zod.string().optional(),
+  "ogTitle": zod.string().optional(),
+  "ogDescription": zod.string().optional(),
+  "ogImage": zod.string().optional(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']).optional(),
+  "twitterTitle": zod.string().optional(),
+  "twitterDescription": zod.string().optional(),
+  "twitterImage": zod.string().optional(),
+  "structuredData": zod.string().optional().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})).optional(),
+  "noIndex": zod.boolean().optional(),
+  "noFollow": zod.boolean().optional()
+})
+
+export const UpdateSeoPageResponse = zod.object({
+  "id": zod.number(),
+  "path": zod.string(),
+  "title": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "canonicalUrl": zod.string().nullish(),
+  "ogTitle": zod.string().nullish(),
+  "ogDescription": zod.string().nullish(),
+  "ogImage": zod.string().nullish(),
+  "twitterCard": zod.enum(['summary', 'summary_large_image']),
+  "twitterTitle": zod.string().nullish(),
+  "twitterDescription": zod.string().nullish(),
+  "twitterImage": zod.string().nullish(),
+  "structuredData": zod.string().nullish().describe('JSON-LD structured data, stored\/transmitted as a raw JSON string.'),
+  "hreflang": zod.array(zod.object({
+  "lang": zod.string(),
+  "url": zod.string()
+})),
+  "noIndex": zod.boolean(),
+  "noFollow": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a page SEO config (admin)
+ */
+export const DeleteSeoPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSeoPageResponse = zod.void()
+
+
+/**
+ * @summary List all redirects (admin)
+ */
+export const ListSeoRedirectsResponseItem = zod.object({
+  "id": zod.number(),
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "statusCode": zod.number(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListSeoRedirectsResponse = zod.array(ListSeoRedirectsResponseItem)
+
+
+/**
+ * @summary Create a redirect (admin)
+ */
+export const CreateSeoRedirectBody = zod.object({
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "statusCode": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateSeoRedirectResponse = zod.object({
+  "id": zod.number(),
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "statusCode": zod.number(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List active redirects (public)
+ */
+export const ListActiveSeoRedirectsResponseItem = zod.object({
+  "id": zod.number(),
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "statusCode": zod.number(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListActiveSeoRedirectsResponse = zod.array(ListActiveSeoRedirectsResponseItem)
+
+
+/**
+ * @summary Update a redirect (admin)
+ */
+export const UpdateSeoRedirectParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSeoRedirectBody = zod.object({
+  "fromPath": zod.string().optional(),
+  "toPath": zod.string().optional(),
+  "statusCode": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateSeoRedirectResponse = zod.object({
+  "id": zod.number(),
+  "fromPath": zod.string(),
+  "toPath": zod.string(),
+  "statusCode": zod.number(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a redirect (admin)
+ */
+export const DeleteSeoRedirectParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSeoRedirectResponse = zod.void()
+
+
+/**
+ * @summary Get site-wide SEO settings (admin)
+ */
+export const GetSeoSettingsResponse = zod.object({
+  "id": zod.number(),
+  "robotsTxt": zod.string(),
+  "sitemapEnabled": zod.boolean(),
+  "siteUrl": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update site-wide SEO settings (admin)
+ */
+export const UpdateSeoSettingsBody = zod.object({
+  "robotsTxt": zod.string().optional(),
+  "sitemapEnabled": zod.boolean().optional(),
+  "siteUrl": zod.string().optional()
+})
+
+export const UpdateSeoSettingsResponse = zod.object({
+  "id": zod.number(),
+  "robotsTxt": zod.string(),
+  "sitemapEnabled": zod.boolean(),
+  "siteUrl": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Serve the admin-edited robots.txt (public)
+ */
+export const GetRobotsTxtResponse = zod.string()
+
+
+/**
+ * @summary Generate sitemap.xml from indexable pages (public)
+ */
+export const GetSitemapXmlResponse = zod.unknown()
+
+
+/**
+ * @summary List media assets (admin)
+ */
+export const ListMediaAssetsQueryParams = zod.object({
+  "category": zod.enum(['favicon', 'logo', 'hero', 'social', 'marketing', 'other']).optional()
+})
+
+export const ListMediaAssetsResponseItem = zod.object({
+  "id": zod.number(),
+  "objectPath": zod.string(),
+  "fileName": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number(),
+  "category": zod.enum(['favicon', 'logo', 'hero', 'social', 'marketing', 'other']),
+  "altText": zod.string().nullish(),
+  "uploadedBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListMediaAssetsResponse = zod.array(ListMediaAssetsResponseItem)
+
+
+/**
+ * @summary Register a media asset after upload (admin)
+ */
+export const CreateMediaAssetBody = zod.object({
+  "objectPath": zod.string(),
+  "fileName": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().optional(),
+  "category": zod.enum(['favicon', 'logo', 'hero', 'social', 'marketing', 'other']).optional(),
+  "altText": zod.string().optional()
+})
+
+export const CreateMediaAssetResponse = zod.object({
+  "id": zod.number(),
+  "objectPath": zod.string(),
+  "fileName": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number(),
+  "category": zod.enum(['favicon', 'logo', 'hero', 'social', 'marketing', 'other']),
+  "altText": zod.string().nullish(),
+  "uploadedBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a media asset (admin)
+ */
+export const DeleteMediaAssetParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMediaAssetResponse = zod.void()
+
+

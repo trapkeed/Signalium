@@ -38,6 +38,12 @@ tags:
     description: EA <-> Platform <-> Trainer (QDE) telemetry and action loop, plus observability
   - name: account
     description: Account security — login history, active sessions, suspicious-login detection, account lock
+  - name: storage
+    description: Object storage upload and serving endpoints.
+  - name: seo
+    description: Per-page SEO metadata, redirects, robots.txt/sitemap.xml site settings.
+  - name: media
+    description: Media library asset management, backed by object storage.
 paths:
   /healthz:
     get:
@@ -1761,6 +1767,378 @@ paths:
                   ok:
                     type: boolean
 
+  /storage/uploads/request-url:
+    post:
+      tags: [storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      description: |
+        Returns a presigned GCS URL for direct upload. The client sends JSON
+        metadata here, then uploads the file directly to the returned URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "500":
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /seo/pages:
+    get:
+      tags: [seo]
+      operationId: listSeoPages
+      summary: List all page SEO configs (admin)
+      responses:
+        "200":
+          description: SEO pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeoPage"
+    post:
+      tags: [seo]
+      operationId: createSeoPage
+      summary: Create a page SEO config (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeoPageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoPage"
+
+  /seo/pages/resolve:
+    get:
+      tags: [seo]
+      operationId: resolveSeoPage
+      summary: Resolve SEO config for a route path (public)
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SEO page config, or null if none configured for this path.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SeoPage"
+                  - type: "null"
+
+  /seo/pages/{id}:
+    patch:
+      tags: [seo]
+      operationId: updateSeoPage
+      summary: Update a page SEO config (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeoPageUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoPage"
+    delete:
+      tags: [seo]
+      operationId: deleteSeoPage
+      summary: Delete a page SEO config (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /seo/redirects:
+    get:
+      tags: [seo]
+      operationId: listSeoRedirects
+      summary: List all redirects (admin)
+      responses:
+        "200":
+          description: SEO redirects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeoRedirect"
+    post:
+      tags: [seo]
+      operationId: createSeoRedirect
+      summary: Create a redirect (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeoRedirectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoRedirect"
+
+  /seo/redirects/active:
+    get:
+      tags: [seo]
+      operationId: listActiveSeoRedirects
+      summary: List active redirects (public)
+      responses:
+        "200":
+          description: Active SEO redirects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SeoRedirect"
+
+  /seo/redirects/{id}:
+    patch:
+      tags: [seo]
+      operationId: updateSeoRedirect
+      summary: Update a redirect (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeoRedirectUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoRedirect"
+    delete:
+      tags: [seo]
+      operationId: deleteSeoRedirect
+      summary: Delete a redirect (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /seo/settings:
+    get:
+      tags: [seo]
+      operationId: getSeoSettings
+      summary: Get site-wide SEO settings (admin)
+      responses:
+        "200":
+          description: SEO settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoSettings"
+    patch:
+      tags: [seo]
+      operationId: updateSeoSettings
+      summary: Update site-wide SEO settings (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SeoSettingsInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeoSettings"
+
+  /seo/robots.txt:
+    get:
+      tags: [seo]
+      operationId: getRobotsTxt
+      summary: Serve the admin-edited robots.txt (public)
+      responses:
+        "200":
+          description: robots.txt content
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /seo/sitemap.xml:
+    get:
+      tags: [seo]
+      operationId: getSitemapXml
+      summary: Generate sitemap.xml from indexable pages (public)
+      responses:
+        "200":
+          description: sitemap.xml content
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /media:
+    get:
+      tags: [media]
+      operationId: listMediaAssets
+      summary: List media assets (admin)
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [favicon, logo, hero, social, marketing, other]
+      responses:
+        "200":
+          description: Media assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaAsset"
+    post:
+      tags: [media]
+      operationId: createMediaAsset
+      summary: Register a media asset after upload (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaAssetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+
+  /media/{id}:
+    delete:
+      tags: [media]
+      operationId: deleteMediaAsset
+      summary: Delete a media asset (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -2849,3 +3227,277 @@ components:
           type: integer
         lastSuspiciousAt:
           type: ["string", "null"]
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/UploadUrlRequest"
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    HreflangEntry:
+      type: object
+      required: [lang, url]
+      properties:
+        lang:
+          type: string
+        url:
+          type: string
+
+    SeoPage:
+      type: object
+      required: [id, path, twitterCard, hreflang, noIndex, noFollow, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        path:
+          type: string
+        title:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        canonicalUrl:
+          type: ["string", "null"]
+        ogTitle:
+          type: ["string", "null"]
+        ogDescription:
+          type: ["string", "null"]
+        ogImage:
+          type: ["string", "null"]
+        twitterCard:
+          type: string
+          enum: [summary, summary_large_image]
+        twitterTitle:
+          type: ["string", "null"]
+        twitterDescription:
+          type: ["string", "null"]
+        twitterImage:
+          type: ["string", "null"]
+        structuredData:
+          type: ["string", "null"]
+          description: JSON-LD structured data, stored/transmitted as a raw JSON string.
+        hreflang:
+          type: array
+          items:
+            $ref: "#/components/schemas/HreflangEntry"
+        noIndex:
+          type: boolean
+        noFollow:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    SeoPageInput:
+      type: object
+      required: [path]
+      properties:
+        path:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        canonicalUrl:
+          type: string
+        ogTitle:
+          type: string
+        ogDescription:
+          type: string
+        ogImage:
+          type: string
+        twitterCard:
+          type: string
+          enum: [summary, summary_large_image]
+        twitterTitle:
+          type: string
+        twitterDescription:
+          type: string
+        twitterImage:
+          type: string
+        structuredData:
+          type: string
+          description: JSON-LD structured data, stored/transmitted as a raw JSON string.
+        hreflang:
+          type: array
+          items:
+            $ref: "#/components/schemas/HreflangEntry"
+        noIndex:
+          type: boolean
+        noFollow:
+          type: boolean
+
+    SeoPageUpdate:
+      type: object
+      properties:
+        path:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        canonicalUrl:
+          type: string
+        ogTitle:
+          type: string
+        ogDescription:
+          type: string
+        ogImage:
+          type: string
+        twitterCard:
+          type: string
+          enum: [summary, summary_large_image]
+        twitterTitle:
+          type: string
+        twitterDescription:
+          type: string
+        twitterImage:
+          type: string
+        structuredData:
+          type: string
+          description: JSON-LD structured data, stored/transmitted as a raw JSON string.
+        hreflang:
+          type: array
+          items:
+            $ref: "#/components/schemas/HreflangEntry"
+        noIndex:
+          type: boolean
+        noFollow:
+          type: boolean
+
+    SeoRedirect:
+      type: object
+      required: [id, fromPath, toPath, statusCode, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        fromPath:
+          type: string
+        toPath:
+          type: string
+        statusCode:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    SeoRedirectInput:
+      type: object
+      required: [fromPath, toPath]
+      properties:
+        fromPath:
+          type: string
+        toPath:
+          type: string
+        statusCode:
+          type: integer
+        isActive:
+          type: boolean
+
+    SeoRedirectUpdate:
+      type: object
+      properties:
+        fromPath:
+          type: string
+        toPath:
+          type: string
+        statusCode:
+          type: integer
+        isActive:
+          type: boolean
+
+    SeoSettings:
+      type: object
+      required: [id, robotsTxt, sitemapEnabled, updatedAt]
+      properties:
+        id:
+          type: integer
+        robotsTxt:
+          type: string
+        sitemapEnabled:
+          type: boolean
+        siteUrl:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+
+    SeoSettingsInput:
+      type: object
+      properties:
+        robotsTxt:
+          type: string
+        sitemapEnabled:
+          type: boolean
+        siteUrl:
+          type: string
+
+    MediaAsset:
+      type: object
+      required: [id, objectPath, fileName, contentType, size, category, createdAt]
+      properties:
+        id:
+          type: integer
+        objectPath:
+          type: string
+        fileName:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        category:
+          type: string
+          enum: [favicon, logo, hero, social, marketing, other]
+        altText:
+          type: ["string", "null"]
+        uploadedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    MediaAssetInput:
+      type: object
+      required: [objectPath, fileName, contentType]
+      properties:
+        objectPath:
+          type: string
+        fileName:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        category:
+          type: string
+          enum: [favicon, logo, hero, social, marketing, other]
+        altText:
+          type: string

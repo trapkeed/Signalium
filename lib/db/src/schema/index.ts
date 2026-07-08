@@ -13,3 +13,5 @@ export * from "./ea-build-audit-log";
 export * from "./symbols";
 export * from "./qde";
 export * from "./security";
+export * from "./seo";
+export * from "./media";

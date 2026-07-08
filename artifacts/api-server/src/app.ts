@@ -9,6 +9,7 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
+import { robotsTxtHandler, sitemapXmlHandler } from "./routes/seo";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -47,6 +48,12 @@ app.use(
     ),
   })),
 );
+
+// Real crawlers request these at the site root, not under /api. Mounted
+// directly (in addition to /api/seo/robots.txt and /api/seo/sitemap.xml)
+// so the admin-controlled content is what search engines actually see.
+app.get("/robots.txt", robotsTxtHandler);
+app.get("/sitemap.xml", sitemapXmlHandler);
 
 app.use("/api", router);
 

@@ -916,6 +916,212 @@ export interface AccountSecurityStatus {
   lastSuspiciousAt?: string | null;
 }
 
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
+export interface HreflangEntry {
+  lang: string;
+  url: string;
+}
+
+export type SeoPageTwitterCard = typeof SeoPageTwitterCard[keyof typeof SeoPageTwitterCard];
+
+
+export const SeoPageTwitterCard = {
+  summary: 'summary',
+  summary_large_image: 'summary_large_image',
+} as const;
+
+export interface SeoPage {
+  id: number;
+  path: string;
+  /** @nullable */
+  title?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  canonicalUrl?: string | null;
+  /** @nullable */
+  ogTitle?: string | null;
+  /** @nullable */
+  ogDescription?: string | null;
+  /** @nullable */
+  ogImage?: string | null;
+  twitterCard: SeoPageTwitterCard;
+  /** @nullable */
+  twitterTitle?: string | null;
+  /** @nullable */
+  twitterDescription?: string | null;
+  /** @nullable */
+  twitterImage?: string | null;
+  /**
+     * JSON-LD structured data, stored/transmitted as a raw JSON string.
+     * @nullable
+     */
+  structuredData?: string | null;
+  hreflang: HreflangEntry[];
+  noIndex: boolean;
+  noFollow: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SeoPageInputTwitterCard = typeof SeoPageInputTwitterCard[keyof typeof SeoPageInputTwitterCard];
+
+
+export const SeoPageInputTwitterCard = {
+  summary: 'summary',
+  summary_large_image: 'summary_large_image',
+} as const;
+
+export interface SeoPageInput {
+  path: string;
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterCard?: SeoPageInputTwitterCard;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  /** JSON-LD structured data, stored/transmitted as a raw JSON string. */
+  structuredData?: string;
+  hreflang?: HreflangEntry[];
+  noIndex?: boolean;
+  noFollow?: boolean;
+}
+
+export type SeoPageUpdateTwitterCard = typeof SeoPageUpdateTwitterCard[keyof typeof SeoPageUpdateTwitterCard];
+
+
+export const SeoPageUpdateTwitterCard = {
+  summary: 'summary',
+  summary_large_image: 'summary_large_image',
+} as const;
+
+export interface SeoPageUpdate {
+  path?: string;
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterCard?: SeoPageUpdateTwitterCard;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  /** JSON-LD structured data, stored/transmitted as a raw JSON string. */
+  structuredData?: string;
+  hreflang?: HreflangEntry[];
+  noIndex?: boolean;
+  noFollow?: boolean;
+}
+
+export interface SeoRedirect {
+  id: number;
+  fromPath: string;
+  toPath: string;
+  statusCode: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeoRedirectInput {
+  fromPath: string;
+  toPath: string;
+  statusCode?: number;
+  isActive?: boolean;
+}
+
+export interface SeoRedirectUpdate {
+  fromPath?: string;
+  toPath?: string;
+  statusCode?: number;
+  isActive?: boolean;
+}
+
+export interface SeoSettings {
+  id: number;
+  robotsTxt: string;
+  sitemapEnabled: boolean;
+  /** @nullable */
+  siteUrl?: string | null;
+  updatedAt: string;
+}
+
+export interface SeoSettingsInput {
+  robotsTxt?: string;
+  sitemapEnabled?: boolean;
+  siteUrl?: string;
+}
+
+export type MediaAssetCategory = typeof MediaAssetCategory[keyof typeof MediaAssetCategory];
+
+
+export const MediaAssetCategory = {
+  favicon: 'favicon',
+  logo: 'logo',
+  hero: 'hero',
+  social: 'social',
+  marketing: 'marketing',
+  other: 'other',
+} as const;
+
+export interface MediaAsset {
+  id: number;
+  objectPath: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  category: MediaAssetCategory;
+  /** @nullable */
+  altText?: string | null;
+  /** @nullable */
+  uploadedBy?: string | null;
+  createdAt: string;
+}
+
+export type MediaAssetInputCategory = typeof MediaAssetInputCategory[keyof typeof MediaAssetInputCategory];
+
+
+export const MediaAssetInputCategory = {
+  favicon: 'favicon',
+  logo: 'logo',
+  hero: 'hero',
+  social: 'social',
+  marketing: 'marketing',
+  other: 'other',
+} as const;
+
+export interface MediaAssetInput {
+  objectPath: string;
+  fileName: string;
+  contentType: string;
+  size?: number;
+  category?: MediaAssetInputCategory;
+  altText?: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -1041,4 +1247,24 @@ export type UnlockAccountBody = {
 export type UnlockAccount200 = {
   ok: boolean;
 };
+
+export type ResolveSeoPageParams = {
+path: string;
+};
+
+export type ListMediaAssetsParams = {
+category?: ListMediaAssetsCategory;
+};
+
+export type ListMediaAssetsCategory = typeof ListMediaAssetsCategory[keyof typeof ListMediaAssetsCategory];
+
+
+export const ListMediaAssetsCategory = {
+  favicon: 'favicon',
+  logo: 'logo',
+  hero: 'hero',
+  social: 'social',
+  marketing: 'marketing',
+  other: 'other',
+} as const;
 

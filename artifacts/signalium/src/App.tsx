@@ -28,9 +28,12 @@ import EaBuilds from "@/pages/ea-builds";
 import AdminEaBuilds from "@/pages/admin/ea-builds";
 import AdminSymbols from "@/pages/admin/symbols";
 import AdminQde from "@/pages/admin/qde";
+import AdminSeo from "@/pages/admin/seo";
+import AdminMedia from "@/pages/admin/media";
 
 import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
+import { useSeoHead } from "@/hooks/use-seo-head";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
@@ -153,6 +156,11 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function SeoHeadManager() {
+  useSeoHead();
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -168,6 +176,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <SeoHeadManager />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
@@ -195,6 +204,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
             <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
+            <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>
+            <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>
 
             <Route component={NotFound} />
           </Switch>

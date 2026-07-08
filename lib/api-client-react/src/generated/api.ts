@@ -36,12 +36,16 @@ import type {
   EaInput,
   EaRegistration,
   EaUpdate,
+  ErrorEnvelope,
   GetSymbolNormalizationLogParams,
   HealthStatus,
   HeartbeatInput,
   HeartbeatResponse,
+  ListMediaAssetsParams,
   LockAccount200,
   LoginEvent,
+  MediaAsset,
+  MediaAssetInput,
   NormalizeSymbol422,
   NormalizeSymbolBody,
   Payment,
@@ -60,10 +64,19 @@ import type {
   RedeliverAction200,
   RegisterEaTerminalBody,
   RejectPaymentBody,
+  ResolveSeoPageParams,
   RevokeAccountSession200,
   RuntimeStatus,
   RuntimeSummary,
   SecurityReport,
+  SeoPage,
+  SeoPageInput,
+  SeoPageUpdate,
+  SeoRedirect,
+  SeoRedirectInput,
+  SeoRedirectUpdate,
+  SeoSettings,
+  SeoSettingsInput,
   SmtpSettings,
   SmtpSettingsInput,
   SmtpSettingsUpdate,
@@ -88,6 +101,8 @@ import type {
   UnlockAccount200,
   UnlockAccountBody,
   UpdateSymbolBody,
+  UploadUrlRequest,
+  UploadUrlResponse,
   User,
   UserUpdate,
   VerifyApiKey200,
@@ -6929,5 +6944,1503 @@ export const useUnlockAccount = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUnlockAccountMutationOptions(options));
+    }
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+ * metadata here, then uploads the file directly to the returned URL.
+ * @summary Request a presigned URL for file upload
+ */
+export const requestUploadUrl = async (uploadUrlRequest: UploadUrlRequest, options?: RequestInit): Promise<UploadUrlResponse> => {
+
+  return customFetch<UploadUrlResponse>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(uploadUrlRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext> => {
+
+const mutationKey = ['requestUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, {data: BodyType<UploadUrlRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>
+    export type RequestUploadUrlMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Request a presigned URL for file upload
+ */
+export const useRequestUploadUrl = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,{data: BodyType<UploadUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        {data: BodyType<UploadUrlRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getGetPublicObjectUrl = (filePath: string,) => {
+
+
+
+
+  return `/api/storage/public-objects/${filePath}`
+}
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const getPublicObject = async (filePath: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicObjectUrl(filePath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicObjectQueryKey = (filePath: string,) => {
+    return [
+    `/api/storage/public-objects/${filePath}`
+    ] as const;
+    }
+
+
+export const getGetPublicObjectQueryOptions = <TData = Awaited<ReturnType<typeof getPublicObject>>, TError = ErrorType<ErrorEnvelope>>(filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicObjectQueryKey(filePath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicObject>>> = ({ signal }) => getPublicObject(filePath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filePath !== null && filePath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicObject>>>
+export type GetPublicObjectQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+
+export function useGetPublicObject<TData = Awaited<ReturnType<typeof getPublicObject>>, TError = ErrorType<ErrorEnvelope>>(
+ filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicObjectQueryOptions(filePath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetStorageObjectUrl = (objectPath: string,) => {
+
+
+
+
+  return `/api/storage/objects/${objectPath}`
+}
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const getStorageObject = async (objectPath: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetStorageObjectUrl(objectPath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStorageObjectQueryKey = (objectPath: string,) => {
+    return [
+    `/api/storage/objects/${objectPath}`
+    ] as const;
+    }
+
+
+export const getGetStorageObjectQueryOptions = <TData = Awaited<ReturnType<typeof getStorageObject>>, TError = ErrorType<ErrorEnvelope>>(objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStorageObjectQueryKey(objectPath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStorageObject>>> = ({ signal }) => getStorageObject(objectPath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: objectPath !== null && objectPath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStorageObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getStorageObject>>>
+export type GetStorageObjectQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+
+export function useGetStorageObject<TData = Awaited<ReturnType<typeof getStorageObject>>, TError = ErrorType<ErrorEnvelope>>(
+ objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStorageObjectQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSeoPagesUrl = () => {
+
+
+
+
+  return `/api/seo/pages`
+}
+
+/**
+ * @summary List all page SEO configs (admin)
+ */
+export const listSeoPages = async ( options?: RequestInit): Promise<SeoPage[]> => {
+
+  return customFetch<SeoPage[]>(getListSeoPagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSeoPagesQueryKey = () => {
+    return [
+    `/api/seo/pages`
+    ] as const;
+    }
+
+
+export const getListSeoPagesQueryOptions = <TData = Awaited<ReturnType<typeof listSeoPages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeoPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSeoPagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSeoPages>>> = ({ signal }) => listSeoPages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSeoPages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSeoPagesQueryResult = NonNullable<Awaited<ReturnType<typeof listSeoPages>>>
+export type ListSeoPagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all page SEO configs (admin)
+ */
+
+export function useListSeoPages<TData = Awaited<ReturnType<typeof listSeoPages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeoPages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSeoPagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSeoPageUrl = () => {
+
+
+
+
+  return `/api/seo/pages`
+}
+
+/**
+ * @summary Create a page SEO config (admin)
+ */
+export const createSeoPage = async (seoPageInput: SeoPageInput, options?: RequestInit): Promise<SeoPage> => {
+
+  return customFetch<SeoPage>(getCreateSeoPageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seoPageInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSeoPageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSeoPage>>, TError,{data: BodyType<SeoPageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSeoPage>>, TError,{data: BodyType<SeoPageInput>}, TContext> => {
+
+const mutationKey = ['createSeoPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSeoPage>>, {data: BodyType<SeoPageInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSeoPage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSeoPageMutationResult = NonNullable<Awaited<ReturnType<typeof createSeoPage>>>
+    export type CreateSeoPageMutationBody = BodyType<SeoPageInput>
+    export type CreateSeoPageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a page SEO config (admin)
+ */
+export const useCreateSeoPage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSeoPage>>, TError,{data: BodyType<SeoPageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSeoPage>>,
+        TError,
+        {data: BodyType<SeoPageInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSeoPageMutationOptions(options));
+    }
+
+export const getResolveSeoPageUrl = (params: ResolveSeoPageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/seo/pages/resolve?${stringifiedParams}` : `/api/seo/pages/resolve`
+}
+
+/**
+ * @summary Resolve SEO config for a route path (public)
+ */
+export const resolveSeoPage = async (params: ResolveSeoPageParams, options?: RequestInit): Promise<SeoPage | null> => {
+
+  return customFetch<SeoPage | null>(getResolveSeoPageUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getResolveSeoPageQueryKey = (params?: ResolveSeoPageParams,) => {
+    return [
+    `/api/seo/pages/resolve`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getResolveSeoPageQueryOptions = <TData = Awaited<ReturnType<typeof resolveSeoPage>>, TError = ErrorType<unknown>>(params: ResolveSeoPageParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof resolveSeoPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getResolveSeoPageQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof resolveSeoPage>>> = ({ signal }) => resolveSeoPage(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof resolveSeoPage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ResolveSeoPageQueryResult = NonNullable<Awaited<ReturnType<typeof resolveSeoPage>>>
+export type ResolveSeoPageQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Resolve SEO config for a route path (public)
+ */
+
+export function useResolveSeoPage<TData = Awaited<ReturnType<typeof resolveSeoPage>>, TError = ErrorType<unknown>>(
+ params: ResolveSeoPageParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof resolveSeoPage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getResolveSeoPageQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSeoPageUrl = (id: number,) => {
+
+
+
+
+  return `/api/seo/pages/${id}`
+}
+
+/**
+ * @summary Update a page SEO config (admin)
+ */
+export const updateSeoPage = async (id: number,
+    seoPageUpdate: SeoPageUpdate, options?: RequestInit): Promise<SeoPage> => {
+
+  return customFetch<SeoPage>(getUpdateSeoPageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seoPageUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSeoPageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoPage>>, TError,{id: number;data: BodyType<SeoPageUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSeoPage>>, TError,{id: number;data: BodyType<SeoPageUpdate>}, TContext> => {
+
+const mutationKey = ['updateSeoPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSeoPage>>, {id: number;data: BodyType<SeoPageUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSeoPage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSeoPageMutationResult = NonNullable<Awaited<ReturnType<typeof updateSeoPage>>>
+    export type UpdateSeoPageMutationBody = BodyType<SeoPageUpdate>
+    export type UpdateSeoPageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a page SEO config (admin)
+ */
+export const useUpdateSeoPage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoPage>>, TError,{id: number;data: BodyType<SeoPageUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSeoPage>>,
+        TError,
+        {id: number;data: BodyType<SeoPageUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSeoPageMutationOptions(options));
+    }
+
+export const getDeleteSeoPageUrl = (id: number,) => {
+
+
+
+
+  return `/api/seo/pages/${id}`
+}
+
+/**
+ * @summary Delete a page SEO config (admin)
+ */
+export const deleteSeoPage = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSeoPageUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSeoPageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSeoPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSeoPage>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSeoPage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSeoPage>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSeoPage(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSeoPageMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSeoPage>>>
+
+    export type DeleteSeoPageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a page SEO config (admin)
+ */
+export const useDeleteSeoPage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSeoPage>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSeoPage>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSeoPageMutationOptions(options));
+    }
+
+export const getListSeoRedirectsUrl = () => {
+
+
+
+
+  return `/api/seo/redirects`
+}
+
+/**
+ * @summary List all redirects (admin)
+ */
+export const listSeoRedirects = async ( options?: RequestInit): Promise<SeoRedirect[]> => {
+
+  return customFetch<SeoRedirect[]>(getListSeoRedirectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSeoRedirectsQueryKey = () => {
+    return [
+    `/api/seo/redirects`
+    ] as const;
+    }
+
+
+export const getListSeoRedirectsQueryOptions = <TData = Awaited<ReturnType<typeof listSeoRedirects>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeoRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSeoRedirectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSeoRedirects>>> = ({ signal }) => listSeoRedirects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSeoRedirects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSeoRedirectsQueryResult = NonNullable<Awaited<ReturnType<typeof listSeoRedirects>>>
+export type ListSeoRedirectsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all redirects (admin)
+ */
+
+export function useListSeoRedirects<TData = Awaited<ReturnType<typeof listSeoRedirects>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSeoRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSeoRedirectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSeoRedirectUrl = () => {
+
+
+
+
+  return `/api/seo/redirects`
+}
+
+/**
+ * @summary Create a redirect (admin)
+ */
+export const createSeoRedirect = async (seoRedirectInput: SeoRedirectInput, options?: RequestInit): Promise<SeoRedirect> => {
+
+  return customFetch<SeoRedirect>(getCreateSeoRedirectUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seoRedirectInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSeoRedirectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSeoRedirect>>, TError,{data: BodyType<SeoRedirectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSeoRedirect>>, TError,{data: BodyType<SeoRedirectInput>}, TContext> => {
+
+const mutationKey = ['createSeoRedirect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSeoRedirect>>, {data: BodyType<SeoRedirectInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSeoRedirect(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSeoRedirectMutationResult = NonNullable<Awaited<ReturnType<typeof createSeoRedirect>>>
+    export type CreateSeoRedirectMutationBody = BodyType<SeoRedirectInput>
+    export type CreateSeoRedirectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a redirect (admin)
+ */
+export const useCreateSeoRedirect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSeoRedirect>>, TError,{data: BodyType<SeoRedirectInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSeoRedirect>>,
+        TError,
+        {data: BodyType<SeoRedirectInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSeoRedirectMutationOptions(options));
+    }
+
+export const getListActiveSeoRedirectsUrl = () => {
+
+
+
+
+  return `/api/seo/redirects/active`
+}
+
+/**
+ * @summary List active redirects (public)
+ */
+export const listActiveSeoRedirects = async ( options?: RequestInit): Promise<SeoRedirect[]> => {
+
+  return customFetch<SeoRedirect[]>(getListActiveSeoRedirectsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListActiveSeoRedirectsQueryKey = () => {
+    return [
+    `/api/seo/redirects/active`
+    ] as const;
+    }
+
+
+export const getListActiveSeoRedirectsQueryOptions = <TData = Awaited<ReturnType<typeof listActiveSeoRedirects>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActiveSeoRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListActiveSeoRedirectsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listActiveSeoRedirects>>> = ({ signal }) => listActiveSeoRedirects({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listActiveSeoRedirects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListActiveSeoRedirectsQueryResult = NonNullable<Awaited<ReturnType<typeof listActiveSeoRedirects>>>
+export type ListActiveSeoRedirectsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List active redirects (public)
+ */
+
+export function useListActiveSeoRedirects<TData = Awaited<ReturnType<typeof listActiveSeoRedirects>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listActiveSeoRedirects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListActiveSeoRedirectsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSeoRedirectUrl = (id: number,) => {
+
+
+
+
+  return `/api/seo/redirects/${id}`
+}
+
+/**
+ * @summary Update a redirect (admin)
+ */
+export const updateSeoRedirect = async (id: number,
+    seoRedirectUpdate: SeoRedirectUpdate, options?: RequestInit): Promise<SeoRedirect> => {
+
+  return customFetch<SeoRedirect>(getUpdateSeoRedirectUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seoRedirectUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSeoRedirectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoRedirect>>, TError,{id: number;data: BodyType<SeoRedirectUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSeoRedirect>>, TError,{id: number;data: BodyType<SeoRedirectUpdate>}, TContext> => {
+
+const mutationKey = ['updateSeoRedirect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSeoRedirect>>, {id: number;data: BodyType<SeoRedirectUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSeoRedirect(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSeoRedirectMutationResult = NonNullable<Awaited<ReturnType<typeof updateSeoRedirect>>>
+    export type UpdateSeoRedirectMutationBody = BodyType<SeoRedirectUpdate>
+    export type UpdateSeoRedirectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a redirect (admin)
+ */
+export const useUpdateSeoRedirect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoRedirect>>, TError,{id: number;data: BodyType<SeoRedirectUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSeoRedirect>>,
+        TError,
+        {id: number;data: BodyType<SeoRedirectUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSeoRedirectMutationOptions(options));
+    }
+
+export const getDeleteSeoRedirectUrl = (id: number,) => {
+
+
+
+
+  return `/api/seo/redirects/${id}`
+}
+
+/**
+ * @summary Delete a redirect (admin)
+ */
+export const deleteSeoRedirect = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSeoRedirectUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSeoRedirectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSeoRedirect>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSeoRedirect>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSeoRedirect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSeoRedirect>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSeoRedirect(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSeoRedirectMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSeoRedirect>>>
+
+    export type DeleteSeoRedirectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a redirect (admin)
+ */
+export const useDeleteSeoRedirect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSeoRedirect>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSeoRedirect>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSeoRedirectMutationOptions(options));
+    }
+
+export const getGetSeoSettingsUrl = () => {
+
+
+
+
+  return `/api/seo/settings`
+}
+
+/**
+ * @summary Get site-wide SEO settings (admin)
+ */
+export const getSeoSettings = async ( options?: RequestInit): Promise<SeoSettings> => {
+
+  return customFetch<SeoSettings>(getGetSeoSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSeoSettingsQueryKey = () => {
+    return [
+    `/api/seo/settings`
+    ] as const;
+    }
+
+
+export const getGetSeoSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getSeoSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSeoSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSeoSettings>>> = ({ signal }) => getSeoSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSeoSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSeoSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getSeoSettings>>>
+export type GetSeoSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get site-wide SEO settings (admin)
+ */
+
+export function useGetSeoSettings<TData = Awaited<ReturnType<typeof getSeoSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSeoSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSeoSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSeoSettingsUrl = () => {
+
+
+
+
+  return `/api/seo/settings`
+}
+
+/**
+ * @summary Update site-wide SEO settings (admin)
+ */
+export const updateSeoSettings = async (seoSettingsInput: SeoSettingsInput, options?: RequestInit): Promise<SeoSettings> => {
+
+  return customFetch<SeoSettings>(getUpdateSeoSettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(seoSettingsInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSeoSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoSettings>>, TError,{data: BodyType<SeoSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSeoSettings>>, TError,{data: BodyType<SeoSettingsInput>}, TContext> => {
+
+const mutationKey = ['updateSeoSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSeoSettings>>, {data: BodyType<SeoSettingsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateSeoSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSeoSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateSeoSettings>>>
+    export type UpdateSeoSettingsMutationBody = BodyType<SeoSettingsInput>
+    export type UpdateSeoSettingsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update site-wide SEO settings (admin)
+ */
+export const useUpdateSeoSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSeoSettings>>, TError,{data: BodyType<SeoSettingsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSeoSettings>>,
+        TError,
+        {data: BodyType<SeoSettingsInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSeoSettingsMutationOptions(options));
+    }
+
+export const getGetRobotsTxtUrl = () => {
+
+
+
+
+  return `/api/seo/robots.txt`
+}
+
+/**
+ * @summary Serve the admin-edited robots.txt (public)
+ */
+export const getRobotsTxt = async ( options?: RequestInit): Promise<string> => {
+
+  return customFetch<string>(getGetRobotsTxtUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRobotsTxtQueryKey = () => {
+    return [
+    `/api/seo/robots.txt`
+    ] as const;
+    }
+
+
+export const getGetRobotsTxtQueryOptions = <TData = Awaited<ReturnType<typeof getRobotsTxt>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRobotsTxt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRobotsTxtQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRobotsTxt>>> = ({ signal }) => getRobotsTxt({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRobotsTxt>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRobotsTxtQueryResult = NonNullable<Awaited<ReturnType<typeof getRobotsTxt>>>
+export type GetRobotsTxtQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Serve the admin-edited robots.txt (public)
+ */
+
+export function useGetRobotsTxt<TData = Awaited<ReturnType<typeof getRobotsTxt>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRobotsTxt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRobotsTxtQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSitemapXmlUrl = () => {
+
+
+
+
+  return `/api/seo/sitemap.xml`
+}
+
+/**
+ * @summary Generate sitemap.xml from indexable pages (public)
+ */
+export const getSitemapXml = async ( options?: RequestInit): Promise<string> => {
+
+  return customFetch<string>(getGetSitemapXmlUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSitemapXmlQueryKey = () => {
+    return [
+    `/api/seo/sitemap.xml`
+    ] as const;
+    }
+
+
+export const getGetSitemapXmlQueryOptions = <TData = Awaited<ReturnType<typeof getSitemapXml>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSitemapXml>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSitemapXmlQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSitemapXml>>> = ({ signal }) => getSitemapXml({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSitemapXml>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSitemapXmlQueryResult = NonNullable<Awaited<ReturnType<typeof getSitemapXml>>>
+export type GetSitemapXmlQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Generate sitemap.xml from indexable pages (public)
+ */
+
+export function useGetSitemapXml<TData = Awaited<ReturnType<typeof getSitemapXml>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSitemapXml>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSitemapXmlQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMediaAssetsUrl = (params?: ListMediaAssetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/media?${stringifiedParams}` : `/api/media`
+}
+
+/**
+ * @summary List media assets (admin)
+ */
+export const listMediaAssets = async (params?: ListMediaAssetsParams, options?: RequestInit): Promise<MediaAsset[]> => {
+
+  return customFetch<MediaAsset[]>(getListMediaAssetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMediaAssetsQueryKey = (params?: ListMediaAssetsParams,) => {
+    return [
+    `/api/media`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMediaAssetsQueryOptions = <TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<unknown>>(params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMediaAssetsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMediaAssets>>> = ({ signal }) => listMediaAssets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMediaAssetsQueryResult = NonNullable<Awaited<ReturnType<typeof listMediaAssets>>>
+export type ListMediaAssetsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List media assets (admin)
+ */
+
+export function useListMediaAssets<TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<unknown>>(
+ params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMediaAssetsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMediaAssetUrl = () => {
+
+
+
+
+  return `/api/media`
+}
+
+/**
+ * @summary Register a media asset after upload (admin)
+ */
+export const createMediaAsset = async (mediaAssetInput: MediaAssetInput, options?: RequestInit): Promise<MediaAsset> => {
+
+  return customFetch<MediaAsset>(getCreateMediaAssetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaAssetInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMediaAssetMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMediaAsset>>, TError,{data: BodyType<MediaAssetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMediaAsset>>, TError,{data: BodyType<MediaAssetInput>}, TContext> => {
+
+const mutationKey = ['createMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMediaAsset>>, {data: BodyType<MediaAssetInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMediaAsset(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof createMediaAsset>>>
+    export type CreateMediaAssetMutationBody = BodyType<MediaAssetInput>
+    export type CreateMediaAssetMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Register a media asset after upload (admin)
+ */
+export const useCreateMediaAsset = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMediaAsset>>, TError,{data: BodyType<MediaAssetInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMediaAsset>>,
+        TError,
+        {data: BodyType<MediaAssetInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMediaAssetMutationOptions(options));
+    }
+
+export const getDeleteMediaAssetUrl = (id: number,) => {
+
+
+
+
+  return `/api/media/${id}`
+}
+
+/**
+ * @summary Delete a media asset (admin)
+ */
+export const deleteMediaAsset = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMediaAssetMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMediaAsset>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteMediaAsset(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMediaAsset>>>
+
+    export type DeleteMediaAssetMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a media asset (admin)
+ */
+export const useDeleteMediaAsset = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMediaAsset>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteMediaAssetMutationOptions(options));
     }
 
