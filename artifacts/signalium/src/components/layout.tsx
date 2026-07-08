@@ -25,12 +25,15 @@ import {
   BookOpen,
   Gift,
   ScrollText,
+  Building2,
+  Flag,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notification-bell";
 import { MaintenanceBanner } from "@/components/maintenance-banner";
 import { AnnouncementBanners } from "@/components/announcement-banners";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -40,27 +43,60 @@ const NAV_ITEMS = [
   { href: "/account", label: "Account & Security", icon: Shield },
 ];
 
-const ADMIN_ITEMS = [
-  { href: "/admin", label: "Overview", icon: Shield },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { href: "/admin/eas", label: "EAs", icon: Database },
-  { href: "/admin/payments", label: "Payments", icon: Wallet },
-  { href: "/admin/smtp", label: "SMTP", icon: Mail },
-  { href: "/admin/api-keys", label: "API Keys", icon: Key },
-  { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
-  { href: "/admin/symbols", label: "Symbols", icon: Coins },
-  { href: "/admin/qde", label: "QDE Loop", icon: Radio },
-  { href: "/admin/seo", label: "SEO", icon: Search },
-  { href: "/admin/media", label: "Media Library", icon: Image },
-  { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
-  { href: "/admin/maintenance-banner", label: "Maintenance Banner", icon: AlertTriangle },
-  { href: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
-  { href: "/admin/contact", label: "Contact Messages", icon: Mail },
-  { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
-  { href: "/admin/status", label: "Platform Status", icon: Activity },
-  { href: "/admin/referrals", label: "Referrals", icon: Gift },
-  { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
+// Grouped to match the full spec's admin surface: each section below is a
+// coherent slice of the panel rather than one long flat list.
+const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
+  {
+    title: "Overview",
+    items: [{ href: "/admin", label: "Overview", icon: Shield }],
+  },
+  {
+    title: "Accounts & Billing",
+    items: [
+      { href: "/admin/users", label: "Users", icon: Users },
+      { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
+      { href: "/admin/payments", label: "Payments", icon: Wallet },
+      { href: "/admin/api-keys", label: "API Keys", icon: Key },
+    ],
+  },
+  {
+    title: "Trading Infrastructure",
+    items: [
+      { href: "/admin/symbols", label: "Symbols", icon: Coins },
+      { href: "/admin/brokers", label: "Brokers", icon: Building2 },
+      { href: "/admin/data-providers", label: "Data Providers", icon: Database },
+      { href: "/admin/eas", label: "EAs", icon: Box },
+      { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
+      { href: "/admin/qde", label: "QDE Loop", icon: Radio },
+    ],
+  },
+  {
+    title: "Content & Growth",
+    items: [
+      { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+      { href: "/admin/seo", label: "SEO", icon: Search },
+      { href: "/admin/media", label: "Media Library", icon: Image },
+      { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+      { href: "/admin/referrals", label: "Referrals", icon: Gift },
+    ],
+  },
+  {
+    title: "Support & Comms",
+    items: [
+      { href: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
+      { href: "/admin/contact", label: "Contact Messages", icon: Mail },
+      { href: "/admin/smtp", label: "SMTP", icon: Mail },
+      { href: "/admin/maintenance-banner", label: "Maintenance Banner", icon: AlertTriangle },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      { href: "/admin/feature-flags", label: "Feature Flags", icon: Flag },
+      { href: "/admin/status", label: "Platform Status", icon: Activity },
+      { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
+    ],
+  },
 ];
 
 function Logo() {
@@ -125,6 +161,12 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
   const [location] = useLocation();
   const { user } = useUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
+  const referralsEnabled = useFeatureFlag("referrals_enabled");
+
+  const adminGroups = ADMIN_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => referralsEnabled || item.href !== "/admin/referrals"),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -134,9 +176,9 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
 
       <div className="flex-1 overflow-y-auto py-5 px-3 flex flex-col gap-7">
         <NavSection title="Platform" items={NAV_ITEMS} location={location} onNavigate={onNavigate} />
-        {isAdmin && (
-          <NavSection title="Admin" items={ADMIN_ITEMS} location={location} onNavigate={onNavigate} />
-        )}
+        {isAdmin && adminGroups.map((group) => (
+          <NavSection key={group.title} title={group.title} items={group.items} location={location} onNavigate={onNavigate} />
+        ))}
       </div>
 
       <div className="mt-auto p-3 border-t border-border shrink-0">

@@ -6,9 +6,11 @@ import Subscriptions from "@/pages/subscriptions";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
 import EaBuilds from "@/pages/ea-builds";
+import { useFeatureFlag } from "@/hooks/use-feature-flags";
 
 export default function Account() {
   const { user } = useUser();
+  const referralsEnabled = useFeatureFlag("referrals_enabled");
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -26,7 +28,7 @@ export default function Account() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys &amp; MT5</TabsTrigger>
             <TabsTrigger value="ea-builds">EA Builds</TabsTrigger>
-            <TabsTrigger value="referrals">Referrals</TabsTrigger>
+            {referralsEnabled && <TabsTrigger value="referrals">Referrals</TabsTrigger>}
             <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
 
@@ -65,9 +67,11 @@ export default function Account() {
             <EaBuilds embedded />
           </TabsContent>
 
-          <TabsContent value="referrals" className="mt-6">
-            <ReferralsTab />
-          </TabsContent>
+          {referralsEnabled && (
+            <TabsContent value="referrals" className="mt-6">
+              <ReferralsTab />
+            </TabsContent>
+          )}
 
           <TabsContent value="security" className="mt-6 max-w-4xl">
             <SecurityTab />

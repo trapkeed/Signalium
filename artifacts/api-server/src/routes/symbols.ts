@@ -170,6 +170,7 @@ router.get("/admin/aliases", requireAdmin, async (req, res) => {
       id: symbolAliasesTable.id,
       alias: symbolAliasesTable.alias,
       source: symbolAliasesTable.source,
+      brokerId: symbolAliasesTable.brokerId,
       createdBy: symbolAliasesTable.createdBy,
       createdAt: symbolAliasesTable.createdAt,
       symbolId: symbolsTable.id,
@@ -185,10 +186,11 @@ router.get("/admin/aliases", requireAdmin, async (req, res) => {
   }
 });
 
-// Add an alias mapping (e.g. "WallStreet30" -> "US30").
+// Add an alias mapping (e.g. "WallStreet30" -> "US30"), optionally
+// attributed to the broker that reports this raw symbol string.
 router.post("/admin/aliases", requireAdmin, async (req, res) => {
   const { userId } = getAuth(req);
-  const { alias, canonicalSymbol } = req.body as { alias?: string; canonicalSymbol?: string };
+  const { alias, canonicalSymbol, brokerId } = req.body as { alias?: string; canonicalSymbol?: string; brokerId?: number };
   if (!alias || !canonicalSymbol) {
     return res.status(400).json({ error: "'alias' and 'canonicalSymbol' are required" });
   }
@@ -200,7 +202,8 @@ router.post("/admin/aliases", requireAdmin, async (req, res) => {
     const [created] = await db.insert(symbolAliasesTable).values({
       alias: alias.toLowerCase(),
       symbolId: symbol.id,
-      source: "admin",
+      source: brokerId ? "broker" : "admin",
+      brokerId: brokerId ?? null,
       createdBy: userId,
     }).returning();
     invalidateSymbolCache();

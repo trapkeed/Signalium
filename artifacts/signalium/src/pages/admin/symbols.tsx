@@ -9,6 +9,7 @@ import {
   useDeleteSymbol,
   useCreateSymbolAlias,
   useDeleteSymbolAlias,
+  useListBrokers,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Coins, Plus, Trash2, ScrollText, Tags, CheckCircle2, XCircle } from "lucide-react";
@@ -167,15 +168,24 @@ function AddAliasDialog({ symbols, defaultAlias }: { symbols: { id: number; cano
   const [open, setOpen] = useState(false);
   const [alias, setAlias] = useState(defaultAlias ?? "");
   const [canonicalSymbol, setCanonicalSymbol] = useState("");
+  const [brokerId, setBrokerId] = useState<string>("");
   const createAlias = useCreateSymbolAlias();
+  const { data: brokers = [] } = useListBrokers();
 
   async function handleSubmit() {
     if (!alias || !canonicalSymbol) return;
     try {
-      await createAlias.mutateAsync({ data: { alias, canonicalSymbol } });
+      await createAlias.mutateAsync({
+        data: {
+          alias,
+          canonicalSymbol,
+          brokerId: brokerId ? Number(brokerId) : undefined,
+        },
+      });
       toast({ title: "Alias created", description: `${alias} → ${canonicalSymbol}` });
       setAlias("");
       setCanonicalSymbol("");
+      setBrokerId("");
       setOpen(false);
     } catch (err: any) {
       toast({ title: "Failed to create alias", description: err?.message, variant: "destructive" });
@@ -211,6 +221,19 @@ function AddAliasDialog({ symbols, defaultAlias }: { symbols: { id: number; cano
               </SelectContent>
             </Select>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-mono text-muted-foreground">Broker (optional)</Label>
+            <Select value={brokerId} onValueChange={setBrokerId}>
+              <SelectTrigger className="rounded-sm font-mono text-sm">
+                <SelectValue placeholder="No specific broker" />
+              </SelectTrigger>
+              <SelectContent>
+                {brokers.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -232,6 +255,8 @@ export default function AdminSymbols() {
   const { data: symbols = [], isLoading: symbolsLoading, refetch: refetchSymbols } = useListSymbols();
   const { data: categories = [] } = useListSymbolCategories();
   const { data: aliases = [], refetch: refetchAliases } = useListSymbolAliases();
+  const { data: brokers = [] } = useListBrokers();
+  const brokerNameById = new Map(brokers.map((b) => [b.id, b.name]));
   const { data: log = [] } = useGetSymbolNormalizationLog(
     logFilter === "unresolved" ? { unresolvedOnly: "true" } : undefined,
   );
@@ -328,8 +353,9 @@ export default function AdminSymbols() {
                             className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
                             onClick={() => handleDeleteSymbol(s.id)}
                             title="Delete"
+                            aria-label={`Delete ${s.canonicalSymbol}`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </Button>
                         </td>
                       </tr>
@@ -348,19 +374,22 @@ export default function AdminSymbols() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/30">
-                    {["Alias", "Canonical Symbol", "Source", "Added", ""].map((h) => (
+                    {["Alias", "Canonical Symbol", "Broker", "Source", "Added", ""].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {aliases.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No aliases yet</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No aliases yet</td></tr>
                   ) : (
                     aliases.map((a) => (
                       <tr key={a.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                         <td className="px-4 py-3 font-mono text-xs">{a.alias}</td>
                         <td className="px-4 py-3 font-mono text-xs text-primary">{a.canonicalSymbol}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                          {a.brokerId ? brokerNameById.get(a.brokerId) ?? `#${a.brokerId}` : "—"}
+                        </td>
                         <td className="px-4 py-3 text-xs font-mono text-muted-foreground capitalize">{a.source}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(a.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-3 text-right">
@@ -370,8 +399,9 @@ export default function AdminSymbols() {
                             className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
                             onClick={() => handleDeleteAlias(a.id)}
                             title="Delete"
+                            aria-label={`Delete alias ${a.alias}`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </Button>
                         </td>
                       </tr>

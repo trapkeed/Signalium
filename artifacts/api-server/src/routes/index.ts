@@ -26,6 +26,9 @@ import knowledgeBaseRouter from "./knowledge-base";
 import statusRouter from "./status";
 import referralsRouter from "./referrals";
 import auditLogRouter from "./audit-log";
+import brokersRouter from "./brokers";
+import dataProvidersRouter from "./data-providers";
+import featureFlagsRouter from "./feature-flags";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -58,5 +61,8 @@ router.use("/kb", knowledgeBaseRouter);
 router.use("/status", statusRouter);
 router.use("/referrals", referralsRouter);
 router.use("/audit-log", auditLogRouter);
+router.use("/brokers", brokersRouter);
+router.use("/data-providers", dataProvidersRouter);
+router.use("/feature-flags", featureFlagsRouter);
 
 export default router;

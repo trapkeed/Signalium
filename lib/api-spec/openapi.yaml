@@ -1410,6 +1410,8 @@ paths:
                   type: string
                 canonicalSymbol:
                   type: string
+                brokerId:
+                  type: integer
       responses:
         "201":
           description: Created
@@ -1436,6 +1438,328 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SymbolAlias"
+
+  /brokers:
+    get:
+      operationId: listBrokers
+      tags: [brokers]
+      summary: List active brokers (any authenticated user)
+      responses:
+        "200":
+          description: Brokers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Broker"
+
+  /brokers/admin:
+    get:
+      operationId: listBrokersAdmin
+      tags: [brokers]
+      summary: List all brokers (admin)
+      responses:
+        "200":
+          description: Brokers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Broker"
+    post:
+      operationId: createBroker
+      tags: [brokers]
+      summary: Create a broker (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+                website:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Broker"
+
+  /brokers/admin/{id}:
+    patch:
+      operationId: updateBroker
+      tags: [brokers]
+      summary: Update a broker (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+                website:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Broker"
+    delete:
+      operationId: deleteBroker
+      tags: [brokers]
+      summary: Delete a broker (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Broker"
+
+  /data-providers:
+    get:
+      operationId: listDataProviders
+      tags: [data-providers]
+      summary: List active data providers (any authenticated user)
+      responses:
+        "200":
+          description: Data providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataProvider"
+
+  /data-providers/admin:
+    get:
+      operationId: listDataProvidersAdmin
+      tags: [data-providers]
+      summary: List all data providers (admin)
+      responses:
+        "200":
+          description: Data providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataProvider"
+    post:
+      operationId: createDataProvider
+      tags: [data-providers]
+      summary: Create a data provider (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+                apiEndpoint:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProvider"
+
+  /data-providers/admin/{id}:
+    patch:
+      operationId: updateDataProvider
+      tags: [data-providers]
+      summary: Update a data provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+                apiEndpoint:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProvider"
+    delete:
+      operationId: deleteDataProvider
+      tags: [data-providers]
+      summary: Delete a data provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProvider"
+
+  /feature-flags:
+    get:
+      operationId: listFeatureFlagStates
+      tags: [feature-flags]
+      summary: Get current feature flag states as a key -> enabled map (any authenticated user)
+      responses:
+        "200":
+          description: Flag states
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: boolean
+
+  /feature-flags/admin:
+    get:
+      operationId: listFeatureFlagsAdmin
+      tags: [feature-flags]
+      summary: List all feature flags (admin)
+      responses:
+        "200":
+          description: Feature flags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeatureFlag"
+    post:
+      operationId: createFeatureFlag
+      tags: [feature-flags]
+      summary: Create a feature flag (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, label]
+              properties:
+                key:
+                  type: string
+                label:
+                  type: string
+                description:
+                  type: string
+                enabled:
+                  type: boolean
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureFlag"
+
+  /feature-flags/admin/{id}:
+    patch:
+      operationId: updateFeatureFlag
+      tags: [feature-flags]
+      summary: Update / toggle a feature flag (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                description:
+                  type: string
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureFlag"
+    delete:
+      operationId: deleteFeatureFlag
+      tags: [feature-flags]
+      summary: Delete a feature flag (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureFlag"
 
   /qde/telemetry:
     post:
@@ -3820,6 +4144,8 @@ components:
         source:
           type: string
           enum: [admin, ea, broker]
+        brokerId:
+          type: ["integer", "null"]
         createdBy:
           type: ["string", "null"]
         createdAt:
@@ -3836,6 +4162,8 @@ components:
         source:
           type: string
           enum: [admin, ea, broker]
+        brokerId:
+          type: ["integer", "null"]
         createdBy:
           type: ["string", "null"]
         createdAt:
@@ -3843,6 +4171,59 @@ components:
         symbolId:
           type: integer
         canonicalSymbol:
+          type: string
+
+    Broker:
+      type: object
+      required: [id, name, slug, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        website:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    DataProvider:
+      type: object
+      required: [id, name, slug, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        apiEndpoint:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    FeatureFlag:
+      type: object
+      required: [id, key, label, enabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
           type: string
 
     SymbolNormalizeResult:

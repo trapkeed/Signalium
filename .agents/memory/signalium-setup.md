@@ -119,3 +119,13 @@ In `openapi.yaml`, do NOT declare a nullable object field as `type: ["object", "
 Referral attribution happens exactly once, at first-ever user-row provisioning (inside the existing sync-login lazy-provisioning path, since there's no signup webhook available). The referred code is captured client-side from a `?ref=` URL param into localStorage, sent on the next login call, and cleared after use. Self-referral is guarded explicitly even though structurally near-impossible; duplicate referral is prevented by a DB unique index on `referredUserId`, not application logic.
 
 **Why:** provisioning-time is the only point the backend can be certain "this is a brand-new user" — attributing later would need extra state to detect first-vs-repeat login.
+
+## Feature flag gating pattern
+Feature flags are a simple `key -> boolean` map (no rollout %/targeting). Public `GET /feature-flags` returns `Record<string, boolean>` for cheap client-side gating (`useFeatureFlag(key)` hook, defaults to `false` while loading/missing so nothing is exposed prematurely); `/feature-flags/admin` returns full row objects for CRUD. Gating is UI-only (hide nav item/tab) — it does not block the underlying route/API, so it's a visibility toggle, not an authorization boundary.
+
+**Why:** matches the spec's ask for a lightweight on/off switch admins can flip without a deploy, not a full experimentation platform; keeping the enforcement UI-only avoided touching every gated route's auth path for a first pass.
+
+## Admin nav grouping
+Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
+
+**Why:** flat admin list had grown past a dozen items across unrelated domains (billing, symbols, content, support); grouping keeps the pattern extensible as new admin pages are added.

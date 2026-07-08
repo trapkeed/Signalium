@@ -677,6 +677,8 @@ export interface SymbolAlias {
   symbolId: number;
   source: SymbolAliasSource;
   /** @nullable */
+  brokerId?: number | null;
+  /** @nullable */
   createdBy?: string | null;
   createdAt: string;
 }
@@ -695,10 +697,43 @@ export interface SymbolAliasWithCanonical {
   alias: string;
   source: SymbolAliasWithCanonicalSource;
   /** @nullable */
+  brokerId?: number | null;
+  /** @nullable */
   createdBy?: string | null;
   createdAt: string;
   symbolId: number;
   canonicalSymbol: string;
+}
+
+export interface Broker {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  website?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface DataProvider {
+  id: number;
+  name: string;
+  slug: string;
+  /** @nullable */
+  apiEndpoint?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface FeatureFlag {
+  id: number;
+  key: string;
+  label: string;
+  /** @nullable */
+  description?: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SymbolNormalizeResult {
@@ -1757,6 +1792,50 @@ export type UpdateSymbolBody = {
 export type CreateSymbolAliasBody = {
   alias: string;
   canonicalSymbol: string;
+  brokerId?: number;
+};
+
+export type CreateBrokerBody = {
+  name: string;
+  slug: string;
+  website?: string;
+  isActive?: boolean;
+};
+
+export type UpdateBrokerBody = {
+  name?: string;
+  slug?: string;
+  website?: string;
+  isActive?: boolean;
+};
+
+export type CreateDataProviderBody = {
+  name: string;
+  slug: string;
+  apiEndpoint?: string;
+  isActive?: boolean;
+};
+
+export type UpdateDataProviderBody = {
+  name?: string;
+  slug?: string;
+  apiEndpoint?: string;
+  isActive?: boolean;
+};
+
+export type ListFeatureFlagStates200 = {[key: string]: boolean};
+
+export type CreateFeatureFlagBody = {
+  key: string;
+  label: string;
+  description?: string;
+  enabled?: boolean;
+};
+
+export type UpdateFeatureFlagBody = {
+  label?: string;
+  description?: string;
+  enabled?: boolean;
 };
 
 export type SubmitEaTelemetry201 = {

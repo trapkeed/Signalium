@@ -1,0 +1,402 @@
+# SIGNALIUM S16 — SUBSCRIPTION, BILLING, PAYMENTS AND ENTITLEMENT INFRASTRUCTURE
+
+Repository:
+signalium
+
+Branch:
+feature/s16-subscriptions-billing-payments
+
+## OBJECTIVE
+
+Implement the complete commercial infrastructure for Signalium.
+
+Signalium is a premium institutional trading platform.
+
+There is no free tier.
+
+No feature should be accessible without an active subscription.
+
+All trading functionality, market analysis, API access, EA generation and autonomous trading capabilities must be protected behind subscription entitlements.
+
+---
+
+# PACKAGES
+
+Create exactly three subscription packages:
+
+## Starter
+
+Price:
+100 USD/month
+
+Capabilities:
+
+* Manual Mode only
+* AI market analysis
+* Market context
+* Trade ideas
+* Entry zones
+* Risk suggestions
+* Up to 5 active symbols
+* No autonomous trading
+* No EA generation
+* No API access
+
+---
+
+## Professional
+
+Price:
+149 USD/month
+
+Capabilities:
+
+* Everything in Starter
+* Autonomous Mode enabled
+* Unique EA generation
+* API key generation
+* EA API access
+* Live trade monitoring
+* Autonomous trade management
+* Maximum 10 active symbols
+* Maximum 3 active EAs
+
+---
+
+## Enterprise
+
+Price:
+499 USD/month
+
+Capabilities:
+
+* Everything in Professional
+* Unlimited symbols
+* Unlimited autonomous sessions
+* Multiple EAs
+* Priority inference queue
+* Advanced analytics
+* Portfolio level QDE management
+* Multiple trading accounts
+
+---
+
+# PACKAGE MANAGEMENT
+
+Packages must NOT be hardcoded.
+
+Create:
+
+server/subscriptions/
+
+including:
+
+plans/
+billing/
+payments/
+entitlements/
+renewals/
+invoices/
+grace_periods/
+webhooks/
+providers/
+
+Admins can:
+
+* change package prices
+* disable plans
+* create promotional plans
+* create regional pricing
+* modify limits
+* change feature access
+* enable or disable payment providers
+
+---
+
+# PAYMENT PROVIDERS
+
+Implement provider abstraction.
+
+Create:
+
+PaymentProvider interface
+
+Supported providers:
+
+Primary:
+
+* USDT
+
+Secondary:
+
+* Stripe
+* Flutterwave
+* PayPal
+
+Future providers should be pluggable.
+
+Never hardcode provider logic.
+
+---
+
+# USDT PAYMENT SYSTEM
+
+USDT is the preferred payment method.
+
+Requirements:
+
+* support TRC20
+* support ERC20
+* support BEP20
+
+Admin configurable:
+
+* wallet addresses
+* supported networks
+* confirmation requirements
+
+Store:
+
+transaction hash
+network
+amount
+confirmations
+status
+wallet address
+
+Implement:
+
+PENDING
+CONFIRMING
+CONFIRMED
+FAILED
+EXPIRED
+
+states.
+
+---
+
+# SUBSCRIPTION STATES
+
+Implement:
+
+ACTIVE
+GRACE_PERIOD
+SUSPENDED
+EXPIRED
+CANCELLED
+PAUSED
+PENDING_PAYMENT
+
+---
+
+# GRACE PERIODS
+
+Implement:
+
+7 day grace period after failed renewal.
+
+During grace period:
+
+* manual mode remains available
+* autonomous mode disabled
+* EA polling denied
+
+After grace period:
+
+all entitlements revoked.
+
+---
+
+# ENTITLEMENT ENGINE
+
+Create:
+
+EntitlementEngine
+
+Responsibilities:
+
+Determine access to:
+
+* Manual Mode
+* Autonomous Mode
+* EA generation
+* API access
+* Symbol limits
+* Number of active EAs
+* Research features
+* Analytics
+
+All access decisions must pass through EntitlementEngine.
+
+No direct package checks anywhere in code.
+
+---
+
+# EA ACCESS CONTROL
+
+EAs cannot function without active entitlement.
+
+EA polling endpoints must verify:
+
+* API key validity
+* subscription status
+* entitlement status
+* active package
+* allowed symbol count
+* autonomous permission
+
+If validation fails:
+
+return machine readable denial response.
+
+Example:
+
+SUBSCRIPTION_EXPIRED
+AUTONOMOUS_DISABLED
+SYMBOL_LIMIT_REACHED
+INVALID_API_KEY
+
+---
+
+# API KEY MANAGEMENT
+
+Create:
+
+server/api_keys/
+
+Requirements:
+
+* cryptographically secure keys
+* hashed storage
+* rotation support
+* revoke support
+* expiration support
+
+Keys are tied to:
+
+user
+subscription
+EA instance
+
+Never store plaintext keys.
+
+---
+
+# INVOICE SYSTEM
+
+Generate invoices automatically for:
+
+* subscriptions
+* renewals
+* upgrades
+* downgrades
+
+Store:
+
+invoice number
+currency
+payment provider
+payment reference
+status
+issued date
+paid date
+
+Support PDF export.
+
+---
+
+# SUBSCRIPTION EVENTS
+
+Create event system:
+
+SUBSCRIPTION_CREATED
+SUBSCRIPTION_RENEWED
+SUBSCRIPTION_UPGRADED
+SUBSCRIPTION_DOWNGRADED
+PAYMENT_FAILED
+PAYMENT_CONFIRMED
+GRACE_STARTED
+GRACE_ENDED
+SUBSCRIPTION_EXPIRED
+
+---
+
+# ADMIN PANEL
+
+Admins can:
+
+* view subscriptions
+* view invoices
+* change prices
+* enable providers
+* disable providers
+* refund payments
+* suspend accounts
+* extend subscriptions manually
+* issue promotional credits
+
+---
+
+# FRONTEND REQUIREMENTS
+
+Users can:
+
+* view active plan
+* upgrade plan
+* downgrade plan
+* view invoices
+* manage payment methods
+* view subscription history
+* renew subscriptions
+* generate API keys
+* revoke API keys
+
+---
+
+# SECURITY
+
+Implement:
+
+* webhook signature verification
+* replay protection
+* transaction deduplication
+* fraud detection hooks
+* rate limiting
+* audit logs
+
+---
+
+# DATABASE TABLES
+
+Create:
+
+subscription_plans
+subscriptions
+subscription_events
+payment_transactions
+payment_methods
+payment_providers
+api_keys
+invoices
+invoice_items
+grace_periods
+entitlements
+
+---
+
+# IMPORTANT
+
+Do not modify authentication.
+
+Do not redesign the UI.
+
+Do not change existing trainer logic.
+
+Do not hardcode package rules.
+
+Everything must be configuration driven.
+
+Signalium must be able to operate globally.
+
+USDT remains the primary payment mechanism.

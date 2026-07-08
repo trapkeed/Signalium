@@ -1501,6 +1501,7 @@ export const ListSymbolAliasesResponseItem = zod.object({
   "id": zod.number(),
   "alias": zod.string(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string(),
   "symbolId": zod.number(),
@@ -1514,7 +1515,8 @@ export const ListSymbolAliasesResponse = zod.array(ListSymbolAliasesResponseItem
  */
 export const CreateSymbolAliasBody = zod.object({
   "alias": zod.string(),
-  "canonicalSymbol": zod.string()
+  "canonicalSymbol": zod.string(),
+  "brokerId": zod.number().optional()
 })
 
 export const CreateSymbolAliasResponse = zod.object({
@@ -1522,6 +1524,7 @@ export const CreateSymbolAliasResponse = zod.object({
   "alias": zod.string(),
   "symbolId": zod.number(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -1539,8 +1542,271 @@ export const DeleteSymbolAliasResponse = zod.object({
   "alias": zod.string(),
   "symbolId": zod.number(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List active brokers (any authenticated user)
+ */
+export const ListBrokersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListBrokersResponse = zod.array(ListBrokersResponseItem)
+
+
+/**
+ * @summary List all brokers (admin)
+ */
+export const ListBrokersAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListBrokersAdminResponse = zod.array(ListBrokersAdminResponseItem)
+
+
+/**
+ * @summary Create a broker (admin)
+ */
+export const CreateBrokerBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateBrokerResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a broker (admin)
+ */
+export const UpdateBrokerParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateBrokerBody = zod.object({
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "website": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateBrokerResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a broker (admin)
+ */
+export const DeleteBrokerParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteBrokerResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "website": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List active data providers (any authenticated user)
+ */
+export const ListDataProvidersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListDataProvidersResponse = zod.array(ListDataProvidersResponseItem)
+
+
+/**
+ * @summary List all data providers (admin)
+ */
+export const ListDataProvidersAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListDataProvidersAdminResponse = zod.array(ListDataProvidersAdminResponseItem)
+
+
+/**
+ * @summary Create a data provider (admin)
+ */
+export const CreateDataProviderBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const CreateDataProviderResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a data provider (admin)
+ */
+export const UpdateDataProviderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateDataProviderBody = zod.object({
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "apiEndpoint": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateDataProviderResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a data provider (admin)
+ */
+export const DeleteDataProviderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteDataProviderResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get current feature flag states as a key -> enabled map (any authenticated user)
+ */
+export const ListFeatureFlagStatesResponse = zod.record(zod.string(), zod.boolean())
+
+
+/**
+ * @summary List all feature flags (admin)
+ */
+export const ListFeatureFlagsAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListFeatureFlagsAdminResponse = zod.array(ListFeatureFlagsAdminResponseItem)
+
+
+/**
+ * @summary Create a feature flag (admin)
+ */
+export const CreateFeatureFlagBody = zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().optional(),
+  "enabled": zod.boolean().optional()
+})
+
+export const CreateFeatureFlagResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update / toggle a feature flag (admin)
+ */
+export const UpdateFeatureFlagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateFeatureFlagBody = zod.object({
+  "label": zod.string().optional(),
+  "description": zod.string().optional(),
+  "enabled": zod.boolean().optional()
+})
+
+export const UpdateFeatureFlagResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a feature flag (admin)
+ */
+export const DeleteFeatureFlagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteFeatureFlagResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 
 

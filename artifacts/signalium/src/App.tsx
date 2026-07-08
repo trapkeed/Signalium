@@ -42,6 +42,9 @@ import AdminSupport from "@/pages/admin/support";
 import AdminContact from "@/pages/admin/contact";
 import AdminKnowledgeBase from "@/pages/admin/knowledge-base";
 import AdminStatusPage from "@/pages/admin/status";
+import AdminBrokers from "@/pages/admin/brokers";
+import AdminDataProviders from "@/pages/admin/data-providers";
+import AdminFeatureFlags from "@/pages/admin/feature-flags";
 
 import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
@@ -240,6 +243,9 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
             <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
             <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
+            <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
+            <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
+            <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
             <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>
             <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>

@@ -9,4 +9,5 @@
 export type CreateSymbolAliasBody = {
   alias: string;
   canonicalSymbol: string;
+  brokerId?: number;
 };

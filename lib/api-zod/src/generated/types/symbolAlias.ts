@@ -13,6 +13,8 @@ export interface SymbolAlias {
   symbolId: number;
   source: SymbolAliasSource;
   /** @nullable */
+  brokerId?: number | null;
+  /** @nullable */
   createdBy?: string | null;
   createdAt: string;
 }

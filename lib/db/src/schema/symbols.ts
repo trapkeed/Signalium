@@ -1,6 +1,7 @@
 import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { brokersTable } from "./brokers";
 
 export const symbolCategoriesTable = pgTable("symbol_categories", {
   id: serial("id").primaryKey(),
@@ -31,6 +32,9 @@ export const symbolAliasesTable = pgTable("symbol_aliases", {
   alias: text("alias").notNull().unique(),
   symbolId: integer("symbol_id").notNull().references(() => symbolsTable.id),
   source: text("source", { enum: ["admin", "ea", "broker"] }).notNull().default("admin"),
+  // Nullable: which broker reports this raw alias, if known. Lets symbol
+  // normalization reference the brokers registry without requiring it.
+  brokerId: integer("broker_id").references(() => brokersTable.id),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
