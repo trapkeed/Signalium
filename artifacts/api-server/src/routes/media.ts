@@ -3,8 +3,10 @@ import { getAuth } from "@clerk/express";
 import { db, mediaAssetsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
+const objectStorageService = new ObjectStorageService();
 
 // GET /media — admin: list media assets, optionally filtered by category
 router.get("/", requireAdmin, async (req, res) => {
@@ -35,6 +37,16 @@ router.post("/", requireAdmin, async (req, res) => {
 
   try {
     const { userId } = getAuth(req);
+
+    // Media library assets back public-facing SEO surfaces (favicon, OG
+    // images, sitemaps read by crawlers), so they're intentionally marked
+    // public — otherwise GET /storage/objects/* would 403 everyone but the
+    // uploading admin, breaking the whole point of the library.
+    await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
+      owner: userId ?? "unknown",
+      visibility: "public",
+    });
+
     const [asset] = await db
       .insert(mediaAssetsTable)
       .values({ ...req.body, uploadedBy: userId ?? null })
@@ -52,6 +64,10 @@ router.delete("/:id", requireAdmin, async (req, res) => {
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
   try {
+    const [asset] = await db.select().from(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
+    if (asset) {
+      await objectStorageService.deleteObjectEntity(asset.objectPath);
+    }
     await db.delete(mediaAssetsTable).where(eq(mediaAssetsTable.id, id));
     return res.status(204).send();
   } catch (err) {

@@ -51,11 +51,19 @@ function clearStructuredData() {
 
 const DEFAULT_TITLE = "Signalium";
 
+// Captured once, lazily, the first time we touch the favicon link — this is
+// the static /favicon.svg href baked into index.html. We restore it if an
+// admin clears a previously-set custom faviconUrl, instead of leaving the
+// last custom favicon stuck (setAttribute has no notion of "unset").
+let defaultFaviconHref: string | null = null;
+
 function setFaviconHref(href: string | null | undefined) {
   const link = document.head.querySelector<HTMLLinkElement>('link[rel="icon"]');
-  // No admin-configured favicon: leave the static index.html <link> as-is.
-  if (!href || !link) return;
-  link.setAttribute("href", href);
+  if (!link) return;
+  if (defaultFaviconHref === null) {
+    defaultFaviconHref = link.getAttribute("href");
+  }
+  link.setAttribute("href", href || defaultFaviconHref || "/favicon.svg");
 }
 
 /**

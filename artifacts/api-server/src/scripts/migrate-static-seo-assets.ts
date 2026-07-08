@@ -41,7 +41,17 @@ async function uploadLocalFile(
   const file = bucket.file(objectName);
   await file.save(buffer, { contentType });
 
-  return `/objects/uploads/${objectId}`;
+  const objectPath = `/objects/uploads/${objectId}`;
+  // These assets back public SEO surfaces (favicon, OG image) that must be
+  // fetchable by crawlers/anonymous visitors — same policy POST /media sets
+  // for admin-uploaded assets. Without this, GET /storage/objects/* (which
+  // enforces ACL) would 403 everyone.
+  await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
+    owner: "migration-script",
+    visibility: "public",
+  });
+
+  return objectPath;
 }
 
 async function upsertMediaAsset(input: {
@@ -97,6 +107,13 @@ async function main() {
 
     if (existingOg) {
       ogImagePath = existingOg.objectPath;
+      // Re-run-safe: earlier runs of this script (before ACL enforcement
+      // was added to GET /storage/objects/*) may have left this object
+      // without a public ACL policy, which would now 403 it. Reassert it.
+      await objectStorageService.trySetObjectEntityAclPolicy(ogImagePath, {
+        owner: "migration-script",
+        visibility: "public",
+      });
       console.log(`  media asset already migrated: opengraph.jpg -> ${ogImagePath}`);
     } else {
       const objectPath = await uploadLocalFile(ogLocalPath, "image/jpeg", objectStorageService);
@@ -130,6 +147,11 @@ async function main() {
         category: "favicon",
       });
     } else {
+      // See the opengraph.jpg branch above — reassert ACL for re-runs.
+      await objectStorageService.trySetObjectEntityAclPolicy(existingFavicon.objectPath, {
+        owner: "migration-script",
+        visibility: "public",
+      });
       console.log(`  media asset already migrated: favicon.svg -> ${existingFavicon.objectPath}`);
     }
   }

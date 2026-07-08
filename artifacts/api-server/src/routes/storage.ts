@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
+import { getAuth } from "@clerk/express";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
@@ -84,9 +85,11 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 /**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serve object entities from PRIVATE_OBJECT_DIR, gated by each object's ACL
+ * policy (set at upload time — see POST /media). Media library assets are
+ * marked "public" on upload since they back public-facing SEO surfaces
+ * (favicon, OG images) that crawlers/anonymous visitors must be able to
+ * fetch; anything without a public policy is only visible to its owner.
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
@@ -95,20 +98,16 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     const objectPath = `/objects/${wildcardPath}`;
     const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
 
-    // --- Protected route example (uncomment when using replit-auth) ---
-    // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
-    //   return;
-    // }
-    // const canAccess = await objectStorageService.canAccessObjectEntity({
-    //   userId: req.user.id,
-    //   objectFile,
-    //   requestedPermission: ObjectPermission.READ,
-    // });
-    // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
-    //   return;
-    // }
+    const { userId } = getAuth(req);
+    const canAccess = await objectStorageService.canAccessObjectEntity({
+      userId: userId ?? undefined,
+      objectFile,
+      requestedPermission: ObjectPermission.READ,
+    });
+    if (!canAccess) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
 
     const response = await objectStorageService.downloadObject(objectFile);
 

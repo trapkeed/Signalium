@@ -34,6 +34,7 @@ import AdminMedia from "@/pages/admin/media";
 import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
 import { useSeoHead } from "@/hooks/use-seo-head";
+import { useSeoRedirects } from "@/hooks/use-seo-redirects";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
@@ -158,6 +159,7 @@ function ClerkQueryClientCacheInvalidator() {
 
 function SeoHeadManager() {
   useSeoHead();
+  useSeoRedirects();
   return null;
 }
 

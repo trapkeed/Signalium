@@ -204,6 +204,21 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+
+  /**
+   * Deletes the underlying blob for an "/objects/..." entity path. Used when
+   * an admin deletes a media_assets row, so we don't leak orphaned blobs that
+   * remain fetchable by anyone who kept the URL.
+   */
+  async deleteObjectEntity(objectPath: string): Promise<void> {
+    try {
+      const objectFile = await this.getObjectEntityFile(objectPath);
+      await objectFile.delete();
+    } catch (err) {
+      if (err instanceof ObjectNotFoundError) return;
+      throw err;
+    }
+  }
 }
 
 function parseObjectPath(path: string): {
