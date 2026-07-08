@@ -205,6 +205,17 @@ function safeSend(ws: WebSocket, payload: unknown) {
 }
 
 async function handleTelemetry(state: ConnectionState, data: unknown) {
+  // Re-check API access on every inbound message, not just at connect time —
+  // a subscription can transition into grace/expired/suspended while a
+  // socket is already open, and EA polling must stop immediately when that
+  // happens rather than waiting for the next reconnect.
+  const apiAccess = await checkApiAccess(state.userId);
+  if (!apiAccess.allowed) {
+    safeSend(state.ws, { type: "error", code: apiAccess.code, message: apiAccess.message });
+    state.ws.close(4003, apiAccess.code);
+    return;
+  }
+
   const telemetry = parseTelemetryPayload(data);
   if (!telemetry) {
     safeSend(state.ws, { type: "error", message: "Invalid telemetry payload" });

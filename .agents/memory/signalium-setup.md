@@ -137,25 +137,18 @@ Routes that return plain object literals (not validated by a zod response schema
 
 **Why:** hit this building a new summary endpoint — the first implementation used different field names than the OpenAPI schema already written, which would have shipped a frontend type mismatch since nothing type-checks response bodies against the spec.
 
-## New config-mutation endpoints need admin protection checked explicitly, not assumed
-When adding new POST/PATCH/DELETE routes for anything that controls platform-wide policy (plan capabilities, feature flags, pricing, etc.), explicitly verify `requireAdmin` is applied — don't assume it carried over from a similar existing route. Grep for the middleware on the new route before finishing, since a missing import silently leaves the endpoint open to any caller.
+## Policy-mutation and access-control changes need explicit, not assumed, verification
+Three related failure modes have recurred building the entitlement/billing system, each caught by code review rather than caught up front:
+1. Platform-policy mutation routes (plan capabilities, feature flags, pricing) silently missing admin protection — never assume it carried over from a similar route; grep for the middleware explicitly.
+2. Auth/entitlement rejections surfaced to external clients (HTTP body or WS error frame) need a stable machine-readable `code`, not just a message — a human-readable string alone can't be branched on programmatically.
+3. Access checks tied to connection state (e.g. a WebSocket) must be re-evaluated on every message, not just at connect time — state (subscription tier, grace period, suspension) can change mid-connection, and a stale allow-decision from connect time will let a now-disallowed action through until reconnect.
 
-**Why:** caught by code review — new plan-capability mutation routes (`autonomousAllowed`, `apiAccessAllowed`, limits) shipped without `requireAdmin`, letting any caller rewrite platform-wide entitlement policy.
+**Why:** each of these is a case where the check existed *somewhere* in the codebase but wasn't wired to the actual enforcement boundary — the general lesson is to trace every access-control claim to the literal request path that needs it, not just the function that implements it.
 
-## EA-facing auth failures need a `code` field alongside the message
-Any auth/entitlement rejection surfaced to EA clients (HTTP JSON body or WS `type: "error"` frame) must include a stable machine-readable `code` (e.g. `INVALID_API_KEY`, `API_KEY_EXPIRED`, `API_KEY_SUSPENDED`), not just a human-readable message — EAs need to branch on this programmatically (retry vs. stop vs. prompt re-auth).
+**How to apply:** when adding or reviewing any access-control or admin-gated endpoint, explicitly trace: (a) is the middleware/check present on this exact route, (b) does the denial response carry a machine code, (c) if this is a persistent connection, is the check re-run per message/action rather than once at handshake.
 
-**Why:** caught by code review — API key auth failures returned only `{error: string}}`, so the `INVALID_API_KEY`-style codes used elsewhere in the entitlement system weren't reachable from the earliest rejection point in the EA auth chain.
-
-## Grace period scope is asymmetric — re-check per capability, don't assume "grace = degraded but working"
-When a spec defines a grace period, verify per-capability which things stay on vs. cut off immediately — don't default every check to "same as active". In Signalium, manual dashboard access survives grace, but EA/API polling and autonomous mode are cut off immediately at grace start (only the full account lockout waits for grace to lapse into EXPIRED).
-
-**Why:** caught by code review — `checkApiAccess` initially allowed `grace_period` (mirroring the manual-access rule) when the spec explicitly says EA polling must be denied during grace, not just autonomous mode.
-
-## Limit-check entitlement functions must be called at the mutation, not just exist
-An entitlement function like `checkMaxActiveEas` only enforces anything if it's actually invoked at the boundary that grows the counted resource (EA terminal registration), in addition to being available for informational/summary endpoints. Grep all state-changing routes for the resource being limited before considering a limit "wired up".
-
-**Why:** caught by code review — `checkMaxActiveEas` existed in the entitlement engine and was surfaced in the summary endpoint, but `POST /ea-registrations` (the only place that creates a new active terminal) never called it, so the plan's max-EA limit was unenforceable in practice.
+## Grace period scope is asymmetric, not "degraded but working" uniformly
+When a spec defines a grace period, capability-by-capability behavior can differ — don't default every check to "same as active" or "same as expired". In Signalium: manual dashboard access survives grace, but EA/API polling and autonomous mode are cut off immediately at grace start; only full account lockout waits for grace to lapse into EXPIRED. Read the spec's per-capability grace rules literally rather than inferring one from another.
 
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
