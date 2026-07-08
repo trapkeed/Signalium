@@ -7,6 +7,6 @@
  */
 
 export interface PaymentProofInput {
-  txHash?: string;
+  txHash: string;
   notes?: string;
 }

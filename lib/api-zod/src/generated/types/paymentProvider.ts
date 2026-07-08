@@ -14,6 +14,13 @@ export interface PaymentProvider {
   name: string;
   isActive: boolean;
   config: PaymentProviderConfig;
+  /** Whether the provider currently has the credentials/config needed to actually process a payment. */
+  connectable?: boolean;
+  /**
+     * Human-readable explanation when the provider is not connectable.
+     * @nullable
+     */
+  limitation?: string | null;
   createdAt: string;
   updatedAt?: string;
 }

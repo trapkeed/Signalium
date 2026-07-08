@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PaymentProviderInputConfig } from './paymentProviderInputConfig';
-import type { PaymentProviderInputType } from './paymentProviderInputType';
+import type { PaymentProviderType } from './paymentProviderType';
 
 export interface PaymentProviderInput {
-  type: PaymentProviderInputType;
+  type: PaymentProviderType;
   name: string;
   isActive?: boolean;
   config?: PaymentProviderInputConfig;

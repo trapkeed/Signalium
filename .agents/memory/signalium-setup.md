@@ -42,10 +42,12 @@ Orval `mode: "split"` with `schemas: { path: "generated/types" }` regenerates `l
 All page files must import hooks from `@workspace/api-client-react`, NOT from `@/lib/api-client-react/generated/api`. The latter path causes TS2307 (module not found) because that path is not aliased in vite/tsconfig.
 
 ## Payment provider architecture
-Pluggable design: `payment_providers` table stores type+config as JSON. Types: `usdt`, `card`, `bank_transfer`. Admin configures wallet/apiKey/etc per type in `config` JSON column. No provider code is hardcoded in routes — routes are generic and read provider config from DB. Adding a new provider = insert a row + update frontend `PROVIDER_ICONS/LABELS` maps.
+A `PaymentProvider` interface (`isConfigured`, `connectivityNote`, `createIntent`, `verifyWebhook`) is implemented once per concrete provider (USDT per network: trc20/erc20/bep20, plus stripe/paypal/flutterwave) and registered in a registry — routes/webhooks/lifecycle code only ever call the interface, never branch on provider-type strings. USDT providers read wallet/confirmation config from the DB `payment_providers.config` JSON; Stripe/PayPal/Flutterwave read credentials from env secrets (via the Replit connector, not DB config) and report `isConfigured()===false` + a human `connectivityNote()` until connected — never fake success. The provider list API exposes `connectable`/`limitation` fields so the admin UI can show this honestly.
 
-## Payment flow
-USDT: user picks plan → picks provider → API creates payment intent with reference → user sends crypto → submits tx hash → admin confirms via `/payments/:id/confirm` → subscription activated automatically. Card: same flow, `config.apiKey` holds provider credentials.
+## Payment flow and confirmation model
+Payments move through `pending -> confirming -> confirmed|failed|expired` (+ `refunded`). USDT has no live blockchain monitoring in this environment (no node/paid indexer) — an admin must check a block explorer and report progress via `POST /payments/:id/confirmations`, which auto-confirms once the count reaches the network's required threshold. Stripe/PayPal/Flutterwave confirm via signed webhooks instead (dedup on `(provider, externalId)` in `webhook_events`). Every successful/failed payment event and invoice issuance is logged through the existing subscription event log (`PAYMENT_CONFIRMED`/`PAYMENT_FAILED`/`INVOICE_ISSUED`), and a PDF invoice is auto-generated on every subscription-affecting payment.
+
+**Why:** the task explicitly required no fabricated on-chain data — USDT confirmation tracking is a manual admin action by design, not a bug to "fix" later without adding real blockchain infrastructure.
 
 ## Fresh-environment startup checklist
 When artifacts fail to start after an environment reset/restore, check in this order: (1) `pnpm install` if `node_modules` is missing entirely, (2) Clerk keys via `checkClerkManagementStatus()`/`setupClerkWhitelabelAuth()` if `Missing Clerk Secret Key` or `Missing VITE_CLERK_PUBLISHABLE_KEY` errors appear, (3) `pnpm --filter @workspace/db run push` if API routes 500 with `relation "X" does not exist`.
@@ -149,6 +151,11 @@ Three related failure modes have recurred building the entitlement/billing syste
 
 ## Grace period scope is asymmetric, not "degraded but working" uniformly
 When a spec defines a grace period, capability-by-capability behavior can differ — don't default every check to "same as active" or "same as expired". In Signalium: manual dashboard access survives grace, but EA/API polling and autonomous mode are cut off immediately at grace start; only full account lockout waits for grace to lapse into EXPIRED. Read the spec's per-capability grace rules literally rather than inferring one from another.
+
+## esbuild `external: ["@swc/*"]` breaks packages that `require()` `@swc/helpers` at runtime
+Some transitive deps (e.g. `pdfkit` → `fontkit` → `brotli`) do a runtime `require("@swc/helpers/cjs/...")`. The api-server build externalizes `@swc/*` (to avoid bundling swc's own compiler internals), so esbuild leaves that require call untouched — but pnpm doesn't hoist `@swc/helpers` into the artifact's own `node_modules`, so Node's resolution from `dist/index.mjs` fails with `MODULE_NOT_FOUND` at startup (build succeeds, only fails at `pnpm run start`). Fix: add `@swc/helpers` as an explicit direct dependency of the artifact that hits this, so pnpm symlinks it locally.
+
+**Why:** the externals list in `build.mjs` is shared boilerplate for many possible packages, not something to remove broadly — the real fix is making the missing package locally resolvable, not un-externalizing `@swc/*`.
 
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).

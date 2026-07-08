@@ -1,7 +1,17 @@
 import { useState } from "react";
-import { useListAllPayments, useConfirmPayment, useRejectPayment, useListPaymentProviders, useCreatePaymentProvider, useUpdatePaymentProvider, useDeletePaymentProvider } from "@workspace/api-client-react";
+import {
+  useListAllPayments,
+  useConfirmPayment,
+  useRejectPayment,
+  useReportPaymentConfirmations,
+  useListPaymentProviders,
+  useCreatePaymentProvider,
+  useUpdatePaymentProvider,
+  useDeletePaymentProvider,
+  useListAllInvoices,
+} from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Clock, AlertCircle, Plus, Trash2, Settings2, Wallet, CreditCard } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, Plus, Trash2, Settings2, Wallet, CreditCard, FileText, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,37 +21,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const STATUS_CONFIG = {
   pending: { label: "Pending", icon: Clock, color: "text-yellow-500" },
-  submitted: { label: "Submitted", icon: AlertCircle, color: "text-blue-400" },
+  confirming: { label: "Confirming", icon: AlertCircle, color: "text-blue-400" },
   confirmed: { label: "Confirmed", icon: CheckCircle, color: "text-primary" },
   failed: { label: "Failed", icon: XCircle, color: "text-destructive" },
+  expired: { label: "Expired", icon: XCircle, color: "text-muted-foreground" },
   refunded: { label: "Refunded", icon: Clock, color: "text-muted-foreground" },
 };
 
-const PROVIDER_TYPES = ["usdt", "card", "bank_transfer"] as const;
-const PROVIDER_LABELS = { usdt: "USDT (Crypto)", card: "Card", bank_transfer: "Bank Transfer" };
-const PROVIDER_ICONS = { usdt: Wallet, card: CreditCard, bank_transfer: CreditCard };
+const PROVIDER_TYPES = ["usdt_trc20", "usdt_erc20", "usdt_bep20", "stripe", "paypal", "flutterwave"] as const;
+const PROVIDER_LABELS: Record<string, string> = {
+  usdt_trc20: "USDT (TRC-20)",
+  usdt_erc20: "USDT (ERC-20)",
+  usdt_bep20: "USDT (BEP-20)",
+  stripe: "Stripe",
+  paypal: "PayPal",
+  flutterwave: "Flutterwave",
+};
+const PROVIDER_ICONS: Record<string, typeof Wallet> = {
+  usdt_trc20: Wallet,
+  usdt_erc20: Wallet,
+  usdt_bep20: Wallet,
+  stripe: CreditCard,
+  paypal: CreditCard,
+  flutterwave: CreditCard,
+};
+const isUsdt = (type: string) => type.startsWith("usdt_");
 
 type ProviderForm = {
   type: string; name: string; isActive: boolean;
-  wallet?: string; network?: string; memo?: string;
-  apiKey?: string; webhookSecret?: string;
-  bankName?: string; accountNumber?: string; routingNumber?: string;
+  wallet?: string; memo?: string; requiredConfirmations?: string;
+  secretKey?: string; publicKey?: string; webhookSecret?: string;
+  clientId?: string; clientSecret?: string; webhookId?: string;
+};
+
+const INVOICE_STATUS_COLOR: Record<string, string> = {
+  draft: "text-muted-foreground",
+  issued: "text-blue-400",
+  paid: "text-primary",
+  void: "text-destructive",
 };
 
 export default function AdminPayments() {
   const { toast } = useToast();
   const [rejectDialogId, setRejectDialogId] = useState<number | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
+  const [confirmationsDialogId, setConfirmationsDialogId] = useState<number | null>(null);
+  const [confirmationsValue, setConfirmationsValue] = useState("");
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
   const [editProviderId, setEditProviderId] = useState<number | null>(null);
   const [providerForm, setProviderForm] = useState<ProviderForm>({
-    type: "usdt", name: "", isActive: false,
+    type: "usdt_trc20", name: "", isActive: false,
   });
 
   const { data: payments = [], refetch: refetchPayments } = useListAllPayments();
   const { data: providers = [], refetch: refetchProviders } = useListPaymentProviders();
+  const { data: invoices = [] } = useListAllInvoices();
   const confirmPayment = useConfirmPayment();
   const rejectPayment = useRejectPayment();
+  const reportConfirmations = useReportPaymentConfirmations();
   const createProvider = useCreatePaymentProvider();
   const updateProvider = useUpdatePaymentProvider();
   const deleteProvider = useDeletePaymentProvider();
@@ -69,20 +106,38 @@ export default function AdminPayments() {
     }
   }
 
+  async function handleReportConfirmations() {
+    if (!confirmationsDialogId) return;
+    const n = Number(confirmationsValue);
+    if (isNaN(n) || n < 0) {
+      toast({ title: "Enter a valid confirmation count", variant: "destructive" });
+      return;
+    }
+    try {
+      await reportConfirmations.mutateAsync({ id: confirmationsDialogId, data: { confirmations: n } });
+      toast({ title: "Confirmations updated" });
+      setConfirmationsDialogId(null);
+      setConfirmationsValue("");
+      refetchPayments();
+    } catch {
+      toast({ title: "Failed to update confirmations", variant: "destructive" });
+    }
+  }
+
   function openProviderCreate() {
     setEditProviderId(null);
-    setProviderForm({ type: "usdt", name: "", isActive: false });
+    setProviderForm({ type: "usdt_trc20", name: "", isActive: false });
     setProviderDialogOpen(true);
   }
 
-  function openProviderEdit(p: typeof providers[0]) {
-    const cfg = p.config as Record<string, string>;
+  function openProviderEdit(p: (typeof providers)[0]) {
+    const cfg = (p.config ?? {}) as Record<string, string>;
     setEditProviderId(p.id);
     setProviderForm({
       type: p.type, name: p.name, isActive: p.isActive,
-      wallet: cfg.wallet, network: cfg.network, memo: cfg.memo,
-      apiKey: cfg.apiKey, webhookSecret: cfg.webhookSecret,
-      bankName: cfg.bankName, accountNumber: cfg.accountNumber, routingNumber: cfg.routingNumber,
+      wallet: cfg.wallet, memo: cfg.memo, requiredConfirmations: cfg.requiredConfirmations,
+      secretKey: cfg.secretKey, publicKey: cfg.publicKey, webhookSecret: cfg.webhookSecret,
+      clientId: cfg.clientId, clientSecret: cfg.clientSecret, webhookId: cfg.webhookId,
     });
     setProviderDialogOpen(true);
   }
@@ -90,13 +145,14 @@ export default function AdminPayments() {
   async function handleSaveProvider() {
     const config: Record<string, string> = {};
     if (providerForm.wallet) config.wallet = providerForm.wallet;
-    if (providerForm.network) config.network = providerForm.network;
     if (providerForm.memo) config.memo = providerForm.memo;
-    if (providerForm.apiKey) config.apiKey = providerForm.apiKey;
+    if (providerForm.requiredConfirmations) config.requiredConfirmations = providerForm.requiredConfirmations;
+    if (providerForm.secretKey) config.secretKey = providerForm.secretKey;
+    if (providerForm.publicKey) config.publicKey = providerForm.publicKey;
     if (providerForm.webhookSecret) config.webhookSecret = providerForm.webhookSecret;
-    if (providerForm.bankName) config.bankName = providerForm.bankName;
-    if (providerForm.accountNumber) config.accountNumber = providerForm.accountNumber;
-    if (providerForm.routingNumber) config.routingNumber = providerForm.routingNumber;
+    if (providerForm.clientId) config.clientId = providerForm.clientId;
+    if (providerForm.clientSecret) config.clientSecret = providerForm.clientSecret;
+    if (providerForm.webhookId) config.webhookId = providerForm.webhookId;
 
     try {
       if (editProviderId) {
@@ -128,14 +184,33 @@ export default function AdminPayments() {
     }
   }
 
-  const pendingPayments = payments.filter((p) => p.status === "submitted");
+  async function handleDownloadInvoice(id: number) {
+    try {
+      const res = await fetch(
+        `${(import.meta as any).env?.BASE_URL ?? "/"}api/invoices/${id}/pdf`,
+        { credentials: "include" },
+      );
+      if (!res.ok) throw new Error("failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: "Failed to download invoice", variant: "destructive" });
+    }
+  }
+
+  const pendingPayments = payments.filter((p) => p.status === "pending" || p.status === "confirming");
   const allPayments = payments;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
       <div className="border-b border-border px-8 py-6">
         <h1 className="text-xl font-bold font-mono tracking-tight">Payment Management</h1>
-        <p className="text-sm text-muted-foreground mt-1">Review payments, manage providers</p>
+        <p className="text-sm text-muted-foreground mt-1">Review payments, manage providers, browse invoices</p>
       </div>
 
       <div className="flex-1 p-8 max-w-5xl">
@@ -145,6 +220,7 @@ export default function AdminPayments() {
               Payments {pendingPayments.length > 0 && <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">{pendingPayments.length}</span>}
             </TabsTrigger>
             <TabsTrigger value="providers" className="rounded-sm font-mono text-xs">Providers</TabsTrigger>
+            <TabsTrigger value="invoices" className="rounded-sm font-mono text-xs">Invoices</TabsTrigger>
           </TabsList>
 
           {/* Payments tab */}
@@ -153,14 +229,14 @@ export default function AdminPayments() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/30">
-                    {["ID", "User", "Amount", "Reference", "TX Hash", "Status", "Date", "Actions"].map((h) => (
+                    {["ID", "User", "Amount", "Network", "TX Hash", "Confirmations", "Status", "Date", "Actions"].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {allPayments.length === 0 ? (
-                    <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No payments yet</td></tr>
+                    <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No payments yet</td></tr>
                   ) : (
                     allPayments.map((p) => {
                       const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
@@ -170,8 +246,11 @@ export default function AdminPayments() {
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground">#{p.id}</td>
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[120px] truncate">{p.userId}</td>
                           <td className="px-4 py-3 font-mono font-bold">${p.amount}</td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? "—"}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground uppercase">{p.network ?? "—"}</td>
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[100px] truncate">{p.txHash ?? "—"}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                            {p.network ? `${p.confirmations ?? 0}${p.requiredConfirmations ? ` / ${p.requiredConfirmations}` : ""}` : "—"}
+                          </td>
                           <td className="px-4 py-3">
                             <span className={`flex items-center gap-1.5 text-xs font-mono ${cfg.color}`}>
                               <Icon className="w-3.5 h-3.5" /> {cfg.label}
@@ -181,8 +260,18 @@ export default function AdminPayments() {
                             {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
                           </td>
                           <td className="px-4 py-3">
-                            {(p.status === "pending" || p.status === "submitted") && (
-                              <div className="flex gap-1">
+                            {(p.status === "pending" || p.status === "confirming") && (
+                              <div className="flex gap-1 flex-wrap">
+                                {p.network && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs rounded-sm px-2 font-mono"
+                                    onClick={() => { setConfirmationsDialogId(p.id); setConfirmationsValue(String(p.confirmations ?? 0)); }}
+                                  >
+                                    Confirmations
+                                  </Button>
+                                )}
                                 <Button size="sm" className="h-7 text-xs rounded-sm px-2 font-mono" onClick={() => handleConfirm(p.id)}>
                                   Confirm
                                 </Button>
@@ -210,21 +299,29 @@ export default function AdminPayments() {
             </div>
             <div className="flex flex-col gap-3">
               {providers.map((p) => {
-                const Icon = PROVIDER_ICONS[p.type as keyof typeof PROVIDER_ICONS] ?? Wallet;
-                const cfg = p.config as Record<string, string>;
+                const Icon = PROVIDER_ICONS[p.type] ?? Wallet;
+                const cfg = (p.config ?? {}) as Record<string, string>;
                 return (
                   <div key={p.id} className="border border-border rounded-sm bg-card p-5 flex items-center gap-4">
                     <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span className="font-medium">{p.name}</span>
-                        <span className="text-xs font-mono text-muted-foreground">{PROVIDER_LABELS[p.type as keyof typeof PROVIDER_LABELS] ?? p.type}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{PROVIDER_LABELS[p.type] ?? p.type}</span>
                         {p.isActive && <span className="text-xs font-mono text-primary border border-primary/30 px-1.5 py-0.5 rounded-sm">active</span>}
+                        {p.connectable ? (
+                          <span className="text-xs font-mono text-primary border border-primary/30 px-1.5 py-0.5 rounded-sm">connectable</span>
+                        ) : (
+                          <span className="text-xs font-mono text-yellow-500 border border-yellow-500/30 px-1.5 py-0.5 rounded-sm flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> not connectable
+                          </span>
+                        )}
                       </div>
+                      {p.limitation && <div className="text-xs text-yellow-500/90 mb-1">{p.limitation}</div>}
                       {cfg.wallet && <div className="text-xs text-muted-foreground font-mono">Wallet: {cfg.wallet.slice(0, 20)}...</div>}
-                      {cfg.network && <div className="text-xs text-muted-foreground">Network: {cfg.network}</div>}
+                      {isUsdt(p.type) && cfg.requiredConfirmations && <div className="text-xs text-muted-foreground">Required confirmations: {cfg.requiredConfirmations}</div>}
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <Button variant="outline" size="sm" className="rounded-sm text-xs gap-1" onClick={() => openProviderEdit(p)}>
@@ -244,6 +341,47 @@ export default function AdminPayments() {
               )}
             </div>
           </TabsContent>
+
+          {/* Invoices tab */}
+          <TabsContent value="invoices">
+            <div className="border border-border rounded-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/30">
+                    {["Invoice #", "User", "Reason", "Amount", "Provider", "Status", "Issued", ""].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.length === 0 ? (
+                    <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No invoices yet</td></tr>
+                  ) : (
+                    invoices.map((inv) => (
+                      <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                        <td className="px-4 py-3 font-mono text-xs flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-muted-foreground" /> {inv.invoiceNumber}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground max-w-[120px] truncate">{inv.userId}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.reason.replace(/_/g, " ")}</td>
+                        <td className="px-4 py-3 font-mono font-bold">${inv.amount} {inv.currency}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.provider ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-mono ${INVOICE_STATUS_COLOR[inv.status] ?? "text-muted-foreground"}`}>{inv.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                          {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString() : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Button size="sm" variant="outline" className="h-7 text-xs rounded-sm px-2 gap-1 font-mono" onClick={() => handleDownloadInvoice(inv.id)}>
+                            <Download className="w-3.5 h-3.5" /> PDF
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -261,6 +399,37 @@ export default function AdminPayments() {
             <Button variant="outline" onClick={() => setRejectDialogId(null)} className="rounded-sm">Cancel</Button>
             <Button variant="destructive" onClick={handleReject} disabled={rejectPayment.isPending} className="rounded-sm font-mono">
               {rejectPayment.isPending ? "Rejecting..." : "Reject Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmations dialog */}
+      <Dialog open={!!confirmationsDialogId} onOpenChange={() => setConfirmationsDialogId(null)}>
+        <DialogContent className="bg-card border-border rounded-sm max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-mono">Report Confirmations — Payment #{confirmationsDialogId}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-2">
+            <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+              On-chain confirmations observed
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              value={confirmationsValue}
+              onChange={(e) => setConfirmationsValue(e.target.value)}
+              placeholder="0"
+              className="rounded-sm font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              USDT confirmations are not monitored automatically — check the relevant block explorer and report the count here. Reaching the required threshold auto-confirms the payment.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmationsDialogId(null)} className="rounded-sm">Cancel</Button>
+            <Button onClick={handleReportConfirmations} disabled={reportConfirmations.isPending} className="rounded-sm font-mono">
+              {reportConfirmations.isPending ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -291,51 +460,68 @@ export default function AdminPayments() {
             </div>
 
             {/* USDT fields */}
-            {providerForm.type === "usdt" && (
+            {isUsdt(providerForm.type) && (
               <>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Wallet Address</Label>
                   <Input value={providerForm.wallet ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, wallet: e.target.value }))} placeholder="T... or 0x..." className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Network</Label>
-                  <Input value={providerForm.network ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, network: e.target.value }))} placeholder="e.g. TRC-20" className="rounded-sm font-mono text-sm" />
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Required Confirmations</Label>
+                  <Input type="number" min={1} value={providerForm.requiredConfirmations ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, requiredConfirmations: e.target.value }))} placeholder="e.g. 12" className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Memo Instructions</Label>
                   <Input value={providerForm.memo ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, memo: e.target.value }))} placeholder="e.g. Include reference number as memo" className="rounded-sm text-sm" />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  On-chain confirmations are not monitored automatically. An admin must verify transactions on a block explorer and report confirmations from the Payments tab.
+                </p>
               </>
             )}
 
-            {/* Card fields */}
-            {providerForm.type === "card" && (
+            {/* Stripe fields */}
+            {providerForm.type === "stripe" && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">API Key</Label>
-                  <Input type="password" value={providerForm.apiKey ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, apiKey: e.target.value }))} placeholder="sk_..." className="rounded-sm font-mono text-sm" />
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Secret Key</Label>
+                  <Input type="password" value={providerForm.secretKey ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder="sk_live_..." className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook Secret</Label>
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook Signing Secret</Label>
                   <Input type="password" value={providerForm.webhookSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookSecret: e.target.value }))} placeholder="whsec_..." className="rounded-sm font-mono text-sm" />
                 </div>
               </>
             )}
 
-            {/* Bank transfer fields */}
-            {providerForm.type === "bank_transfer" && (
+            {/* PayPal fields */}
+            {providerForm.type === "paypal" && (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Bank Name</Label>
-                  <Input value={providerForm.bankName ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, bankName: e.target.value }))} className="rounded-sm font-mono text-sm" />
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Client ID</Label>
+                  <Input value={providerForm.clientId ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, clientId: e.target.value }))} className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Account Number</Label>
-                  <Input value={providerForm.accountNumber ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, accountNumber: e.target.value }))} className="rounded-sm font-mono text-sm" />
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Client Secret</Label>
+                  <Input type="password" value={providerForm.clientSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, clientSecret: e.target.value }))} className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Routing Number</Label>
-                  <Input value={providerForm.routingNumber ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, routingNumber: e.target.value }))} className="rounded-sm font-mono text-sm" />
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook ID</Label>
+                  <Input value={providerForm.webhookId ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookId: e.target.value }))} className="rounded-sm font-mono text-sm" />
+                </div>
+              </>
+            )}
+
+            {/* Flutterwave fields */}
+            {providerForm.type === "flutterwave" && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Secret Key</Label>
+                  <Input type="password" value={providerForm.secretKey ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder="FLWSECK-..." className="rounded-sm font-mono text-sm" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook Secret Hash</Label>
+                  <Input type="password" value={providerForm.webhookSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookSecret: e.target.value }))} className="rounded-sm font-mono text-sm" />
                 </div>
               </>
             )}

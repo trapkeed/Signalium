@@ -1,29 +1,24 @@
 import { useState } from "react";
 import { useListMyPayments, useListPlans, useListPaymentProviders, useCreatePaymentIntent, useSubmitPaymentProof } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Wallet, CreditCard, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Copy, ExternalLink } from "lucide-react";
+import { Wallet, CreditCard, ArrowRight, CheckCircle, Clock, XCircle, AlertCircle, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG = {
   pending: { label: "Pending", icon: Clock, color: "text-yellow-500" },
-  submitted: { label: "Submitted", icon: AlertCircle, color: "text-blue-400" },
+  confirming: { label: "Confirming", icon: AlertCircle, color: "text-blue-400" },
   confirmed: { label: "Confirmed", icon: CheckCircle, color: "text-primary" },
   failed: { label: "Failed", icon: XCircle, color: "text-destructive" },
+  expired: { label: "Expired", icon: XCircle, color: "text-muted-foreground" },
   refunded: { label: "Refunded", icon: ArrowRight, color: "text-muted-foreground" },
 };
 
-const PROVIDER_ICONS = {
-  usdt: Wallet,
-  card: CreditCard,
-  bank_transfer: ArrowRight,
-};
+const isUsdt = (type: string) => type.startsWith("usdt_");
 
-const TIER_LABELS = {
+const TIER_LABELS: Record<string, string> = {
   starter: "Starter",
   professional: "Professional",
   enterprise: "Enterprise",
@@ -39,7 +34,7 @@ type PaymentIntent = {
   provider: {
     type: string;
     name: string;
-    instructions?: Record<string, string> | null;
+    instructions?: Record<string, unknown> | null;
   };
 };
 
@@ -58,7 +53,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
   const submitProof = useSubmitPaymentProof();
 
   const activePlans = plans.filter((p) => p.isActive);
-  const activeProviders = providers.filter((p) => p.isActive);
+  const activeProviders = providers.filter((p) => p.isActive && p.connectable);
 
   async function handleCreateIntent() {
     if (!selectedPlan || !selectedProvider) return;
@@ -66,7 +61,13 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
       const result = await createIntent.mutateAsync({
         data: { planId: selectedPlan, providerId: selectedProvider },
       });
-      setActiveIntent(result as PaymentIntent);
+      const intent = result as PaymentIntent;
+      const checkoutUrl = intent.provider.instructions?.checkoutUrl as string | undefined;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+        return;
+      }
+      setActiveIntent(intent);
       setStep("submit-proof");
       refetch();
     } catch {
@@ -76,10 +77,14 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
 
   async function handleSubmitProof() {
     if (!activeIntent) return;
+    if (!txHash.trim()) {
+      toast({ title: "Transaction hash is required", variant: "destructive" });
+      return;
+    }
     try {
       await submitProof.mutateAsync({
         id: activeIntent.payment.id,
-        data: { txHash: txHash || undefined },
+        data: { txHash },
       });
       toast({ title: "Payment proof submitted — pending admin confirmation" });
       setStep("list");
@@ -110,7 +115,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
               onClick={() => { setSelectedPlan(plan.id); setStep("choose-provider"); }}
               className={`border rounded-lg p-5 text-left transition-all hover:border-primary/50 ${selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
             >
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{TIER_LABELS[plan.tier]}</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{TIER_LABELS[plan.tier] ?? plan.tier}</div>
               <div className="text-2xl font-bold tabular-nums mb-1">${plan.priceMonthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
               <div className="text-sm text-muted-foreground">{plan.name}</div>
               {plan.features && (plan.features as string[]).length > 0 && (
@@ -143,7 +148,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
             </div>
           ) : (
             activeProviders.map((provider) => {
-              const Icon = PROVIDER_ICONS[provider.type as keyof typeof PROVIDER_ICONS] ?? Wallet;
+              const Icon = isUsdt(provider.type) ? Wallet : CreditCard;
               return (
                 <button
                   key={provider.id}
@@ -155,7 +160,7 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
                   </div>
                   <div>
                     <div className="font-medium">{provider.name}</div>
-                    <div className="text-xs text-muted-foreground capitalize">{provider.type.replace("_", " ")}</div>
+                    <div className="text-xs text-muted-foreground capitalize">{provider.type.replace(/_/g, " ")}</div>
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
                 </button>
@@ -168,10 +173,12 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
   }
 
   if (step === "submit-proof" && activeIntent) {
-    const isUSDT = activeIntent.provider.type === "usdt";
-    const wallet = activeIntent.provider.instructions?.wallet;
-    const network = activeIntent.provider.instructions?.network;
-    const memo = activeIntent.provider.instructions?.memo;
+    const instructions = activeIntent.provider.instructions ?? {};
+    const isUSDT = isUsdt(activeIntent.provider.type);
+    const wallet = instructions.walletAddress as string | undefined;
+    const network = instructions.network as string | undefined;
+    const memo = instructions.memo as string | undefined;
+    const note = instructions.note as string | undefined;
 
     return (
       <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
@@ -214,13 +221,14 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
               </div>
               {network && <div className="text-xs text-muted-foreground">Network: <span className="font-mono text-foreground">{network}</span></div>}
               {memo && <div className="text-xs text-muted-foreground">⚠️ Include your reference as memo/tag: <span className="font-mono text-foreground">{activeIntent.payment.reference}</span></div>}
+              {note && <div className="text-xs text-muted-foreground">{note}</div>}
             </div>
           )}
 
           {/* TX hash input */}
           <div className="flex flex-col gap-2">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Transaction Hash <span className="normal-case">(optional but speeds up confirmation)</span>
+              Transaction Hash
             </Label>
             <Input
               value={txHash}
@@ -230,11 +238,13 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
             />
           </div>
 
-          <Button onClick={handleSubmitProof} disabled={submitProof.isPending} className="rounded-lg">
+          <Button onClick={handleSubmitProof} disabled={submitProof.isPending || !txHash.trim()} className="rounded-lg">
             {submitProof.isPending ? "Submitting..." : "Submit Payment Proof"}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Your subscription will be activated after admin confirmation, typically within 1–24 hours.
+            {isUSDT
+              ? "On-chain confirmations are checked manually by an admin — your subscription activates once the required number of confirmations is reached."
+              : "Your subscription will be activated after admin confirmation, typically within 1–24 hours."}
           </p>
         </div>
       </div>

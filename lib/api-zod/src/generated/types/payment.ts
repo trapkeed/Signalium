@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PaymentNetwork } from './paymentNetwork';
 import type { PaymentStatus } from './paymentStatus';
 
 export interface Payment {
@@ -12,6 +13,8 @@ export interface Payment {
   userId: string;
   /** @nullable */
   subscriptionId?: number | null;
+  /** @nullable */
+  planId?: number | null;
   providerId: number;
   amount: number;
   currency: string;
@@ -19,9 +22,20 @@ export interface Payment {
   /** @nullable */
   reference?: string | null;
   /** @nullable */
+  network?: PaymentNetwork;
+  /** @nullable */
+  walletAddress?: string | null;
+  /** @nullable */
   txHash?: string | null;
+  confirmations?: number;
+  /** @nullable */
+  requiredConfirmations?: number | null;
+  /** @nullable */
+  externalReference?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
   /** @nullable */
   confirmedAt?: string | null;
   createdAt: string;

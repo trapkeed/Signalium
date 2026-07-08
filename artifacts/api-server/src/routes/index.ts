@@ -29,11 +29,18 @@ import auditLogRouter from "./audit-log";
 import brokersRouter from "./brokers";
 import dataProvidersRouter from "./data-providers";
 import featureFlagsRouter from "./feature-flags";
+import invoicesRouter from "./invoices";
+import paymentWebhooksRouter from "./payment-webhooks";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+// Payment webhooks must be reachable regardless of maintenance-lock state
+// (a provider will retry-storm us if we 503 every delivery) and are
+// authenticated by signature verification, not Clerk auth — mounted before
+// blockWhenLocked and any auth middleware.
+router.use("/payments/webhooks", paymentWebhooksRouter);
 router.use("/account", accountSecurityRouter);
 router.use(blockWhenLocked);
 router.use("/plans", plansRouter);
@@ -43,6 +50,7 @@ router.use("/runtime", runtimeRouter);
 router.use("/users", usersRouter);
 router.use("/stats", statsRouter);
 router.use("/payments", paymentsRouter);
+router.use("/invoices", invoicesRouter);
 router.use("/smtp", smtpRouter);
 router.use("/api-keys", apiKeysRouter);
 router.use("/ea-registrations", eaRegistrationsRouter);

@@ -671,6 +671,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/Payment"
 
+  /payments/{id}/confirmations:
+    post:
+      operationId: reportPaymentConfirmations
+      tags: [payments]
+      summary: Record on-chain confirmation progress for a USDT payment (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentConfirmationsInput"
+      responses:
+        "200":
+          description: Payment updated (auto-confirmed if threshold reached)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
   /payments/{id}/confirm:
     post:
       operationId: confirmPayment
@@ -716,6 +741,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+
+  /invoices:
+    get:
+      operationId: listMyInvoices
+      tags: [payments]
+      summary: List current user's invoices
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+
+  /invoices/all:
+    get:
+      operationId: listAllInvoices
+      tags: [payments]
+      summary: List all invoices (admin)
+      responses:
+        "200":
+          description: All invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [payments]
+      summary: Get an invoice with line items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+
+  /invoices/{id}/pdf:
+    get:
+      operationId: downloadInvoicePdf
+      tags: [payments]
+      summary: Download an invoice as a PDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invoice PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
 
   /smtp:
     get:
@@ -3838,6 +3932,10 @@ components:
         lastActivity:
           type: ["string", "null"]
 
+    PaymentProviderType:
+      type: string
+      enum: [usdt_trc20, usdt_erc20, usdt_bep20, stripe, paypal, flutterwave]
+
     PaymentProvider:
       type: object
       required: [id, type, name, isActive, config, createdAt]
@@ -3845,8 +3943,7 @@ components:
         id:
           type: integer
         type:
-          type: string
-          enum: [usdt, card, bank_transfer]
+          $ref: "#/components/schemas/PaymentProviderType"
         name:
           type: string
         isActive:
@@ -3855,6 +3952,12 @@ components:
           type: object
           additionalProperties:
             type: string
+        connectable:
+          type: boolean
+          description: Whether the provider currently has the credentials/config needed to actually process a payment.
+        limitation:
+          type: ["string", "null"]
+          description: Human-readable explanation when the provider is not connectable.
         createdAt:
           type: string
         updatedAt:
@@ -3865,8 +3968,7 @@ components:
       required: [type, name]
       properties:
         type:
-          type: string
-          enum: [usdt, card, bank_transfer]
+          $ref: "#/components/schemas/PaymentProviderType"
         name:
           type: string
         isActive:
@@ -3898,6 +4000,8 @@ components:
           type: string
         subscriptionId:
           type: ["integer", "null"]
+        planId:
+          type: ["integer", "null"]
         providerId:
           type: integer
         amount:
@@ -3906,12 +4010,25 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, submitted, confirmed, failed, refunded]
+          enum: [pending, confirming, confirmed, failed, expired, refunded]
         reference:
+          type: ["string", "null"]
+        network:
+          type: ["string", "null"]
+          enum: [trc20, erc20, bep20, null]
+        walletAddress:
           type: ["string", "null"]
         txHash:
           type: ["string", "null"]
+        confirmations:
+          type: integer
+        requiredConfirmations:
+          type: ["integer", "null"]
+        externalReference:
+          type: ["string", "null"]
         notes:
+          type: ["string", "null"]
+        expiresAt:
           type: ["string", "null"]
         confirmedAt:
           type: ["string", "null"]
@@ -3944,16 +4061,87 @@ components:
               type: string
             instructions:
               type: object
-              additionalProperties:
-                type: string
+              additionalProperties: true
 
     PaymentProofInput:
       type: object
+      required: [txHash]
       properties:
         txHash:
           type: string
         notes:
           type: string
+
+    PaymentConfirmationsInput:
+      type: object
+      required: [confirmations]
+      properties:
+        confirmations:
+          type: integer
+
+    Invoice:
+      type: object
+      required: [id, invoiceNumber, userId, amount, currency, status, reason, issuedAt, createdAt]
+      properties:
+        id:
+          type: integer
+        invoiceNumber:
+          type: string
+        userId:
+          type: string
+        subscriptionId:
+          type: ["integer", "null"]
+        paymentId:
+          type: ["integer", "null"]
+        planId:
+          type: ["integer", "null"]
+        currency:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [draft, issued, paid, void]
+        reason:
+          type: string
+          enum: [subscription_created, subscription_renewed, subscription_upgraded, subscription_downgraded]
+        provider:
+          type: ["string", "null"]
+        paymentReference:
+          type: ["string", "null"]
+        issuedAt:
+          type: string
+        paidAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    InvoiceItem:
+      type: object
+      required: [id, invoiceId, description, quantity, unitAmount, amount]
+      properties:
+        id:
+          type: integer
+        invoiceId:
+          type: integer
+        description:
+          type: string
+        quantity:
+          type: integer
+        unitAmount:
+          type: number
+        amount:
+          type: number
+
+    InvoiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Invoice"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/InvoiceItem"
 
     SmtpSettings:
       type: object

@@ -435,9 +435,12 @@ export type PaymentProviderType = typeof PaymentProviderType[keyof typeof Paymen
 
 
 export const PaymentProviderType = {
-  usdt: 'usdt',
-  card: 'card',
-  bank_transfer: 'bank_transfer',
+  usdt_trc20: 'usdt_trc20',
+  usdt_erc20: 'usdt_erc20',
+  usdt_bep20: 'usdt_bep20',
+  stripe: 'stripe',
+  paypal: 'paypal',
+  flutterwave: 'flutterwave',
 } as const;
 
 export type PaymentProviderConfig = {[key: string]: string};
@@ -448,23 +451,21 @@ export interface PaymentProvider {
   name: string;
   isActive: boolean;
   config: PaymentProviderConfig;
+  /** Whether the provider currently has the credentials/config needed to actually process a payment. */
+  connectable?: boolean;
+  /**
+     * Human-readable explanation when the provider is not connectable.
+     * @nullable
+     */
+  limitation?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
 
-export type PaymentProviderInputType = typeof PaymentProviderInputType[keyof typeof PaymentProviderInputType];
-
-
-export const PaymentProviderInputType = {
-  usdt: 'usdt',
-  card: 'card',
-  bank_transfer: 'bank_transfer',
-} as const;
-
 export type PaymentProviderInputConfig = {[key: string]: string};
 
 export interface PaymentProviderInput {
-  type: PaymentProviderInputType;
+  type: PaymentProviderType;
   name: string;
   isActive?: boolean;
   config?: PaymentProviderInputConfig;
@@ -483,10 +484,23 @@ export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
   pending: 'pending',
-  submitted: 'submitted',
+  confirming: 'confirming',
   confirmed: 'confirmed',
   failed: 'failed',
+  expired: 'expired',
   refunded: 'refunded',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PaymentNetwork = typeof PaymentNetwork[keyof typeof PaymentNetwork] | null;
+
+
+export const PaymentNetwork = {
+  trc20: 'trc20',
+  erc20: 'erc20',
+  bep20: 'bep20',
 } as const;
 
 export interface Payment {
@@ -494,6 +508,8 @@ export interface Payment {
   userId: string;
   /** @nullable */
   subscriptionId?: number | null;
+  /** @nullable */
+  planId?: number | null;
   providerId: number;
   amount: number;
   currency: string;
@@ -501,9 +517,20 @@ export interface Payment {
   /** @nullable */
   reference?: string | null;
   /** @nullable */
+  network?: PaymentNetwork;
+  /** @nullable */
+  walletAddress?: string | null;
+  /** @nullable */
   txHash?: string | null;
+  confirmations?: number;
+  /** @nullable */
+  requiredConfirmations?: number | null;
+  /** @nullable */
+  externalReference?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
   /** @nullable */
   confirmedAt?: string | null;
   createdAt: string;
@@ -515,7 +542,7 @@ export interface PaymentIntentInput {
   providerId: number;
 }
 
-export type PaymentIntentResultProviderInstructions = {[key: string]: string};
+export type PaymentIntentResultProviderInstructions = { [key: string]: unknown };
 
 export type PaymentIntentResultProvider = {
   type?: string;
@@ -529,9 +556,70 @@ export interface PaymentIntentResult {
 }
 
 export interface PaymentProofInput {
-  txHash?: string;
+  txHash: string;
   notes?: string;
 }
+
+export interface PaymentConfirmationsInput {
+  confirmations: number;
+}
+
+export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
+
+
+export const InvoiceStatus = {
+  draft: 'draft',
+  issued: 'issued',
+  paid: 'paid',
+  void: 'void',
+} as const;
+
+export type InvoiceReason = typeof InvoiceReason[keyof typeof InvoiceReason];
+
+
+export const InvoiceReason = {
+  subscription_created: 'subscription_created',
+  subscription_renewed: 'subscription_renewed',
+  subscription_upgraded: 'subscription_upgraded',
+  subscription_downgraded: 'subscription_downgraded',
+} as const;
+
+export interface Invoice {
+  id: number;
+  invoiceNumber: string;
+  userId: string;
+  /** @nullable */
+  subscriptionId?: number | null;
+  /** @nullable */
+  paymentId?: number | null;
+  /** @nullable */
+  planId?: number | null;
+  currency: string;
+  amount: number;
+  status: InvoiceStatus;
+  reason: InvoiceReason;
+  /** @nullable */
+  provider?: string | null;
+  /** @nullable */
+  paymentReference?: string | null;
+  issuedAt: string;
+  /** @nullable */
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export interface InvoiceItem {
+  id: number;
+  invoiceId: number;
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+}
+
+export type InvoiceDetail = Invoice & {
+  items?: InvoiceItem[];
+};
 
 export interface SmtpSettings {
   id: number;

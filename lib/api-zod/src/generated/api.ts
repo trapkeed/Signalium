@@ -632,10 +632,12 @@ export const UpdateUserResponse = zod.object({
  */
 export const ListPaymentProvidersResponseItem = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean(),
   "config": zod.record(zod.string(), zod.string()),
+  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -646,7 +648,7 @@ export const ListPaymentProvidersResponse = zod.array(ListPaymentProvidersRespon
  * @summary Create a payment provider (admin)
  */
 export const CreatePaymentProviderBody = zod.object({
-  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean().optional(),
   "config": zod.record(zod.string(), zod.string()).optional()
@@ -654,10 +656,12 @@ export const CreatePaymentProviderBody = zod.object({
 
 export const CreatePaymentProviderResponse = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean(),
   "config": zod.record(zod.string(), zod.string()),
+  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -672,10 +676,12 @@ export const GetPaymentProviderParams = zod.object({
 
 export const GetPaymentProviderResponse = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean(),
   "config": zod.record(zod.string(), zod.string()),
+  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -696,10 +702,12 @@ export const UpdatePaymentProviderBody = zod.object({
 
 export const UpdatePaymentProviderResponse = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['usdt', 'card', 'bank_transfer']),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean(),
   "config": zod.record(zod.string(), zod.string()),
+  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -722,13 +730,20 @@ export const ListMyPaymentsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -743,13 +758,20 @@ export const ListAllPaymentsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -770,13 +792,20 @@ export const CreatePaymentIntentResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -784,7 +813,7 @@ export const CreatePaymentIntentResponse = zod.object({
   "provider": zod.object({
   "type": zod.string().optional(),
   "name": zod.string().optional(),
-  "instructions": zod.record(zod.string(), zod.string()).optional()
+  "instructions": zod.record(zod.string(), zod.unknown()).optional()
 })
 })
 
@@ -797,7 +826,7 @@ export const SubmitPaymentProofParams = zod.object({
 })
 
 export const SubmitPaymentProofBody = zod.object({
-  "txHash": zod.string().optional(),
+  "txHash": zod.string(),
   "notes": zod.string().optional()
 })
 
@@ -805,13 +834,55 @@ export const SubmitPaymentProofResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Record on-chain confirmation progress for a USDT payment (admin)
+ */
+export const ReportPaymentConfirmationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReportPaymentConfirmationsBody = zod.object({
+  "confirmations": zod.number()
+})
+
+export const ReportPaymentConfirmationsResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
+  "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -829,13 +900,20 @@ export const ConfirmPaymentResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
@@ -857,17 +935,115 @@ export const RejectPaymentResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
   "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
   "providerId": zod.number(),
   "amount": zod.number(),
   "currency": zod.string(),
-  "status": zod.enum(['pending', 'submitted', 'confirmed', 'failed', 'refunded']),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
   "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
   "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
+
+
+/**
+ * @summary List current user's invoices
+ */
+export const ListMyInvoicesResponseItem = zod.object({
+  "id": zod.number(),
+  "invoiceNumber": zod.string(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "paymentId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
+  "currency": zod.string(),
+  "amount": zod.number(),
+  "status": zod.enum(['draft', 'issued', 'paid', 'void']),
+  "reason": zod.enum(['subscription_created', 'subscription_renewed', 'subscription_upgraded', 'subscription_downgraded']),
+  "provider": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "issuedAt": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListMyInvoicesResponse = zod.array(ListMyInvoicesResponseItem)
+
+
+/**
+ * @summary List all invoices (admin)
+ */
+export const ListAllInvoicesResponseItem = zod.object({
+  "id": zod.number(),
+  "invoiceNumber": zod.string(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "paymentId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
+  "currency": zod.string(),
+  "amount": zod.number(),
+  "status": zod.enum(['draft', 'issued', 'paid', 'void']),
+  "reason": zod.enum(['subscription_created', 'subscription_renewed', 'subscription_upgraded', 'subscription_downgraded']),
+  "provider": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "issuedAt": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListAllInvoicesResponse = zod.array(ListAllInvoicesResponseItem)
+
+
+/**
+ * @summary Get an invoice with line items
+ */
+export const GetInvoiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetInvoiceResponse = zod.object({
+  "id": zod.number(),
+  "invoiceNumber": zod.string(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "paymentId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
+  "currency": zod.string(),
+  "amount": zod.number(),
+  "status": zod.enum(['draft', 'issued', 'paid', 'void']),
+  "reason": zod.enum(['subscription_created', 'subscription_renewed', 'subscription_upgraded', 'subscription_downgraded']),
+  "provider": zod.string().nullish(),
+  "paymentReference": zod.string().nullish(),
+  "issuedAt": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "invoiceId": zod.number(),
+  "description": zod.string(),
+  "quantity": zod.number(),
+  "unitAmount": zod.number(),
+  "amount": zod.number()
+})).optional()
+}))
+
+
+/**
+ * @summary Download an invoice as a PDF
+ */
+export const DownloadInvoicePdfParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DownloadInvoicePdfResponse = zod.unknown()
 
 
 /**

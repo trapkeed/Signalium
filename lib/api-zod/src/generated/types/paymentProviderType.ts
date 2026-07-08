@@ -10,7 +10,10 @@ export type PaymentProviderType = typeof PaymentProviderType[keyof typeof Paymen
 
 
 export const PaymentProviderType = {
-  usdt: 'usdt',
-  card: 'card',
-  bank_transfer: 'bank_transfer',
+  usdt_trc20: 'usdt_trc20',
+  usdt_erc20: 'usdt_erc20',
+  usdt_bep20: 'usdt_bep20',
+  stripe: 'stripe',
+  paypal: 'paypal',
+  flutterwave: 'flutterwave',
 } as const;
