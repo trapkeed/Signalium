@@ -12,6 +12,7 @@ import {
   Key,
   Wallet,
   Mail,
+  Cpu,
 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/payments", label: "Payments", icon: Wallet },
   { href: "/api-keys", label: "API Keys", icon: Key },
+  { href: "/ea-builds", label: "EA Builds", icon: Cpu },
 ];
 
 const ADMIN_ITEMS = [
@@ -33,6 +35,7 @@ const ADMIN_ITEMS = [
   { href: "/admin/payments", label: "Payments", icon: Wallet },
   { href: "/admin/smtp", label: "SMTP", icon: Mail },
   { href: "/admin/api-keys", label: "API Keys", icon: Key },
+  { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {

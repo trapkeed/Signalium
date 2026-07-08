@@ -61,3 +61,13 @@ Keys stored hashed (SHA-256), never in plaintext. Full key shown once on creatio
 An OpenAPI array item schema of bare `type: object` with no `properties` makes orval emit `zod.looseObject({})`, which doesn't exist in the installed zod v3 (only zod v4 has it) — causes a `tsc` error in generated code. Fix: always give object schemas explicit `properties`, even if minimal.
 
 **Why:** hit this when adding a security-report endpoint with placeholder object items; codegen succeeded but `typecheck:libs` failed on the generated file.
+
+## Express admin routes must precede `/:param` routes
+In routers combining `/admin/...` static routes with `/:id/...` dynamic routes, declare all `/admin/*` routes before any `/:id/*` route, or Express matches "admin" as the `:id` param and the intended admin handler is never reached.
+
+**Why:** hit this building `ea-builds.ts` — admin list/audit routes were silently shadowed by `/:buildId/download` etc. until reordered.
+
+## Server-generated binary files bypass presigned upload flow
+For files generated server-side (not user-uploaded), write/read directly via `objectStorageClient.bucket(...).file(...)` instead of the presigned-URL upload flow in `objectStorage.ts`/`objectAcl.ts` (that flow is for client-initiated uploads). Store the returned `/objects/<prefix>/<id>` path in the DB row and resolve it back to a GCS `File` handle for streaming downloads.
+
+**Why:** used for EA build binaries (`eaBuilder.ts`) — the presigned-upload template assumes a browser-initiated PUT, which doesn't apply when the API server itself produces the file.

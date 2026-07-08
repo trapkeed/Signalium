@@ -1152,6 +1152,212 @@ export const DeactivateEaRegistrationResponse = zod.object({
 
 
 /**
+ * @summary Generate a new unique EA build for the current user (requires active subscription + active API key)
+ */
+export const GenerateEaBuildResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "buildId": zod.string(),
+  "fileName": zod.string(),
+  "platform": zod.enum(['mt5']),
+  "platformVersion": zod.string(),
+  "subscriptionTier": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'superseded']),
+  "metadata": zod.object({
+  "userId": zod.string(),
+  "apiKeyHash": zod.string(),
+  "buildId": zod.string(),
+  "subscriptionTier": zod.string(),
+  "generationTimestamp": zod.string(),
+  "platformVersion": zod.string()
+}).describe('Embedded, non-secret build metadata. Never contains the raw API key.'),
+  "checksum": zod.string(),
+  "fileSizeBytes": zod.number(),
+  "downloadCount": zod.number(),
+  "lastDownloadedAt": zod.string().nullish(),
+  "generatedAt": zod.string(),
+  "revokedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary List the current user's EA builds
+ */
+export const ListMyEaBuildsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "buildId": zod.string(),
+  "fileName": zod.string(),
+  "platform": zod.enum(['mt5']),
+  "platformVersion": zod.string(),
+  "subscriptionTier": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'superseded']),
+  "metadata": zod.object({
+  "userId": zod.string(),
+  "apiKeyHash": zod.string(),
+  "buildId": zod.string(),
+  "subscriptionTier": zod.string(),
+  "generationTimestamp": zod.string(),
+  "platformVersion": zod.string()
+}).describe('Embedded, non-secret build metadata. Never contains the raw API key.'),
+  "checksum": zod.string(),
+  "fileSizeBytes": zod.number(),
+  "downloadCount": zod.number(),
+  "lastDownloadedAt": zod.string().nullish(),
+  "generatedAt": zod.string(),
+  "revokedAt": zod.string().nullish()
+})
+export const ListMyEaBuildsResponse = zod.array(ListMyEaBuildsResponseItem)
+
+
+/**
+ * @summary List all EA builds across all users (admin)
+ */
+export const ListAllEaBuildsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "buildId": zod.string(),
+  "fileName": zod.string(),
+  "platform": zod.enum(['mt5']),
+  "platformVersion": zod.string(),
+  "subscriptionTier": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'superseded']),
+  "metadata": zod.object({
+  "userId": zod.string(),
+  "apiKeyHash": zod.string(),
+  "buildId": zod.string(),
+  "subscriptionTier": zod.string(),
+  "generationTimestamp": zod.string(),
+  "platformVersion": zod.string()
+}).describe('Embedded, non-secret build metadata. Never contains the raw API key.'),
+  "checksum": zod.string(),
+  "fileSizeBytes": zod.number(),
+  "downloadCount": zod.number(),
+  "lastDownloadedAt": zod.string().nullish(),
+  "generatedAt": zod.string(),
+  "revokedAt": zod.string().nullish()
+})
+export const ListAllEaBuildsResponse = zod.array(ListAllEaBuildsResponseItem)
+
+
+/**
+ * @summary Global EA build audit log across all users (admin)
+ */
+export const GetGlobalEaBuildAuditLogResponseItem = zod.object({
+  "id": zod.number(),
+  "buildId": zod.number(),
+  "fileName": zod.string().optional().describe('Only present on the global admin audit listing'),
+  "buildIdentifier": zod.string().optional().describe('Only present on the global admin audit listing (the build\'s public buildId)'),
+  "userId": zod.string(),
+  "action": zod.enum(['generated', 'downloaded', 'regenerated', 'revoked']),
+  "detail": zod.record(zod.string(), zod.unknown()).optional(),
+  "createdAt": zod.string()
+})
+export const GetGlobalEaBuildAuditLogResponse = zod.array(GetGlobalEaBuildAuditLogResponseItem)
+
+
+/**
+ * @summary Download a build's compiled .ex5 file (owner or admin)
+ */
+export const DownloadEaBuildParams = zod.object({
+  "buildId": zod.coerce.string()
+})
+
+export const DownloadEaBuildResponse = zod.unknown()
+
+
+/**
+ * @summary Regenerate a build with refreshed metadata, superseding the previous one (owner or admin)
+ */
+export const RegenerateEaBuildParams = zod.object({
+  "buildId": zod.coerce.string()
+})
+
+export const RegenerateEaBuildResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "buildId": zod.string(),
+  "fileName": zod.string(),
+  "platform": zod.enum(['mt5']),
+  "platformVersion": zod.string(),
+  "subscriptionTier": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'superseded']),
+  "metadata": zod.object({
+  "userId": zod.string(),
+  "apiKeyHash": zod.string(),
+  "buildId": zod.string(),
+  "subscriptionTier": zod.string(),
+  "generationTimestamp": zod.string(),
+  "platformVersion": zod.string()
+}).describe('Embedded, non-secret build metadata. Never contains the raw API key.'),
+  "checksum": zod.string(),
+  "fileSizeBytes": zod.number(),
+  "downloadCount": zod.number(),
+  "lastDownloadedAt": zod.string().nullish(),
+  "generatedAt": zod.string(),
+  "revokedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Revoke a build, e.g. on suspected leak or compromise (owner or admin)
+ */
+export const RevokeEaBuildParams = zod.object({
+  "buildId": zod.coerce.string()
+})
+
+export const RevokeEaBuildResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "apiKeyId": zod.number(),
+  "buildId": zod.string(),
+  "fileName": zod.string(),
+  "platform": zod.enum(['mt5']),
+  "platformVersion": zod.string(),
+  "subscriptionTier": zod.string(),
+  "status": zod.enum(['active', 'revoked', 'superseded']),
+  "metadata": zod.object({
+  "userId": zod.string(),
+  "apiKeyHash": zod.string(),
+  "buildId": zod.string(),
+  "subscriptionTier": zod.string(),
+  "generationTimestamp": zod.string(),
+  "platformVersion": zod.string()
+}).describe('Embedded, non-secret build metadata. Never contains the raw API key.'),
+  "checksum": zod.string(),
+  "fileSizeBytes": zod.number(),
+  "downloadCount": zod.number(),
+  "lastDownloadedAt": zod.string().nullish(),
+  "generatedAt": zod.string(),
+  "revokedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Audit trail for a specific build (owner or admin)
+ */
+export const GetEaBuildAuditParams = zod.object({
+  "buildId": zod.coerce.string()
+})
+
+export const GetEaBuildAuditResponseItem = zod.object({
+  "id": zod.number(),
+  "buildId": zod.number(),
+  "fileName": zod.string().optional().describe('Only present on the global admin audit listing'),
+  "buildIdentifier": zod.string().optional().describe('Only present on the global admin audit listing (the build\'s public buildId)'),
+  "userId": zod.string(),
+  "action": zod.enum(['generated', 'downloaded', 'regenerated', 'revoked']),
+  "detail": zod.record(zod.string(), zod.unknown()).optional(),
+  "createdAt": zod.string()
+})
+export const GetEaBuildAuditResponse = zod.array(GetEaBuildAuditResponseItem)
+
+
+/**
  * @summary Get platform overview stats (admin)
  */
 export const GetStatsOverviewResponse = zod.object({

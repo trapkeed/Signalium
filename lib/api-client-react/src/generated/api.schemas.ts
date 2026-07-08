@@ -562,6 +562,80 @@ export interface SecurityReport {
   multiHardwareAnomalies: SecurityReportMultiHardwareAnomaliesItem[];
 }
 
+export type EaBuildStatus = typeof EaBuildStatus[keyof typeof EaBuildStatus];
+
+
+export const EaBuildStatus = {
+  active: 'active',
+  revoked: 'revoked',
+  superseded: 'superseded',
+} as const;
+
+/**
+ * Embedded, non-secret build metadata. Never contains the raw API key.
+ */
+export interface EaBuildMetadata {
+  userId: string;
+  apiKeyHash: string;
+  buildId: string;
+  subscriptionTier: string;
+  generationTimestamp: string;
+  platformVersion: string;
+}
+
+export type EaBuildPlatform = typeof EaBuildPlatform[keyof typeof EaBuildPlatform];
+
+
+export const EaBuildPlatform = {
+  mt5: 'mt5',
+} as const;
+
+export interface EaBuild {
+  id: number;
+  userId: string;
+  apiKeyId: number;
+  buildId: string;
+  fileName: string;
+  platform: EaBuildPlatform;
+  platformVersion: string;
+  subscriptionTier: string;
+  status: EaBuildStatus;
+  metadata: EaBuildMetadata;
+  checksum: string;
+  fileSizeBytes: number;
+  downloadCount: number;
+  /** @nullable */
+  lastDownloadedAt?: string | null;
+  generatedAt: string;
+  /** @nullable */
+  revokedAt?: string | null;
+}
+
+export type EaBuildAuditEntryAction = typeof EaBuildAuditEntryAction[keyof typeof EaBuildAuditEntryAction];
+
+
+export const EaBuildAuditEntryAction = {
+  generated: 'generated',
+  downloaded: 'downloaded',
+  regenerated: 'regenerated',
+  revoked: 'revoked',
+} as const;
+
+export type EaBuildAuditEntryDetail = { [key: string]: unknown };
+
+export interface EaBuildAuditEntry {
+  id: number;
+  buildId: number;
+  /** Only present on the global admin audit listing */
+  fileName?: string;
+  /** Only present on the global admin audit listing (the build's public buildId) */
+  buildIdentifier?: string;
+  userId: string;
+  action: EaBuildAuditEntryAction;
+  detail?: EaBuildAuditEntryDetail;
+  createdAt: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };

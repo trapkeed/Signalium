@@ -25,6 +25,8 @@ import type {
   CreateApiKeyBody,
   DownloadToken,
   Ea,
+  EaBuild,
+  EaBuildAuditEntry,
   EaInput,
   EaRegistration,
   EaUpdate,
@@ -4064,6 +4066,604 @@ export const useDeactivateEaRegistration = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeactivateEaRegistrationMutationOptions(options));
     }
+
+export const getGenerateEaBuildUrl = () => {
+
+
+
+
+  return `/api/ea-builds/generate`
+}
+
+/**
+ * @summary Generate a new unique EA build for the current user (requires active subscription + active API key)
+ */
+export const generateEaBuild = async ( options?: RequestInit): Promise<EaBuild> => {
+
+  return customFetch<EaBuild>(getGenerateEaBuildUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGenerateEaBuildMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateEaBuild>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateEaBuild>>, TError,void, TContext> => {
+
+const mutationKey = ['generateEaBuild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateEaBuild>>, void> = () => {
+
+
+          return  generateEaBuild(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateEaBuildMutationResult = NonNullable<Awaited<ReturnType<typeof generateEaBuild>>>
+
+    export type GenerateEaBuildMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate a new unique EA build for the current user (requires active subscription + active API key)
+ */
+export const useGenerateEaBuild = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateEaBuild>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateEaBuild>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getGenerateEaBuildMutationOptions(options));
+    }
+
+export const getListMyEaBuildsUrl = () => {
+
+
+
+
+  return `/api/ea-builds`
+}
+
+/**
+ * @summary List the current user's EA builds
+ */
+export const listMyEaBuilds = async ( options?: RequestInit): Promise<EaBuild[]> => {
+
+  return customFetch<EaBuild[]>(getListMyEaBuildsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyEaBuildsQueryKey = () => {
+    return [
+    `/api/ea-builds`
+    ] as const;
+    }
+
+
+export const getListMyEaBuildsQueryOptions = <TData = Awaited<ReturnType<typeof listMyEaBuilds>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEaBuilds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyEaBuildsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyEaBuilds>>> = ({ signal }) => listMyEaBuilds({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyEaBuilds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyEaBuildsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyEaBuilds>>>
+export type ListMyEaBuildsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current user's EA builds
+ */
+
+export function useListMyEaBuilds<TData = Awaited<ReturnType<typeof listMyEaBuilds>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyEaBuilds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyEaBuildsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAllEaBuildsUrl = () => {
+
+
+
+
+  return `/api/ea-builds/admin/all`
+}
+
+/**
+ * @summary List all EA builds across all users (admin)
+ */
+export const listAllEaBuilds = async ( options?: RequestInit): Promise<EaBuild[]> => {
+
+  return customFetch<EaBuild[]>(getListAllEaBuildsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllEaBuildsQueryKey = () => {
+    return [
+    `/api/ea-builds/admin/all`
+    ] as const;
+    }
+
+
+export const getListAllEaBuildsQueryOptions = <TData = Awaited<ReturnType<typeof listAllEaBuilds>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllEaBuilds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllEaBuildsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllEaBuilds>>> = ({ signal }) => listAllEaBuilds({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllEaBuilds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllEaBuildsQueryResult = NonNullable<Awaited<ReturnType<typeof listAllEaBuilds>>>
+export type ListAllEaBuildsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all EA builds across all users (admin)
+ */
+
+export function useListAllEaBuilds<TData = Awaited<ReturnType<typeof listAllEaBuilds>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllEaBuilds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllEaBuildsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetGlobalEaBuildAuditLogUrl = () => {
+
+
+
+
+  return `/api/ea-builds/admin/audit`
+}
+
+/**
+ * @summary Global EA build audit log across all users (admin)
+ */
+export const getGlobalEaBuildAuditLog = async ( options?: RequestInit): Promise<EaBuildAuditEntry[]> => {
+
+  return customFetch<EaBuildAuditEntry[]>(getGetGlobalEaBuildAuditLogUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGlobalEaBuildAuditLogQueryKey = () => {
+    return [
+    `/api/ea-builds/admin/audit`
+    ] as const;
+    }
+
+
+export const getGetGlobalEaBuildAuditLogQueryOptions = <TData = Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGlobalEaBuildAuditLogQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>> = ({ signal }) => getGlobalEaBuildAuditLog({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGlobalEaBuildAuditLogQueryResult = NonNullable<Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>>
+export type GetGlobalEaBuildAuditLogQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Global EA build audit log across all users (admin)
+ */
+
+export function useGetGlobalEaBuildAuditLog<TData = Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGlobalEaBuildAuditLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGlobalEaBuildAuditLogQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadEaBuildUrl = (buildId: string,) => {
+
+
+
+
+  return `/api/ea-builds/${buildId}/download`
+}
+
+/**
+ * @summary Download a build's compiled .ex5 file (owner or admin)
+ */
+export const downloadEaBuild = async (buildId: string, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadEaBuildUrl(buildId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadEaBuildQueryKey = (buildId: string,) => {
+    return [
+    `/api/ea-builds/${buildId}/download`
+    ] as const;
+    }
+
+
+export const getDownloadEaBuildQueryOptions = <TData = Awaited<ReturnType<typeof downloadEaBuild>>, TError = ErrorType<unknown>>(buildId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadEaBuild>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadEaBuildQueryKey(buildId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadEaBuild>>> = ({ signal }) => downloadEaBuild(buildId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: buildId !== null && buildId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadEaBuild>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadEaBuildQueryResult = NonNullable<Awaited<ReturnType<typeof downloadEaBuild>>>
+export type DownloadEaBuildQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Download a build's compiled .ex5 file (owner or admin)
+ */
+
+export function useDownloadEaBuild<TData = Awaited<ReturnType<typeof downloadEaBuild>>, TError = ErrorType<unknown>>(
+ buildId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadEaBuild>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadEaBuildQueryOptions(buildId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegenerateEaBuildUrl = (buildId: string,) => {
+
+
+
+
+  return `/api/ea-builds/${buildId}/regenerate`
+}
+
+/**
+ * @summary Regenerate a build with refreshed metadata, superseding the previous one (owner or admin)
+ */
+export const regenerateEaBuild = async (buildId: string, options?: RequestInit): Promise<EaBuild> => {
+
+  return customFetch<EaBuild>(getRegenerateEaBuildUrl(buildId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRegenerateEaBuildMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateEaBuild>>, TError,{buildId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof regenerateEaBuild>>, TError,{buildId: string}, TContext> => {
+
+const mutationKey = ['regenerateEaBuild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regenerateEaBuild>>, {buildId: string}> = (props) => {
+          const {buildId} = props ?? {};
+
+          return  regenerateEaBuild(buildId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegenerateEaBuildMutationResult = NonNullable<Awaited<ReturnType<typeof regenerateEaBuild>>>
+
+    export type RegenerateEaBuildMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Regenerate a build with refreshed metadata, superseding the previous one (owner or admin)
+ */
+export const useRegenerateEaBuild = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateEaBuild>>, TError,{buildId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof regenerateEaBuild>>,
+        TError,
+        {buildId: string},
+        TContext
+      > => {
+      return useMutation(getRegenerateEaBuildMutationOptions(options));
+    }
+
+export const getRevokeEaBuildUrl = (buildId: string,) => {
+
+
+
+
+  return `/api/ea-builds/${buildId}/revoke`
+}
+
+/**
+ * @summary Revoke a build, e.g. on suspected leak or compromise (owner or admin)
+ */
+export const revokeEaBuild = async (buildId: string, options?: RequestInit): Promise<EaBuild> => {
+
+  return customFetch<EaBuild>(getRevokeEaBuildUrl(buildId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeEaBuildMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeEaBuild>>, TError,{buildId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeEaBuild>>, TError,{buildId: string}, TContext> => {
+
+const mutationKey = ['revokeEaBuild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeEaBuild>>, {buildId: string}> = (props) => {
+          const {buildId} = props ?? {};
+
+          return  revokeEaBuild(buildId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeEaBuildMutationResult = NonNullable<Awaited<ReturnType<typeof revokeEaBuild>>>
+
+    export type RevokeEaBuildMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Revoke a build, e.g. on suspected leak or compromise (owner or admin)
+ */
+export const useRevokeEaBuild = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeEaBuild>>, TError,{buildId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeEaBuild>>,
+        TError,
+        {buildId: string},
+        TContext
+      > => {
+      return useMutation(getRevokeEaBuildMutationOptions(options));
+    }
+
+export const getGetEaBuildAuditUrl = (buildId: string,) => {
+
+
+
+
+  return `/api/ea-builds/${buildId}/audit`
+}
+
+/**
+ * @summary Audit trail for a specific build (owner or admin)
+ */
+export const getEaBuildAudit = async (buildId: string, options?: RequestInit): Promise<EaBuildAuditEntry[]> => {
+
+  return customFetch<EaBuildAuditEntry[]>(getGetEaBuildAuditUrl(buildId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEaBuildAuditQueryKey = (buildId: string,) => {
+    return [
+    `/api/ea-builds/${buildId}/audit`
+    ] as const;
+    }
+
+
+export const getGetEaBuildAuditQueryOptions = <TData = Awaited<ReturnType<typeof getEaBuildAudit>>, TError = ErrorType<unknown>>(buildId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEaBuildAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEaBuildAuditQueryKey(buildId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEaBuildAudit>>> = ({ signal }) => getEaBuildAudit(buildId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: buildId !== null && buildId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEaBuildAudit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEaBuildAuditQueryResult = NonNullable<Awaited<ReturnType<typeof getEaBuildAudit>>>
+export type GetEaBuildAuditQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Audit trail for a specific build (owner or admin)
+ */
+
+export function useGetEaBuildAudit<TData = Awaited<ReturnType<typeof getEaBuildAudit>>, TError = ErrorType<unknown>>(
+ buildId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEaBuildAudit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEaBuildAuditQueryOptions(buildId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetStatsOverviewUrl = () => {
 

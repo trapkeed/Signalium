@@ -24,6 +24,8 @@ import AdminSmtp from "@/pages/admin/smtp";
 import AdminApiKeys from "@/pages/admin/api-keys";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
+import EaBuilds from "@/pages/ea-builds";
+import AdminEaBuilds from "@/pages/admin/ea-builds";
 
 import { AppLayout } from "@/components/layout";
 
@@ -174,6 +176,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
             <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
             <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>
+            <Route path="/ea-builds"><ProtectedRoute component={EaBuilds} /></Route>
             <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
 
             <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
@@ -183,6 +186,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/payments"><ProtectedRoute component={AdminPayments} /></Route>
             <Route path="/admin/smtp"><ProtectedRoute component={AdminSmtp} /></Route>
             <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
+            <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
 
             <Route component={NotFound} />
           </Switch>

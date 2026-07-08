@@ -30,6 +30,8 @@ tags:
     description: API key management operations
   - name: ea-registrations
     description: EA terminal registration operations
+  - name: ea-builds
+    description: Per-user EA build generation, download, and audit operations
 paths:
   /healthz:
     get:
@@ -1031,6 +1033,143 @@ paths:
               schema:
                 $ref: "#/components/schemas/EaRegistration"
 
+  /ea-builds/generate:
+    post:
+      operationId: generateEaBuild
+      tags: [ea-builds]
+      summary: Generate a new unique EA build for the current user (requires active subscription + active API key)
+      responses:
+        "201":
+          description: Build generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EaBuild"
+
+  /ea-builds:
+    get:
+      operationId: listMyEaBuilds
+      tags: [ea-builds]
+      summary: List the current user's EA builds
+      responses:
+        "200":
+          description: EA builds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaBuild"
+
+  /ea-builds/admin/all:
+    get:
+      operationId: listAllEaBuilds
+      tags: [ea-builds]
+      summary: List all EA builds across all users (admin)
+      responses:
+        "200":
+          description: EA builds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaBuild"
+
+  /ea-builds/admin/audit:
+    get:
+      operationId: getGlobalEaBuildAuditLog
+      tags: [ea-builds]
+      summary: Global EA build audit log across all users (admin)
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaBuildAuditEntry"
+
+  /ea-builds/{buildId}/download:
+    get:
+      operationId: downloadEaBuild
+      tags: [ea-builds]
+      summary: Download a build's compiled .ex5 file (owner or admin)
+      parameters:
+        - name: buildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: EA binary
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /ea-builds/{buildId}/regenerate:
+    post:
+      operationId: regenerateEaBuild
+      tags: [ea-builds]
+      summary: Regenerate a build with refreshed metadata, superseding the previous one (owner or admin)
+      parameters:
+        - name: buildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: New build generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EaBuild"
+
+  /ea-builds/{buildId}/revoke:
+    post:
+      operationId: revokeEaBuild
+      tags: [ea-builds]
+      summary: Revoke a build, e.g. on suspected leak or compromise (owner or admin)
+      parameters:
+        - name: buildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EaBuild"
+
+  /ea-builds/{buildId}/audit:
+    get:
+      operationId: getEaBuildAudit
+      tags: [ea-builds]
+      summary: Audit trail for a specific build (owner or admin)
+      parameters:
+        - name: buildId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EaBuildAuditEntry"
+
   /stats/overview:
     get:
       operationId: getStatsOverview
@@ -1708,3 +1847,88 @@ components:
                 type: integer
               distinctHardwareCount:
                 type: integer
+
+    EaBuildStatus:
+      type: string
+      enum: [active, revoked, superseded]
+
+    EaBuildMetadata:
+      type: object
+      required: [userId, apiKeyHash, buildId, subscriptionTier, generationTimestamp, platformVersion]
+      description: Embedded, non-secret build metadata. Never contains the raw API key.
+      properties:
+        userId:
+          type: string
+        apiKeyHash:
+          type: string
+        buildId:
+          type: string
+        subscriptionTier:
+          type: string
+        generationTimestamp:
+          type: string
+        platformVersion:
+          type: string
+
+    EaBuild:
+      type: object
+      required: [id, userId, apiKeyId, buildId, fileName, platform, platformVersion, subscriptionTier, status, metadata, checksum, fileSizeBytes, downloadCount, generatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        apiKeyId:
+          type: integer
+        buildId:
+          type: string
+        fileName:
+          type: string
+        platform:
+          type: string
+          enum: [mt5]
+        platformVersion:
+          type: string
+        subscriptionTier:
+          type: string
+        status:
+          $ref: "#/components/schemas/EaBuildStatus"
+        metadata:
+          $ref: "#/components/schemas/EaBuildMetadata"
+        checksum:
+          type: string
+        fileSizeBytes:
+          type: integer
+        downloadCount:
+          type: integer
+        lastDownloadedAt:
+          type: ["string", "null"]
+        generatedAt:
+          type: string
+        revokedAt:
+          type: ["string", "null"]
+
+    EaBuildAuditEntry:
+      type: object
+      required: [id, buildId, userId, action, createdAt]
+      properties:
+        id:
+          type: integer
+        buildId:
+          type: integer
+        fileName:
+          type: string
+          description: Only present on the global admin audit listing
+        buildIdentifier:
+          type: string
+          description: Only present on the global admin audit listing (the build's public buildId)
+        userId:
+          type: string
+        action:
+          type: string
+          enum: [generated, downloaded, regenerated, revoked]
+        detail:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
