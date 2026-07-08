@@ -13,10 +13,14 @@ import eaRegistrationsRouter from "./ea-registrations";
 import eaBuildsRouter from "./ea-builds";
 import symbolsRouter from "./symbols";
 import qdeRouter from "./qde";
+import accountSecurityRouter from "./account-security";
+import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/account", accountSecurityRouter);
+router.use(blockWhenLocked);
 router.use("/plans", plansRouter);
 router.use("/subscriptions", subscriptionsRouter);
 router.use("/eas", easRouter);

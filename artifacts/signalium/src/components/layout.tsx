@@ -25,10 +25,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ea", label: "EA Library", icon: Box },
   { href: "/runtime", label: "Runtime", icon: Activity },
-  { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { href: "/payments", label: "Payments", icon: Wallet },
-  { href: "/api-keys", label: "API Keys", icon: Key },
-  { href: "/ea-builds", label: "EA Builds", icon: Cpu },
+  { href: "/account", label: "Account & Security", icon: Shield },
 ];
 
 const ADMIN_ITEMS = [
@@ -138,7 +135,7 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
             </div>
           </div>
           <Link
-            href="/settings"
+            href="/account"
             onClick={onNavigate}
             className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary shrink-0"
           >

@@ -36,6 +36,8 @@ tags:
     description: Universal symbol normalization, canonical registry, and alias management
   - name: qde
     description: EA <-> Platform <-> Trainer (QDE) telemetry and action loop, plus observability
+  - name: account
+    description: Account security — login history, active sessions, suspicious-login detection, account lock
 paths:
   /healthz:
     get:
@@ -1628,6 +1630,137 @@ paths:
               schema:
                 $ref: "#/components/schemas/RuntimeSummary"
 
+  /account/sync-login:
+    post:
+      operationId: syncLogin
+      tags: [account]
+      summary: Sync the current Clerk session into login history, running suspicious-login detection
+      responses:
+        "200":
+          description: Synced
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event, locked]
+                properties:
+                  event:
+                    $ref: "#/components/schemas/LoginEvent"
+                  locked:
+                    type: boolean
+
+  /account/login-history:
+    get:
+      operationId: getLoginHistory
+      tags: [account]
+      summary: Recent login/security timeline for the current user
+      responses:
+        "200":
+          description: Login events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LoginEvent"
+
+  /account/sessions:
+    get:
+      operationId: listAccountSessions
+      tags: [account]
+      summary: Active Clerk sessions for the current user
+      responses:
+        "200":
+          description: Active sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActiveSession"
+
+  /account/sessions/{sessionId}/revoke:
+    post:
+      operationId: revokeAccountSession
+      tags: [account]
+      summary: Revoke one of the current user's active sessions
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+
+  /account/security-status:
+    get:
+      operationId: getAccountSecurityStatus
+      tags: [account]
+      summary: Account lock status and suspicious-activity summary
+      responses:
+        "200":
+          description: Security status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountSecurityStatus"
+
+  /account/lock:
+    post:
+      operationId: lockAccount
+      tags: [account]
+      summary: Self-service panic button — immediately lock the current user's account
+      responses:
+        "200":
+          description: Locked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [isLocked, lockedAt]
+                properties:
+                  isLocked:
+                    type: boolean
+                  lockedAt:
+                    type: ["string", "null"]
+
+  /account/unlock:
+    post:
+      operationId: unlockAccount
+      tags: [account]
+      summary: Clear an account lock using the emailed unlock token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Unlocked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+
 components:
   schemas:
     HealthStatus:
@@ -2641,3 +2774,78 @@ components:
           type: integer
         actionsWithRetries:
           type: integer
+
+    LoginEvent:
+      type: object
+      required: [id, userId, clerkSessionId, isMobile, isNewDevice, isSuspicious, occurredAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        clerkSessionId:
+          type: string
+        ipAddress:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        deviceType:
+          type: ["string", "null"]
+        browserName:
+          type: ["string", "null"]
+        browserVersion:
+          type: ["string", "null"]
+        isMobile:
+          type: boolean
+        isNewDevice:
+          type: boolean
+        isSuspicious:
+          type: boolean
+        occurredAt:
+          type: string
+
+    ActiveSession:
+      type: object
+      required: [id, isCurrent, status, lastActiveAt, createdAt, expireAt, isMobile]
+      properties:
+        id:
+          type: string
+        isCurrent:
+          type: boolean
+        status:
+          type: string
+        lastActiveAt:
+          type: string
+        createdAt:
+          type: string
+        expireAt:
+          type: string
+        ipAddress:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        deviceType:
+          type: ["string", "null"]
+        browserName:
+          type: ["string", "null"]
+        isMobile:
+          type: boolean
+
+    AccountSecurityStatus:
+      type: object
+      required: [isLocked, recentSuspiciousCount]
+      properties:
+        isLocked:
+          type: boolean
+        lockedAt:
+          type: ["string", "null"]
+        lockReason:
+          type: ["string", "null"]
+        recentSuspiciousCount:
+          type: integer
+        lastSuspiciousAt:
+          type: ["string", "null"]

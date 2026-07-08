@@ -12,3 +12,4 @@ export * from "./ea-builds";
 export * from "./ea-build-audit-log";
 export * from "./symbols";
 export * from "./qde";
+export * from "./security";

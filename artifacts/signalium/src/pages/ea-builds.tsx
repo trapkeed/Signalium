@@ -67,7 +67,7 @@ function AuditRow({ buildId }: { buildId: string }) {
   );
 }
 
-export default function EaBuilds() {
+export default function EaBuilds({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -127,22 +127,28 @@ export default function EaBuilds() {
     }
   }
 
-  return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-      <div className="border-b border-border px-8 py-6 flex items-center justify-between">
+  const header = (
+    <div className={cn("flex items-center justify-between", embedded ? "" : "border-b border-border px-8 py-6")}>
+      {!embedded && (
         <div>
           <h1 className="text-2xl font-bold tracking-tight">EA Builds</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Generate your personal, uniquely-signed MT5 Expert Advisor
           </p>
         </div>
-        <Button onClick={handleGenerate} disabled={generate.isPending} className="gap-2 text-sm rounded-lg">
-          <Cpu className="w-4 h-4" />
-          {generate.isPending ? "Generating..." : "Generate EA"}
-        </Button>
-      </div>
+      )}
+      <Button onClick={handleGenerate} disabled={generate.isPending} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
+        <Cpu className="w-4 h-4" />
+        {generate.isPending ? "Generating..." : "Generate EA"}
+      </Button>
+    </div>
+  );
 
-      <div className="p-8 max-w-4xl flex flex-col gap-6">
+  return (
+    <div className={embedded ? "flex flex-col gap-6" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+      {header}
+
+      <div className={embedded ? "max-w-4xl flex flex-col gap-6" : "p-8 max-w-4xl flex flex-col gap-6"}>
         <div className="border border-border bg-card rounded-lg p-4">
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />

@@ -1800,3 +1800,112 @@ export const GetRuntimeSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary Sync the current Clerk session into login history, running suspicious-login detection
+ */
+export const SyncLoginResponse = zod.object({
+  "event": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "clerkSessionId": zod.string(),
+  "ipAddress": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "deviceType": zod.string().nullish(),
+  "browserName": zod.string().nullish(),
+  "browserVersion": zod.string().nullish(),
+  "isMobile": zod.boolean(),
+  "isNewDevice": zod.boolean(),
+  "isSuspicious": zod.boolean(),
+  "occurredAt": zod.string()
+}),
+  "locked": zod.boolean()
+})
+
+
+/**
+ * @summary Recent login/security timeline for the current user
+ */
+export const GetLoginHistoryResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "clerkSessionId": zod.string(),
+  "ipAddress": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "deviceType": zod.string().nullish(),
+  "browserName": zod.string().nullish(),
+  "browserVersion": zod.string().nullish(),
+  "isMobile": zod.boolean(),
+  "isNewDevice": zod.boolean(),
+  "isSuspicious": zod.boolean(),
+  "occurredAt": zod.string()
+})
+export const GetLoginHistoryResponse = zod.array(GetLoginHistoryResponseItem)
+
+
+/**
+ * @summary Active Clerk sessions for the current user
+ */
+export const ListAccountSessionsResponseItem = zod.object({
+  "id": zod.string(),
+  "isCurrent": zod.boolean(),
+  "status": zod.string(),
+  "lastActiveAt": zod.string(),
+  "createdAt": zod.string(),
+  "expireAt": zod.string(),
+  "ipAddress": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "country": zod.string().nullish(),
+  "deviceType": zod.string().nullish(),
+  "browserName": zod.string().nullish(),
+  "isMobile": zod.boolean()
+})
+export const ListAccountSessionsResponse = zod.array(ListAccountSessionsResponseItem)
+
+
+/**
+ * @summary Revoke one of the current user's active sessions
+ */
+export const RevokeAccountSessionParams = zod.object({
+  "sessionId": zod.coerce.string()
+})
+
+export const RevokeAccountSessionResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Account lock status and suspicious-activity summary
+ */
+export const GetAccountSecurityStatusResponse = zod.object({
+  "isLocked": zod.boolean(),
+  "lockedAt": zod.string().nullish(),
+  "lockReason": zod.string().nullish(),
+  "recentSuspiciousCount": zod.number(),
+  "lastSuspiciousAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Self-service panic button — immediately lock the current user's account
+ */
+export const LockAccountResponse = zod.object({
+  "isLocked": zod.boolean(),
+  "lockedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Clear an account lock using the emailed unlock token
+ */
+export const UnlockAccountBody = zod.object({
+  "token": zod.string()
+})
+
+export const UnlockAccountResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+

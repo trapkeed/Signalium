@@ -14,7 +14,7 @@ import EaList from "@/pages/ea/list";
 import EaDetail from "@/pages/ea/detail";
 import Runtime from "@/pages/runtime";
 import Subscriptions from "@/pages/subscriptions";
-import Settings from "@/pages/settings";
+import Account from "@/pages/account";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminSubscriptions from "@/pages/admin/subscriptions";
@@ -30,6 +30,7 @@ import AdminSymbols from "@/pages/admin/symbols";
 import AdminQde from "@/pages/admin/qde";
 
 import { AppLayout } from "@/components/layout";
+import { AccountGate } from "@/components/account-gate";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
@@ -117,9 +118,11 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <>
       <Show when="signed-in">
-        <AppLayout>
-          <Component />
-        </AppLayout>
+        <AccountGate>
+          <AppLayout>
+            <Component />
+          </AppLayout>
+        </AccountGate>
       </Show>
       <Show when="signed-out">
         <Redirect to="/sign-in" />
@@ -179,7 +182,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
             <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>
             <Route path="/ea-builds"><ProtectedRoute component={EaBuilds} /></Route>
-            <Route path="/settings"><ProtectedRoute component={Settings} /></Route>
+            <Route path="/account"><ProtectedRoute component={Account} /></Route>
+            <Route path="/settings"><Redirect to="/account" /></Route>
 
             <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
             <Route path="/admin/users"><ProtectedRoute component={AdminUsers} /></Route>

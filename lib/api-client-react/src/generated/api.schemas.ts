@@ -863,6 +863,59 @@ export interface QdeStatsOverview {
   actionsWithRetries: number;
 }
 
+export interface LoginEvent {
+  id: number;
+  userId: string;
+  clerkSessionId: string;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  deviceType?: string | null;
+  /** @nullable */
+  browserName?: string | null;
+  /** @nullable */
+  browserVersion?: string | null;
+  isMobile: boolean;
+  isNewDevice: boolean;
+  isSuspicious: boolean;
+  occurredAt: string;
+}
+
+export interface ActiveSession {
+  id: string;
+  isCurrent: boolean;
+  status: string;
+  lastActiveAt: string;
+  createdAt: string;
+  expireAt: string;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  country?: string | null;
+  /** @nullable */
+  deviceType?: string | null;
+  /** @nullable */
+  browserName?: string | null;
+  isMobile: boolean;
+}
+
+export interface AccountSecurityStatus {
+  isLocked: boolean;
+  /** @nullable */
+  lockedAt?: string | null;
+  /** @nullable */
+  lockReason?: string | null;
+  recentSuspiciousCount: number;
+  /** @nullable */
+  lastSuspiciousAt?: string | null;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -964,5 +1017,28 @@ export type SubmitEaTelemetry201 = {
 
 export type RedeliverAction200 = {
   delivered: boolean;
+};
+
+export type SyncLogin200 = {
+  event: LoginEvent;
+  locked: boolean;
+};
+
+export type RevokeAccountSession200 = {
+  ok: boolean;
+};
+
+export type LockAccount200 = {
+  isLocked: boolean;
+  /** @nullable */
+  lockedAt: string | null;
+};
+
+export type UnlockAccountBody = {
+  token: string;
+};
+
+export type UnlockAccount200 = {
+  ok: boolean;
 };
 

@@ -104,7 +104,7 @@ function TerminalsRow({ apiKeyId }: { apiKeyId: number }) {
   );
 }
 
-export default function ApiKeys() {
+export default function ApiKeys({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -157,22 +157,28 @@ export default function ApiKeys() {
     toast({ title: "Key copied to clipboard" });
   }
 
-  return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-      <div className="border-b border-border px-8 py-6 flex items-center justify-between">
+  const header = (
+    <div className={cn("flex items-center justify-between", embedded ? "" : "border-b border-border px-8 py-6")}>
+      {!embedded && (
         <div>
           <h1 className="text-2xl font-bold tracking-tight">API Keys</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Generate keys to authenticate your EA connections to the QDE runtime
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="gap-2 text-sm rounded-lg">
-          <Plus className="w-4 h-4" />
-          New API Key
-        </Button>
-      </div>
+      )}
+      <Button onClick={() => setIsCreating(true)} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
+        <Plus className="w-4 h-4" />
+        New API Key
+      </Button>
+    </div>
+  );
 
-      <div className="p-8 max-w-4xl flex flex-col gap-6">
+  return (
+    <div className={embedded ? "flex flex-col gap-6" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+      {header}
+
+      <div className={embedded ? "max-w-4xl flex flex-col gap-6" : "p-8 max-w-4xl flex flex-col gap-6"}>
         {/* Info box */}
         <div className="border border-border bg-card rounded-lg p-4">
           <div className="flex items-start gap-3">

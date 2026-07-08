@@ -9,7 +9,7 @@ const TIER_COLORS: Record<string, string> = {
   enterprise: "border-warning/60",
 };
 
-export default function Subscriptions() {
+export default function Subscriptions({ embedded = false }: { embedded?: boolean } = {}) {
   const queryClient = useQueryClient();
   const { data: plans } = useListPlans();
   const { data: subscription, isLoading } = useGetMySubscription();
@@ -47,13 +47,15 @@ export default function Subscriptions() {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="px-8 py-6 border-b border-border">
-        <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage your Signalium subscription</p>
-      </div>
+    <div className={embedded ? "" : "flex-1 overflow-auto"}>
+      {!embedded && (
+        <div className="px-8 py-6 border-b border-border">
+          <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your Signalium subscription</p>
+        </div>
+      )}
 
-      <div className="p-8 space-y-8 max-w-5xl">
+      <div className={embedded ? "space-y-8 max-w-5xl" : "p-8 space-y-8 max-w-5xl"}>
         {/* Current subscription */}
         {!isLoading && (
           <div>

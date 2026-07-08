@@ -84,3 +84,13 @@ For files generated server-side (not user-uploaded), write/read directly via `ob
 Broker/EA symbol variants (e.g. `XAUUSD.a`, `XAUUSDm`, `GOLD`) are normalized via an in-memory Map cache (canonical symbols + aliases, lowercased keys) loaded from `symbols`/`symbol_aliases` tables, with iterative suffix-stripping (`.a`, `.pro`, `m`, `micro`, etc.) as a fallback before declaring a symbol unknown. Cache is invalidated on every admin write, not TTL-based.
 
 **Why:** chosen over pure regex/fuzzy-matching so admins can add exact aliases (e.g. `WallStreet30` → `US30`) for cases the suffix heuristic can't infer, while keeping normalization fast (no DB hit per EA tick).
+
+## Security-gate middleware must fail closed
+Any middleware enforcing a security control (account lock, suspension, ban) that reads its decision from a DB lookup must treat a lookup failure as "deny", not "allow". A `catch { return next() }` pattern silently defeats the control during any DB hiccup.
+
+**Why:** caught by architect review on the account-lock middleware — it originally failed open on DB errors, which would let a locked account back in whenever the lock-status query itself errored.
+
+## Embedding full-page components inside tabs needs an `embedded` prop
+When reusing an existing full-page component (own header/title + outer `flex-1 overflow-y-auto` wrapper) inside a tabbed/consolidated page, add an `embedded?: boolean` prop to that component that suppresses its own page header and outer scroll/padding wrapper, rather than just nesting it as-is. Nesting as-is causes duplicate headers and nested scroll containers.
+
+**Why:** caught by architect review when consolidating Subscriptions/Payments/ApiKeys/EaBuilds into a single Account & Security page — each had its own `<h1>` + full-bleed wrapper meant for standalone routing.

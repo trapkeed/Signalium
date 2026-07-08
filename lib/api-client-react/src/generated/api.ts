@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountSecurityStatus,
+  ActiveSession,
   ApiKey,
   ApiKeyCreated,
   CreateApiKeyBody,
@@ -38,6 +40,8 @@ import type {
   HealthStatus,
   HeartbeatInput,
   HeartbeatResponse,
+  LockAccount200,
+  LoginEvent,
   NormalizeSymbol422,
   NormalizeSymbolBody,
   Payment,
@@ -56,6 +60,7 @@ import type {
   RedeliverAction200,
   RegisterEaTerminalBody,
   RejectPaymentBody,
+  RevokeAccountSession200,
   RuntimeStatus,
   RuntimeSummary,
   SecurityReport,
@@ -74,11 +79,14 @@ import type {
   SymbolNormalizationLogEntry,
   SymbolNormalizeResult,
   SymbolWithCategory,
+  SyncLogin200,
   TelemetryEvent,
   TelemetryInput,
   TestSmtp200,
   TestSmtpBody,
   TrainerAction,
+  UnlockAccount200,
+  UnlockAccountBody,
   UpdateSymbolBody,
   User,
   UserUpdate,
@@ -6407,4 +6415,519 @@ export function useGetRuntimeSummary<TData = Awaited<ReturnType<typeof getRuntim
 
 
 
+
+export const getSyncLoginUrl = () => {
+
+
+
+
+  return `/api/account/sync-login`
+}
+
+/**
+ * @summary Sync the current Clerk session into login history, running suspicious-login detection
+ */
+export const syncLogin = async ( options?: RequestInit): Promise<SyncLogin200> => {
+
+  return customFetch<SyncLogin200>(getSyncLoginUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncLoginMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext> => {
+
+const mutationKey = ['syncLogin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncLogin>>, void> = () => {
+
+
+          return  syncLogin(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncLoginMutationResult = NonNullable<Awaited<ReturnType<typeof syncLogin>>>
+
+    export type SyncLoginMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Sync the current Clerk session into login history, running suspicious-login detection
+ */
+export const useSyncLogin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncLogin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncLogin>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncLoginMutationOptions(options));
+    }
+
+export const getGetLoginHistoryUrl = () => {
+
+
+
+
+  return `/api/account/login-history`
+}
+
+/**
+ * @summary Recent login/security timeline for the current user
+ */
+export const getLoginHistory = async ( options?: RequestInit): Promise<LoginEvent[]> => {
+
+  return customFetch<LoginEvent[]>(getGetLoginHistoryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLoginHistoryQueryKey = () => {
+    return [
+    `/api/account/login-history`
+    ] as const;
+    }
+
+
+export const getGetLoginHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getLoginHistory>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLoginHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLoginHistoryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLoginHistory>>> = ({ signal }) => getLoginHistory({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLoginHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLoginHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getLoginHistory>>>
+export type GetLoginHistoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Recent login/security timeline for the current user
+ */
+
+export function useGetLoginHistory<TData = Awaited<ReturnType<typeof getLoginHistory>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLoginHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLoginHistoryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAccountSessionsUrl = () => {
+
+
+
+
+  return `/api/account/sessions`
+}
+
+/**
+ * @summary Active Clerk sessions for the current user
+ */
+export const listAccountSessions = async ( options?: RequestInit): Promise<ActiveSession[]> => {
+
+  return customFetch<ActiveSession[]>(getListAccountSessionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAccountSessionsQueryKey = () => {
+    return [
+    `/api/account/sessions`
+    ] as const;
+    }
+
+
+export const getListAccountSessionsQueryOptions = <TData = Awaited<ReturnType<typeof listAccountSessions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAccountSessionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccountSessions>>> = ({ signal }) => listAccountSessions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccountSessions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAccountSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof listAccountSessions>>>
+export type ListAccountSessionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Active Clerk sessions for the current user
+ */
+
+export function useListAccountSessions<TData = Awaited<ReturnType<typeof listAccountSessions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAccountSessionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRevokeAccountSessionUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/account/sessions/${sessionId}/revoke`
+}
+
+/**
+ * @summary Revoke one of the current user's active sessions
+ */
+export const revokeAccountSession = async (sessionId: string, options?: RequestInit): Promise<RevokeAccountSession200> => {
+
+  return customFetch<RevokeAccountSession200>(getRevokeAccountSessionUrl(sessionId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeAccountSessionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAccountSession>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeAccountSession>>, TError,{sessionId: string}, TContext> => {
+
+const mutationKey = ['revokeAccountSession'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAccountSession>>, {sessionId: string}> = (props) => {
+          const {sessionId} = props ?? {};
+
+          return  revokeAccountSession(sessionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeAccountSessionMutationResult = NonNullable<Awaited<ReturnType<typeof revokeAccountSession>>>
+
+    export type RevokeAccountSessionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Revoke one of the current user's active sessions
+ */
+export const useRevokeAccountSession = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAccountSession>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeAccountSession>>,
+        TError,
+        {sessionId: string},
+        TContext
+      > => {
+      return useMutation(getRevokeAccountSessionMutationOptions(options));
+    }
+
+export const getGetAccountSecurityStatusUrl = () => {
+
+
+
+
+  return `/api/account/security-status`
+}
+
+/**
+ * @summary Account lock status and suspicious-activity summary
+ */
+export const getAccountSecurityStatus = async ( options?: RequestInit): Promise<AccountSecurityStatus> => {
+
+  return customFetch<AccountSecurityStatus>(getGetAccountSecurityStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAccountSecurityStatusQueryKey = () => {
+    return [
+    `/api/account/security-status`
+    ] as const;
+    }
+
+
+export const getGetAccountSecurityStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAccountSecurityStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountSecurityStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountSecurityStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountSecurityStatus>>> = ({ signal }) => getAccountSecurityStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountSecurityStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAccountSecurityStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountSecurityStatus>>>
+export type GetAccountSecurityStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Account lock status and suspicious-activity summary
+ */
+
+export function useGetAccountSecurityStatus<TData = Awaited<ReturnType<typeof getAccountSecurityStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAccountSecurityStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAccountSecurityStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLockAccountUrl = () => {
+
+
+
+
+  return `/api/account/lock`
+}
+
+/**
+ * @summary Self-service panic button — immediately lock the current user's account
+ */
+export const lockAccount = async ( options?: RequestInit): Promise<LockAccount200> => {
+
+  return customFetch<LockAccount200>(getLockAccountUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLockAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lockAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof lockAccount>>, TError,void, TContext> => {
+
+const mutationKey = ['lockAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lockAccount>>, void> = () => {
+
+
+          return  lockAccount(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LockAccountMutationResult = NonNullable<Awaited<ReturnType<typeof lockAccount>>>
+
+    export type LockAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Self-service panic button — immediately lock the current user's account
+ */
+export const useLockAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lockAccount>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof lockAccount>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLockAccountMutationOptions(options));
+    }
+
+export const getUnlockAccountUrl = () => {
+
+
+
+
+  return `/api/account/unlock`
+}
+
+/**
+ * @summary Clear an account lock using the emailed unlock token
+ */
+export const unlockAccount = async (unlockAccountBody: UnlockAccountBody, options?: RequestInit): Promise<UnlockAccount200> => {
+
+  return customFetch<UnlockAccount200>(getUnlockAccountUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(unlockAccountBody)
+  }
+);}
+
+
+
+
+
+export const getUnlockAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlockAccount>>, TError,{data: BodyType<UnlockAccountBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unlockAccount>>, TError,{data: BodyType<UnlockAccountBody>}, TContext> => {
+
+const mutationKey = ['unlockAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unlockAccount>>, {data: BodyType<UnlockAccountBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  unlockAccount(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnlockAccountMutationResult = NonNullable<Awaited<ReturnType<typeof unlockAccount>>>
+    export type UnlockAccountMutationBody = BodyType<UnlockAccountBody>
+    export type UnlockAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Clear an account lock using the emailed unlock token
+ */
+export const useUnlockAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unlockAccount>>, TError,{data: BodyType<UnlockAccountBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unlockAccount>>,
+        TError,
+        {data: BodyType<UnlockAccountBody>},
+        TContext
+      > => {
+      return useMutation(getUnlockAccountMutationOptions(options));
+    }
 

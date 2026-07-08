@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const STATUS_CONFIG = {
   pending: { label: "Pending", icon: Clock, color: "text-yellow-500" },
@@ -42,7 +43,7 @@ type PaymentIntent = {
   };
 };
 
-export default function Payments() {
+export default function Payments({ embedded = false }: { embedded?: boolean } = {}) {
   const { toast } = useToast();
   const [step, setStep] = useState<"list" | "choose-plan" | "choose-provider" | "submit-proof">("list");
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
@@ -97,12 +98,12 @@ export default function Payments() {
 
   if (step === "choose-plan") {
     return (
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="border-b border-border px-8 py-6">
+      <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+        <div className={embedded ? "mb-4" : "border-b border-border px-8 py-6"}>
           <button onClick={() => setStep("list")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-2xl font-bold tracking-tight">Choose Plan</h1>
+          {!embedded && <h1 className="text-2xl font-bold tracking-tight">Choose Plan</h1>}
         </div>
-        <div className="p-8 max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className={embedded ? "max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4" : "p-8 max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4"}>
           {activePlans.map((plan) => (
             <button
               key={plan.id}
@@ -130,12 +131,12 @@ export default function Payments() {
 
   if (step === "choose-provider") {
     return (
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="border-b border-border px-8 py-6">
+      <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+        <div className={embedded ? "mb-4" : "border-b border-border px-8 py-6"}>
           <button onClick={() => setStep("choose-plan")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-2xl font-bold tracking-tight">Choose Payment Method</h1>
+          {!embedded && <h1 className="text-2xl font-bold tracking-tight">Choose Payment Method</h1>}
         </div>
-        <div className="p-8 max-w-xl flex flex-col gap-4">
+        <div className={embedded ? "max-w-xl flex flex-col gap-4" : "p-8 max-w-xl flex flex-col gap-4"}>
           {activeProviders.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               No payment methods available. Please contact support.
@@ -173,12 +174,12 @@ export default function Payments() {
     const memo = activeIntent.provider.instructions?.memo;
 
     return (
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="border-b border-border px-8 py-6">
+      <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+        <div className={embedded ? "mb-4" : "border-b border-border px-8 py-6"}>
           <button onClick={() => setStep("list")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-2xl font-bold tracking-tight">Complete Payment</h1>
+          {!embedded && <h1 className="text-2xl font-bold tracking-tight">Complete Payment</h1>}
         </div>
-        <div className="p-8 max-w-xl flex flex-col gap-5">
+        <div className={embedded ? "max-w-xl flex flex-col gap-5" : "p-8 max-w-xl flex flex-col gap-5"}>
           {/* Reference */}
           <div className="border border-border rounded-lg p-4 bg-card flex flex-col gap-1">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</div>
@@ -242,19 +243,21 @@ export default function Payments() {
 
   // Default: payment history
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-      <div className="border-b border-border px-8 py-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
-          <p className="text-sm text-muted-foreground mt-1">Payment history and new payments</p>
-        </div>
-        <Button onClick={() => setStep("choose-plan")} className="gap-2 text-sm rounded-lg">
+    <div className={embedded ? "flex flex-col" : "flex-1 flex flex-col min-w-0 overflow-y-auto"}>
+      <div className={cn("flex items-center justify-between", embedded ? "mb-4" : "border-b border-border px-8 py-6")}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
+            <p className="text-sm text-muted-foreground mt-1">Payment history and new payments</p>
+          </div>
+        )}
+        <Button onClick={() => setStep("choose-plan")} className={cn("gap-2 text-sm rounded-lg", embedded && "ml-auto")}>
           <Plus className="w-4 h-4" />
           New Payment
         </Button>
       </div>
 
-      <div className="p-8 max-w-4xl">
+      <div className={embedded ? "max-w-4xl" : "p-8 max-w-4xl"}>
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
