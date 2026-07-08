@@ -1,0 +1,175 @@
+Signalium 3.0
+
+PHASE 0 — FOUNDATIONAL ARCHITECTURE
+
+Repository:
+signalium
+
+OBJECTIVE
+
+Build Signalium from scratch as a customer platform and runtime host for the Signalium Quant Decision Engine.
+
+Signalium is NOT:
+
+* a signal provider
+* a charting platform
+* a strategy engine
+* a research platform
+* a model training platform
+
+Signalium IS:
+
+* customer platform
+* subscription platform
+* EA distribution platform
+* runtime environment
+* QDE hosting layer
+
+====================================================
+
+ARCHITECTURAL PRINCIPLES
+
+====================================================
+
+Signalium Trainer:
+
+* trains models
+* validates models
+* deploys models
+* manages research
+
+Signalium:
+
+* serves customers
+* hosts QDE runtime
+* communicates with EAs
+* routes data
+* stores telemetry
+
+QDE:
+
+* makes all trading decisions
+
+EA:
+
+* executes QDE decisions
+
+====================================================
+
+CREATE PROJECT STRUCTURE
+
+====================================================
+
+frontend/
+
+backend/
+
+runtime/
+
+ea/
+
+subscriptions/
+
+payments/
+
+providers/
+
+market/
+
+normalization/
+
+telemetry/
+
+notifications/
+
+monitoring/
+
+deployment/
+
+admin/
+
+shared/
+
+docs/
+
+tests/
+
+====================================================
+
+BACKEND MODULES
+
+====================================================
+
+auth/
+
+users/
+
+subscriptions/
+
+payments/
+
+billing/
+
+admin/
+
+smtp/
+
+notifications/
+
+market/
+
+runtime/
+
+telemetry/
+
+deployment/
+
+providers/
+
+ea/
+
+monitoring/
+
+audit/
+
+====================================================
+
+DO NOT CREATE
+
+====================================================
+
+strategy/
+
+signals/
+
+indicators/
+
+trade-engine/
+
+risk-engine/
+
+portfolio-engine/
+
+confluence-engine/
+
+market-regime-engine/
+
+decision-engine/
+
+These belong to the QDE and trainer ecosystem.
+
+====================================================
+
+GENERATE
+
+====================================================
+
+Architecture report
+
+Folder explanation
+
+Service responsibilities
+
+Communication diagram
+
+Dependency diagram

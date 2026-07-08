@@ -1,0 +1,1 @@
+- [Signalium project setup](signalium-setup.md) — key architecture decisions, auth quirks, and sharp edges for this project.
