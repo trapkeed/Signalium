@@ -47,5 +47,10 @@ Pluggable design: `payment_providers` table stores type+config as JSON. Types: `
 ## Payment flow
 USDT: user picks plan → picks provider → API creates payment intent with reference → user sends crypto → submits tx hash → admin confirms via `/payments/:id/confirm` → subscription activated automatically. Card: same flow, `config.apiKey` holds provider credentials.
 
+## Fresh-environment startup checklist
+When artifacts fail to start after an environment reset/restore, check in this order: (1) `pnpm install` if `node_modules` is missing entirely, (2) Clerk keys via `checkClerkManagementStatus()`/`setupClerkWhitelabelAuth()` if `Missing Clerk Secret Key` or `Missing VITE_CLERK_PUBLISHABLE_KEY` errors appear, (3) `pnpm --filter @workspace/db run push` if API routes 500 with `relation "X" does not exist`.
+
+**Why:** node_modules, secrets, and DB schema are all environment-local state that doesn't survive a fresh clone/restore, even though code and lockfile do.
+
 ## API key auth for EAs
 Keys stored hashed (SHA-256). Full key shown once on creation. EA runtime calls `POST /api/api-keys/verify` with `x-api-key` header. Route checks hash match + active subscription. Returns `{ ok, userId, keyId }`.
