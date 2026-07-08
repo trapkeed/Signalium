@@ -3,7 +3,7 @@ import { Activity, Wifi, WifiOff, TrendingUp, TrendingDown, AlertCircle, Clock, 
 
 function StatusDot({ connected }: { connected: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-mono px-2 py-0.5 rounded-sm ${connected ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${connected ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${connected ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
       {connected ? "CONNECTED" : "OFFLINE"}
     </span>
@@ -32,8 +32,8 @@ export default function Dashboard() {
     <div className="flex-1 overflow-auto">
       <div className="px-8 py-6 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-xs text-muted-foreground mt-0.5 font-mono">Signalium runtime overview</p>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Signalium runtime overview</p>
         </div>
         {!statusLoading && status && <StatusDot connected={status.isConnected} />}
       </div>
@@ -41,9 +41,9 @@ export default function Dashboard() {
       <div className="p-8 space-y-8">
         {/* Runtime status */}
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="border border-border bg-card rounded-sm p-6">
+          <div className="border border-border bg-card rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">QDE Runtime</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">QDE Runtime</div>
               {status && <StatusDot connected={status.isConnected} />}
             </div>
             {statusLoading ? (
@@ -65,11 +65,11 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
                   <div>
                     <div className="text-xs text-muted-foreground">Active EAs</div>
-                    <div className="font-mono font-bold text-lg">{status.activeEas}</div>
+                    <div className="font-bold text-lg tabular-nums">{status.activeEas}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Last heartbeat</div>
-                    <div className="font-mono text-sm">
+                    <div className="text-sm tabular-nums">
                       {status.lastHeartbeat
                         ? new Date(status.lastHeartbeat).toLocaleTimeString()
                         : "—"}
@@ -81,13 +81,13 @@ export default function Dashboard() {
           </div>
 
           {/* Subscription */}
-          <div className="border border-border bg-card rounded-sm p-6">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Active Subscription</div>
+          <div className="border border-border bg-card rounded-lg p-6">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Active Subscription</div>
             {subscription ? (
               <div className="space-y-3">
                 <div>
                   <div className="font-bold text-lg">{subscription.plan?.name ?? "—"}</div>
-                  <div className={`inline-flex items-center gap-1.5 text-xs font-mono px-2 py-0.5 rounded-sm mt-1 ${
+                  <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full mt-1 ${
                     subscription.status === "active" ? "bg-success/15 text-success" :
                     subscription.status === "trialing" ? "bg-warning/15 text-warning" :
                     "bg-destructive/15 text-destructive"
@@ -98,18 +98,18 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
                   <div>
                     <div className="text-xs text-muted-foreground">Price</div>
-                    <div className="font-mono font-bold">${subscription.plan?.priceMonthly}/mo</div>
+                    <div className="font-bold tabular-nums">${subscription.plan?.priceMonthly}/mo</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Tier</div>
-                    <div className="font-mono capitalize">{subscription.plan?.tier}</div>
+                    <div className="capitalize">{subscription.plan?.tier}</div>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-start gap-3">
                 <div className="text-sm text-muted-foreground">No active subscription.</div>
-                <a href="/subscriptions" className="text-xs text-primary hover:underline font-mono">View plans →</a>
+                <a href="/subscriptions" className="text-xs text-primary hover:underline font-medium">View plans →</a>
               </div>
             )}
           </div>
@@ -118,33 +118,33 @@ export default function Dashboard() {
         {/* Runtime summary stats */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="border border-border bg-card rounded-sm p-4">
+            <div className="border border-border bg-card rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-success" />
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Trades Opened</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Trades Opened</div>
               </div>
-              <div className="text-2xl font-bold font-mono">{summary.tradesOpened}</div>
+              <div className="text-2xl font-bold tabular-nums">{summary.tradesOpened}</div>
             </div>
-            <div className="border border-border bg-card rounded-sm p-4">
+            <div className="border border-border bg-card rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingDown className="w-4 h-4 text-primary" />
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Trades Closed</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Trades Closed</div>
               </div>
-              <div className="text-2xl font-bold font-mono">{summary.tradesClosed}</div>
+              <div className="text-2xl font-bold tabular-nums">{summary.tradesClosed}</div>
             </div>
-            <div className="border border-border bg-card rounded-sm p-4">
+            <div className="border border-border bg-card rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="w-4 h-4 text-destructive" />
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Errors</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Errors</div>
               </div>
-              <div className="text-2xl font-bold font-mono">{summary.errors}</div>
+              <div className="text-2xl font-bold tabular-nums">{summary.errors}</div>
             </div>
-            <div className="border border-border bg-card rounded-sm p-4">
+            <div className="border border-border bg-card rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4 text-warning" />
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono">Uptime</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Uptime</div>
               </div>
-              <div className="text-2xl font-bold font-mono">{summary.uptime}%</div>
+              <div className="text-2xl font-bold tabular-nums">{summary.uptime}%</div>
             </div>
           </div>
         )}
@@ -152,22 +152,23 @@ export default function Dashboard() {
         {/* Recent telemetry */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Recent Telemetry</div>
-            <a href="/runtime" className="text-xs text-primary hover:underline font-mono">View all →</a>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recent Telemetry</div>
+            <a href="/runtime" className="text-xs text-primary hover:underline font-medium">View all →</a>
           </div>
           {recentEvents.length === 0 ? (
-            <div className="border border-border bg-card rounded-sm p-8 text-center text-muted-foreground text-sm">
+            <div className="border border-border bg-card rounded-lg p-8 text-center text-muted-foreground text-sm">
               <Activity className="w-8 h-8 mx-auto mb-3 opacity-30" />
               No telemetry yet. Connect your EA to start recording events.
             </div>
           ) : (
-            <div className="border border-border rounded-sm overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary">
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">Time</th>
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">Type</th>
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">EA</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Time</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">EA</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -177,7 +178,7 @@ export default function Dashboard() {
                         {new Date(ev.createdAt).toLocaleTimeString()}
                       </td>
                       <td className="px-4 py-2">
-                        <span className={`text-xs font-mono border px-2 py-0.5 rounded-sm ${EVENT_COLORS[ev.eventType] ?? "text-muted-foreground border-border"}`}>
+                        <span className={`text-xs font-mono border px-2 py-0.5 rounded-lg ${EVENT_COLORS[ev.eventType] ?? "text-muted-foreground border-border"}`}>
                           {ev.eventType}
                         </span>
                       </td>
@@ -188,6 +189,7 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>

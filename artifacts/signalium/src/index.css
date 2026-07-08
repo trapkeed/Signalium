@@ -96,7 +96,7 @@
 
   --app-font-sans: 'DM Sans', system-ui, sans-serif;
   --app-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --radius: 0.25rem;
+  --radius: 0.625rem;
 }
 
 @layer base {

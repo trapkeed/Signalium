@@ -49,25 +49,25 @@ export default function Subscriptions() {
   return (
     <div className="flex-1 overflow-auto">
       <div className="px-8 py-6 border-b border-border">
-        <h1 className="text-xl font-bold tracking-tight">Subscriptions</h1>
-        <p className="text-xs text-muted-foreground mt-0.5 font-mono">Manage your Signalium subscription</p>
+        <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage your Signalium subscription</p>
       </div>
 
       <div className="p-8 space-y-8 max-w-5xl">
         {/* Current subscription */}
         {!isLoading && (
           <div>
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Current Plan</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Current Plan</div>
             {subscription ? (
-              <div className="border border-primary/30 bg-primary/5 rounded-sm p-6">
+              <div className="border border-primary/30 bg-primary/5 rounded-lg p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-bold text-lg">{subscription.plan?.name}</div>
-                    <div className="text-2xl font-mono font-bold mt-1">
+                    <div className="text-2xl font-bold tabular-nums mt-1">
                       ${subscription.plan?.priceMonthly}
                       <span className="text-sm font-normal text-muted-foreground">/month</span>
                     </div>
-                    <div className={`inline-flex items-center gap-1 text-xs font-mono mt-2 px-2 py-0.5 rounded-sm ${
+                    <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-2 px-2.5 py-1 rounded-full ${
                       subscription.status === "active" ? "bg-success/15 text-success" :
                       subscription.status === "trialing" ? "bg-warning/15 text-warning" :
                       "bg-destructive/15 text-destructive"
@@ -78,7 +78,7 @@ export default function Subscriptions() {
                   <button
                     onClick={handleCancel}
                     disabled={cancelSub.isPending}
-                    className="text-xs text-destructive border border-destructive/30 hover:bg-destructive/10 px-3 py-1.5 rounded-sm transition-colors disabled:opacity-50"
+                    className="text-xs text-destructive border border-destructive/30 hover:bg-destructive/10 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                   >
                     Cancel subscription
                   </button>
@@ -95,7 +95,7 @@ export default function Subscriptions() {
                 )}
               </div>
             ) : (
-              <div className="border border-border bg-card rounded-sm p-6 text-muted-foreground text-sm flex items-center gap-3">
+              <div className="border border-border bg-card rounded-lg p-6 text-muted-foreground text-sm flex items-center gap-3">
                 <CreditCard className="w-5 h-5 opacity-50" />
                 No active subscription. Choose a plan below to get started.
               </div>
@@ -105,7 +105,7 @@ export default function Subscriptions() {
 
         {/* Plan comparison */}
         <div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Available Plans</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Available Plans</div>
           <div className="grid md:grid-cols-3 gap-4">
             {plans?.map((plan) => {
               const planTierOrder = TIER_ORDER[plan.tier as keyof typeof TIER_ORDER];
@@ -116,18 +116,18 @@ export default function Subscriptions() {
               return (
                 <div
                   key={plan.id}
-                  className={`border rounded-sm p-6 flex flex-col gap-4 ${isCurrent ? "border-primary bg-primary/5" : TIER_COLORS[plan.tier] + " bg-card"}`}
+                  className={`border rounded-lg p-6 flex flex-col gap-4 ${isCurrent ? "border-primary bg-primary/5" : TIER_COLORS[plan.tier] + " bg-card"}`}
                 >
                   {isCurrent && (
-                    <div className="text-xs font-mono text-primary uppercase tracking-wider">Current plan</div>
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wider">Current plan</div>
                   )}
                   {plan.tier === "professional" && !isCurrent && (
-                    <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Most popular</div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Most popular</div>
                   )}
 
                   <div>
                     <div className="font-bold text-lg">{plan.name}</div>
-                    <div className="text-3xl font-mono font-bold mt-1">
+                    <div className="text-3xl font-bold tabular-nums mt-1">
                       ${plan.priceMonthly}
                       <span className="text-sm font-normal text-muted-foreground">/mo</span>
                     </div>
@@ -147,7 +147,7 @@ export default function Subscriptions() {
                   <button
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={isCurrent || createSub.isPending}
-                    className={`w-full py-2.5 rounded-sm text-sm font-medium transition-colors ${
+                    className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       isCurrent
                         ? "bg-secondary text-muted-foreground cursor-default"
                         : plan.tier === "professional"

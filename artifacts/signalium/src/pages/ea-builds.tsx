@@ -58,7 +58,7 @@ function AuditRow({ buildId }: { buildId: string }) {
   return (
     <div className="px-4 py-3 flex flex-col gap-2">
       {entries.map((entry) => (
-        <div key={entry.id} className="flex items-center justify-between border border-border rounded-sm px-3 py-2 bg-background/50 text-xs font-mono">
+        <div key={entry.id} className="flex items-center justify-between border border-border rounded-lg px-3 py-2 bg-background/50 text-xs font-mono">
           <span className="capitalize">{entry.action}</span>
           <span className="text-muted-foreground">{new Date(entry.createdAt).toLocaleString()}</span>
         </div>
@@ -131,19 +131,19 @@ export default function EaBuilds() {
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
       <div className="border-b border-border px-8 py-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-mono tracking-tight">EA Builds</h1>
+          <h1 className="text-2xl font-bold tracking-tight">EA Builds</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Generate your personal, uniquely-signed MT5 Expert Advisor
           </p>
         </div>
-        <Button onClick={handleGenerate} disabled={generate.isPending} className="gap-2 font-mono text-xs rounded-sm">
+        <Button onClick={handleGenerate} disabled={generate.isPending} className="gap-2 text-sm rounded-lg">
           <Cpu className="w-4 h-4" />
           {generate.isPending ? "Generating..." : "Generate EA"}
         </Button>
       </div>
 
       <div className="p-8 max-w-4xl flex flex-col gap-6">
-        <div className="border border-border bg-card rounded-sm p-4">
+        <div className="border border-border bg-card rounded-lg p-4">
           <div className="flex items-start gap-3">
             <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div className="text-sm text-muted-foreground leading-relaxed">
@@ -156,36 +156,37 @@ export default function EaBuilds() {
         </div>
 
         {error && (
-          <Alert variant="destructive" className="rounded-sm">
+          <Alert variant="destructive" className="rounded-lg">
             <AlertTriangle className="w-4 h-4" />
-            <AlertDescription className="text-xs font-mono">
+            <AlertDescription className="text-xs">
               {(error as any)?.message ?? "Failed to load EA builds"}
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="border border-border rounded-sm overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">File</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Tier</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Downloads</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Generated</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">File</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tier</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Downloads</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Generated</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     Loading...
                   </td>
                 </tr>
               ) : builds.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No EA builds yet. Generate one to get started.
                   </td>
                 </tr>
@@ -195,7 +196,7 @@ export default function EaBuilds() {
                     <tr key={build.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                       <td className="px-4 py-3 font-medium">
                         <button
-                          className="flex items-center gap-1.5 font-mono text-xs"
+                          className="flex items-center gap-1.5 text-sm font-medium"
                           onClick={() => setExpandedId(expandedId === build.id ? null : build.id)}
                         >
                           {expandedId === build.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -214,7 +215,7 @@ export default function EaBuilds() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 rounded-sm"
+                              className="h-7 w-7 p-0 rounded-lg"
                               onClick={() => handleDownload(build.buildId, build.fileName)}
                               disabled={downloadingId === build.id}
                               title="Download"
@@ -226,7 +227,7 @@ export default function EaBuilds() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 rounded-sm"
+                              className="h-7 w-7 p-0 rounded-lg"
                               onClick={() => handleRegenerate(build.buildId)}
                               title="Regenerate (rotates build, supersedes this one)"
                             >
@@ -237,7 +238,7 @@ export default function EaBuilds() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-lg"
                               onClick={() => handleRevoke(build.buildId)}
                               title="Revoke"
                             >
@@ -259,6 +260,7 @@ export default function EaBuilds() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

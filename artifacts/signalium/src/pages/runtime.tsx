@@ -21,11 +21,11 @@ export default function Runtime() {
     <div className="flex-1 overflow-auto">
       <div className="px-8 py-6 border-b border-border flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Runtime</h1>
-          <p className="text-xs text-muted-foreground mt-0.5 font-mono">Live QDE runtime monitoring</p>
+          <h1 className="text-2xl font-bold tracking-tight">Runtime</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Live QDE runtime monitoring</p>
         </div>
         {!statusLoading && (
-          <span className={`inline-flex items-center gap-1.5 text-xs font-mono px-2 py-0.5 rounded-sm ${isConnected ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isConnected ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
             {isConnected ? "LIVE" : "OFFLINE"}
           </span>
@@ -35,8 +35,8 @@ export default function Runtime() {
       <div className="p-8 space-y-8">
         {/* Connection status */}
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="border border-border bg-card rounded-sm p-5">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Connection</div>
+          <div className="border border-border bg-card rounded-lg p-5">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Connection</div>
             <div className="flex items-center gap-3">
               {isConnected ? (
                 <Wifi className="w-6 h-6 text-success" />
@@ -50,11 +50,11 @@ export default function Runtime() {
             </div>
           </div>
 
-          <div className="border border-border bg-card rounded-sm p-5">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Last Heartbeat</div>
+          <div className="border border-border bg-card rounded-lg p-5">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Last Heartbeat</div>
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="font-mono text-sm">
+              <span className="text-sm tabular-nums">
                 {status?.lastHeartbeat
                   ? new Date(status.lastHeartbeat).toLocaleString()
                   : "No heartbeat received"}
@@ -62,29 +62,29 @@ export default function Runtime() {
             </div>
           </div>
 
-          <div className="border border-border bg-card rounded-sm p-5">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Active EAs</div>
+          <div className="border border-border bg-card rounded-lg p-5">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Active EAs</div>
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              <span className="font-mono text-2xl font-bold">{status?.activeEas ?? 0}</span>
+              <span className="text-2xl font-bold tabular-nums">{status?.activeEas ?? 0}</span>
             </div>
           </div>
         </div>
 
         {/* Account info */}
         {status?.accountId && (
-          <div className="border border-border bg-card rounded-sm p-4">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Connected Account</div>
-            <div className="font-mono text-sm">{status.accountId}</div>
+          <div className="border border-border bg-card rounded-lg p-4">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Connected Account</div>
+            <div className="text-sm font-mono">{status.accountId}</div>
           </div>
         )}
 
         {/* Telemetry log */}
         <div>
-          <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Telemetry Event Log</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Telemetry Event Log</div>
 
           {telemetryLoading ? (
-            <div className="border border-border rounded-sm overflow-hidden animate-pulse">
+            <div className="border border-border rounded-lg overflow-hidden animate-pulse">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="px-4 py-3 border-b border-border last:border-0 flex gap-4">
                   <div className="h-3 bg-secondary rounded w-24" />
@@ -94,14 +94,15 @@ export default function Runtime() {
               ))}
             </div>
           ) : telemetry && telemetry.length > 0 ? (
-            <div className="border border-border rounded-sm overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary">
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">Timestamp</th>
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">Type</th>
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">EA</th>
-                    <th className="text-left px-4 py-2 text-xs font-mono text-muted-foreground uppercase tracking-wider">Payload</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Timestamp</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">EA</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payload</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -111,7 +112,7 @@ export default function Runtime() {
                         {new Date(ev.createdAt).toLocaleString()}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`text-xs font-mono border px-2 py-0.5 rounded-sm ${EVENT_COLORS[ev.eventType] ?? "text-muted-foreground border-border"}`}>
+                        <span className={`text-xs font-mono border px-2 py-0.5 rounded-lg ${EVENT_COLORS[ev.eventType] ?? "text-muted-foreground border-border"}`}>
                           {ev.eventType}
                         </span>
                       </td>
@@ -125,9 +126,10 @@ export default function Runtime() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           ) : (
-            <div className="border border-border bg-card rounded-sm p-12 text-center text-muted-foreground">
+            <div className="border border-border bg-card rounded-lg p-12 text-center text-muted-foreground">
               <AlertCircle className="w-8 h-8 mx-auto mb-3 opacity-30" />
               <div className="text-sm">No telemetry events yet.</div>
               <div className="text-xs mt-1">Connect your EA to the runtime to start recording events.</div>

@@ -41,15 +41,15 @@ export default function EaList() {
   return (
     <div className="flex-1 overflow-auto">
       <div className="px-8 py-6 border-b border-border">
-        <h1 className="text-xl font-bold tracking-tight">EA Library</h1>
-        <p className="text-xs text-muted-foreground mt-0.5 font-mono">Expert Advisors available on your subscription</p>
+        <h1 className="text-2xl font-bold tracking-tight">EA Library</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Expert Advisors available on your subscription</p>
       </div>
 
       <div className="p-8">
         {isLoading ? (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-border bg-card rounded-sm p-6 animate-pulse">
+              <div key={i} className="border border-border bg-card rounded-lg p-6 animate-pulse">
                 <div className="h-4 bg-secondary rounded w-1/2 mb-3" />
                 <div className="h-3 bg-secondary rounded w-full mb-2" />
                 <div className="h-3 bg-secondary rounded w-3/4" />
@@ -63,12 +63,12 @@ export default function EaList() {
               return (
                 <div
                   key={ea.id}
-                  className={`border bg-card rounded-sm p-6 flex flex-col gap-4 transition-colors ${accessible ? "border-border hover:border-primary/30" : "border-border opacity-70"}`}
+                  className={`border bg-card rounded-lg p-6 flex flex-col gap-4 transition-colors ${accessible ? "border-border hover:border-primary/30" : "border-border opacity-70"}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="font-semibold">{ea.name}</div>
-                      <div className="text-xs font-mono text-muted-foreground mt-0.5">v{ea.version}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-mono">v{ea.version}</div>
                     </div>
                     {!accessible && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
                   </div>
@@ -78,13 +78,13 @@ export default function EaList() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <span className={`text-xs font-mono border px-2 py-0.5 rounded-sm ${TIER_COLORS[ea.requiredTier]}`}>
+                    <span className={`text-xs font-semibold border px-2.5 py-1 rounded-full ${TIER_COLORS[ea.requiredTier]}`}>
                       {ea.requiredTier.toUpperCase()}
                     </span>
-                    <span className="text-xs font-mono border border-border bg-secondary px-2 py-0.5 rounded-sm text-muted-foreground">
+                    <span className="text-xs font-semibold border border-border bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">
                       {ea.platform ? (PLATFORM_LABELS[ea.platform] ?? ea.platform) : "—"}
                     </span>
-                    <span className="text-xs font-mono text-muted-foreground ml-auto">
+                    <span className="text-xs text-muted-foreground ml-auto">
                       {ea.downloadCount} downloads
                     </span>
                   </div>
@@ -92,14 +92,14 @@ export default function EaList() {
                   <div className="flex items-center gap-3 pt-2 border-t border-border">
                     <Link
                       href={`/ea/${ea.id}`}
-                      className="text-xs text-primary hover:underline font-mono"
+                      className="text-xs text-primary hover:underline font-medium"
                     >
                       Details →
                     </Link>
                     <button
                       onClick={() => handleDownload(ea.id)}
                       disabled={!accessible || downloadToken.isPending}
-                      className={`ml-auto flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-sm transition-colors ${
+                      className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
                         accessible
                           ? "bg-primary text-primary-foreground hover:bg-primary/90"
                           : "bg-secondary text-muted-foreground cursor-not-allowed"
@@ -116,7 +116,7 @@ export default function EaList() {
         )}
 
         {eas?.length === 0 && (
-          <div className="border border-border bg-card rounded-sm p-12 text-center text-muted-foreground">
+          <div className="border border-border bg-card rounded-lg p-12 text-center text-muted-foreground">
             <Cpu className="w-8 h-8 mx-auto mb-3 opacity-30" />
             No Expert Advisors available yet.
           </div>

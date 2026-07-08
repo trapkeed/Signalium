@@ -68,7 +68,7 @@ function TerminalsRow({ apiKeyId }: { apiKeyId: number }) {
   return (
     <div className="px-4 py-3 flex flex-col gap-2">
       {registrations.map((reg) => (
-        <div key={reg.id} className="flex items-center justify-between gap-3 border border-border rounded-sm px-3 py-2 bg-background/50">
+        <div key={reg.id} className="flex items-center justify-between gap-3 border border-border rounded-lg px-3 py-2 bg-background/50">
           <div className="flex items-center gap-3 min-w-0">
             <Monitor className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <div className="min-w-0">
@@ -87,7 +87,7 @@ function TerminalsRow({ apiKeyId }: { apiKeyId: number }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive h-6 w-6 p-0 rounded-sm"
+                  className="text-destructive hover:text-destructive h-6 w-6 p-0 rounded-lg"
                   onClick={() => handleDeactivate(reg.id)}
                   title="Deactivate terminal (hardware replacement, decommission)"
                 >
@@ -161,12 +161,12 @@ export default function ApiKeys() {
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
       <div className="border-b border-border px-8 py-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-mono tracking-tight">API Keys</h1>
+          <h1 className="text-2xl font-bold tracking-tight">API Keys</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Generate keys to authenticate your EA connections to the QDE runtime
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="gap-2 font-mono text-xs rounded-sm">
+        <Button onClick={() => setIsCreating(true)} className="gap-2 text-sm rounded-lg">
           <Plus className="w-4 h-4" />
           New API Key
         </Button>
@@ -174,7 +174,7 @@ export default function ApiKeys() {
 
       <div className="p-8 max-w-4xl flex flex-col gap-6">
         {/* Info box */}
-        <div className="border border-border bg-card rounded-sm p-4">
+        <div className="border border-border bg-card rounded-lg p-4">
           <div className="flex items-start gap-3">
             <Key className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div className="text-sm text-muted-foreground leading-relaxed">
@@ -187,22 +187,23 @@ export default function ApiKeys() {
         </div>
 
         {/* Keys table */}
-        <div className="border border-border rounded-sm overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Name</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Key</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Expires</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Last Used</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Used</th>
                 <th />
               </tr>
             </thead>
             <tbody>
               {keys.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No API keys yet. Generate one to connect your EA.
                   </td>
                 </tr>
@@ -238,7 +239,7 @@ export default function ApiKeys() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 rounded-sm"
+                              className="h-7 w-7 p-0 rounded-lg"
                               onClick={() => handleRotate(key.id)}
                               title="Rotate key (keeps registered terminals)"
                             >
@@ -249,7 +250,7 @@ export default function ApiKeys() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                              className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-lg"
                               onClick={() => handleRevoke(key.id)}
                               title="Revoke key"
                             >
@@ -271,37 +272,38 @@ export default function ApiKeys() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
       {/* Create key dialog */}
       <Dialog open={isCreating} onOpenChange={setIsCreating}>
-        <DialogContent className="bg-card border-border rounded-sm">
+        <DialogContent className="bg-card border-border rounded-lg">
           <DialogHeader>
-            <DialogTitle className="font-mono">Create API Key</DialogTitle>
+            <DialogTitle>Create API Key</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-2">
-              <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Key Name</Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Key Name</Label>
               <Input
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
                 placeholder="e.g. MT5 Production"
-                className="rounded-sm font-mono"
+                className="rounded-lg font-mono"
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Expires in (days, optional)</Label>
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Expires in (days, optional)</Label>
               <Input
                 value={newKeyExpiry}
                 onChange={(e) => setNewKeyExpiry(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Leave empty for no expiry"
-                className="rounded-sm font-mono"
+                className="rounded-lg font-mono"
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
             </div>
-            <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-sm">
+            <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-yellow-500" />
               <AlertDescription className="text-xs text-muted-foreground">
                 The key will only be shown once after creation. Store it securely.
@@ -309,8 +311,8 @@ export default function ApiKeys() {
             </Alert>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreating(false)} className="rounded-sm">Cancel</Button>
-            <Button onClick={handleCreate} disabled={!newKeyName.trim() || createKey.isPending} className="rounded-sm font-mono">
+            <Button variant="outline" onClick={() => setIsCreating(false)} className="rounded-lg">Cancel</Button>
+            <Button onClick={handleCreate} disabled={!newKeyName.trim() || createKey.isPending} className="rounded-lg">
               {createKey.isPending ? "Creating..." : "Create Key"}
             </Button>
           </DialogFooter>
@@ -319,29 +321,29 @@ export default function ApiKeys() {
 
       {/* Reveal key dialog */}
       <Dialog open={!!revealedKey} onOpenChange={() => setRevealedKey(null)}>
-        <DialogContent className="bg-card border-border rounded-sm max-w-lg">
+        <DialogContent className="bg-card border-border rounded-lg max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-mono text-primary">Your API Key</DialogTitle>
+            <DialogTitle className="text-primary">Your API Key</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
-            <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-sm">
+            <Alert className="border-yellow-500/30 bg-yellow-500/5 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-yellow-500" />
-              <AlertDescription className="text-xs text-yellow-400 font-mono">
+              <AlertDescription className="text-xs text-yellow-400 font-medium">
                 Copy this key now. You won't be able to see it again.
               </AlertDescription>
             </Alert>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {revealedKey?.name}
               </Label>
               <div className="flex items-center gap-2">
-                <code className="flex-1 font-mono text-xs bg-secondary border border-border rounded-sm px-3 py-2.5 text-primary break-all">
+                <code className="flex-1 font-mono text-xs bg-secondary border border-border rounded-lg px-3 py-2.5 text-primary break-all">
                   {revealedKey?.key}
                 </code>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-sm shrink-0"
+                  className="rounded-lg shrink-0"
                   onClick={() => revealedKey && copyKey(revealedKey.key)}
                 >
                   <Copy className="w-3.5 h-3.5" />
@@ -350,7 +352,7 @@ export default function ApiKeys() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setRevealedKey(null)} className="rounded-sm font-mono w-full">
+            <Button onClick={() => setRevealedKey(null)} className="rounded-lg w-full">
               I've saved my key
             </Button>
           </DialogFooter>

@@ -99,18 +99,18 @@ export default function Payments() {
     return (
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <div className="border-b border-border px-8 py-6">
-          <button onClick={() => setStep("list")} className="text-xs font-mono text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-xl font-bold font-mono tracking-tight">Choose Plan</h1>
+          <button onClick={() => setStep("list")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
+          <h1 className="text-2xl font-bold tracking-tight">Choose Plan</h1>
         </div>
         <div className="p-8 max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-4">
           {activePlans.map((plan) => (
             <button
               key={plan.id}
               onClick={() => { setSelectedPlan(plan.id); setStep("choose-provider"); }}
-              className={`border rounded-sm p-5 text-left transition-all hover:border-primary/50 ${selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+              className={`border rounded-lg p-5 text-left transition-all hover:border-primary/50 ${selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
             >
-              <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">{TIER_LABELS[plan.tier]}</div>
-              <div className="text-2xl font-bold font-mono mb-1">${plan.priceMonthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{TIER_LABELS[plan.tier]}</div>
+              <div className="text-2xl font-bold tabular-nums mb-1">${plan.priceMonthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
               <div className="text-sm text-muted-foreground">{plan.name}</div>
               {plan.features && (plan.features as string[]).length > 0 && (
                 <ul className="mt-3 space-y-1">
@@ -132,12 +132,12 @@ export default function Payments() {
     return (
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <div className="border-b border-border px-8 py-6">
-          <button onClick={() => setStep("choose-plan")} className="text-xs font-mono text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-xl font-bold font-mono tracking-tight">Choose Payment Method</h1>
+          <button onClick={() => setStep("choose-plan")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
+          <h1 className="text-2xl font-bold tracking-tight">Choose Payment Method</h1>
         </div>
         <div className="p-8 max-w-xl flex flex-col gap-4">
           {activeProviders.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground font-mono text-xs">
+            <div className="text-center py-12 text-muted-foreground text-sm">
               No payment methods available. Please contact support.
             </div>
           ) : (
@@ -147,9 +147,9 @@ export default function Payments() {
                 <button
                   key={provider.id}
                   onClick={() => { setSelectedProvider(provider.id); handleCreateIntent(); }}
-                  className="border border-border rounded-sm p-5 text-left transition-all hover:border-primary/50 hover:bg-primary/5 bg-card flex items-center gap-4"
+                  className="border border-border rounded-lg p-5 text-left transition-all hover:border-primary/50 hover:bg-primary/5 bg-card flex items-center gap-4"
                 >
-                  <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <div>
@@ -175,13 +175,13 @@ export default function Payments() {
     return (
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <div className="border-b border-border px-8 py-6">
-          <button onClick={() => setStep("list")} className="text-xs font-mono text-muted-foreground hover:text-foreground mb-3">← Back</button>
-          <h1 className="text-xl font-bold font-mono tracking-tight">Complete Payment</h1>
+          <button onClick={() => setStep("list")} className="text-xs text-muted-foreground hover:text-foreground mb-3">← Back</button>
+          <h1 className="text-2xl font-bold tracking-tight">Complete Payment</h1>
         </div>
         <div className="p-8 max-w-xl flex flex-col gap-5">
           {/* Reference */}
-          <div className="border border-border rounded-sm p-4 bg-card flex flex-col gap-1">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Reference</div>
+          <div className="border border-border rounded-lg p-4 bg-card flex flex-col gap-1">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</div>
             <div className="flex items-center gap-2">
               <code className="font-mono text-sm text-primary">{activeIntent.payment.reference}</code>
               <button onClick={() => copyRef(activeIntent.payment.reference ?? "")} className="text-muted-foreground hover:text-foreground">
@@ -191,22 +191,22 @@ export default function Payments() {
           </div>
 
           {/* Amount */}
-          <div className="border border-border rounded-sm p-4 bg-card">
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">Amount Due</div>
-            <div className="text-2xl font-bold font-mono">
+          <div className="border border-border rounded-lg p-4 bg-card">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Amount Due</div>
+            <div className="text-2xl font-bold tabular-nums">
               {isUSDT ? `${activeIntent.payment.amount} USDT` : `$${activeIntent.payment.amount}`}
             </div>
           </div>
 
           {/* Instructions */}
           {isUSDT && wallet && (
-            <div className="border border-border rounded-sm p-4 bg-card flex flex-col gap-3">
-              <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Payment Instructions</div>
+            <div className="border border-border rounded-lg p-4 bg-card flex flex-col gap-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment Instructions</div>
               <ol className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2"><span className="text-primary font-mono text-xs mt-0.5">1.</span> Send exactly <strong className="text-foreground font-mono">{activeIntent.payment.amount} USDT</strong> to:</li>
               </ol>
               <div className="flex items-center gap-2">
-                <code className="flex-1 font-mono text-xs bg-secondary border border-border rounded-sm px-3 py-2 text-primary break-all">{wallet}</code>
+                <code className="flex-1 font-mono text-xs bg-secondary border border-border rounded-lg px-3 py-2 text-primary break-all">{wallet}</code>
                 <button onClick={() => copyRef(wallet)} className="text-muted-foreground hover:text-foreground shrink-0">
                   <Copy className="w-3.5 h-3.5" />
                 </button>
@@ -218,18 +218,18 @@ export default function Payments() {
 
           {/* TX hash input */}
           <div className="flex flex-col gap-2">
-            <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Transaction Hash <span className="normal-case">(optional but speeds up confirmation)</span>
             </Label>
             <Input
               value={txHash}
               onChange={(e) => setTxHash(e.target.value)}
               placeholder={isUSDT ? "0x... or TXID" : "Reference number"}
-              className="rounded-sm font-mono text-sm"
+              className="rounded-lg font-mono text-sm"
             />
           </div>
 
-          <Button onClick={handleSubmitProof} disabled={submitProof.isPending} className="rounded-sm font-mono">
+          <Button onClick={handleSubmitProof} disabled={submitProof.isPending} className="rounded-lg">
             {submitProof.isPending ? "Submitting..." : "Submit Payment Proof"}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
@@ -245,30 +245,31 @@ export default function Payments() {
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
       <div className="border-b border-border px-8 py-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold font-mono tracking-tight">Payments</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
           <p className="text-sm text-muted-foreground mt-1">Payment history and new payments</p>
         </div>
-        <Button onClick={() => setStep("choose-plan")} className="gap-2 font-mono text-xs rounded-sm">
+        <Button onClick={() => setStep("choose-plan")} className="gap-2 text-sm rounded-lg">
           <Plus className="w-4 h-4" />
           New Payment
         </Button>
       </div>
 
       <div className="p-8 max-w-4xl">
-        <div className="border border-border rounded-sm overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Reference</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Amount</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">Date</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
               </tr>
             </thead>
             <tbody>
               {payments.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                  <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     No payments yet. Start your subscription to get access.
                   </td>
                 </tr>
@@ -279,9 +280,9 @@ export default function Payments() {
                   return (
                     <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.reference ?? `#${p.id}`}</td>
-                      <td className="px-4 py-3 font-mono font-bold">${p.amount}</td>
+                      <td className="px-4 py-3 font-bold tabular-nums">${p.amount}</td>
                       <td className="px-4 py-3">
-                        <span className={`flex items-center gap-1.5 text-xs font-mono ${cfg.color}`}>
+                        <span className={`flex items-center gap-1.5 text-xs font-semibold ${cfg.color}`}>
                           <Icon className="w-3.5 h-3.5" /> {cfg.label}
                         </span>
                       </td>
@@ -294,6 +295,7 @@ export default function Payments() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

@@ -47,7 +47,7 @@ export default function EaDetail() {
       <div className="flex-1 p-8 flex flex-col items-center justify-center text-muted-foreground">
         <Cpu className="w-10 h-10 mb-4 opacity-30" />
         <div>Expert Advisor not found.</div>
-        <Link href="/ea" className="mt-4 text-xs text-primary font-mono hover:underline">← Back to library</Link>
+        <Link href="/ea" className="mt-4 text-xs text-primary font-medium hover:underline">← Back to library</Link>
       </div>
     );
   }
@@ -59,13 +59,13 @@ export default function EaDetail() {
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold tracking-tight">{ea.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{ea.name}</h1>
           <div className="text-xs text-muted-foreground font-mono mt-0.5">v{ea.version}</div>
         </div>
         <button
           onClick={handleDownload}
           disabled={downloadToken.isPending}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-sm text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
           Generate download token
@@ -74,25 +74,25 @@ export default function EaDetail() {
 
       <div className="p-8 max-w-3xl space-y-8">
         {/* Meta */}
-        <div className="border border-border bg-card rounded-sm p-6">
+        <div className="border border-border bg-card rounded-lg p-6">
           <div className="grid md:grid-cols-4 gap-6">
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono mb-1">Version</div>
-              <div className="font-mono font-bold">{ea.version}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Version</div>
+              <div className="font-bold font-mono">{ea.version}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono mb-1">Platform</div>
-              <div className="font-mono">{ea.platform ? (PLATFORM_LABELS[ea.platform] ?? ea.platform) : "—"}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Platform</div>
+              <div>{ea.platform ? (PLATFORM_LABELS[ea.platform] ?? ea.platform) : "—"}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono mb-1">Required tier</div>
-              <span className={`text-xs font-mono border px-2 py-0.5 rounded-sm ${TIER_COLORS[ea.requiredTier] ?? ""}`}>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Required tier</div>
+              <span className={`text-xs font-semibold border px-2.5 py-1 rounded-full ${TIER_COLORS[ea.requiredTier] ?? ""}`}>
                 {ea.requiredTier.toUpperCase()}
               </span>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider font-mono mb-1">Downloads</div>
-              <div className="font-mono font-bold">{ea.downloadCount}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Downloads</div>
+              <div className="font-bold tabular-nums">{ea.downloadCount}</div>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function EaDetail() {
         {/* Description */}
         {ea.description && (
           <div>
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Description</div>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Description</div>
             <div className="text-sm text-foreground leading-relaxed">{ea.description}</div>
           </div>
         )}
@@ -108,15 +108,15 @@ export default function EaDetail() {
         {/* Changelog */}
         {ea.changeLog && (
           <div>
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Changelog</div>
-            <div className="border border-border bg-card rounded-sm p-4 font-mono text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Changelog</div>
+            <div className="border border-border bg-card rounded-lg p-4 font-mono text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
               {ea.changeLog}
             </div>
           </div>
         )}
 
         {/* Dates */}
-        <div className="flex items-center gap-6 text-xs text-muted-foreground font-mono border-t border-border pt-4">
+        <div className="flex items-center gap-6 text-xs text-muted-foreground border-t border-border pt-4">
           {ea.createdAt && (
             <div className="flex items-center gap-1.5">
               <Clock className="w-3 h-3" />
