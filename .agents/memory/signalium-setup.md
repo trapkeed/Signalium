@@ -147,6 +147,16 @@ Any auth/entitlement rejection surfaced to EA clients (HTTP JSON body or WS `typ
 
 **Why:** caught by code review — API key auth failures returned only `{error: string}}`, so the `INVALID_API_KEY`-style codes used elsewhere in the entitlement system weren't reachable from the earliest rejection point in the EA auth chain.
 
+## Grace period scope is asymmetric — re-check per capability, don't assume "grace = degraded but working"
+When a spec defines a grace period, verify per-capability which things stay on vs. cut off immediately — don't default every check to "same as active". In Signalium, manual dashboard access survives grace, but EA/API polling and autonomous mode are cut off immediately at grace start (only the full account lockout waits for grace to lapse into EXPIRED).
+
+**Why:** caught by code review — `checkApiAccess` initially allowed `grace_period` (mirroring the manual-access rule) when the spec explicitly says EA polling must be denied during grace, not just autonomous mode.
+
+## Limit-check entitlement functions must be called at the mutation, not just exist
+An entitlement function like `checkMaxActiveEas` only enforces anything if it's actually invoked at the boundary that grows the counted resource (EA terminal registration), in addition to being available for informational/summary endpoints. Grep all state-changing routes for the resource being limited before considering a limit "wired up".
+
+**Why:** caught by code review — `checkMaxActiveEas` existed in the entitlement engine and was surfaced in the summary endpoint, but `POST /ea-registrations` (the only place that creates a new active terminal) never called it, so the plan's max-EA limit was unenforceable in practice.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 

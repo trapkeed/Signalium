@@ -4,6 +4,7 @@ import { db, apiKeysTable, eaRegistrationsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { isAdmin } from "../middlewares/requireAdmin";
+import { checkMaxActiveEas } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -41,6 +42,20 @@ router.post("/", async (req, res) => {
     }
     if (key.status !== "active") {
       return res.status(401).json({ error: `API key is ${key.status}` });
+    }
+
+    const [existingRegistration] = await db.select().from(eaRegistrationsTable)
+      .where(and(eq(eaRegistrationsTable.apiKeyId, key.id), eq(eaRegistrationsTable.hardwareId, body.hardwareId)));
+
+    // Only a registration that isn't already an active terminal under this key
+    // would increase the user's active-EA count, so only gate that case —
+    // re-registering an already-active terminal (metadata refresh) must not
+    // be blocked by its own count.
+    if (!existingRegistration || !existingRegistration.isActive) {
+      const maxEasCheck = await checkMaxActiveEas(key.userId);
+      if (!maxEasCheck.allowed) {
+        return res.status(403).json({ error: maxEasCheck.message, code: maxEasCheck.code });
+      }
     }
 
     const now = new Date();

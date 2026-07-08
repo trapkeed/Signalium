@@ -49,6 +49,7 @@ export type EntitlementDenialCode =
   | "SUBSCRIPTION_CANCELLED"
   | "SUBSCRIPTION_PAUSED"
   | "GRACE_PERIOD_AUTONOMOUS_DENIED"
+  | "GRACE_PERIOD_API_DENIED"
   | "AUTONOMOUS_DISABLED"
   | "API_ACCESS_DISABLED"
   | "SYMBOL_LIMIT_REACHED"
@@ -191,7 +192,7 @@ export async function checkAutonomousAccess(userId: string): Promise<Entitlement
   return allow();
 }
 
-/** API key issuance + EA WebSocket/HTTP polling — requires ACTIVE or GRACE_PERIOD AND the plan allowing API access. */
+/** API key issuance + EA WebSocket/HTTP polling — requires a truly ACTIVE subscription (grace period explicitly denies EA polling per spec) AND the plan allowing API access. */
 export async function checkApiAccess(userId: string): Promise<EntitlementResult> {
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
@@ -200,6 +201,9 @@ export async function checkApiAccess(userId: string): Promise<EntitlementResult>
   const denial = statusDenial(subscription.status);
   if (denial) return denial;
 
+  if (subscription.status === "grace_period") {
+    return deny("GRACE_PERIOD_API_DENIED", "EA/API access is paused during the grace period. Renew to resume.");
+  }
   if (!plan.apiAccessAllowed) {
     return deny("API_ACCESS_DISABLED", "API access is not included in the current plan.");
   }
