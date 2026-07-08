@@ -21,6 +21,8 @@ import {
   Image,
   Megaphone,
   AlertTriangle,
+  LifeBuoy,
+  BookOpen,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -32,6 +34,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ea", label: "EA Library", icon: Box },
   { href: "/runtime", label: "Runtime", icon: Activity },
+  { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/account", label: "Account & Security", icon: Shield },
 ];
 
@@ -50,6 +53,10 @@ const ADMIN_ITEMS = [
   { href: "/admin/media", label: "Media Library", icon: Image },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/maintenance-banner", label: "Maintenance Banner", icon: AlertTriangle },
+  { href: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
+  { href: "/admin/contact", label: "Contact Messages", icon: Mail },
+  { href: "/admin/knowledge-base", label: "Knowledge Base", icon: BookOpen },
+  { href: "/admin/status", label: "Platform Status", icon: Activity },
 ];
 
 function Logo() {

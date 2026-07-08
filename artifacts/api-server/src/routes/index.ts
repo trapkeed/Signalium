@@ -20,6 +20,10 @@ import mediaRouter from "./media";
 import notificationsRouter from "./notifications";
 import announcementsRouter from "./announcements";
 import maintenanceBannerRouter from "./maintenance-banner";
+import supportTicketsRouter from "./support-tickets";
+import contactRouter from "./contact";
+import knowledgeBaseRouter from "./knowledge-base";
+import statusRouter from "./status";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -46,5 +50,9 @@ router.use("/media", mediaRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/announcements", announcementsRouter);
 router.use("/maintenance-banner", maintenanceBannerRouter);
+router.use("/support/tickets", supportTicketsRouter);
+router.use("/contact", contactRouter);
+router.use("/kb", knowledgeBaseRouter);
+router.use("/status", statusRouter);
 
 export default router;

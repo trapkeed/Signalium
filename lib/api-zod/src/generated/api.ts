@@ -2574,3 +2574,530 @@ export const GetActiveMaintenanceBannerResponse = zod.union([zod.object({
 }),zod.null()])
 
 
+/**
+ * @summary List the current user's support tickets (authenticated)
+ */
+export const ListMySupportTicketsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListMySupportTicketsResponse = zod.array(ListMySupportTicketsResponseItem)
+
+
+/**
+ * @summary Create a support ticket (authenticated)
+ */
+export const CreateSupportTicketBody = zod.object({
+  "subject": zod.string(),
+  "message": zod.string(),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  "attachmentPath": zod.string().optional()
+})
+
+export const CreateSupportTicketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "replies": zod.array(zod.object({
+  "id": zod.number(),
+  "ticketId": zod.number(),
+  "authorId": zod.string(),
+  "authorRole": zod.enum(['user', 'admin']),
+  "body": zod.string(),
+  "attachmentPath": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}))
+
+
+/**
+ * @summary Get a presigned URL for uploading a ticket/reply attachment (authenticated)
+ */
+export const RequestSupportTicketAttachmentUploadUrlResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary List all support tickets (admin)
+ */
+export const ListAllSupportTicketsQueryParams = zod.object({
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']).optional()
+})
+
+export const ListAllSupportTicketsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAllSupportTicketsResponse = zod.array(ListAllSupportTicketsResponseItem)
+
+
+/**
+ * @summary Update a ticket's status/priority (admin)
+ */
+export const UpdateSupportTicketAdminParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSupportTicketAdminBody = zod.object({
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']).optional(),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']).optional()
+})
+
+export const UpdateSupportTicketAdminResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get a ticket and its full reply thread (owner or admin)
+ */
+export const GetSupportTicketParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetSupportTicketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "replies": zod.array(zod.object({
+  "id": zod.number(),
+  "ticketId": zod.number(),
+  "authorId": zod.string(),
+  "authorRole": zod.enum(['user', 'admin']),
+  "body": zod.string(),
+  "attachmentPath": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}))
+
+
+/**
+ * @summary Add a reply to a ticket (owner or admin)
+ */
+export const CreateSupportTicketReplyParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateSupportTicketReplyBody = zod.object({
+  "body": zod.string(),
+  "attachmentPath": zod.string().optional()
+})
+
+export const CreateSupportTicketReplyResponse = zod.object({
+  "id": zod.number(),
+  "ticketId": zod.number(),
+  "authorId": zod.string(),
+  "authorRole": zod.enum(['user', 'admin']),
+  "body": zod.string(),
+  "attachmentPath": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Download a reply attachment (owner or admin)
+ */
+export const GetSupportTicketAttachmentParams = zod.object({
+  "id": zod.coerce.number(),
+  "replyId": zod.coerce.number()
+})
+
+export const GetSupportTicketAttachmentResponse = zod.unknown()
+
+
+/**
+ * @summary Submit the public contact form (public)
+ */
+export const SubmitContactMessageBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string(),
+  "subject": zod.string(),
+  "message": zod.string()
+})
+
+export const SubmitContactMessageResponse = zod.object({
+  "id": zod.number()
+})
+
+
+/**
+ * @summary List contact form submissions (admin)
+ */
+export const ListContactMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'handled']),
+  "createdAt": zod.string()
+})
+export const ListContactMessagesResponse = zod.array(ListContactMessagesResponseItem)
+
+
+/**
+ * @summary Mark a contact message new/handled (admin)
+ */
+export const UpdateContactMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateContactMessageBody = zod.object({
+  "status": zod.enum(['new', 'handled'])
+})
+
+export const UpdateContactMessageResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "subject": zod.string(),
+  "message": zod.string(),
+  "status": zod.enum(['new', 'handled']),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List knowledge base categories with published article counts (public)
+ */
+export const ListKbCategoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "articleCount": zod.number()
+}))
+export const ListKbCategoriesResponse = zod.array(ListKbCategoriesResponseItem)
+
+
+/**
+ * @summary List published knowledge base articles, optionally filtered/searched (public)
+ */
+export const ListKbArticlesQueryParams = zod.object({
+  "categorySlug": zod.coerce.string().optional(),
+  "q": zod.coerce.string().optional()
+})
+
+export const ListKbArticlesResponseItem = zod.object({
+  "id": zod.number(),
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListKbArticlesResponse = zod.array(ListKbArticlesResponseItem)
+
+
+/**
+ * @summary Get a single published article by slug (public)
+ */
+export const GetKbArticleParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetKbArticleResponse = zod.object({
+  "id": zod.number(),
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List all knowledge base categories (admin)
+ */
+export const ListKbCategoriesAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string()
+})
+export const ListKbCategoriesAdminResponse = zod.array(ListKbCategoriesAdminResponseItem)
+
+
+/**
+ * @summary Create a knowledge base category (admin)
+ */
+export const CreateKbCategoryBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number().optional()
+})
+
+export const CreateKbCategoryResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a knowledge base category (admin)
+ */
+export const UpdateKbCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateKbCategoryBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number().optional()
+})
+
+export const UpdateKbCategoryResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a knowledge base category and its articles (admin)
+ */
+export const DeleteKbCategoryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteKbCategoryResponse = zod.void()
+
+
+/**
+ * @summary List all knowledge base articles (admin)
+ */
+export const ListKbArticlesAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListKbArticlesAdminResponse = zod.array(ListKbArticlesAdminResponseItem)
+
+
+/**
+ * @summary Create a knowledge base article (admin)
+ */
+export const CreateKbArticleBody = zod.object({
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+export const CreateKbArticleResponse = zod.object({
+  "id": zod.number(),
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update a knowledge base article (admin)
+ */
+export const UpdateKbArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateKbArticleBody = zod.object({
+  "categoryId": zod.number().optional(),
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "body": zod.string().optional(),
+  "status": zod.enum(['draft', 'published']).optional()
+})
+
+export const UpdateKbArticleResponse = zod.object({
+  "id": zod.number(),
+  "categoryId": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'published']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a knowledge base article (admin)
+ */
+export const DeleteKbArticleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteKbArticleResponse = zod.void()
+
+
+/**
+ * @summary Get the current effective platform status and open incidents (public)
+ */
+export const GetActiveStatusResponse = zod.object({
+  "status": zod.enum(['operational', 'degraded', 'partial_outage', 'major_outage', 'maintenance']),
+  "updatedAt": zod.string().nullish(),
+  "incidents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+  "message": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+})),
+  "recentResolved": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+  "message": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Get the raw stored status and all incidents (admin)
+ */
+export const GetAdminStatusResponse = zod.object({
+  "status": zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['operational', 'degraded', 'partial_outage', 'major_outage']),
+  "updatedAt": zod.string()
+}),
+  "incidents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+  "message": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Update the overall stored platform status (admin)
+ */
+export const UpdatePlatformStatusBody = zod.object({
+  "status": zod.enum(['operational', 'degraded', 'partial_outage', 'major_outage'])
+})
+
+export const UpdatePlatformStatusResponse = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['operational', 'degraded', 'partial_outage', 'major_outage']),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Create a status incident (admin)
+ */
+export const CreateStatusIncidentBody = zod.object({
+  "title": zod.string(),
+  "message": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']).optional()
+})
+
+export const CreateStatusIncidentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+  "message": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a status incident (admin)
+ */
+export const UpdateStatusIncidentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateStatusIncidentBody = zod.object({
+  "title": zod.string().optional(),
+  "message": zod.string().optional(),
+  "impact": zod.enum(['minor', 'major', 'critical']).optional(),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']).optional()
+})
+
+export const UpdateStatusIncidentResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "impact": zod.enum(['minor', 'major', 'critical']),
+  "status": zod.enum(['investigating', 'identified', 'monitoring', 'resolved']),
+  "message": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a status incident (admin)
+ */
+export const DeleteStatusIncidentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteStatusIncidentResponse = zod.void()
+
+

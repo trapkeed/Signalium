@@ -32,6 +32,16 @@ import AdminSeo from "@/pages/admin/seo";
 import AdminMedia from "@/pages/admin/media";
 import AdminAnnouncements from "@/pages/admin/announcements";
 import AdminMaintenanceBanner from "@/pages/admin/maintenance-banner";
+import Contact from "@/pages/contact";
+import KnowledgeBase from "@/pages/knowledge-base";
+import KbArticle from "@/pages/kb-article";
+import StatusPage from "@/pages/status-page";
+import Support from "@/pages/support";
+import SupportTicketDetail from "@/pages/support-ticket-detail";
+import AdminSupport from "@/pages/admin/support";
+import AdminContact from "@/pages/admin/contact";
+import AdminKnowledgeBase from "@/pages/admin/knowledge-base";
+import AdminStatusPage from "@/pages/admin/status";
 
 import { AppLayout } from "@/components/layout";
 import { AccountGate } from "@/components/account-gate";
@@ -186,7 +196,11 @@ function ClerkProviderWithRoutes() {
             <Route path="/" component={HomeRedirect} />
             <Route path="/sign-in/*?" component={SignInPage} />
             <Route path="/sign-up/*?" component={SignUpPage} />
-            
+            <Route path="/contact" component={Contact} />
+            <Route path="/kb" component={KnowledgeBase} />
+            <Route path="/kb/:slug" component={KbArticle} />
+            <Route path="/status" component={StatusPage} />
+
             <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
             <Route path="/ea"><ProtectedRoute component={EaList} /></Route>
             <Route path="/ea/:id"><ProtectedRoute component={EaDetail} /></Route>
@@ -195,6 +209,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
             <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>
             <Route path="/ea-builds"><ProtectedRoute component={EaBuilds} /></Route>
+            <Route path="/support"><ProtectedRoute component={Support} /></Route>
+            <Route path="/support/:id"><ProtectedRoute component={SupportTicketDetail} /></Route>
             <Route path="/account"><ProtectedRoute component={Account} /></Route>
             <Route path="/settings"><Redirect to="/account" /></Route>
 
@@ -212,6 +228,11 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>
             <Route path="/admin/announcements"><ProtectedRoute component={AdminAnnouncements} /></Route>
             <Route path="/admin/maintenance-banner"><ProtectedRoute component={AdminMaintenanceBanner} /></Route>
+            <Route path="/admin/support"><ProtectedRoute component={AdminSupport} /></Route>
+            <Route path="/admin/support/:id"><ProtectedRoute component={AdminSupport} /></Route>
+            <Route path="/admin/contact"><ProtectedRoute component={AdminContact} /></Route>
+            <Route path="/admin/knowledge-base"><ProtectedRoute component={AdminKnowledgeBase} /></Route>
+            <Route path="/admin/status"><ProtectedRoute component={AdminStatusPage} /></Route>
 
             <Route component={NotFound} />
           </Switch>

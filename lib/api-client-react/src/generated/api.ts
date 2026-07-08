@@ -23,11 +23,15 @@ import type {
   AccountSecurityStatus,
   ActiveMaintenanceBanner,
   ActiveSession,
+  ActiveStatus,
+  AdminStatus,
   Announcement,
   AnnouncementInput,
   AnnouncementUpdate,
   ApiKey,
   ApiKeyCreated,
+  ContactMessage,
+  ContactMessageInput,
   CreateApiKeyBody,
   CreateSymbolAliasBody,
   CreateSymbolBody,
@@ -46,6 +50,14 @@ import type {
   HealthStatus,
   HeartbeatInput,
   HeartbeatResponse,
+  KbArticle,
+  KbArticleInput,
+  KbArticleUpdate,
+  KbCategory,
+  KbCategoryInput,
+  KbCategoryWithCount,
+  ListAllSupportTicketsParams,
+  ListKbArticlesParams,
   ListMediaAssetsParams,
   LockAccount200,
   LoginEvent,
@@ -66,12 +78,14 @@ import type {
   Plan,
   PlanInput,
   PlanUpdate,
+  PlatformStatus,
   PositionTelemetry,
   PositionTelemetryInput,
   QdeStatsOverview,
   RedeliverAction200,
   RegisterEaTerminalBody,
   RejectPaymentBody,
+  RequestSupportTicketAttachmentUploadUrl200,
   ResolveSeoPageParams,
   RevokeAccountSession200,
   RuntimeStatus,
@@ -90,10 +104,20 @@ import type {
   SmtpSettingsInput,
   SmtpSettingsUpdate,
   StatsOverview,
+  StatusIncident,
+  StatusIncidentInput,
+  StatusIncidentUpdate,
+  SubmitContactMessage201,
   SubmitEaTelemetry201,
   Subscription,
   SubscriptionInput,
   SubscriptionUpdate,
+  SupportTicket,
+  SupportTicketAdminUpdate,
+  SupportTicketInput,
+  SupportTicketReply,
+  SupportTicketReplyInput,
+  SupportTicketWithReplies,
   Symbol,
   SymbolAlias,
   SymbolAliasWithCanonical,
@@ -109,6 +133,8 @@ import type {
   TrainerAction,
   UnlockAccount200,
   UnlockAccountBody,
+  UpdateContactMessageBody,
+  UpdatePlatformStatusBody,
   UpdateSymbolBody,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -9560,4 +9586,2089 @@ export function useGetActiveMaintenanceBanner<TData = Awaited<ReturnType<typeof 
 
 
 
+
+export const getListMySupportTicketsUrl = () => {
+
+
+
+
+  return `/api/support/tickets`
+}
+
+/**
+ * @summary List the current user's support tickets (authenticated)
+ */
+export const listMySupportTickets = async ( options?: RequestInit): Promise<SupportTicket[]> => {
+
+  return customFetch<SupportTicket[]>(getListMySupportTicketsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMySupportTicketsQueryKey = () => {
+    return [
+    `/api/support/tickets`
+    ] as const;
+    }
+
+
+export const getListMySupportTicketsQueryOptions = <TData = Awaited<ReturnType<typeof listMySupportTickets>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySupportTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMySupportTicketsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMySupportTickets>>> = ({ signal }) => listMySupportTickets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMySupportTickets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMySupportTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof listMySupportTickets>>>
+export type ListMySupportTicketsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current user's support tickets (authenticated)
+ */
+
+export function useListMySupportTickets<TData = Awaited<ReturnType<typeof listMySupportTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMySupportTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMySupportTicketsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportTicketUrl = () => {
+
+
+
+
+  return `/api/support/tickets`
+}
+
+/**
+ * @summary Create a support ticket (authenticated)
+ */
+export const createSupportTicket = async (supportTicketInput: SupportTicketInput, options?: RequestInit): Promise<SupportTicketWithReplies> => {
+
+  return customFetch<SupportTicketWithReplies>(getCreateSupportTicketUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(supportTicketInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportTicket>>, TError,{data: BodyType<SupportTicketInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportTicket>>, TError,{data: BodyType<SupportTicketInput>}, TContext> => {
+
+const mutationKey = ['createSupportTicket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportTicket>>, {data: BodyType<SupportTicketInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSupportTicket(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportTicket>>>
+    export type CreateSupportTicketMutationBody = BodyType<SupportTicketInput>
+    export type CreateSupportTicketMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a support ticket (authenticated)
+ */
+export const useCreateSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportTicket>>, TError,{data: BodyType<SupportTicketInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportTicket>>,
+        TError,
+        {data: BodyType<SupportTicketInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSupportTicketMutationOptions(options));
+    }
+
+export const getRequestSupportTicketAttachmentUploadUrlUrl = () => {
+
+
+
+
+  return `/api/support/tickets/attachments/request-url`
+}
+
+/**
+ * @summary Get a presigned URL for uploading a ticket/reply attachment (authenticated)
+ */
+export const requestSupportTicketAttachmentUploadUrl = async ( options?: RequestInit): Promise<RequestSupportTicketAttachmentUploadUrl200> => {
+
+  return customFetch<RequestSupportTicketAttachmentUploadUrl200>(getRequestSupportTicketAttachmentUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRequestSupportTicketAttachmentUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>, TError,void, TContext> => {
+
+const mutationKey = ['requestSupportTicketAttachmentUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>, void> = () => {
+
+
+          return  requestSupportTicketAttachmentUploadUrl(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSupportTicketAttachmentUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>>
+
+    export type RequestSupportTicketAttachmentUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Get a presigned URL for uploading a ticket/reply attachment (authenticated)
+ */
+export const useRequestSupportTicketAttachmentUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSupportTicketAttachmentUploadUrl>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRequestSupportTicketAttachmentUploadUrlMutationOptions(options));
+    }
+
+export const getListAllSupportTicketsUrl = (params?: ListAllSupportTicketsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/support/tickets/admin?${stringifiedParams}` : `/api/support/tickets/admin`
+}
+
+/**
+ * @summary List all support tickets (admin)
+ */
+export const listAllSupportTickets = async (params?: ListAllSupportTicketsParams, options?: RequestInit): Promise<SupportTicket[]> => {
+
+  return customFetch<SupportTicket[]>(getListAllSupportTicketsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllSupportTicketsQueryKey = (params?: ListAllSupportTicketsParams,) => {
+    return [
+    `/api/support/tickets/admin`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAllSupportTicketsQueryOptions = <TData = Awaited<ReturnType<typeof listAllSupportTickets>>, TError = ErrorType<unknown>>(params?: ListAllSupportTicketsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllSupportTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllSupportTicketsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSupportTickets>>> = ({ signal }) => listAllSupportTickets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllSupportTickets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllSupportTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof listAllSupportTickets>>>
+export type ListAllSupportTicketsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all support tickets (admin)
+ */
+
+export function useListAllSupportTickets<TData = Awaited<ReturnType<typeof listAllSupportTickets>>, TError = ErrorType<unknown>>(
+ params?: ListAllSupportTicketsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllSupportTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllSupportTicketsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSupportTicketAdminUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/tickets/admin/${id}`
+}
+
+/**
+ * @summary Update a ticket's status/priority (admin)
+ */
+export const updateSupportTicketAdmin = async (id: number,
+    supportTicketAdminUpdate: SupportTicketAdminUpdate, options?: RequestInit): Promise<SupportTicket> => {
+
+  return customFetch<SupportTicket>(getUpdateSupportTicketAdminUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(supportTicketAdminUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSupportTicketAdminMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportTicketAdmin>>, TError,{id: number;data: BodyType<SupportTicketAdminUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSupportTicketAdmin>>, TError,{id: number;data: BodyType<SupportTicketAdminUpdate>}, TContext> => {
+
+const mutationKey = ['updateSupportTicketAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSupportTicketAdmin>>, {id: number;data: BodyType<SupportTicketAdminUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSupportTicketAdmin(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSupportTicketAdminMutationResult = NonNullable<Awaited<ReturnType<typeof updateSupportTicketAdmin>>>
+    export type UpdateSupportTicketAdminMutationBody = BodyType<SupportTicketAdminUpdate>
+    export type UpdateSupportTicketAdminMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a ticket's status/priority (admin)
+ */
+export const useUpdateSupportTicketAdmin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSupportTicketAdmin>>, TError,{id: number;data: BodyType<SupportTicketAdminUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSupportTicketAdmin>>,
+        TError,
+        {id: number;data: BodyType<SupportTicketAdminUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSupportTicketAdminMutationOptions(options));
+    }
+
+export const getGetSupportTicketUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/tickets/${id}`
+}
+
+/**
+ * @summary Get a ticket and its full reply thread (owner or admin)
+ */
+export const getSupportTicket = async (id: number, options?: RequestInit): Promise<SupportTicketWithReplies> => {
+
+  return customFetch<SupportTicketWithReplies>(getGetSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportTicketQueryKey = (id: number,) => {
+    return [
+    `/api/support/tickets/${id}`
+    ] as const;
+    }
+
+
+export const getGetSupportTicketQueryOptions = <TData = Awaited<ReturnType<typeof getSupportTicket>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportTicket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportTicketQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportTicket>>> = ({ signal }) => getSupportTicket(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportTicket>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSupportTicketQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportTicket>>>
+export type GetSupportTicketQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a ticket and its full reply thread (owner or admin)
+ */
+
+export function useGetSupportTicket<TData = Awaited<ReturnType<typeof getSupportTicket>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportTicket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSupportTicketQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSupportTicketReplyUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/tickets/${id}/replies`
+}
+
+/**
+ * @summary Add a reply to a ticket (owner or admin)
+ */
+export const createSupportTicketReply = async (id: number,
+    supportTicketReplyInput: SupportTicketReplyInput, options?: RequestInit): Promise<SupportTicketReply> => {
+
+  return customFetch<SupportTicketReply>(getCreateSupportTicketReplyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(supportTicketReplyInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSupportTicketReplyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportTicketReply>>, TError,{id: number;data: BodyType<SupportTicketReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSupportTicketReply>>, TError,{id: number;data: BodyType<SupportTicketReplyInput>}, TContext> => {
+
+const mutationKey = ['createSupportTicketReply'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSupportTicketReply>>, {id: number;data: BodyType<SupportTicketReplyInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createSupportTicketReply(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSupportTicketReplyMutationResult = NonNullable<Awaited<ReturnType<typeof createSupportTicketReply>>>
+    export type CreateSupportTicketReplyMutationBody = BodyType<SupportTicketReplyInput>
+    export type CreateSupportTicketReplyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a reply to a ticket (owner or admin)
+ */
+export const useCreateSupportTicketReply = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSupportTicketReply>>, TError,{id: number;data: BodyType<SupportTicketReplyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSupportTicketReply>>,
+        TError,
+        {id: number;data: BodyType<SupportTicketReplyInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSupportTicketReplyMutationOptions(options));
+    }
+
+export const getGetSupportTicketAttachmentUrl = (id: number,
+    replyId: number,) => {
+
+
+
+
+  return `/api/support/tickets/${id}/replies/${replyId}/attachment`
+}
+
+/**
+ * @summary Download a reply attachment (owner or admin)
+ */
+export const getSupportTicketAttachment = async (id: number,
+    replyId: number, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetSupportTicketAttachmentUrl(id,replyId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupportTicketAttachmentQueryKey = (id: number,
+    replyId: number,) => {
+    return [
+    `/api/support/tickets/${id}/replies/${replyId}/attachment`
+    ] as const;
+    }
+
+
+export const getGetSupportTicketAttachmentQueryOptions = <TData = Awaited<ReturnType<typeof getSupportTicketAttachment>>, TError = ErrorType<unknown>>(id: number,
+    replyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportTicketAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupportTicketAttachmentQueryKey(id,replyId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupportTicketAttachment>>> = ({ signal }) => getSupportTicketAttachment(id,replyId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && replyId !== null && replyId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupportTicketAttachment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSupportTicketAttachmentQueryResult = NonNullable<Awaited<ReturnType<typeof getSupportTicketAttachment>>>
+export type GetSupportTicketAttachmentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Download a reply attachment (owner or admin)
+ */
+
+export function useGetSupportTicketAttachment<TData = Awaited<ReturnType<typeof getSupportTicketAttachment>>, TError = ErrorType<unknown>>(
+ id: number,
+    replyId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupportTicketAttachment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSupportTicketAttachmentQueryOptions(id,replyId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitContactMessageUrl = () => {
+
+
+
+
+  return `/api/contact`
+}
+
+/**
+ * @summary Submit the public contact form (public)
+ */
+export const submitContactMessage = async (contactMessageInput: ContactMessageInput, options?: RequestInit): Promise<SubmitContactMessage201> => {
+
+  return customFetch<SubmitContactMessage201>(getSubmitContactMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contactMessageInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitContactMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageInput>}, TContext> => {
+
+const mutationKey = ['submitContactMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitContactMessage>>, {data: BodyType<ContactMessageInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitContactMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitContactMessageMutationResult = NonNullable<Awaited<ReturnType<typeof submitContactMessage>>>
+    export type SubmitContactMessageMutationBody = BodyType<ContactMessageInput>
+    export type SubmitContactMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Submit the public contact form (public)
+ */
+export const useSubmitContactMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitContactMessage>>, TError,{data: BodyType<ContactMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitContactMessage>>,
+        TError,
+        {data: BodyType<ContactMessageInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitContactMessageMutationOptions(options));
+    }
+
+export const getListContactMessagesUrl = () => {
+
+
+
+
+  return `/api/contact/admin`
+}
+
+/**
+ * @summary List contact form submissions (admin)
+ */
+export const listContactMessages = async ( options?: RequestInit): Promise<ContactMessage[]> => {
+
+  return customFetch<ContactMessage[]>(getListContactMessagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListContactMessagesQueryKey = () => {
+    return [
+    `/api/contact/admin`
+    ] as const;
+    }
+
+
+export const getListContactMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listContactMessages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContactMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContactMessagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContactMessages>>> = ({ signal }) => listContactMessages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listContactMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListContactMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listContactMessages>>>
+export type ListContactMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List contact form submissions (admin)
+ */
+
+export function useListContactMessages<TData = Awaited<ReturnType<typeof listContactMessages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContactMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListContactMessagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateContactMessageUrl = (id: number,) => {
+
+
+
+
+  return `/api/contact/admin/${id}`
+}
+
+/**
+ * @summary Mark a contact message new/handled (admin)
+ */
+export const updateContactMessage = async (id: number,
+    updateContactMessageBody: UpdateContactMessageBody, options?: RequestInit): Promise<ContactMessage> => {
+
+  return customFetch<ContactMessage>(getUpdateContactMessageUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateContactMessageBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateContactMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContactMessage>>, TError,{id: number;data: BodyType<UpdateContactMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateContactMessage>>, TError,{id: number;data: BodyType<UpdateContactMessageBody>}, TContext> => {
+
+const mutationKey = ['updateContactMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateContactMessage>>, {id: number;data: BodyType<UpdateContactMessageBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateContactMessage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateContactMessageMutationResult = NonNullable<Awaited<ReturnType<typeof updateContactMessage>>>
+    export type UpdateContactMessageMutationBody = BodyType<UpdateContactMessageBody>
+    export type UpdateContactMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a contact message new/handled (admin)
+ */
+export const useUpdateContactMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateContactMessage>>, TError,{id: number;data: BodyType<UpdateContactMessageBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateContactMessage>>,
+        TError,
+        {id: number;data: BodyType<UpdateContactMessageBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateContactMessageMutationOptions(options));
+    }
+
+export const getListKbCategoriesUrl = () => {
+
+
+
+
+  return `/api/kb/categories`
+}
+
+/**
+ * @summary List knowledge base categories with published article counts (public)
+ */
+export const listKbCategories = async ( options?: RequestInit): Promise<KbCategoryWithCount[]> => {
+
+  return customFetch<KbCategoryWithCount[]>(getListKbCategoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListKbCategoriesQueryKey = () => {
+    return [
+    `/api/kb/categories`
+    ] as const;
+    }
+
+
+export const getListKbCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listKbCategories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListKbCategoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbCategories>>> = ({ signal }) => listKbCategories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListKbCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listKbCategories>>>
+export type ListKbCategoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List knowledge base categories with published article counts (public)
+ */
+
+export function useListKbCategories<TData = Awaited<ReturnType<typeof listKbCategories>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListKbCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListKbArticlesUrl = (params?: ListKbArticlesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/kb/articles?${stringifiedParams}` : `/api/kb/articles`
+}
+
+/**
+ * @summary List published knowledge base articles, optionally filtered/searched (public)
+ */
+export const listKbArticles = async (params?: ListKbArticlesParams, options?: RequestInit): Promise<KbArticle[]> => {
+
+  return customFetch<KbArticle[]>(getListKbArticlesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListKbArticlesQueryKey = (params?: ListKbArticlesParams,) => {
+    return [
+    `/api/kb/articles`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListKbArticlesQueryOptions = <TData = Awaited<ReturnType<typeof listKbArticles>>, TError = ErrorType<unknown>>(params?: ListKbArticlesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbArticles>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListKbArticlesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbArticles>>> = ({ signal }) => listKbArticles(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listKbArticles>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListKbArticlesQueryResult = NonNullable<Awaited<ReturnType<typeof listKbArticles>>>
+export type ListKbArticlesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List published knowledge base articles, optionally filtered/searched (public)
+ */
+
+export function useListKbArticles<TData = Awaited<ReturnType<typeof listKbArticles>>, TError = ErrorType<unknown>>(
+ params?: ListKbArticlesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbArticles>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListKbArticlesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetKbArticleUrl = (slug: string,) => {
+
+
+
+
+  return `/api/kb/articles/${slug}`
+}
+
+/**
+ * @summary Get a single published article by slug (public)
+ */
+export const getKbArticle = async (slug: string, options?: RequestInit): Promise<KbArticle> => {
+
+  return customFetch<KbArticle>(getGetKbArticleUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetKbArticleQueryKey = (slug: string,) => {
+    return [
+    `/api/kb/articles/${slug}`
+    ] as const;
+    }
+
+
+export const getGetKbArticleQueryOptions = <TData = Awaited<ReturnType<typeof getKbArticle>>, TError = ErrorType<unknown>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKbArticle>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKbArticleQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKbArticle>>> = ({ signal }) => getKbArticle(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: slug !== null && slug !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKbArticle>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetKbArticleQueryResult = NonNullable<Awaited<ReturnType<typeof getKbArticle>>>
+export type GetKbArticleQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a single published article by slug (public)
+ */
+
+export function useGetKbArticle<TData = Awaited<ReturnType<typeof getKbArticle>>, TError = ErrorType<unknown>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getKbArticle>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetKbArticleQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListKbCategoriesAdminUrl = () => {
+
+
+
+
+  return `/api/kb/admin/categories`
+}
+
+/**
+ * @summary List all knowledge base categories (admin)
+ */
+export const listKbCategoriesAdmin = async ( options?: RequestInit): Promise<KbCategory[]> => {
+
+  return customFetch<KbCategory[]>(getListKbCategoriesAdminUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListKbCategoriesAdminQueryKey = () => {
+    return [
+    `/api/kb/admin/categories`
+    ] as const;
+    }
+
+
+export const getListKbCategoriesAdminQueryOptions = <TData = Awaited<ReturnType<typeof listKbCategoriesAdmin>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategoriesAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListKbCategoriesAdminQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbCategoriesAdmin>>> = ({ signal }) => listKbCategoriesAdmin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listKbCategoriesAdmin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListKbCategoriesAdminQueryResult = NonNullable<Awaited<ReturnType<typeof listKbCategoriesAdmin>>>
+export type ListKbCategoriesAdminQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all knowledge base categories (admin)
+ */
+
+export function useListKbCategoriesAdmin<TData = Awaited<ReturnType<typeof listKbCategoriesAdmin>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbCategoriesAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListKbCategoriesAdminQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateKbCategoryUrl = () => {
+
+
+
+
+  return `/api/kb/admin/categories`
+}
+
+/**
+ * @summary Create a knowledge base category (admin)
+ */
+export const createKbCategory = async (kbCategoryInput: KbCategoryInput, options?: RequestInit): Promise<KbCategory> => {
+
+  return customFetch<KbCategory>(getCreateKbCategoryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbCategoryInput)
+  }
+);}
+
+
+
+
+
+export const getCreateKbCategoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKbCategory>>, TError,{data: BodyType<KbCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createKbCategory>>, TError,{data: BodyType<KbCategoryInput>}, TContext> => {
+
+const mutationKey = ['createKbCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createKbCategory>>, {data: BodyType<KbCategoryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createKbCategory(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateKbCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof createKbCategory>>>
+    export type CreateKbCategoryMutationBody = BodyType<KbCategoryInput>
+    export type CreateKbCategoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a knowledge base category (admin)
+ */
+export const useCreateKbCategory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKbCategory>>, TError,{data: BodyType<KbCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createKbCategory>>,
+        TError,
+        {data: BodyType<KbCategoryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateKbCategoryMutationOptions(options));
+    }
+
+export const getUpdateKbCategoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/kb/admin/categories/${id}`
+}
+
+/**
+ * @summary Update a knowledge base category (admin)
+ */
+export const updateKbCategory = async (id: number,
+    kbCategoryInput: KbCategoryInput, options?: RequestInit): Promise<KbCategory> => {
+
+  return customFetch<KbCategory>(getUpdateKbCategoryUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbCategoryInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateKbCategoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbCategory>>, TError,{id: number;data: BodyType<KbCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateKbCategory>>, TError,{id: number;data: BodyType<KbCategoryInput>}, TContext> => {
+
+const mutationKey = ['updateKbCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKbCategory>>, {id: number;data: BodyType<KbCategoryInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateKbCategory(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateKbCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateKbCategory>>>
+    export type UpdateKbCategoryMutationBody = BodyType<KbCategoryInput>
+    export type UpdateKbCategoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a knowledge base category (admin)
+ */
+export const useUpdateKbCategory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbCategory>>, TError,{id: number;data: BodyType<KbCategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateKbCategory>>,
+        TError,
+        {id: number;data: BodyType<KbCategoryInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateKbCategoryMutationOptions(options));
+    }
+
+export const getDeleteKbCategoryUrl = (id: number,) => {
+
+
+
+
+  return `/api/kb/admin/categories/${id}`
+}
+
+/**
+ * @summary Delete a knowledge base category and its articles (admin)
+ */
+export const deleteKbCategory = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteKbCategoryUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteKbCategoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKbCategory>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteKbCategory>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteKbCategory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteKbCategory>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteKbCategory(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteKbCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteKbCategory>>>
+
+    export type DeleteKbCategoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a knowledge base category and its articles (admin)
+ */
+export const useDeleteKbCategory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKbCategory>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteKbCategory>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteKbCategoryMutationOptions(options));
+    }
+
+export const getListKbArticlesAdminUrl = () => {
+
+
+
+
+  return `/api/kb/admin/articles`
+}
+
+/**
+ * @summary List all knowledge base articles (admin)
+ */
+export const listKbArticlesAdmin = async ( options?: RequestInit): Promise<KbArticle[]> => {
+
+  return customFetch<KbArticle[]>(getListKbArticlesAdminUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListKbArticlesAdminQueryKey = () => {
+    return [
+    `/api/kb/admin/articles`
+    ] as const;
+    }
+
+
+export const getListKbArticlesAdminQueryOptions = <TData = Awaited<ReturnType<typeof listKbArticlesAdmin>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbArticlesAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListKbArticlesAdminQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKbArticlesAdmin>>> = ({ signal }) => listKbArticlesAdmin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listKbArticlesAdmin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListKbArticlesAdminQueryResult = NonNullable<Awaited<ReturnType<typeof listKbArticlesAdmin>>>
+export type ListKbArticlesAdminQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all knowledge base articles (admin)
+ */
+
+export function useListKbArticlesAdmin<TData = Awaited<ReturnType<typeof listKbArticlesAdmin>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listKbArticlesAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListKbArticlesAdminQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateKbArticleUrl = () => {
+
+
+
+
+  return `/api/kb/admin/articles`
+}
+
+/**
+ * @summary Create a knowledge base article (admin)
+ */
+export const createKbArticle = async (kbArticleInput: KbArticleInput, options?: RequestInit): Promise<KbArticle> => {
+
+  return customFetch<KbArticle>(getCreateKbArticleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbArticleInput)
+  }
+);}
+
+
+
+
+
+export const getCreateKbArticleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKbArticle>>, TError,{data: BodyType<KbArticleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createKbArticle>>, TError,{data: BodyType<KbArticleInput>}, TContext> => {
+
+const mutationKey = ['createKbArticle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createKbArticle>>, {data: BodyType<KbArticleInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createKbArticle(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateKbArticleMutationResult = NonNullable<Awaited<ReturnType<typeof createKbArticle>>>
+    export type CreateKbArticleMutationBody = BodyType<KbArticleInput>
+    export type CreateKbArticleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a knowledge base article (admin)
+ */
+export const useCreateKbArticle = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKbArticle>>, TError,{data: BodyType<KbArticleInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createKbArticle>>,
+        TError,
+        {data: BodyType<KbArticleInput>},
+        TContext
+      > => {
+      return useMutation(getCreateKbArticleMutationOptions(options));
+    }
+
+export const getUpdateKbArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/kb/admin/articles/${id}`
+}
+
+/**
+ * @summary Update a knowledge base article (admin)
+ */
+export const updateKbArticle = async (id: number,
+    kbArticleUpdate: KbArticleUpdate, options?: RequestInit): Promise<KbArticle> => {
+
+  return customFetch<KbArticle>(getUpdateKbArticleUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(kbArticleUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateKbArticleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: number;data: BodyType<KbArticleUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: number;data: BodyType<KbArticleUpdate>}, TContext> => {
+
+const mutationKey = ['updateKbArticle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKbArticle>>, {id: number;data: BodyType<KbArticleUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateKbArticle(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateKbArticleMutationResult = NonNullable<Awaited<ReturnType<typeof updateKbArticle>>>
+    export type UpdateKbArticleMutationBody = BodyType<KbArticleUpdate>
+    export type UpdateKbArticleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a knowledge base article (admin)
+ */
+export const useUpdateKbArticle = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKbArticle>>, TError,{id: number;data: BodyType<KbArticleUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateKbArticle>>,
+        TError,
+        {id: number;data: BodyType<KbArticleUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateKbArticleMutationOptions(options));
+    }
+
+export const getDeleteKbArticleUrl = (id: number,) => {
+
+
+
+
+  return `/api/kb/admin/articles/${id}`
+}
+
+/**
+ * @summary Delete a knowledge base article (admin)
+ */
+export const deleteKbArticle = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteKbArticleUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteKbArticleMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKbArticle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteKbArticle>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteKbArticle'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteKbArticle>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteKbArticle(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteKbArticleMutationResult = NonNullable<Awaited<ReturnType<typeof deleteKbArticle>>>
+
+    export type DeleteKbArticleMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a knowledge base article (admin)
+ */
+export const useDeleteKbArticle = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKbArticle>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteKbArticle>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteKbArticleMutationOptions(options));
+    }
+
+export const getGetActiveStatusUrl = () => {
+
+
+
+
+  return `/api/status/active`
+}
+
+/**
+ * @summary Get the current effective platform status and open incidents (public)
+ */
+export const getActiveStatus = async ( options?: RequestInit): Promise<ActiveStatus> => {
+
+  return customFetch<ActiveStatus>(getGetActiveStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetActiveStatusQueryKey = () => {
+    return [
+    `/api/status/active`
+    ] as const;
+    }
+
+
+export const getGetActiveStatusQueryOptions = <TData = Awaited<ReturnType<typeof getActiveStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveStatus>>> = ({ signal }) => getActiveStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetActiveStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getActiveStatus>>>
+export type GetActiveStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current effective platform status and open incidents (public)
+ */
+
+export function useGetActiveStatus<TData = Awaited<ReturnType<typeof getActiveStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetActiveStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminStatusUrl = () => {
+
+
+
+
+  return `/api/status/admin`
+}
+
+/**
+ * @summary Get the raw stored status and all incidents (admin)
+ */
+export const getAdminStatus = async ( options?: RequestInit): Promise<AdminStatus> => {
+
+  return customFetch<AdminStatus>(getGetAdminStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminStatusQueryKey = () => {
+    return [
+    `/api/status/admin`
+    ] as const;
+    }
+
+
+export const getGetAdminStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAdminStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminStatus>>> = ({ signal }) => getAdminStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminStatus>>>
+export type GetAdminStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the raw stored status and all incidents (admin)
+ */
+
+export function useGetAdminStatus<TData = Awaited<ReturnType<typeof getAdminStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdatePlatformStatusUrl = () => {
+
+
+
+
+  return `/api/status/admin`
+}
+
+/**
+ * @summary Update the overall stored platform status (admin)
+ */
+export const updatePlatformStatus = async (updatePlatformStatusBody: UpdatePlatformStatusBody, options?: RequestInit): Promise<PlatformStatus> => {
+
+  return customFetch<PlatformStatus>(getUpdatePlatformStatusUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updatePlatformStatusBody)
+  }
+);}
+
+
+
+
+
+export const getUpdatePlatformStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlatformStatus>>, TError,{data: BodyType<UpdatePlatformStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePlatformStatus>>, TError,{data: BodyType<UpdatePlatformStatusBody>}, TContext> => {
+
+const mutationKey = ['updatePlatformStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePlatformStatus>>, {data: BodyType<UpdatePlatformStatusBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePlatformStatus(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePlatformStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updatePlatformStatus>>>
+    export type UpdatePlatformStatusMutationBody = BodyType<UpdatePlatformStatusBody>
+    export type UpdatePlatformStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update the overall stored platform status (admin)
+ */
+export const useUpdatePlatformStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlatformStatus>>, TError,{data: BodyType<UpdatePlatformStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePlatformStatus>>,
+        TError,
+        {data: BodyType<UpdatePlatformStatusBody>},
+        TContext
+      > => {
+      return useMutation(getUpdatePlatformStatusMutationOptions(options));
+    }
+
+export const getCreateStatusIncidentUrl = () => {
+
+
+
+
+  return `/api/status/admin/incidents`
+}
+
+/**
+ * @summary Create a status incident (admin)
+ */
+export const createStatusIncident = async (statusIncidentInput: StatusIncidentInput, options?: RequestInit): Promise<StatusIncident> => {
+
+  return customFetch<StatusIncident>(getCreateStatusIncidentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(statusIncidentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateStatusIncidentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStatusIncident>>, TError,{data: BodyType<StatusIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createStatusIncident>>, TError,{data: BodyType<StatusIncidentInput>}, TContext> => {
+
+const mutationKey = ['createStatusIncident'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStatusIncident>>, {data: BodyType<StatusIncidentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createStatusIncident(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateStatusIncidentMutationResult = NonNullable<Awaited<ReturnType<typeof createStatusIncident>>>
+    export type CreateStatusIncidentMutationBody = BodyType<StatusIncidentInput>
+    export type CreateStatusIncidentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a status incident (admin)
+ */
+export const useCreateStatusIncident = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStatusIncident>>, TError,{data: BodyType<StatusIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createStatusIncident>>,
+        TError,
+        {data: BodyType<StatusIncidentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateStatusIncidentMutationOptions(options));
+    }
+
+export const getUpdateStatusIncidentUrl = (id: number,) => {
+
+
+
+
+  return `/api/status/admin/incidents/${id}`
+}
+
+/**
+ * @summary Update a status incident (admin)
+ */
+export const updateStatusIncident = async (id: number,
+    statusIncidentUpdate: StatusIncidentUpdate, options?: RequestInit): Promise<StatusIncident> => {
+
+  return customFetch<StatusIncident>(getUpdateStatusIncidentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(statusIncidentUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateStatusIncidentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStatusIncident>>, TError,{id: number;data: BodyType<StatusIncidentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateStatusIncident>>, TError,{id: number;data: BodyType<StatusIncidentUpdate>}, TContext> => {
+
+const mutationKey = ['updateStatusIncident'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateStatusIncident>>, {id: number;data: BodyType<StatusIncidentUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateStatusIncident(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateStatusIncidentMutationResult = NonNullable<Awaited<ReturnType<typeof updateStatusIncident>>>
+    export type UpdateStatusIncidentMutationBody = BodyType<StatusIncidentUpdate>
+    export type UpdateStatusIncidentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a status incident (admin)
+ */
+export const useUpdateStatusIncident = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateStatusIncident>>, TError,{id: number;data: BodyType<StatusIncidentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateStatusIncident>>,
+        TError,
+        {id: number;data: BodyType<StatusIncidentUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateStatusIncidentMutationOptions(options));
+    }
+
+export const getDeleteStatusIncidentUrl = (id: number,) => {
+
+
+
+
+  return `/api/status/admin/incidents/${id}`
+}
+
+/**
+ * @summary Delete a status incident (admin)
+ */
+export const deleteStatusIncident = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteStatusIncidentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteStatusIncidentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStatusIncident>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteStatusIncident>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteStatusIncident'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteStatusIncident>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteStatusIncident(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteStatusIncidentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteStatusIncident>>>
+
+    export type DeleteStatusIncidentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a status incident (admin)
+ */
+export const useDeleteStatusIncident = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStatusIncident>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteStatusIncident>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteStatusIncidentMutationOptions(options));
+    }
 

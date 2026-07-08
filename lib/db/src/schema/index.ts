@@ -16,3 +16,6 @@ export * from "./security";
 export * from "./seo";
 export * from "./media";
 export * from "./notifications";
+export * from "./support";
+export * from "./knowledge-base";
+export * from "./status";

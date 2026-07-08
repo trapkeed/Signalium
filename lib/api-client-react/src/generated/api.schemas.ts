@@ -1281,6 +1281,312 @@ export interface ActiveMaintenanceBanner {
   endsAt?: string | null;
 }
 
+export type SupportTicketStatus = typeof SupportTicketStatus[keyof typeof SupportTicketStatus];
+
+
+export const SupportTicketStatus = {
+  open: 'open',
+  pending: 'pending',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export type SupportTicketPriority = typeof SupportTicketPriority[keyof typeof SupportTicketPriority];
+
+
+export const SupportTicketPriority = {
+  low: 'low',
+  normal: 'normal',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export interface SupportTicket {
+  id: number;
+  userId: string;
+  subject: string;
+  status: SupportTicketStatus;
+  priority: SupportTicketPriority;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SupportTicketReplyAuthorRole = typeof SupportTicketReplyAuthorRole[keyof typeof SupportTicketReplyAuthorRole];
+
+
+export const SupportTicketReplyAuthorRole = {
+  user: 'user',
+  admin: 'admin',
+} as const;
+
+export interface SupportTicketReply {
+  id: number;
+  ticketId: number;
+  authorId: string;
+  authorRole: SupportTicketReplyAuthorRole;
+  body: string;
+  /** @nullable */
+  attachmentPath?: string | null;
+  createdAt: string;
+}
+
+export type SupportTicketWithReplies = SupportTicket & {
+  replies: SupportTicketReply[];
+};
+
+export type SupportTicketInputPriority = typeof SupportTicketInputPriority[keyof typeof SupportTicketInputPriority];
+
+
+export const SupportTicketInputPriority = {
+  low: 'low',
+  normal: 'normal',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export interface SupportTicketInput {
+  subject: string;
+  message: string;
+  priority?: SupportTicketInputPriority;
+  attachmentPath?: string;
+}
+
+export interface SupportTicketReplyInput {
+  body: string;
+  attachmentPath?: string;
+}
+
+export type SupportTicketAdminUpdateStatus = typeof SupportTicketAdminUpdateStatus[keyof typeof SupportTicketAdminUpdateStatus];
+
+
+export const SupportTicketAdminUpdateStatus = {
+  open: 'open',
+  pending: 'pending',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export type SupportTicketAdminUpdatePriority = typeof SupportTicketAdminUpdatePriority[keyof typeof SupportTicketAdminUpdatePriority];
+
+
+export const SupportTicketAdminUpdatePriority = {
+  low: 'low',
+  normal: 'normal',
+  high: 'high',
+  urgent: 'urgent',
+} as const;
+
+export interface SupportTicketAdminUpdate {
+  status?: SupportTicketAdminUpdateStatus;
+  priority?: SupportTicketAdminUpdatePriority;
+}
+
+export type ContactMessageStatus = typeof ContactMessageStatus[keyof typeof ContactMessageStatus];
+
+
+export const ContactMessageStatus = {
+  new: 'new',
+  handled: 'handled',
+} as const;
+
+export interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: ContactMessageStatus;
+  createdAt: string;
+}
+
+export interface ContactMessageInput {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export interface KbCategory {
+  id: number;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export type KbCategoryWithCount = KbCategory & {
+  articleCount: number;
+};
+
+export interface KbCategoryInput {
+  name: string;
+  slug: string;
+  sortOrder?: number;
+}
+
+export type KbArticleStatus = typeof KbArticleStatus[keyof typeof KbArticleStatus];
+
+
+export const KbArticleStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface KbArticle {
+  id: number;
+  categoryId: number;
+  title: string;
+  slug: string;
+  body: string;
+  status: KbArticleStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type KbArticleInputStatus = typeof KbArticleInputStatus[keyof typeof KbArticleInputStatus];
+
+
+export const KbArticleInputStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface KbArticleInput {
+  categoryId: number;
+  title: string;
+  slug: string;
+  body: string;
+  status?: KbArticleInputStatus;
+}
+
+export type KbArticleUpdateStatus = typeof KbArticleUpdateStatus[keyof typeof KbArticleUpdateStatus];
+
+
+export const KbArticleUpdateStatus = {
+  draft: 'draft',
+  published: 'published',
+} as const;
+
+export interface KbArticleUpdate {
+  categoryId?: number;
+  title?: string;
+  slug?: string;
+  body?: string;
+  status?: KbArticleUpdateStatus;
+}
+
+export type PlatformStatusStatus = typeof PlatformStatusStatus[keyof typeof PlatformStatusStatus];
+
+
+export const PlatformStatusStatus = {
+  operational: 'operational',
+  degraded: 'degraded',
+  partial_outage: 'partial_outage',
+  major_outage: 'major_outage',
+} as const;
+
+export interface PlatformStatus {
+  id: number;
+  status: PlatformStatusStatus;
+  updatedAt: string;
+}
+
+export type StatusIncidentImpact = typeof StatusIncidentImpact[keyof typeof StatusIncidentImpact];
+
+
+export const StatusIncidentImpact = {
+  minor: 'minor',
+  major: 'major',
+  critical: 'critical',
+} as const;
+
+export type StatusIncidentStatus = typeof StatusIncidentStatus[keyof typeof StatusIncidentStatus];
+
+
+export const StatusIncidentStatus = {
+  investigating: 'investigating',
+  identified: 'identified',
+  monitoring: 'monitoring',
+  resolved: 'resolved',
+} as const;
+
+export interface StatusIncident {
+  id: number;
+  title: string;
+  impact: StatusIncidentImpact;
+  status: StatusIncidentStatus;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  resolvedAt?: string | null;
+}
+
+export type StatusIncidentInputImpact = typeof StatusIncidentInputImpact[keyof typeof StatusIncidentInputImpact];
+
+
+export const StatusIncidentInputImpact = {
+  minor: 'minor',
+  major: 'major',
+  critical: 'critical',
+} as const;
+
+export interface StatusIncidentInput {
+  title: string;
+  message: string;
+  impact?: StatusIncidentInputImpact;
+}
+
+export type StatusIncidentUpdateImpact = typeof StatusIncidentUpdateImpact[keyof typeof StatusIncidentUpdateImpact];
+
+
+export const StatusIncidentUpdateImpact = {
+  minor: 'minor',
+  major: 'major',
+  critical: 'critical',
+} as const;
+
+export type StatusIncidentUpdateStatus = typeof StatusIncidentUpdateStatus[keyof typeof StatusIncidentUpdateStatus];
+
+
+export const StatusIncidentUpdateStatus = {
+  investigating: 'investigating',
+  identified: 'identified',
+  monitoring: 'monitoring',
+  resolved: 'resolved',
+} as const;
+
+export interface StatusIncidentUpdate {
+  title?: string;
+  message?: string;
+  impact?: StatusIncidentUpdateImpact;
+  status?: StatusIncidentUpdateStatus;
+}
+
+export type ActiveStatusStatus = typeof ActiveStatusStatus[keyof typeof ActiveStatusStatus];
+
+
+export const ActiveStatusStatus = {
+  operational: 'operational',
+  degraded: 'degraded',
+  partial_outage: 'partial_outage',
+  major_outage: 'major_outage',
+  maintenance: 'maintenance',
+} as const;
+
+export interface ActiveStatus {
+  status: ActiveStatusStatus;
+  /** @nullable */
+  updatedAt?: string | null;
+  incidents: StatusIncident[];
+  recentResolved: StatusIncident[];
+}
+
+export interface AdminStatus {
+  status: PlatformStatus;
+  incidents: StatusIncident[];
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -1429,5 +1735,59 @@ export const ListMediaAssetsCategory = {
 
 export type GetUnreadNotificationCount200 = {
   count: number;
+};
+
+export type RequestSupportTicketAttachmentUploadUrl200 = {
+  uploadURL: string;
+  objectPath: string;
+};
+
+export type ListAllSupportTicketsParams = {
+status?: ListAllSupportTicketsStatus;
+};
+
+export type ListAllSupportTicketsStatus = typeof ListAllSupportTicketsStatus[keyof typeof ListAllSupportTicketsStatus];
+
+
+export const ListAllSupportTicketsStatus = {
+  open: 'open',
+  pending: 'pending',
+  resolved: 'resolved',
+  closed: 'closed',
+} as const;
+
+export type SubmitContactMessage201 = {
+  id: number;
+};
+
+export type UpdateContactMessageBodyStatus = typeof UpdateContactMessageBodyStatus[keyof typeof UpdateContactMessageBodyStatus];
+
+
+export const UpdateContactMessageBodyStatus = {
+  new: 'new',
+  handled: 'handled',
+} as const;
+
+export type UpdateContactMessageBody = {
+  status: UpdateContactMessageBodyStatus;
+};
+
+export type ListKbArticlesParams = {
+categorySlug?: string;
+q?: string;
+};
+
+export type UpdatePlatformStatusBodyStatus = typeof UpdatePlatformStatusBodyStatus[keyof typeof UpdatePlatformStatusBodyStatus];
+
+
+export const UpdatePlatformStatusBodyStatus = {
+  operational: 'operational',
+  degraded: 'degraded',
+  partial_outage: 'partial_outage',
+  major_outage: 'major_outage',
+} as const;
+
+export type UpdatePlatformStatusBody = {
+  status: UpdatePlatformStatusBodyStatus;
 };
 

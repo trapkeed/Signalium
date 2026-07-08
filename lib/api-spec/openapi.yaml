@@ -2386,6 +2386,546 @@ paths:
                   - $ref: "#/components/schemas/ActiveMaintenanceBanner"
                   - type: "null"
 
+  /support/tickets:
+    get:
+      tags: [support-tickets]
+      operationId: listMySupportTickets
+      summary: List the current user's support tickets (authenticated)
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicket"
+    post:
+      tags: [support-tickets]
+      operationId: createSupportTicket
+      summary: Create a support ticket (authenticated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketWithReplies"
+
+  /support/tickets/attachments/request-url:
+    post:
+      tags: [support-tickets]
+      operationId: requestSupportTicketAttachmentUploadUrl
+      summary: Get a presigned URL for uploading a ticket/reply attachment (authenticated)
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [uploadURL, objectPath]
+                properties:
+                  uploadURL:
+                    type: string
+                  objectPath:
+                    type: string
+
+  /support/tickets/admin:
+    get:
+      tags: [support-tickets]
+      operationId: listAllSupportTickets
+      summary: List all support tickets (admin)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, pending, resolved, closed]
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportTicket"
+
+  /support/tickets/admin/{id}:
+    patch:
+      tags: [support-tickets]
+      operationId: updateSupportTicketAdmin
+      summary: Update a ticket's status/priority (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketAdminUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /support/tickets/{id}:
+    get:
+      tags: [support-tickets]
+      operationId: getSupportTicket
+      summary: Get a ticket and its full reply thread (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket with replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketWithReplies"
+
+  /support/tickets/{id}/replies:
+    post:
+      tags: [support-tickets]
+      operationId: createSupportTicketReply
+      summary: Add a reply to a ticket (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketReplyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicketReply"
+
+  /support/tickets/{id}/replies/{replyId}/attachment:
+    get:
+      tags: [support-tickets]
+      operationId: getSupportTicketAttachment
+      summary: Download a reply attachment (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: replyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Attachment binary content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /contact:
+    post:
+      tags: [contact]
+      operationId: submitContactMessage
+      summary: Submit the public contact form (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactMessageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: integer
+
+  /contact/admin:
+    get:
+      tags: [contact]
+      operationId: listContactMessages
+      summary: List contact form submissions (admin)
+      responses:
+        "200":
+          description: Contact messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactMessage"
+
+  /contact/admin/{id}:
+    patch:
+      tags: [contact]
+      operationId: updateContactMessage
+      summary: Mark a contact message new/handled (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [new, handled]
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactMessage"
+
+  /kb/categories:
+    get:
+      tags: [knowledge-base]
+      operationId: listKbCategories
+      summary: List knowledge base categories with published article counts (public)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KbCategoryWithCount"
+
+  /kb/articles:
+    get:
+      tags: [knowledge-base]
+      operationId: listKbArticles
+      summary: List published knowledge base articles, optionally filtered/searched (public)
+      parameters:
+        - name: categorySlug
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KbArticle"
+
+  /kb/articles/{slug}:
+    get:
+      tags: [knowledge-base]
+      operationId: getKbArticle
+      summary: Get a single published article by slug (public)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+
+  /kb/admin/categories:
+    get:
+      tags: [knowledge-base]
+      operationId: listKbCategoriesAdmin
+      summary: List all knowledge base categories (admin)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KbCategory"
+    post:
+      tags: [knowledge-base]
+      operationId: createKbCategory
+      summary: Create a knowledge base category (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbCategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbCategory"
+
+  /kb/admin/categories/{id}:
+    patch:
+      tags: [knowledge-base]
+      operationId: updateKbCategory
+      summary: Update a knowledge base category (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbCategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbCategory"
+    delete:
+      tags: [knowledge-base]
+      operationId: deleteKbCategory
+      summary: Delete a knowledge base category and its articles (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /kb/admin/articles:
+    get:
+      tags: [knowledge-base]
+      operationId: listKbArticlesAdmin
+      summary: List all knowledge base articles (admin)
+      responses:
+        "200":
+          description: Articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KbArticle"
+    post:
+      tags: [knowledge-base]
+      operationId: createKbArticle
+      summary: Create a knowledge base article (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbArticleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+
+  /kb/admin/articles/{id}:
+    patch:
+      tags: [knowledge-base]
+      operationId: updateKbArticle
+      summary: Update a knowledge base article (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KbArticleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KbArticle"
+    delete:
+      tags: [knowledge-base]
+      operationId: deleteKbArticle
+      summary: Delete a knowledge base article (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /status/active:
+    get:
+      tags: [status]
+      operationId: getActiveStatus
+      summary: Get the current effective platform status and open incidents (public)
+      responses:
+        "200":
+          description: Active status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveStatus"
+
+  /status/admin:
+    get:
+      tags: [status]
+      operationId: getAdminStatus
+      summary: Get the raw stored status and all incidents (admin)
+      responses:
+        "200":
+          description: Admin status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStatus"
+    patch:
+      tags: [status]
+      operationId: updatePlatformStatus
+      summary: Update the overall stored platform status (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [operational, degraded, partial_outage, major_outage]
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStatus"
+
+  /status/admin/incidents:
+    post:
+      tags: [status]
+      operationId: createStatusIncident
+      summary: Create a status incident (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusIncidentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusIncident"
+
+  /status/admin/incidents/{id}:
+    patch:
+      tags: [status]
+      operationId: updateStatusIncident
+      summary: Update a status incident (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusIncidentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusIncident"
+    delete:
+      tags: [status]
+      operationId: deleteStatusIncident
+      summary: Delete a status incident (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -3891,3 +4431,299 @@ components:
           type: ["string", "null"]
         endsAt:
           type: ["string", "null"]
+
+    SupportTicket:
+      type: object
+      required: [id, userId, subject, status, priority, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        subject:
+          type: string
+        status:
+          type: string
+          enum: [open, pending, resolved, closed]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    SupportTicketReply:
+      type: object
+      required: [id, ticketId, authorId, authorRole, body, createdAt]
+      properties:
+        id:
+          type: integer
+        ticketId:
+          type: integer
+        authorId:
+          type: string
+        authorRole:
+          type: string
+          enum: [user, admin]
+        body:
+          type: string
+        attachmentPath:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    SupportTicketWithReplies:
+      allOf:
+        - $ref: "#/components/schemas/SupportTicket"
+        - type: object
+          required: [replies]
+          properties:
+            replies:
+              type: array
+              items:
+                $ref: "#/components/schemas/SupportTicketReply"
+
+    SupportTicketInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject:
+          type: string
+        message:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        attachmentPath:
+          type: string
+
+    SupportTicketReplyInput:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+        attachmentPath:
+          type: string
+
+    SupportTicketAdminUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, pending, resolved, closed]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+
+    ContactMessage:
+      type: object
+      required: [id, name, email, subject, message, status, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [new, handled]
+        createdAt:
+          type: string
+
+    ContactMessageInput:
+      type: object
+      required: [name, email, subject, message]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+
+    KbCategory:
+      type: object
+      required: [id, name, slug, sortOrder, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+
+    KbCategoryWithCount:
+      allOf:
+        - $ref: "#/components/schemas/KbCategory"
+        - type: object
+          required: [articleCount]
+          properties:
+            articleCount:
+              type: integer
+
+    KbCategoryInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        sortOrder:
+          type: integer
+
+    KbArticle:
+      type: object
+      required: [id, categoryId, title, slug, body, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    KbArticleInput:
+      type: object
+      required: [categoryId, title, slug, body]
+      properties:
+        categoryId:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+
+    KbArticleUpdate:
+      type: object
+      properties:
+        categoryId:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, published]
+
+    PlatformStatus:
+      type: object
+      required: [id, status, updatedAt]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [operational, degraded, partial_outage, major_outage]
+        updatedAt:
+          type: string
+
+    StatusIncident:
+      type: object
+      required: [id, title, impact, status, message, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        impact:
+          type: string
+          enum: [minor, major, critical]
+        status:
+          type: string
+          enum: [investigating, identified, monitoring, resolved]
+        message:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+
+    StatusIncidentInput:
+      type: object
+      required: [title, message]
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+        impact:
+          type: string
+          enum: [minor, major, critical]
+
+    StatusIncidentUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        message:
+          type: string
+        impact:
+          type: string
+          enum: [minor, major, critical]
+        status:
+          type: string
+          enum: [investigating, identified, monitoring, resolved]
+
+    ActiveStatus:
+      type: object
+      required: [status, incidents, recentResolved]
+      properties:
+        status:
+          type: string
+          enum: [operational, degraded, partial_outage, major_outage, maintenance]
+        updatedAt:
+          type: ["string", "null"]
+        incidents:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusIncident"
+        recentResolved:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusIncident"
+
+    AdminStatus:
+      type: object
+      required: [status, incidents]
+      properties:
+        status:
+          $ref: "#/components/schemas/PlatformStatus"
+        incidents:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusIncident"
