@@ -14,5 +14,9 @@ export interface PlanUpdate {
   features?: string[];
   tier?: PlanUpdateTier;
   maxEas?: number;
+  maxSymbols?: number;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   isActive?: boolean;
 }

@@ -14,5 +14,9 @@ export interface PlanInput {
   features?: string[];
   tier: PlanInputTier;
   maxEas?: number;
+  maxSymbols?: number;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   isActive?: boolean;
 }

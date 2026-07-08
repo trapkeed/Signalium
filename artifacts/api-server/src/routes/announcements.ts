@@ -8,7 +8,7 @@ import {
   subscriptionsTable,
   plansTable,
 } from "@workspace/db";
-import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 
@@ -26,7 +26,7 @@ async function resolveAudienceUserIds(audience: "all" | "plan_tier", planTier: s
     .select({ userId: subscriptionsTable.userId })
     .from(subscriptionsTable)
     .innerJoin(plansTable, eq(subscriptionsTable.planId, plansTable.id))
-    .where(and(eq(subscriptionsTable.status, "active"), eq(plansTable.tier, planTier as "starter" | "professional" | "enterprise")));
+    .where(and(inArray(subscriptionsTable.status, ["active", "grace_period"]), eq(plansTable.tier, planTier as "starter" | "professional" | "enterprise")));
   return [...new Set(rows.map((r) => r.userId))];
 }
 
@@ -198,7 +198,7 @@ router.get("/banners", async (req, res) => {
       .select({ tier: plansTable.tier })
       .from(subscriptionsTable)
       .innerJoin(plansTable, eq(subscriptionsTable.planId, plansTable.id))
-      .where(and(eq(subscriptionsTable.userId, userId), eq(subscriptionsTable.status, "active")));
+      .where(and(eq(subscriptionsTable.userId, userId), inArray(subscriptionsTable.status, ["active", "grace_period"])));
 
     const visible = candidates.filter(
       (a) => a.audience === "all" || (a.audience === "plan_tier" && a.planTier === subscription?.tier),

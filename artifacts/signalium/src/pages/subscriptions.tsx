@@ -71,11 +71,16 @@ export default function Subscriptions({ embedded = false }: { embedded?: boolean
                     </div>
                     <div className={`inline-flex items-center gap-1 text-xs font-semibold mt-2 px-2.5 py-1 rounded-full ${
                       subscription.status === "active" ? "bg-success/15 text-success" :
-                      subscription.status === "trialing" ? "bg-warning/15 text-warning" :
+                      subscription.status === "grace_period" || subscription.status === "pending_payment" || subscription.status === "paused" ? "bg-warning/15 text-warning" :
                       "bg-destructive/15 text-destructive"
                     }`}>
-                      {subscription.status.toUpperCase()}
+                      {subscription.status.replace(/_/g, " ").toUpperCase()}
                     </div>
+                    {subscription.status === "grace_period" && subscription.graceEndsAt && (
+                      <div className="text-xs text-warning mt-1">
+                        Payment past due — access ends {new Date(subscription.graceEndsAt).toLocaleDateString()} unless renewed
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={handleCancel}
@@ -111,7 +116,7 @@ export default function Subscriptions({ embedded = false }: { embedded?: boolean
           <div className="grid md:grid-cols-3 gap-4">
             {plans?.map((plan) => {
               const planTierOrder = TIER_ORDER[plan.tier as keyof typeof TIER_ORDER];
-              const isCurrent = subscription?.planId === plan.id && subscription.status === "active";
+              const isCurrent = subscription?.planId === plan.id && (subscription.status === "active" || subscription.status === "grace_period");
               const isUpgrade = planTierOrder > currentTierOrder;
               const isDowngrade = planTierOrder < currentTierOrder && currentTierOrder !== -1;
 

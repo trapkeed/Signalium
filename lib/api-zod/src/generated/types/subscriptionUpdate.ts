@@ -10,5 +10,6 @@ import type { SubscriptionUpdateStatus } from './subscriptionUpdateStatus';
 export interface SubscriptionUpdate {
   planId?: number;
   status?: SubscriptionUpdateStatus;
+  cancelAtPeriodEnd?: boolean;
   endsAt?: string;
 }

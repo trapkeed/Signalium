@@ -54,6 +54,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
     title: "Accounts & Billing",
     items: [
       { href: "/admin/users", label: "Users", icon: Users },
+      { href: "/admin/plans", label: "Plans", icon: ScrollText },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
       { href: "/admin/payments", label: "Payments", icon: Wallet },
       { href: "/admin/api-keys", label: "API Keys", icon: Key },

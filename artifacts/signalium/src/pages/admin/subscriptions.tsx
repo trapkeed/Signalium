@@ -4,9 +4,12 @@ import { CreditCard } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "text-success border-success/30 bg-success/10",
+  grace_period: "text-warning border-warning/30 bg-warning/10",
+  pending_payment: "text-warning border-warning/30 bg-warning/10",
+  paused: "text-warning border-warning/30 bg-warning/10",
   cancelled: "text-muted-foreground border-border bg-secondary",
-  past_due: "text-destructive border-destructive/30 bg-destructive/10",
-  trialing: "text-warning border-warning/30 bg-warning/10",
+  suspended: "text-destructive border-destructive/30 bg-destructive/10",
+  expired: "text-destructive border-destructive/30 bg-destructive/10",
 };
 
 export default function AdminSubscriptions() {
@@ -67,7 +70,7 @@ export default function AdminSubscriptions() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-mono border px-2 py-0.5 rounded-sm ${STATUS_COLORS[sub.status] ?? "text-muted-foreground border-border"}`}>
-                        {sub.status}
+                        {sub.status.replace(/_/g, " ")}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
@@ -77,7 +80,7 @@ export default function AdminSubscriptions() {
                       {sub.endsAt ? new Date(sub.endsAt).toLocaleDateString() : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      {sub.status === "active" && (
+                      {(sub.status === "active" || sub.status === "grace_period") && (
                         <button
                           onClick={() => handleCancel(sub.id)}
                           disabled={cancel.isPending}

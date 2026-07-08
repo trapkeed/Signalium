@@ -29,6 +29,11 @@ export interface Plan {
   tier: PlanTier;
   /** @nullable */
   maxEas?: number | null;
+  /** @nullable */
+  maxSymbols?: number | null;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   createdAt: string;
 }
 
@@ -48,6 +53,10 @@ export interface PlanInput {
   features?: string[];
   tier: PlanInputTier;
   maxEas?: number;
+  maxSymbols?: number;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   isActive?: boolean;
 }
 
@@ -67,6 +76,10 @@ export interface PlanUpdate {
   features?: string[];
   tier?: PlanUpdateTier;
   maxEas?: number;
+  maxSymbols?: number;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   isActive?: boolean;
 }
 
@@ -74,11 +87,16 @@ export type SubscriptionStatus = typeof SubscriptionStatus[keyof typeof Subscrip
 
 
 export const SubscriptionStatus = {
+  pending_payment: 'pending_payment',
   active: 'active',
+  grace_period: 'grace_period',
+  suspended: 'suspended',
+  expired: 'expired',
   cancelled: 'cancelled',
-  past_due: 'past_due',
-  trialing: 'trialing',
+  paused: 'paused',
 } as const;
+
+export type SubscriptionMetadata = { [key: string]: unknown } | null;
 
 export interface Subscription {
   id: number;
@@ -88,7 +106,17 @@ export interface Subscription {
   status: SubscriptionStatus;
   startedAt: string;
   /** @nullable */
+  currentPeriodEnd?: string | null;
+  /** @nullable */
+  graceEndsAt?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  /** @nullable */
+  pausedAt?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
   endsAt?: string | null;
+  metadata?: SubscriptionMetadata;
   createdAt: string;
   /** @nullable */
   userEmail?: string | null;
@@ -103,16 +131,85 @@ export type SubscriptionUpdateStatus = typeof SubscriptionUpdateStatus[keyof typ
 
 
 export const SubscriptionUpdateStatus = {
+  pending_payment: 'pending_payment',
   active: 'active',
+  grace_period: 'grace_period',
+  suspended: 'suspended',
+  expired: 'expired',
   cancelled: 'cancelled',
-  past_due: 'past_due',
-  trialing: 'trialing',
+  paused: 'paused',
 } as const;
 
 export interface SubscriptionUpdate {
   planId?: number;
   status?: SubscriptionUpdateStatus;
+  cancelAtPeriodEnd?: boolean;
   endsAt?: string;
+}
+
+export type SubscriptionEventEventType = typeof SubscriptionEventEventType[keyof typeof SubscriptionEventEventType];
+
+
+export const SubscriptionEventEventType = {
+  SUBSCRIPTION_CREATED: 'SUBSCRIPTION_CREATED',
+  SUBSCRIPTION_RENEWED: 'SUBSCRIPTION_RENEWED',
+  SUBSCRIPTION_UPGRADED: 'SUBSCRIPTION_UPGRADED',
+  SUBSCRIPTION_DOWNGRADED: 'SUBSCRIPTION_DOWNGRADED',
+  GRACE_STARTED: 'GRACE_STARTED',
+  GRACE_ENDED: 'GRACE_ENDED',
+  SUBSCRIPTION_EXPIRED: 'SUBSCRIPTION_EXPIRED',
+  SUBSCRIPTION_CANCELLED: 'SUBSCRIPTION_CANCELLED',
+  SUBSCRIPTION_PAUSED: 'SUBSCRIPTION_PAUSED',
+  SUBSCRIPTION_RESUMED: 'SUBSCRIPTION_RESUMED',
+  SUBSCRIPTION_SUSPENDED: 'SUBSCRIPTION_SUSPENDED',
+  SUBSCRIPTION_REACTIVATED: 'SUBSCRIPTION_REACTIVATED',
+  ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
+} as const;
+
+export type SubscriptionEventDetail = { [key: string]: unknown } | null;
+
+export interface SubscriptionEvent {
+  id: number;
+  subscriptionId: number;
+  userId: string;
+  eventType: SubscriptionEventEventType;
+  /** @nullable */
+  fromStatus?: string | null;
+  /** @nullable */
+  toStatus?: string | null;
+  detail?: SubscriptionEventDetail;
+  createdAt: string;
+}
+
+export type EntitlementSummaryStatus = typeof EntitlementSummaryStatus[keyof typeof EntitlementSummaryStatus];
+
+
+export const EntitlementSummaryStatus = {
+  pending_payment: 'pending_payment',
+  active: 'active',
+  grace_period: 'grace_period',
+  suspended: 'suspended',
+  expired: 'expired',
+  cancelled: 'cancelled',
+  paused: 'paused',
+  none: 'none',
+} as const;
+
+export interface EntitlementSummary {
+  status: EntitlementSummaryStatus;
+  manualAllowed: boolean;
+  autonomousAllowed: boolean;
+  eaGenerationAllowed: boolean;
+  apiAccessAllowed: boolean;
+  researchAccess: boolean;
+  /** @nullable */
+  maxSymbols: number | null;
+  /** @nullable */
+  maxActiveEas: number | null;
+  /** @nullable */
+  graceEndsAt?: string | null;
+  /** @nullable */
+  planName?: string | null;
 }
 
 export type EaPlatform = typeof EaPlatform[keyof typeof EaPlatform];

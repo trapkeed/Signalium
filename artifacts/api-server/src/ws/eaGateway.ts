@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { resolveApiKeyAuth } from "../middlewares/requireApiKeyAuth";
 import { decideAction, type TelemetrySnapshot, type TrainerActionType } from "../lib/qdeTrainer";
 import { logger } from "../lib/logger";
+import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -80,6 +81,12 @@ export function attachEaGateway(server: HttpServer) {
     const auth = await resolveApiKeyAuth(apiKey, hardwareId);
     if ("error" in auth) {
       ws.close(4001, auth.error);
+      return;
+    }
+
+    const apiAccess = await checkApiAccess(auth.userId);
+    if (!apiAccess.allowed) {
+      ws.close(4003, `${apiAccess.code}: ${apiAccess.message}`);
       return;
     }
 
@@ -201,6 +208,12 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
     return;
   }
 
+  const symbolCheck = await checkSymbolLimit(state.userId, telemetry.symbol);
+  if (!symbolCheck.allowed) {
+    safeSend(state.ws, { type: "error", code: symbolCheck.code, message: symbolCheck.message });
+    return;
+  }
+
   const [row] = await db.insert(positionTelemetryTable).values({
     userId: state.userId,
     apiKeyId: state.apiKeyId,
@@ -224,6 +237,15 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
   await db.update(eaConnectionsTable)
     .set({ lastMessageAt: new Date(), messageCount: (await getMessageCount(state.connectionId)) + 1 })
     .where(eq(eaConnectionsTable.connectionId, state.connectionId));
+
+  const autonomousAccess = await checkAutonomousAccess(state.userId);
+  if (!autonomousAccess.allowed) {
+    // Telemetry is still recorded above — only the autonomous decision step
+    // is gated, since manual/telemetry visibility can remain available (e.g.
+    // during grace period) even when autonomous trading is denied.
+    safeSend(state.ws, { type: "error", code: autonomousAccess.code, message: autonomousAccess.message });
+    return;
+  }
 
   let decision;
   try {

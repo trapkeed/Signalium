@@ -18,6 +18,7 @@ import Account from "@/pages/account";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminSubscriptions from "@/pages/admin/subscriptions";
+import AdminPlans from "@/pages/admin/plans";
 import AdminEas from "@/pages/admin/eas";
 import AdminPayments from "@/pages/admin/payments";
 import AdminSmtp from "@/pages/admin/smtp";
@@ -236,6 +237,7 @@ function ClerkProviderWithRoutes() {
 
             <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
             <Route path="/admin/users"><ProtectedRoute component={AdminUsers} /></Route>
+            <Route path="/admin/plans"><ProtectedRoute component={AdminPlans} /></Route>
             <Route path="/admin/subscriptions"><ProtectedRoute component={AdminSubscriptions} /></Route>
             <Route path="/admin/eas"><ProtectedRoute component={AdminEas} /></Route>
             <Route path="/admin/payments"><ProtectedRoute component={AdminPayments} /></Route>

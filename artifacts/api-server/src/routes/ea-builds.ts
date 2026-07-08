@@ -5,8 +5,6 @@ import {
   apiKeysTable,
   eaBuildsTable,
   eaBuildAuditLogTable,
-  subscriptionsTable,
-  plansTable,
   usersTable,
 } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
@@ -22,6 +20,7 @@ import {
   getEaBuildFile,
 } from "../lib/eaBuilder";
 import { ObjectNotFoundError } from "../lib/objectStorage";
+import { checkEaGenerationAccess, resolveCurrentSubscription, type EntitlementDenialCode } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -29,16 +28,26 @@ async function logAudit(buildId: number, userId: string, action: "generated" | "
   await db.insert(eaBuildAuditLogTable).values({ buildId, userId, action, detail });
 }
 
-/** Resolves the current active subscription tier + a usable active API key for a user. Throws a descriptive error if either is missing. */
-async function resolveBuildPrerequisites(userId: string) {
-  const [sub] = await db
-    .select({ tier: plansTable.tier })
-    .from(subscriptionsTable)
-    .innerJoin(plansTable, eq(subscriptionsTable.planId, plansTable.id))
-    .where(and(eq(subscriptionsTable.userId, userId), eq(subscriptionsTable.status, "active")));
-  if (!sub) {
-    throw new Error("NO_ACTIVE_SUBSCRIPTION");
+class BuildPrerequisiteError extends Error {
+  constructor(public code: EntitlementDenialCode | "NO_ACTIVE_API_KEY" | "USER_NOT_FOUND", message: string) {
+    super(message);
   }
+}
+
+/**
+ * Resolves the current display tier (for build metadata only — access is
+ * decided entirely by the EntitlementEngine, never by tier name) plus a
+ * usable active API key for a user. Throws BuildPrerequisiteError if
+ * generation isn't currently allowed.
+ */
+async function resolveBuildPrerequisites(userId: string) {
+  const access = await checkEaGenerationAccess(userId);
+  if (!access.allowed) {
+    throw new BuildPrerequisiteError(access.code, access.message);
+  }
+
+  const snapshot = await resolveCurrentSubscription(userId);
+  const tier = snapshot?.plan.tier ?? "starter";
 
   const [apiKey] = await db
     .select()
@@ -47,29 +56,22 @@ async function resolveBuildPrerequisites(userId: string) {
     .orderBy(desc(apiKeysTable.createdAt))
     .limit(1);
   if (!apiKey) {
-    throw new Error("NO_ACTIVE_API_KEY");
+    throw new BuildPrerequisiteError("NO_ACTIVE_API_KEY", "An active API key is required to generate an EA build. Create one first.");
   }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
   if (!user) {
-    throw new Error("USER_NOT_FOUND");
+    throw new BuildPrerequisiteError("USER_NOT_FOUND", "User not found.");
   }
 
-  return { tier: sub.tier, apiKey, user };
+  return { tier, apiKey, user };
 }
 
-function prerequisiteErrorResponse(err: unknown): { status: number; body: { error: string } } | null {
-  if (!(err instanceof Error)) return null;
-  switch (err.message) {
-    case "NO_ACTIVE_SUBSCRIPTION":
-      return { status: 400, body: { error: "An active subscription is required to generate an EA build." } };
-    case "NO_ACTIVE_API_KEY":
-      return { status: 400, body: { error: "An active API key is required to generate an EA build. Create one first." } };
-    case "USER_NOT_FOUND":
-      return { status: 404, body: { error: "User not found." } };
-    default:
-      return null;
-  }
+function prerequisiteErrorResponse(err: unknown): { status: number; body: { error: string; code?: string } } | null {
+  if (!(err instanceof BuildPrerequisiteError)) return null;
+  if (err.code === "USER_NOT_FOUND") return { status: 404, body: { error: err.message } };
+  if (err.code === "NO_ACTIVE_API_KEY") return { status: 400, body: { error: err.message } };
+  return { status: 403, body: { error: err.message, code: err.code } };
 }
 
 // ─── User-facing ────────────────────────────────────────────────────────────

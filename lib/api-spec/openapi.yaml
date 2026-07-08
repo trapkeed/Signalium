@@ -201,6 +201,44 @@ paths:
         "404":
           description: No active subscription
 
+  /subscriptions/me/entitlements:
+    get:
+      operationId: getMyEntitlements
+      tags: [subscriptions]
+      summary: Get the current user's resolved entitlements (capabilities/limits)
+      responses:
+        "200":
+          description: Entitlement summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementSummary"
+
+  /subscriptions/{id}/events:
+    get:
+      operationId: listSubscriptionEvents
+      tags: [subscriptions]
+      summary: List lifecycle events for a subscription (owner or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of subscription events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionEvent"
+        "403":
+          description: Not authorized to view these events
+        "404":
+          description: Subscription not found
+
   /subscriptions/{id}:
     patch:
       operationId: updateSubscription
@@ -3378,6 +3416,14 @@ components:
           enum: [starter, professional, enterprise]
         maxEas:
           type: ["integer", "null"]
+        maxSymbols:
+          type: ["integer", "null"]
+        autonomousAllowed:
+          type: boolean
+        apiAccessAllowed:
+          type: boolean
+        researchAccess:
+          type: boolean
         createdAt:
           type: string
 
@@ -3400,6 +3446,14 @@ components:
           enum: [starter, professional, enterprise]
         maxEas:
           type: integer
+        maxSymbols:
+          type: integer
+        autonomousAllowed:
+          type: boolean
+        apiAccessAllowed:
+          type: boolean
+        researchAccess:
+          type: boolean
         isActive:
           type: boolean
 
@@ -3421,6 +3475,14 @@ components:
           enum: [starter, professional, enterprise]
         maxEas:
           type: integer
+        maxSymbols:
+          type: integer
+        autonomousAllowed:
+          type: boolean
+        apiAccessAllowed:
+          type: boolean
+        researchAccess:
+          type: boolean
         isActive:
           type: boolean
 
@@ -3438,11 +3500,25 @@ components:
           $ref: "#/components/schemas/Plan"
         status:
           type: string
-          enum: [active, cancelled, past_due, trialing]
+          enum: [pending_payment, active, grace_period, suspended, expired, cancelled, paused]
         startedAt:
           type: string
+        currentPeriodEnd:
+          type: ["string", "null"]
+        graceEndsAt:
+          type: ["string", "null"]
+        cancelAtPeriodEnd:
+          type: boolean
+        pausedAt:
+          type: ["string", "null"]
+        cancelledAt:
+          type: ["string", "null"]
         endsAt:
           type: ["string", "null"]
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
         createdAt:
           type: string
         userEmail:
@@ -3464,9 +3540,86 @@ components:
           type: integer
         status:
           type: string
-          enum: [active, cancelled, past_due, trialing]
+          enum: [pending_payment, active, grace_period, suspended, expired, cancelled, paused]
+        cancelAtPeriodEnd:
+          type: boolean
         endsAt:
           type: string
+
+    SubscriptionEvent:
+      type: object
+      required: [id, subscriptionId, userId, eventType, createdAt]
+      properties:
+        id:
+          type: integer
+        subscriptionId:
+          type: integer
+        userId:
+          type: string
+        eventType:
+          type: string
+          enum:
+            [
+              SUBSCRIPTION_CREATED,
+              SUBSCRIPTION_RENEWED,
+              SUBSCRIPTION_UPGRADED,
+              SUBSCRIPTION_DOWNGRADED,
+              GRACE_STARTED,
+              GRACE_ENDED,
+              SUBSCRIPTION_EXPIRED,
+              SUBSCRIPTION_CANCELLED,
+              SUBSCRIPTION_PAUSED,
+              SUBSCRIPTION_RESUMED,
+              SUBSCRIPTION_SUSPENDED,
+              SUBSCRIPTION_REACTIVATED,
+              ADMIN_OVERRIDE,
+            ]
+        fromStatus:
+          type: ["string", "null"]
+        toStatus:
+          type: ["string", "null"]
+        detail:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+
+    EntitlementSummary:
+      type: object
+      required:
+        [
+          status,
+          manualAllowed,
+          autonomousAllowed,
+          eaGenerationAllowed,
+          apiAccessAllowed,
+          researchAccess,
+          maxSymbols,
+          maxActiveEas,
+        ]
+      properties:
+        status:
+          type: string
+          enum: [pending_payment, active, grace_period, suspended, expired, cancelled, paused, none]
+        manualAllowed:
+          type: boolean
+        autonomousAllowed:
+          type: boolean
+        eaGenerationAllowed:
+          type: boolean
+        apiAccessAllowed:
+          type: boolean
+        researchAccess:
+          type: boolean
+        maxSymbols:
+          type: ["integer", "null"]
+        maxActiveEas:
+          type: ["integer", "null"]
+        graceEndsAt:
+          type: ["string", "null"]
+        planName:
+          type: ["string", "null"]
 
     Ea:
       type: object

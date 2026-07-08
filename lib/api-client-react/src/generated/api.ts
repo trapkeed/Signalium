@@ -50,6 +50,7 @@ import type {
   EaInput,
   EaRegistration,
   EaUpdate,
+  EntitlementSummary,
   ErrorEnvelope,
   FeatureFlag,
   GetSymbolNormalizationLogParams,
@@ -122,6 +123,7 @@ import type {
   SubmitContactMessage201,
   SubmitEaTelemetry201,
   Subscription,
+  SubscriptionEvent,
   SubscriptionInput,
   SubscriptionUpdate,
   SupportTicket,
@@ -846,6 +848,160 @@ export function useGetMySubscription<TData = Awaited<ReturnType<typeof getMySubs
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMySubscriptionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyEntitlementsUrl = () => {
+
+
+
+
+  return `/api/subscriptions/me/entitlements`
+}
+
+/**
+ * @summary Get the current user's resolved entitlements (capabilities/limits)
+ */
+export const getMyEntitlements = async ( options?: RequestInit): Promise<EntitlementSummary> => {
+
+  return customFetch<EntitlementSummary>(getGetMyEntitlementsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyEntitlementsQueryKey = () => {
+    return [
+    `/api/subscriptions/me/entitlements`
+    ] as const;
+    }
+
+
+export const getGetMyEntitlementsQueryOptions = <TData = Awaited<ReturnType<typeof getMyEntitlements>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyEntitlements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyEntitlementsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyEntitlements>>> = ({ signal }) => getMyEntitlements({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyEntitlements>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyEntitlementsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyEntitlements>>>
+export type GetMyEntitlementsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current user's resolved entitlements (capabilities/limits)
+ */
+
+export function useGetMyEntitlements<TData = Awaited<ReturnType<typeof getMyEntitlements>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyEntitlements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyEntitlementsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSubscriptionEventsUrl = (id: number,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/events`
+}
+
+/**
+ * @summary List lifecycle events for a subscription (owner or admin)
+ */
+export const listSubscriptionEvents = async (id: number, options?: RequestInit): Promise<SubscriptionEvent[]> => {
+
+  return customFetch<SubscriptionEvent[]>(getListSubscriptionEventsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSubscriptionEventsQueryKey = (id: number,) => {
+    return [
+    `/api/subscriptions/${id}/events`
+    ] as const;
+    }
+
+
+export const getListSubscriptionEventsQueryOptions = <TData = Awaited<ReturnType<typeof listSubscriptionEvents>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSubscriptionEventsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSubscriptionEvents>>> = ({ signal }) => listSubscriptionEvents(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSubscriptionEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listSubscriptionEvents>>>
+export type ListSubscriptionEventsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List lifecycle events for a subscription (owner or admin)
+ */
+
+export function useListSubscriptionEvents<TData = Awaited<ReturnType<typeof listSubscriptionEvents>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSubscriptionEventsQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -18,5 +18,10 @@ export interface Plan {
   tier: PlanTier;
   /** @nullable */
   maxEas?: number | null;
+  /** @nullable */
+  maxSymbols?: number | null;
+  autonomousAllowed?: boolean;
+  apiAccessAllowed?: boolean;
+  researchAccess?: boolean;
   createdAt: string;
 }

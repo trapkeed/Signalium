@@ -29,6 +29,10 @@ export const ListPlansResponseItem = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const ListPlansResponse = zod.array(ListPlansResponseItem)
@@ -44,6 +48,10 @@ export const CreatePlanBody = zod.object({
   "features": zod.array(zod.string()).optional(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().optional(),
+  "maxSymbols": zod.number().optional(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "isActive": zod.boolean().optional()
 })
 
@@ -56,6 +64,10 @@ export const CreatePlanResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -76,6 +88,10 @@ export const GetPlanResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -94,6 +110,10 @@ export const UpdatePlanBody = zod.object({
   "features": zod.array(zod.string()).optional(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']).optional(),
   "maxEas": zod.number().optional(),
+  "maxSymbols": zod.number().optional(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "isActive": zod.boolean().optional()
 })
 
@@ -106,6 +126,10 @@ export const UpdatePlanResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -136,11 +160,21 @@ export const ListSubscriptionsResponseItem = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
   "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
   "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string(),
   "userEmail": zod.string().nullish()
 })
@@ -168,11 +202,21 @@ export const CreateSubscriptionResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
   "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
   "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string(),
   "userEmail": zod.string().nullish()
 })
@@ -194,14 +238,61 @@ export const GetMySubscriptionResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
   "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
   "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string(),
   "userEmail": zod.string().nullish()
 })
+
+
+/**
+ * @summary Get the current user's resolved entitlements (capabilities/limits)
+ */
+export const GetMyEntitlementsResponse = zod.object({
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused', 'none']),
+  "manualAllowed": zod.boolean(),
+  "autonomousAllowed": zod.boolean(),
+  "eaGenerationAllowed": zod.boolean(),
+  "apiAccessAllowed": zod.boolean(),
+  "researchAccess": zod.boolean(),
+  "maxSymbols": zod.number().nullable(),
+  "maxActiveEas": zod.number().nullable(),
+  "graceEndsAt": zod.string().nullish(),
+  "planName": zod.string().nullish()
+})
+
+
+/**
+ * @summary List lifecycle events for a subscription (owner or admin)
+ */
+export const ListSubscriptionEventsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListSubscriptionEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "subscriptionId": zod.number(),
+  "userId": zod.string(),
+  "eventType": zod.enum(['SUBSCRIPTION_CREATED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_UPGRADED', 'SUBSCRIPTION_DOWNGRADED', 'GRACE_STARTED', 'GRACE_ENDED', 'SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_RESUMED', 'SUBSCRIPTION_SUSPENDED', 'SUBSCRIPTION_REACTIVATED', 'ADMIN_OVERRIDE']),
+  "fromStatus": zod.string().nullish(),
+  "toStatus": zod.string().nullish(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string()
+})
+export const ListSubscriptionEventsResponse = zod.array(ListSubscriptionEventsResponseItem)
 
 
 /**
@@ -213,7 +304,8 @@ export const UpdateSubscriptionParams = zod.object({
 
 export const UpdateSubscriptionBody = zod.object({
   "planId": zod.number().optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
   "endsAt": zod.string().optional()
 })
 
@@ -230,11 +322,21 @@ export const UpdateSubscriptionResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
   "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
   "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string(),
   "userEmail": zod.string().nullish()
 })
@@ -260,11 +362,21 @@ export const CancelSubscriptionResponse = zod.object({
   "isActive": zod.boolean(),
   "tier": zod.enum(['starter', 'professional', 'enterprise']),
   "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
-  "status": zod.enum(['active', 'cancelled', 'past_due', 'trialing']),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
   "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
   "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string(),
   "userEmail": zod.string().nullish()
 })

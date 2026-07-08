@@ -89,10 +89,10 @@ export default function Dashboard() {
                   <div className="font-bold text-lg">{subscription.plan?.name ?? "—"}</div>
                   <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full mt-1 ${
                     subscription.status === "active" ? "bg-success/15 text-success" :
-                    subscription.status === "trialing" ? "bg-warning/15 text-warning" :
+                    subscription.status === "grace_period" || subscription.status === "pending_payment" || subscription.status === "paused" ? "bg-warning/15 text-warning" :
                     "bg-destructive/15 text-destructive"
                   }`}>
-                    {subscription.status.toUpperCase()}
+                    {subscription.status.replace(/_/g, " ").toUpperCase()}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">

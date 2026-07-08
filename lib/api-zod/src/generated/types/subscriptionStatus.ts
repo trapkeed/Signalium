@@ -10,8 +10,11 @@ export type SubscriptionStatus = typeof SubscriptionStatus[keyof typeof Subscrip
 
 
 export const SubscriptionStatus = {
+  pending_payment: 'pending_payment',
   active: 'active',
+  grace_period: 'grace_period',
+  suspended: 'suspended',
+  expired: 'expired',
   cancelled: 'cancelled',
-  past_due: 'past_due',
-  trialing: 'trialing',
+  paused: 'paused',
 } as const;

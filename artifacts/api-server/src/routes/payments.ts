@@ -1,10 +1,13 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, paymentsTable, paymentProvidersTable, subscriptionsTable, plansTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
+import { logSubscriptionEvent } from "../lib/entitlementEngine";
+
+const DEFAULT_BILLING_PERIOD_DAYS = 30;
 
 const router = Router();
 
@@ -206,21 +209,26 @@ router.post("/:id/confirm", requireAdmin, async (req, res) => {
     const meta = payment.metadata as Record<string, unknown>;
     const planId = typeof meta.planId === "number" ? meta.planId : null;
     if (planId) {
+      // A confirmed payment counts as a successful renewal even if the
+      // subscription had lapsed into GRACE_PERIOD — it brings the user back
+      // to ACTIVE with a fresh billing period.
       const [existing] = await db.select().from(subscriptionsTable)
-        .where(and(eq(subscriptionsTable.userId, payment.userId), eq(subscriptionsTable.status, "active")));
+        .where(and(eq(subscriptionsTable.userId, payment.userId), inArray(subscriptionsTable.status, ["active", "grace_period"])));
 
-      const endsAt = new Date();
-      endsAt.setMonth(endsAt.getMonth() + 1);
+      const now = new Date();
+      const currentPeriodEnd = new Date(now.getTime() + DEFAULT_BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
       if (!existing) {
         const [sub] = await db.insert(subscriptionsTable).values({
-          userId: payment.userId, planId, status: "active", endsAt,
+          userId: payment.userId, planId, status: "active", startedAt: now, currentPeriodEnd,
         }).returning();
         await db.update(paymentsTable).set({ subscriptionId: sub.id }).where(eq(paymentsTable.id, id));
+        await logSubscriptionEvent(sub.id, payment.userId, "SUBSCRIPTION_CREATED", null, "active", { planId, paymentId: payment.id });
       } else {
         await db.update(subscriptionsTable)
-          .set({ planId, status: "active" })
+          .set({ planId, status: "active", currentPeriodEnd, graceEndsAt: null })
           .where(eq(subscriptionsTable.id, existing.id));
+        await logSubscriptionEvent(existing.id, payment.userId, "SUBSCRIPTION_RENEWED", existing.status, "active", { planId, paymentId: payment.id });
       }
     }
 

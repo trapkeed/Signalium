@@ -4,6 +4,7 @@ import { db, apiKeysTable, eaRegistrationsTable } from "@workspace/db";
 import { eq, and, count } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
+import { checkApiAccess } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -51,6 +52,11 @@ router.post("/", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const { name, expiresInDays } = req.body as { name?: string; expiresInDays?: number };
   if (!name) return res.status(400).json({ error: "name required" });
+
+  const apiAccess = await checkApiAccess(userId);
+  if (!apiAccess.allowed) {
+    return res.status(403).json({ error: apiAccess.message, code: apiAccess.code });
+  }
 
   try {
     const { rawKey, keyHash, keyPrefix } = generateRawKey();

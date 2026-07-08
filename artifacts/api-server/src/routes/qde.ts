@@ -12,6 +12,7 @@ import { requireAdmin } from "../middlewares/requireAdmin";
 import { requireApiKeyAuth } from "../middlewares/requireApiKeyAuth";
 import { decideAction, TRAINER_ACTIONS, type TelemetrySnapshot } from "../lib/qdeTrainer";
 import { deliverAction, getActiveConnections } from "../ws/eaGateway";
+import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -53,6 +54,16 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
   if (!telemetry) return res.status(400).json({ error: "Invalid telemetry payload" });
 
   const auth = req.eaAuth!;
+
+  const apiAccess = await checkApiAccess(auth.userId);
+  if (!apiAccess.allowed) {
+    return res.status(403).json({ error: apiAccess.message, code: apiAccess.code });
+  }
+  const symbolCheck = await checkSymbolLimit(auth.userId, telemetry.symbol);
+  if (!symbolCheck.allowed) {
+    return res.status(403).json({ error: symbolCheck.message, code: symbolCheck.code });
+  }
+
   try {
     const [row] = await db.insert(positionTelemetryTable).values({
       userId: auth.userId,
@@ -73,6 +84,16 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
       drawdown: telemetry.drawdown ?? null,
       tradeAgeSeconds: telemetry.tradeAgeSeconds ?? null,
     }).returning();
+
+    const autonomousAccess = await checkAutonomousAccess(auth.userId);
+    if (!autonomousAccess.allowed) {
+      return res.status(202).json({
+        telemetryId: row.id,
+        action: null,
+        code: autonomousAccess.code,
+        message: autonomousAccess.message,
+      });
+    }
 
     let decision;
     try {
@@ -112,6 +133,12 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
 // instead of reconnecting the socket.
 router.get("/actions/pending", requireApiKeyAuth, async (req, res) => {
   const auth = req.eaAuth!;
+
+  const apiAccess = await checkApiAccess(auth.userId);
+  if (!apiAccess.allowed) {
+    return res.status(403).json({ error: apiAccess.message, code: apiAccess.code });
+  }
+
   try {
     const queued = await db.select().from(trainerActionsTable)
       .where(and(eq(trainerActionsTable.eaRegistrationId, auth.eaRegistrationId), eq(trainerActionsTable.status, "queued")))

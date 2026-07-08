@@ -125,6 +125,18 @@ Feature flags are a simple `key -> boolean` map (no rollout %/targeting). Public
 
 **Why:** matches the spec's ask for a lightweight on/off switch admins can flip without a deploy, not a full experimentation platform; keeping the enforcement UI-only avoided touching every gated route's auth path for a first pass.
 
+## Entitlement engine architecture
+All access decisions (manual/autonomous mode, EA generation, API access, symbol/EA limits, research) route through a single `entitlementEngine.ts` module exposing `checkXAccess(userId)` functions returning `{allowed: true} | {allowed: false, code, message}` — never raw `plan.tier`/`status` string checks in routes. Lifecycle transitions (active→grace_period→expired) are computed lazily inside `resolveCurrentSubscription` on every read (idempotent, recursive), not via a cron job, mirroring the API-key-expiry pattern.
+
+**Why:** spec required config-driven plan capabilities (no hardcoded tier names) and reuses the lazy-expiry pattern already proven for API keys, avoiding a background job.
+
+**How to apply:** any new gated feature adds a `checkXAccess` function here and calls it from the route/gateway; never re-derive access from `subscription.status`/`plan.tier` inline elsewhere.
+
+## Keep OpenAPI response schemas in sync with handwritten route handlers
+Routes that return plain object literals (not validated by a zod response schema) can silently drift from the OpenAPI schema declared for that endpoint — nothing enforces the match at build time. When adding an endpoint like this, write the return shape and the OpenAPI schema together and diff them by eye before moving on.
+
+**Why:** caught mid-session building `/subscriptions/me/entitlements` — the first implementation used different field names (`manualAccess`/`hasSubscription`) than the OpenAPI schema already written (`manualAllowed`/`status: "none"`), which would have shipped a frontend type mismatch since nothing type-checks response bodies against the spec.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 

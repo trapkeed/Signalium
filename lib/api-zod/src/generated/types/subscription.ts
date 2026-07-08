@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Plan } from './plan';
+import type { SubscriptionMetadata } from './subscriptionMetadata';
 import type { SubscriptionStatus } from './subscriptionStatus';
 
 export interface Subscription {
@@ -16,7 +17,17 @@ export interface Subscription {
   status: SubscriptionStatus;
   startedAt: string;
   /** @nullable */
+  currentPeriodEnd?: string | null;
+  /** @nullable */
+  graceEndsAt?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  /** @nullable */
+  pausedAt?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
   endsAt?: string | null;
+  metadata?: SubscriptionMetadata;
   createdAt: string;
   /** @nullable */
   userEmail?: string | null;

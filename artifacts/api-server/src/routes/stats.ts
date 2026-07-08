@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, subscriptionsTable, easTable, telemetryTable, plansTable } from "@workspace/db";
-import { eq, count, sql } from "drizzle-orm";
+import { eq, count, inArray, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.get("/overview", async (req, res) => {
     const [{ totalUsers }] = await db.select({ totalUsers: count() }).from(usersTable);
     const [{ activeSubscriptions }] = await db.select({ activeSubscriptions: count() })
       .from(subscriptionsTable)
-      .where(eq(subscriptionsTable.status, "active"));
+      .where(inArray(subscriptionsTable.status, ["active", "grace_period"]));
     const [{ totalEas }] = await db.select({ totalEas: count() }).from(easTable);
     const [{ totalTelemetryEvents }] = await db.select({ totalTelemetryEvents: count() }).from(telemetryTable);
 
@@ -18,7 +18,7 @@ router.get("/overview", async (req, res) => {
       .select({ price: plansTable.priceMonthly, tier: plansTable.tier })
       .from(subscriptionsTable)
       .leftJoin(plansTable, eq(subscriptionsTable.planId, plansTable.id))
-      .where(eq(subscriptionsTable.status, "active"));
+      .where(inArray(subscriptionsTable.status, ["active", "grace_period"]));
 
     const revenueMonthly = activeSubs.reduce((sum, s) => sum + (s.price ?? 0), 0);
     const tierCounts = activeSubs.reduce((acc: Record<string, number>, s) => {

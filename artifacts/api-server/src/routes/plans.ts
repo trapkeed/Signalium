@@ -33,6 +33,10 @@ router.post("/", async (req, res) => {
       features: parsed.data.features ?? [],
       tier: parsed.data.tier,
       maxEas: parsed.data.maxEas,
+      maxSymbols: parsed.data.maxSymbols,
+      autonomousAllowed: parsed.data.autonomousAllowed ?? false,
+      apiAccessAllowed: parsed.data.apiAccessAllowed ?? true,
+      researchAccess: parsed.data.researchAccess ?? true,
       isActive: parsed.data.isActive ?? true,
     }).returning();
     return res.status(201).json(plan);
