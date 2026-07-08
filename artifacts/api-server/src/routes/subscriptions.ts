@@ -42,7 +42,7 @@ function subscriptionWithPlanQuery() {
     .leftJoin(plansTable, eq(subscriptionsTable.planId, plansTable.id));
 }
 
-router.get("/", async (req, res) => {
+router.get("/", requireAdmin, async (req, res) => {
   try {
     const subs = await subscriptionWithPlanQuery();
     return res.json(subs);
@@ -91,10 +91,28 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const { userId: authUserId } = getAuth(req);
-  const userId = parsed.data.userId ?? authUserId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!authUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const requestedUserId = parsed.data.userId ?? authUserId;
+  const actorIsAdmin = await isAdmin(authUserId);
+  if (requestedUserId !== authUserId && !actorIsAdmin) {
+    return res.status(403).json({ error: "Only an admin may create a subscription for another user" });
+  }
+  const userId = requestedUserId;
 
   try {
+    const [plan] = await db.select().from(plansTable).where(eq(plansTable.id, parsed.data.planId));
+    if (!plan) return res.status(404).json({ error: "Plan not found" });
+
+    // Self-service creation without going through admin cannot activate a
+    // paid plan directly — real payment collection/confirmation is handled
+    // in the billing/payments work (checkout, webhooks), not here. Only a
+    // free ($0) plan may be self-activated; anything else requires an admin
+    // (e.g. manual billing override) until that flow lands.
+    if (!actorIsAdmin && plan.priceMonthly > 0) {
+      return res.status(403).json({ error: "Paid plans require checkout — self-activation is only available for free plans" });
+    }
+
     const startedAt = new Date();
     const currentPeriodEnd = new Date(startedAt.getTime() + DEFAULT_BILLING_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
@@ -186,9 +204,16 @@ router.delete("/:id", async (req, res) => {
   const parsed = CancelSubscriptionParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
   try {
     const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, parsed.data.id));
     if (!before) return res.status(404).json({ error: "Not found" });
+
+    if (before.userId !== actorUserId && !(await isAdmin(actorUserId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     const cancelledAt = new Date();
     const [sub] = await db.update(subscriptionsTable)
