@@ -10,8 +10,12 @@ import { applySuccessfulPayment, applyFailedPayment } from "../lib/payments/paym
  * pipeline regardless of provider:
  *   1. verify signature (provider-specific — rejects anything unsigned/forged)
  *   2. dedup on (provider, externalId) via the webhook_events unique
- *      constraint — a retried/replayed delivery is recorded but not
- *      reprocessed
+ *      constraint — a delivery that already fully succeeded (status
+ *      "processed"/"ignored") is recorded but not reprocessed. A delivery
+ *      that never finished (status "received"/"failed" — e.g. the process
+ *      crashed mid-handler, or a prior attempt threw) is instead *reclaimed*
+ *      and retried, so a transient failure can't permanently strand a
+ *      payment in an unconfirmed state.
  *   3. locate the payment by the provider's externalReference and apply the
  *      normalized outcome through the shared payment lifecycle
  *
@@ -39,7 +43,7 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
   // event mutate another provider's webhook_events row.
   const eventKey = and(eq(webhookEventsTable.provider, providerType), eq(webhookEventsTable.externalId, verification.externalId));
 
-  let dedupInserted = true;
+  let claimed = true;
   try {
     await db.insert(webhookEventsTable).values({
       provider: providerType,
@@ -52,14 +56,29 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
     // "already seen this event" — any other error (connection drop, schema
     // issue, etc.) must propagate instead of being silently treated as a
     // successful dedup, or real failures would get swallowed as fake 200s.
-    if ((err as { code?: string })?.code === "23505") {
-      dedupInserted = false;
-    } else {
+    if ((err as { code?: string })?.code !== "23505") {
       throw err;
     }
+
+    // A row already exists for this event. Atomically reclaim it for retry
+    // only if a *previous attempt explicitly failed* ("failed" — the catch
+    // block below always transitions to this on error, so it's a reliable
+    // "safe to retry" signal). Rows still "received" are either mid-flight
+    // right now (a genuinely concurrent duplicate delivery — must NOT also
+    // be claimed, or both requests would apply the payment lifecycle at
+    // once) or, rarely, orphaned by a hard process crash before the catch
+    // block ran (requires manual/ops follow-up, not an automatic retry, to
+    // avoid ever double-applying a payment). Rows already "processed"/
+    // "ignored" are left untouched and short-circuit as a genuine dedup —
+    // this update matches zero rows in all of those cases.
+    const reclaimed = await db.update(webhookEventsTable)
+      .set({ payloadHash, error: null })
+      .where(and(eventKey, eq(webhookEventsTable.status, "failed")))
+      .returning();
+    claimed = reclaimed.length > 0;
   }
 
-  if (!dedupInserted) {
+  if (!claimed) {
     return { status: 200 as const, body: { deduped: true } };
   }
 
