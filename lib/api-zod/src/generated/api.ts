@@ -33,6 +33,9 @@ export const ListPlansResponseItem = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 })
 export const ListPlansResponse = zod.array(ListPlansResponseItem)
@@ -52,7 +55,10 @@ export const CreatePlanBody = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
-  "isActive": zod.boolean().optional()
+  "isActive": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).optional()
 })
 
 export const CreatePlanResponse = zod.object({
@@ -68,6 +74,9 @@ export const CreatePlanResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -92,6 +101,9 @@ export const GetPlanResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -114,7 +126,10 @@ export const UpdatePlanBody = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
-  "isActive": zod.boolean().optional()
+  "isActive": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).optional()
 })
 
 export const UpdatePlanResponse = zod.object({
@@ -130,6 +145,9 @@ export const UpdatePlanResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -164,6 +182,9 @@ export const ListSubscriptionsResponseItem = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 }).optional(),
   "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
@@ -206,6 +227,9 @@ export const CreateSubscriptionResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 }).optional(),
   "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
@@ -242,6 +266,9 @@ export const GetMySubscriptionResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 }).optional(),
   "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
@@ -286,7 +313,7 @@ export const ListSubscriptionEventsResponseItem = zod.object({
   "id": zod.number(),
   "subscriptionId": zod.number(),
   "userId": zod.string(),
-  "eventType": zod.enum(['SUBSCRIPTION_CREATED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_UPGRADED', 'SUBSCRIPTION_DOWNGRADED', 'GRACE_STARTED', 'GRACE_ENDED', 'SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_RESUMED', 'SUBSCRIPTION_SUSPENDED', 'SUBSCRIPTION_REACTIVATED', 'ADMIN_OVERRIDE']),
+  "eventType": zod.enum(['SUBSCRIPTION_CREATED', 'SUBSCRIPTION_RENEWED', 'SUBSCRIPTION_UPGRADED', 'SUBSCRIPTION_DOWNGRADED', 'GRACE_STARTED', 'GRACE_ENDED', 'SUBSCRIPTION_EXPIRED', 'SUBSCRIPTION_CANCELLED', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_RESUMED', 'SUBSCRIPTION_SUSPENDED', 'SUBSCRIPTION_REACTIVATED', 'ADMIN_OVERRIDE', 'PAYMENT_CONFIRMED', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED', 'INVOICE_ISSUED', 'SUBSCRIPTION_EXTENDED', 'PROMOTIONAL_CREDIT_GRANTED']),
   "fromStatus": zod.string().nullish(),
   "toStatus": zod.string().nullish(),
   "detail": zod.record(zod.string(), zod.unknown()).nullish(),
@@ -326,6 +353,9 @@ export const UpdateSubscriptionResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 }).optional(),
   "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
@@ -366,6 +396,197 @@ export const CancelSubscriptionResponse = zod.object({
   "autonomousAllowed": zod.boolean().optional(),
   "apiAccessAllowed": zod.boolean().optional(),
   "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
+  "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "userEmail": zod.string().nullish()
+})
+
+
+/**
+ * @summary Suspend a subscription (admin)
+ */
+export const SuspendSubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SuspendSubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "planId": zod.number(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "priceMonthly": zod.number(),
+  "features": zod.array(zod.string()),
+  "isActive": zod.boolean(),
+  "tier": zod.enum(['starter', 'professional', 'enterprise']),
+  "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
+  "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "userEmail": zod.string().nullish()
+})
+
+
+/**
+ * @summary Reactivate a suspended subscription (admin)
+ */
+export const ReactivateSubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReactivateSubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "planId": zod.number(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "priceMonthly": zod.number(),
+  "features": zod.array(zod.string()),
+  "isActive": zod.boolean(),
+  "tier": zod.enum(['starter', 'professional', 'enterprise']),
+  "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
+  "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "userEmail": zod.string().nullish()
+})
+
+
+/**
+ * @summary Extend a subscription's current period (admin)
+ */
+export const ExtendSubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const ExtendSubscriptionBody = zod.object({
+  "days": zod.number().min(1),
+  "notes": zod.string().optional()
+})
+
+export const ExtendSubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "planId": zod.number(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "priceMonthly": zod.number(),
+  "features": zod.array(zod.string()),
+  "isActive": zod.boolean(),
+  "tier": zod.enum(['starter', 'professional', 'enterprise']),
+  "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
+  "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "userEmail": zod.string().nullish()
+})
+
+
+/**
+ * @summary Grant promotional free days to a subscription (admin)
+ */
+export const GrantSubscriptionCreditParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const GrantSubscriptionCreditBody = zod.object({
+  "days": zod.number().min(1),
+  "reason": zod.string().optional()
+})
+
+export const GrantSubscriptionCreditResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "planId": zod.number(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "priceMonthly": zod.number(),
+  "features": zod.array(zod.string()),
+  "isActive": zod.boolean(),
+  "tier": zod.enum(['starter', 'professional', 'enterprise']),
+  "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
   "createdAt": zod.string()
 }).optional(),
   "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
@@ -579,9 +800,48 @@ export const ListUsersResponseItem = zod.object({
   "role": zod.enum(['user', 'admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
   "createdAt": zod.string()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
+
+
+/**
+ * @summary Get the current user's own profile
+ */
+export const GetMyUserResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "role": zod.enum(['user', 'admin']),
+  "isActive": zod.boolean().optional(),
+  "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update the current user's own profile (self-service fields only)
+ */
+export const UpdateMyUserBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "preferredPaymentProviderId": zod.number().nullish()
+}).describe('Self-service profile fields a user may update on their own account.')
+
+export const UpdateMyUserResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "role": zod.enum(['user', 'admin']),
+  "isActive": zod.boolean().optional(),
+  "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
+  "createdAt": zod.string()
+})
 
 
 /**
@@ -599,6 +859,7 @@ export const GetUserResponse = zod.object({
   "role": zod.enum(['user', 'admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
   "createdAt": zod.string()
 })
 
@@ -623,6 +884,7 @@ export const UpdateUserResponse = zod.object({
   "role": zod.enum(['user', 'admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
   "createdAt": zod.string()
 })
 
@@ -761,6 +1023,8 @@ export const ListMyPaymentsResponseItem = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -789,6 +1053,8 @@ export const ListAllPaymentsResponseItem = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -800,7 +1066,8 @@ export const ListAllPaymentsResponse = zod.array(ListAllPaymentsResponseItem)
  */
 export const CreatePaymentIntentBody = zod.object({
   "planId": zod.number(),
-  "providerId": zod.number()
+  "providerId": zod.number(),
+  "region": zod.string().optional()
 })
 
 export const CreatePaymentIntentResponse = zod.object({
@@ -823,6 +1090,8 @@ export const CreatePaymentIntentResponse = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 }),
@@ -865,6 +1134,8 @@ export const SubmitPaymentProofResponse = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -900,6 +1171,8 @@ export const ReportPaymentConfirmationsResponse = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -931,6 +1204,8 @@ export const ConfirmPaymentResponse = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })
@@ -966,6 +1241,45 @@ export const RejectPaymentResponse = zod.object({
   "notes": zod.string().nullish(),
   "expiresAt": zod.string().nullish(),
   "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Refund a confirmed payment (admin)
+ */
+export const RefundPaymentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RefundPaymentBody = zod.object({
+  "notes": zod.string().optional()
+})
+
+export const RefundPaymentResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subscriptionId": zod.number().nullish(),
+  "planId": zod.number().nullish(),
+  "providerId": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.enum(['pending', 'confirming', 'confirmed', 'failed', 'expired', 'refunded']),
+  "reference": zod.string().nullish(),
+  "network": zod.union([zod.literal('trc20'),zod.literal('erc20'),zod.literal('bep20'),zod.literal(null)]).nullish(),
+  "walletAddress": zod.string().nullish(),
+  "txHash": zod.string().nullish(),
+  "confirmations": zod.number().optional(),
+  "requiredConfirmations": zod.number().nullish(),
+  "externalReference": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish(),
+  "refundedAt": zod.string().nullish(),
+  "refundNotes": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })

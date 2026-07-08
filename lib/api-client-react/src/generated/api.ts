@@ -52,9 +52,11 @@ import type {
   EaUpdate,
   EntitlementSummary,
   ErrorEnvelope,
+  ExtendSubscriptionBody,
   FeatureFlag,
   GetSymbolNormalizationLogParams,
   GetUnreadNotificationCount200,
+  GrantCreditBody,
   HealthStatus,
   HeartbeatInput,
   HeartbeatResponse,
@@ -100,6 +102,7 @@ import type {
   ReferralActivity,
   ReferralLeaderboardEntry,
   ReferralSummary,
+  RefundPaymentBody,
   RegisterEaTerminalBody,
   RejectPaymentBody,
   RequestSupportTicketAttachmentUploadUrl200,
@@ -156,6 +159,7 @@ import type {
   UpdateContactMessageBody,
   UpdateDataProviderBody,
   UpdateFeatureFlagBody,
+  UpdateMeBody,
   UpdatePlatformStatusBody,
   UpdateSymbolBody,
   UploadUrlRequest,
@@ -1161,6 +1165,292 @@ export const useCancelSubscription = <TError = ErrorType<unknown>,
       return useMutation(getCancelSubscriptionMutationOptions(options));
     }
 
+export const getSuspendSubscriptionUrl = (id: number,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/suspend`
+}
+
+/**
+ * @summary Suspend a subscription (admin)
+ */
+export const suspendSubscription = async (id: number, options?: RequestInit): Promise<Subscription> => {
+
+  return customFetch<Subscription>(getSuspendSubscriptionUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSuspendSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendSubscription>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof suspendSubscription>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['suspendSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suspendSubscription>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  suspendSubscription(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuspendSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof suspendSubscription>>>
+
+    export type SuspendSubscriptionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Suspend a subscription (admin)
+ */
+export const useSuspendSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendSubscription>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof suspendSubscription>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getSuspendSubscriptionMutationOptions(options));
+    }
+
+export const getReactivateSubscriptionUrl = (id: number,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/reactivate`
+}
+
+/**
+ * @summary Reactivate a suspended subscription (admin)
+ */
+export const reactivateSubscription = async (id: number, options?: RequestInit): Promise<Subscription> => {
+
+  return customFetch<Subscription>(getReactivateSubscriptionUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getReactivateSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateSubscription>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactivateSubscription>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['reactivateSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactivateSubscription>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  reactivateSubscription(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactivateSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof reactivateSubscription>>>
+
+    export type ReactivateSubscriptionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Reactivate a suspended subscription (admin)
+ */
+export const useReactivateSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateSubscription>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactivateSubscription>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getReactivateSubscriptionMutationOptions(options));
+    }
+
+export const getExtendSubscriptionUrl = (id: number,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/extend`
+}
+
+/**
+ * @summary Extend a subscription's current period (admin)
+ */
+export const extendSubscription = async (id: number,
+    extendSubscriptionBody: ExtendSubscriptionBody, options?: RequestInit): Promise<Subscription> => {
+
+  return customFetch<Subscription>(getExtendSubscriptionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(extendSubscriptionBody)
+  }
+);}
+
+
+
+
+
+export const getExtendSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extendSubscription>>, TError,{id: number;data: BodyType<ExtendSubscriptionBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof extendSubscription>>, TError,{id: number;data: BodyType<ExtendSubscriptionBody>}, TContext> => {
+
+const mutationKey = ['extendSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof extendSubscription>>, {id: number;data: BodyType<ExtendSubscriptionBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  extendSubscription(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExtendSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof extendSubscription>>>
+    export type ExtendSubscriptionMutationBody = BodyType<ExtendSubscriptionBody>
+    export type ExtendSubscriptionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Extend a subscription's current period (admin)
+ */
+export const useExtendSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extendSubscription>>, TError,{id: number;data: BodyType<ExtendSubscriptionBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof extendSubscription>>,
+        TError,
+        {id: number;data: BodyType<ExtendSubscriptionBody>},
+        TContext
+      > => {
+      return useMutation(getExtendSubscriptionMutationOptions(options));
+    }
+
+export const getGrantSubscriptionCreditUrl = (id: number,) => {
+
+
+
+
+  return `/api/subscriptions/${id}/credit`
+}
+
+/**
+ * @summary Grant promotional free days to a subscription (admin)
+ */
+export const grantSubscriptionCredit = async (id: number,
+    grantCreditBody: GrantCreditBody, options?: RequestInit): Promise<Subscription> => {
+
+  return customFetch<Subscription>(getGrantSubscriptionCreditUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(grantCreditBody)
+  }
+);}
+
+
+
+
+
+export const getGrantSubscriptionCreditMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantSubscriptionCredit>>, TError,{id: number;data: BodyType<GrantCreditBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof grantSubscriptionCredit>>, TError,{id: number;data: BodyType<GrantCreditBody>}, TContext> => {
+
+const mutationKey = ['grantSubscriptionCredit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantSubscriptionCredit>>, {id: number;data: BodyType<GrantCreditBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  grantSubscriptionCredit(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GrantSubscriptionCreditMutationResult = NonNullable<Awaited<ReturnType<typeof grantSubscriptionCredit>>>
+    export type GrantSubscriptionCreditMutationBody = BodyType<GrantCreditBody>
+    export type GrantSubscriptionCreditMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Grant promotional free days to a subscription (admin)
+ */
+export const useGrantSubscriptionCredit = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantSubscriptionCredit>>, TError,{id: number;data: BodyType<GrantCreditBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof grantSubscriptionCredit>>,
+        TError,
+        {id: number;data: BodyType<GrantCreditBody>},
+        TContext
+      > => {
+      return useMutation(getGrantSubscriptionCreditMutationOptions(options));
+    }
+
 export const getListEasUrl = () => {
 
 
@@ -1972,6 +2262,154 @@ export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TErr
 
 
 
+
+export const getGetMyUserUrl = () => {
+
+
+
+
+  return `/api/users/me`
+}
+
+/**
+ * @summary Get the current user's own profile
+ */
+export const getMyUser = async ( options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getGetMyUserUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyUserQueryKey = () => {
+    return [
+    `/api/users/me`
+    ] as const;
+    }
+
+
+export const getGetMyUserQueryOptions = <TData = Awaited<ReturnType<typeof getMyUser>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyUserQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyUser>>> = ({ signal }) => getMyUser({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyUser>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyUserQueryResult = NonNullable<Awaited<ReturnType<typeof getMyUser>>>
+export type GetMyUserQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current user's own profile
+ */
+
+export function useGetMyUser<TData = Awaited<ReturnType<typeof getMyUser>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyUser>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyUserQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateMyUserUrl = () => {
+
+
+
+
+  return `/api/users/me`
+}
+
+/**
+ * @summary Update the current user's own profile (self-service fields only)
+ */
+export const updateMyUser = async (updateMeBody: UpdateMeBody, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getUpdateMyUserUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateMeBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateMyUserMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyUser>>, TError,{data: BodyType<UpdateMeBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyUser>>, TError,{data: BodyType<UpdateMeBody>}, TContext> => {
+
+const mutationKey = ['updateMyUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyUser>>, {data: BodyType<UpdateMeBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyUser(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyUserMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyUser>>>
+    export type UpdateMyUserMutationBody = BodyType<UpdateMeBody>
+    export type UpdateMyUserMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update the current user's own profile (self-service fields only)
+ */
+export const useUpdateMyUser = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyUser>>, TError,{data: BodyType<UpdateMeBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyUser>>,
+        TError,
+        {data: BodyType<UpdateMeBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyUserMutationOptions(options));
+    }
 
 export const getGetUserUrl = (id: string,) => {
 
@@ -3077,6 +3515,78 @@ export const useRejectPayment = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRejectPaymentMutationOptions(options));
+    }
+
+export const getRefundPaymentUrl = (id: number,) => {
+
+
+
+
+  return `/api/payments/${id}/refund`
+}
+
+/**
+ * @summary Refund a confirmed payment (admin)
+ */
+export const refundPayment = async (id: number,
+    refundPaymentBody?: RefundPaymentBody, options?: RequestInit): Promise<Payment> => {
+
+  return customFetch<Payment>(getRefundPaymentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(refundPaymentBody)
+  }
+);}
+
+
+
+
+
+export const getRefundPaymentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundPayment>>, TError,{id: number;data?: BodyType<RefundPaymentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundPayment>>, TError,{id: number;data?: BodyType<RefundPaymentBody>}, TContext> => {
+
+const mutationKey = ['refundPayment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundPayment>>, {id: number;data?: BodyType<RefundPaymentBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  refundPayment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefundPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof refundPayment>>>
+    export type RefundPaymentMutationBody = BodyType<RefundPaymentBody> | undefined
+    export type RefundPaymentMutationError = ErrorType<void>
+
+    /**
+ * @summary Refund a confirmed payment (admin)
+ */
+export const useRefundPayment = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundPayment>>, TError,{id: number;data?: BodyType<RefundPaymentBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refundPayment>>,
+        TError,
+        {id: number;data?: BodyType<RefundPaymentBody>},
+        TContext
+      > => {
+      return useMutation(getRefundPaymentMutationOptions(options));
     }
 
 export const getListMyInvoicesUrl = () => {

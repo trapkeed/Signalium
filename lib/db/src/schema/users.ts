@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,6 +13,11 @@ export const usersTable = pgTable("users", {
   // the user's row is provisioned (see account-security.ts sync-login, which
   // doubles as our user-provisioning hook since there is no signup webhook).
   referralCode: text("referral_code").notNull().unique(),
+  // Self-service default provider for the payments page's "pay with" picker
+  // (pre-selects this provider on the next payment intent). Not a foreign
+  // key constraint at the DB level to avoid cross-schema-file import
+  // ordering issues — validated at the route layer instead.
+  preferredPaymentProviderId: integer("preferred_payment_provider_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

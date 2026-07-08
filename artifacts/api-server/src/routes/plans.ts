@@ -39,6 +39,9 @@ router.post("/", requireAdmin, async (req, res) => {
       apiAccessAllowed: parsed.data.apiAccessAllowed ?? true,
       researchAccess: parsed.data.researchAccess ?? true,
       isActive: parsed.data.isActive ?? true,
+      promoPriceMonthly: parsed.data.promoPriceMonthly,
+      promoLabel: parsed.data.promoLabel,
+      regionalPricing: parsed.data.regionalPricing ?? {},
     }).returning();
     return res.status(201).json(plan);
   } catch (err) {

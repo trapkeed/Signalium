@@ -7,6 +7,8 @@ import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import { getPaymentProvider } from "../lib/payments/registry";
 import { applySuccessfulPayment, applyFailedPayment, expireStalePayment } from "../lib/payments/paymentLifecycle";
+import { resolvePlanPrice } from "../lib/payments/pricing";
+import { logSubscriptionEvent, resolveCurrentSubscription } from "../lib/entitlementEngine";
 
 const router = Router();
 
@@ -171,7 +173,7 @@ router.post("/intent", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const body = req.body as { planId?: number; providerId?: number };
+  const body = req.body as { planId?: number; providerId?: number; region?: string };
   if (!body.planId || !body.providerId) return res.status(400).json({ error: "planId and providerId required" });
 
   try {
@@ -191,22 +193,23 @@ router.post("/intent", async (req, res) => {
       });
     }
 
+    const amount = resolvePlanPrice(plan, body.region);
     const reference = `SIG-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
     const [payment] = await db.insert(paymentsTable).values({
       userId,
       providerId: body.providerId,
       planId: body.planId,
-      amount: plan.priceMonthly,
+      amount,
       currency: "USD",
       status: "pending",
       reference,
-      metadata: { planId: body.planId, planName: plan.name, providerType: providerRow.type },
+      metadata: { planId: body.planId, planName: plan.name, providerType: providerRow.type, region: body.region ?? null },
     }).returning();
 
     let intentResult;
     try {
       intentResult = await providerImpl.createIntent(
-        { paymentId: payment.id, userId, amount: plan.priceMonthly, currency: "USD", planId: body.planId, planName: plan.name, reference },
+        { paymentId: payment.id, userId, amount, currency: "USD", planId: body.planId, planName: plan.name, reference },
         providerRow.config,
       );
     } catch (err) {
@@ -352,6 +355,47 @@ router.post("/:id/reject", requireAdmin, async (req, res) => {
     return res.json(payment);
   } catch (err) {
     req.log.error(err, "Failed to reject payment");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: refund a confirmed payment. Marks the payment refunded and logs both a
+// subscription-side event (for the customer's history) and an audit entry.
+router.post("/:id/refund", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  const body = req.body as { notes?: string };
+
+  try {
+    const [existing] = await db.select().from(paymentsTable).where(eq(paymentsTable.id, id));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    if (existing.status !== "confirmed") {
+      return res.status(409).json({ error: "Only confirmed payments can be refunded" });
+    }
+
+    const [payment] = await db.update(paymentsTable)
+      .set({ status: "refunded", refundedAt: new Date(), refundNotes: body.notes ?? null })
+      .where(eq(paymentsTable.id, id))
+      .returning();
+
+    const snapshot = await resolveCurrentSubscription(existing.userId);
+    if (snapshot) {
+      await logSubscriptionEvent(snapshot.subscription.id, existing.userId, "PAYMENT_REFUNDED", snapshot.subscription.status, snapshot.subscription.status, {
+        paymentId: id, amount: existing.amount, currency: existing.currency, notes: body.notes ?? null,
+      });
+    }
+
+    await logAudit(actorUserId, "payment.refunded", "payment", String(id), {
+      userId: existing.userId, amount: existing.amount, currency: existing.currency, notes: body.notes ?? null,
+    });
+
+    return res.json(payment);
+  } catch (err) {
+    req.log.error(err, "Failed to refund payment");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

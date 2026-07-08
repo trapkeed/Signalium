@@ -18,5 +18,7 @@ export interface User {
   isActive?: boolean;
   /** @nullable */
   subscriptionStatus?: string | null;
+  /** @nullable */
+  preferredPaymentProviderId?: number | null;
   createdAt: string;
 }

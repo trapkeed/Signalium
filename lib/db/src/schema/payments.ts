@@ -54,6 +54,9 @@ export const paymentsTable = pgTable("payments", {
   metadata: json("metadata").$type<Record<string, unknown>>().notNull().default({}),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  // Set when an admin refunds a confirmed payment (see routes/payments.ts POST /:id/refund).
+  refundedAt: timestamp("refunded_at", { withTimezone: true }),
+  refundNotes: text("refund_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

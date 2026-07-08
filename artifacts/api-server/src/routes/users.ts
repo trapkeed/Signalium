@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, subscriptionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { GetUserParams, UpdateUserParams, UpdateUserBody } from "@workspace/api-zod";
+import { GetUserParams, UpdateUserParams, UpdateUserBody, UpdateMyUserBody } from "@workspace/api-zod";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 
@@ -23,6 +23,47 @@ router.get("/", async (req, res) => {
     return res.json(usersWithSubs);
   } catch (err) {
     req.log.error(err, "Failed to list users");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/me", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) return res.status(404).json({ error: "Not found" });
+
+    const [sub] = await db.select().from(subscriptionsTable)
+      .where(eq(subscriptionsTable.userId, user.id))
+      .orderBy(desc(subscriptionsTable.createdAt))
+      .limit(1);
+
+    return res.json({ ...user, subscriptionStatus: sub?.status ?? null });
+  } catch (err) {
+    req.log.error(err, "Failed to get own user profile");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/me", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const body = UpdateMyUserBody.safeParse(req.body);
+  if (!body.success) return res.status(400).json({ error: body.error });
+
+  try {
+    const [user] = await db.update(usersTable)
+      .set({ ...body.data })
+      .where(eq(usersTable.id, userId))
+      .returning();
+    if (!user) return res.status(404).json({ error: "Not found" });
+
+    return res.json({ ...user, subscriptionStatus: null });
+  } catch (err) {
+    req.log.error(err, "Failed to update own user profile");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

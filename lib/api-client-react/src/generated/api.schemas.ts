@@ -18,6 +18,8 @@ export const PlanTier = {
   enterprise: 'enterprise',
 } as const;
 
+export type PlanRegionalPricing = {[key: string]: number} | null;
+
 export interface Plan {
   id: number;
   name: string;
@@ -34,6 +36,11 @@ export interface Plan {
   autonomousAllowed?: boolean;
   apiAccessAllowed?: boolean;
   researchAccess?: boolean;
+  /** @nullable */
+  promoPriceMonthly?: number | null;
+  /** @nullable */
+  promoLabel?: string | null;
+  regionalPricing?: PlanRegionalPricing;
   createdAt: string;
 }
 
@@ -45,6 +52,8 @@ export const PlanInputTier = {
   professional: 'professional',
   enterprise: 'enterprise',
 } as const;
+
+export type PlanInputRegionalPricing = {[key: string]: number};
 
 export interface PlanInput {
   name: string;
@@ -58,6 +67,11 @@ export interface PlanInput {
   apiAccessAllowed?: boolean;
   researchAccess?: boolean;
   isActive?: boolean;
+  /** @nullable */
+  promoPriceMonthly?: number | null;
+  /** @nullable */
+  promoLabel?: string | null;
+  regionalPricing?: PlanInputRegionalPricing;
 }
 
 export type PlanUpdateTier = typeof PlanUpdateTier[keyof typeof PlanUpdateTier];
@@ -68,6 +82,8 @@ export const PlanUpdateTier = {
   professional: 'professional',
   enterprise: 'enterprise',
 } as const;
+
+export type PlanUpdateRegionalPricing = {[key: string]: number};
 
 export interface PlanUpdate {
   name?: string;
@@ -81,6 +97,11 @@ export interface PlanUpdate {
   apiAccessAllowed?: boolean;
   researchAccess?: boolean;
   isActive?: boolean;
+  /** @nullable */
+  promoPriceMonthly?: number | null;
+  /** @nullable */
+  promoLabel?: string | null;
+  regionalPricing?: PlanUpdateRegionalPricing;
 }
 
 export type SubscriptionStatus = typeof SubscriptionStatus[keyof typeof SubscriptionStatus];
@@ -164,6 +185,12 @@ export const SubscriptionEventEventType = {
   SUBSCRIPTION_SUSPENDED: 'SUBSCRIPTION_SUSPENDED',
   SUBSCRIPTION_REACTIVATED: 'SUBSCRIPTION_REACTIVATED',
   ADMIN_OVERRIDE: 'ADMIN_OVERRIDE',
+  PAYMENT_CONFIRMED: 'PAYMENT_CONFIRMED',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  PAYMENT_REFUNDED: 'PAYMENT_REFUNDED',
+  INVOICE_ISSUED: 'INVOICE_ISSUED',
+  SUBSCRIPTION_EXTENDED: 'SUBSCRIPTION_EXTENDED',
+  PROMOTIONAL_CREDIT_GRANTED: 'PROMOTIONAL_CREDIT_GRANTED',
 } as const;
 
 export type SubscriptionEventDetail = { [key: string]: unknown } | null;
@@ -393,6 +420,8 @@ export interface User {
   isActive?: boolean;
   /** @nullable */
   subscriptionStatus?: string | null;
+  /** @nullable */
+  preferredPaymentProviderId?: number | null;
   createdAt: string;
 }
 
@@ -407,6 +436,16 @@ export const UserUpdateRole = {
 export interface UserUpdate {
   role?: UserUpdateRole;
   isActive?: boolean;
+}
+
+/**
+ * Self-service profile fields a user may update on their own account.
+ */
+export interface UpdateMeBody {
+  firstName?: string;
+  lastName?: string;
+  /** @nullable */
+  preferredPaymentProviderId?: number | null;
 }
 
 export type StatsOverviewSubscriptionsByTier = {[key: string]: number};
@@ -555,6 +594,10 @@ export interface Payment {
   expiresAt?: string | null;
   /** @nullable */
   confirmedAt?: string | null;
+  /** @nullable */
+  refundedAt?: string | null;
+  /** @nullable */
+  refundNotes?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -562,6 +605,7 @@ export interface Payment {
 export interface PaymentIntentInput {
   planId: number;
   providerId: number;
+  region?: string;
 }
 
 export type PaymentIntentResultProviderInstructions = { [key: string]: unknown };
@@ -584,6 +628,22 @@ export interface PaymentProofInput {
 
 export interface PaymentConfirmationsInput {
   confirmations: number;
+}
+
+export interface RefundPaymentBody {
+  notes?: string;
+}
+
+export interface ExtendSubscriptionBody {
+  /** @minimum 1 */
+  days: number;
+  notes?: string;
+}
+
+export interface GrantCreditBody {
+  /** @minimum 1 */
+  days: number;
+  reason?: string;
 }
 
 export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];

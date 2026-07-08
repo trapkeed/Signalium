@@ -281,6 +281,94 @@ paths:
               schema:
                 $ref: "#/components/schemas/Subscription"
 
+  /subscriptions/{id}/suspend:
+    post:
+      operationId: suspendSubscription
+      tags: [subscriptions]
+      summary: Suspend a subscription (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Suspended subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{id}/reactivate:
+    post:
+      operationId: reactivateSubscription
+      tags: [subscriptions]
+      summary: Reactivate a suspended subscription (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reactivated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{id}/extend:
+    post:
+      operationId: extendSubscription
+      tags: [subscriptions]
+      summary: Extend a subscription's current period (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtendSubscriptionBody"
+      responses:
+        "200":
+          description: Extended subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{id}/credit:
+    post:
+      operationId: grantSubscriptionCredit
+      tags: [subscriptions]
+      summary: Grant promotional free days to a subscription (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantCreditBody"
+      responses:
+        "200":
+          description: Credited subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
   /eas:
     get:
       operationId: listEas
@@ -467,6 +555,36 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
+
+  /users/me:
+    get:
+      operationId: getMyUser
+      tags: [users]
+      summary: Get the current user's own profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateMyUser
+      tags: [users]
+      summary: Update the current user's own profile (self-service fields only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMeBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
 
   /users/{id}:
     get:
@@ -756,6 +874,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+
+  /payments/{id}/refund:
+    post:
+      operationId: refundPayment
+      tags: [payments]
+      summary: Refund a confirmed payment (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundPaymentBody"
+      responses:
+        "200":
+          description: Payment refunded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "409":
+          description: Payment is not in a refundable state
 
   /invoices:
     get:
@@ -3533,6 +3677,15 @@ components:
           type: boolean
         researchAccess:
           type: boolean
+        promoPriceMonthly:
+          type: ["number", "null"]
+        promoLabel:
+          type: ["string", "null"]
+        regionalPricing:
+          type: object
+          additionalProperties:
+            type: number
+          nullable: true
         createdAt:
           type: string
 
@@ -3565,6 +3718,14 @@ components:
           type: boolean
         isActive:
           type: boolean
+        promoPriceMonthly:
+          type: ["number", "null"]
+        promoLabel:
+          type: ["string", "null"]
+        regionalPricing:
+          type: object
+          additionalProperties:
+            type: number
 
     PlanUpdate:
       type: object
@@ -3594,6 +3755,14 @@ components:
           type: boolean
         isActive:
           type: boolean
+        promoPriceMonthly:
+          type: ["number", "null"]
+        promoLabel:
+          type: ["string", "null"]
+        regionalPricing:
+          type: object
+          additionalProperties:
+            type: number
 
     Subscription:
       type: object
@@ -3682,6 +3851,12 @@ components:
               SUBSCRIPTION_SUSPENDED,
               SUBSCRIPTION_REACTIVATED,
               ADMIN_OVERRIDE,
+              PAYMENT_CONFIRMED,
+              PAYMENT_FAILED,
+              PAYMENT_REFUNDED,
+              INVOICE_ISSUED,
+              SUBSCRIPTION_EXTENDED,
+              PROMOTIONAL_CREDIT_GRANTED,
             ]
         fromStatus:
           type: ["string", "null"]
@@ -3897,6 +4072,8 @@ components:
           type: boolean
         subscriptionStatus:
           type: ["string", "null"]
+        preferredPaymentProviderId:
+          type: ["integer", "null"]
         createdAt:
           type: string
 
@@ -3908,6 +4085,17 @@ components:
           enum: [user, admin]
         isActive:
           type: boolean
+
+    UpdateMeBody:
+      type: object
+      description: Self-service profile fields a user may update on their own account.
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        preferredPaymentProviderId:
+          type: ["integer", "null"]
 
     StatsOverview:
       type: object
@@ -4072,6 +4260,10 @@ components:
           type: ["string", "null"]
         confirmedAt:
           type: ["string", "null"]
+        refundedAt:
+          type: ["string", "null"]
+        refundNotes:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -4085,6 +4277,8 @@ components:
           type: integer
         providerId:
           type: integer
+        region:
+          type: string
 
     PaymentIntentResult:
       type: object
@@ -4118,6 +4312,32 @@ components:
       properties:
         confirmations:
           type: integer
+
+    RefundPaymentBody:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    ExtendSubscriptionBody:
+      type: object
+      required: [days]
+      properties:
+        days:
+          type: integer
+          minimum: 1
+        notes:
+          type: string
+
+    GrantCreditBody:
+      type: object
+      required: [days]
+      properties:
+        days:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
 
     Invoice:
       type: object

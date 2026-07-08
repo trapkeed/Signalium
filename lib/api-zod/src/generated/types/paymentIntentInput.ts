@@ -9,4 +9,5 @@
 export interface PaymentIntentInput {
   planId: number;
   providerId: number;
+  region?: string;
 }

@@ -32,6 +32,19 @@ export const plansTable = pgTable("plans", {
   apiAccessAllowed: boolean("api_access_allowed").notNull().default(true),
   // Whether subscribers on this plan can access research/analytics surfaces.
   researchAccess: boolean("research_access").notNull().default(true),
+  // ─── Promotional / regional pricing ──────────────────────────────────────
+  // Optional promotional price shown/used instead of priceMonthly while set.
+  // Null = no promo running. Clearing it (setting back to null) restores the
+  // base price — there is no separate "promo active" flag by design, the
+  // presence of a value *is* the toggle.
+  promoPriceMonthly: real("promo_price_monthly"),
+  // Short label surfaced next to the promo price (e.g. "Black Friday", "Launch offer").
+  promoLabel: text("promo_label"),
+  // Region-code (e.g. "US", "IN", "EU") -> absolute monthly price override in
+  // USD, applied instead of priceMonthly/promoPriceMonthly for a matching
+  // region. Resolution order (see lib/payments/pricing.ts): regional > promo
+  // > base. Null/empty = no regional pricing configured.
+  regionalPricing: json("regional_pricing").$type<Record<string, number>>().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

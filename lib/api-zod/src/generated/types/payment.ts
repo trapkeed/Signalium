@@ -38,6 +38,10 @@ export interface Payment {
   expiresAt?: string | null;
   /** @nullable */
   confirmedAt?: string | null;
+  /** @nullable */
+  refundedAt?: string | null;
+  /** @nullable */
+  refundNotes?: string | null;
   createdAt: string;
   updatedAt?: string;
 }

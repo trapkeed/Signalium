@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PlanUpdateRegionalPricing } from './planUpdateRegionalPricing';
 import type { PlanUpdateTier } from './planUpdateTier';
 
 export interface PlanUpdate {
@@ -19,4 +20,9 @@ export interface PlanUpdate {
   apiAccessAllowed?: boolean;
   researchAccess?: boolean;
   isActive?: boolean;
+  /** @nullable */
+  promoPriceMonthly?: number | null;
+  /** @nullable */
+  promoLabel?: string | null;
+  regionalPricing?: PlanUpdateRegionalPricing;
 }

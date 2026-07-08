@@ -7,6 +7,8 @@ import {
   UpdateSubscriptionBody,
   UpdateSubscriptionParams,
   CancelSubscriptionParams,
+  ExtendSubscriptionBody,
+  GrantSubscriptionCreditBody,
 } from "@workspace/api-zod";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
@@ -196,6 +198,146 @@ router.patch("/:id", requireAdmin, async (req, res) => {
     return res.json(subWithPlan);
   } catch (err) {
     req.log.error(err, "Failed to update subscription");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: suspend a subscription immediately (out-of-band, independent of the renewal calendar).
+router.post("/:id/suspend", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+    if (before.status === "suspended") return res.status(409).json({ error: "Subscription is already suspended" });
+
+    const [sub] = await db.update(subscriptionsTable)
+      .set({ status: "suspended" })
+      .where(eq(subscriptionsTable.id, id))
+      .returning();
+
+    await logSubscriptionEvent(sub.id, sub.userId, "SUBSCRIPTION_SUSPENDED", before.status, "suspended", { actorUserId });
+    await logAudit(actorUserId, "subscription.suspended", "subscription", String(sub.id), {
+      userId: sub.userId, fromStatus: before.status,
+    });
+
+    const [subWithPlan] = await subscriptionWithPlanQuery().where(eq(subscriptionsTable.id, sub.id));
+    return res.json(subWithPlan);
+  } catch (err) {
+    req.log.error(err, "Failed to suspend subscription");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: reactivate a previously suspended subscription.
+router.post("/:id/reactivate", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+    if (before.status !== "suspended") return res.status(409).json({ error: "Subscription is not suspended" });
+
+    const now = Date.now();
+    const restoredStatus = before.currentPeriodEnd && before.currentPeriodEnd.getTime() < now ? "grace_period" : "active";
+
+    const [sub] = await db.update(subscriptionsTable)
+      .set({ status: restoredStatus })
+      .where(eq(subscriptionsTable.id, id))
+      .returning();
+
+    await logSubscriptionEvent(sub.id, sub.userId, "SUBSCRIPTION_REACTIVATED", before.status, restoredStatus, { actorUserId });
+    await logAudit(actorUserId, "subscription.reactivated", "subscription", String(sub.id), {
+      userId: sub.userId, toStatus: restoredStatus,
+    });
+
+    const [subWithPlan] = await subscriptionWithPlanQuery().where(eq(subscriptionsTable.id, sub.id));
+    return res.json(subWithPlan);
+  } catch (err) {
+    req.log.error(err, "Failed to reactivate subscription");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: extend the current billing period by N days (e.g. goodwill extension, dispute resolution).
+router.post("/:id/extend", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const body = ExtendSubscriptionBody.safeParse(req.body);
+  if (!body.success) return res.status(400).json({ error: body.error });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+
+    const base = before.currentPeriodEnd && before.currentPeriodEnd.getTime() > Date.now() ? before.currentPeriodEnd : new Date();
+    const currentPeriodEnd = new Date(base.getTime() + body.data.days * 24 * 60 * 60 * 1000);
+
+    const [sub] = await db.update(subscriptionsTable)
+      .set({ currentPeriodEnd, graceEndsAt: null, status: before.status === "grace_period" || before.status === "expired" ? "active" : before.status })
+      .where(eq(subscriptionsTable.id, id))
+      .returning();
+
+    await logSubscriptionEvent(sub.id, sub.userId, "SUBSCRIPTION_EXTENDED", before.status, sub.status, {
+      actorUserId, days: body.data.days, notes: body.data.notes ?? null, newCurrentPeriodEnd: currentPeriodEnd.toISOString(),
+    });
+    await logAudit(actorUserId, "subscription.extended", "subscription", String(sub.id), {
+      userId: sub.userId, days: body.data.days, notes: body.data.notes ?? null,
+    });
+
+    const [subWithPlan] = await subscriptionWithPlanQuery().where(eq(subscriptionsTable.id, sub.id));
+    return res.json(subWithPlan);
+  } catch (err) {
+    req.log.error(err, "Failed to extend subscription");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: grant promotional free days — implemented as extending currentPeriodEnd, distinguished from a plain
+// extension by a dedicated event type + audit action for reporting purposes.
+router.post("/:id/credit", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const body = GrantSubscriptionCreditBody.safeParse(req.body);
+  if (!body.success) return res.status(400).json({ error: body.error });
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [before] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, id));
+    if (!before) return res.status(404).json({ error: "Not found" });
+
+    const base = before.currentPeriodEnd && before.currentPeriodEnd.getTime() > Date.now() ? before.currentPeriodEnd : new Date();
+    const currentPeriodEnd = new Date(base.getTime() + body.data.days * 24 * 60 * 60 * 1000);
+
+    const [sub] = await db.update(subscriptionsTable)
+      .set({ currentPeriodEnd, graceEndsAt: null, status: before.status === "grace_period" || before.status === "expired" ? "active" : before.status })
+      .where(eq(subscriptionsTable.id, id))
+      .returning();
+
+    await logSubscriptionEvent(sub.id, sub.userId, "PROMOTIONAL_CREDIT_GRANTED", before.status, sub.status, {
+      actorUserId, days: body.data.days, reason: body.data.reason ?? null, newCurrentPeriodEnd: currentPeriodEnd.toISOString(),
+    });
+    await logAudit(actorUserId, "subscription.credit_granted", "subscription", String(sub.id), {
+      userId: sub.userId, days: body.data.days, reason: body.data.reason ?? null,
+    });
+
+    const [subWithPlan] = await subscriptionWithPlanQuery().where(eq(subscriptionsTable.id, sub.id));
+    return res.json(subWithPlan);
+  } catch (err) {
+    req.log.error(err, "Failed to grant subscription credit");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
