@@ -2,13 +2,13 @@ import { Router } from "express";
 import { db, contactMessagesTable, smtpSettingsTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { sendMail } from "../lib/mailer";
 
 const router = Router();
 
 // POST /contact — public: submit the contact form. Stored for the admin
-// queue below; if an SMTP config is active we log the notification (actual
-// outbound send is not wired up yet — see smtp.ts's own /test stub for the
-// same limitation).
+// queue below, and forwarded by email to the configured SMTP "from" address
+// (i.e. the support inbox) when an active SMTP configuration exists.
 router.post("/", async (req, res) => {
   const { name, email, subject, message } = req.body as { name?: string; email?: string; subject?: string; message?: string };
   if (!name || !email || !subject || !message) {
@@ -20,7 +20,11 @@ router.post("/", async (req, res) => {
 
     const [smtp] = await db.select().from(smtpSettingsTable).where(eq(smtpSettingsTable.isActive, true));
     if (smtp) {
-      req.log.info({ to: smtp.fromEmail, from: email }, "Contact form submission would be emailed to support");
+      void sendMail({
+        to: smtp.fromEmail,
+        subject: `[Contact] ${subject}`,
+        html: `<p><strong>From:</strong> ${name} (${email})</p><p><strong>Subject:</strong> ${subject}</p><p>${message.replace(/\n/g, "<br/>")}</p>`,
+      });
     }
 
     return res.status(201).json({ id: contactMessage.id });

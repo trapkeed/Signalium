@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useListMySupportTickets, useCreateSupportTicket } from "@workspace/api-client-react";
+import { useListMySupportTickets, useCreateSupportTicket, useRequestSupportTicketAttachmentUploadUrl } from "@workspace/api-client-react";
 import type { SupportTicket } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { LifeBuoy, Plus, ChevronRight } from "lucide-react";
+import { LifeBuoy, Plus, ChevronRight, Paperclip } from "lucide-react";
 
 function statusVariant(status: SupportTicket["status"]): "default" | "secondary" | "outline" | "destructive" {
   if (status === "open") return "default";
@@ -23,8 +23,10 @@ export default function Support() {
   const { toast } = useToast();
   const { data: tickets = [], isLoading, refetch } = useListMySupportTickets();
   const createTicket = useCreateSupportTicket();
+  const requestUploadUrl = useRequestSupportTicketAttachmentUploadUrl();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ subject: "", message: "", priority: "normal" as SupportTicket["priority"] });
+  const [file, setFile] = useState<File | null>(null);
 
   function field<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -36,9 +38,16 @@ export default function Support() {
       return;
     }
     try {
-      await createTicket.mutateAsync({ data: form });
+      let attachmentPath: string | undefined;
+      if (file) {
+        const { uploadURL, objectPath } = await requestUploadUrl.mutateAsync();
+        await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+        attachmentPath = objectPath;
+      }
+      await createTicket.mutateAsync({ data: { ...form, attachmentPath } });
       toast({ title: "Ticket submitted" });
       setForm({ subject: "", message: "", priority: "normal" });
+      setFile(null);
       setShowForm(false);
       refetch();
     } catch (err) {
@@ -116,6 +125,11 @@ export default function Support() {
               <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Message</Label>
               <Textarea rows={5} value={form.message} onChange={(e) => field("message", e.target.value)} className="rounded-sm text-sm" />
             </div>
+            <label className="text-xs text-muted-foreground font-mono flex items-center gap-2 cursor-pointer w-fit">
+              <Paperclip className="w-3.5 h-3.5" />
+              {file ? file.name : "Attach a file (optional)"}
+              <input type="file" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowForm(false)} className="rounded-sm">Cancel</Button>
