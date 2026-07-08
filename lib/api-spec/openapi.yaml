@@ -514,7 +514,7 @@ paths:
     get:
       operationId: listPaymentProviders
       tags: [payments]
-      summary: List payment providers
+      summary: List active payment providers (safe fields only, no config/secrets — any authenticated user)
       responses:
         "200":
           description: List of payment providers
@@ -523,7 +523,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PaymentProvider"
+                  $ref: "#/components/schemas/PaymentProviderPublic"
     post:
       operationId: createPaymentProvider
       tags: [payments]
@@ -542,11 +542,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/PaymentProvider"
 
+  /payments/providers/admin:
+    get:
+      operationId: listPaymentProvidersAdmin
+      tags: [payments]
+      summary: List all payment providers with full config (admin)
+      responses:
+        "200":
+          description: List of payment providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentProvider"
+
   /payments/providers/{id}:
     get:
       operationId: getPaymentProvider
       tags: [payments]
-      summary: Get a payment provider
+      summary: Get a payment provider with full config (admin)
       parameters:
         - name: id
           in: path
@@ -3936,9 +3951,34 @@ components:
       type: string
       enum: [usdt_trc20, usdt_erc20, usdt_bep20, stripe, paypal, flutterwave]
 
+    PaymentProviderPublic:
+      type: object
+      required: [id, type, name, isActive, connectable, createdAt]
+      description: Safe, non-admin view of a payment provider — never includes `config` (which may hold secrets/credentials).
+      properties:
+        id:
+          type: integer
+        type:
+          $ref: "#/components/schemas/PaymentProviderType"
+        name:
+          type: string
+        isActive:
+          type: boolean
+        connectable:
+          type: boolean
+          description: Whether the provider currently has the credentials/config needed to actually process a payment.
+        limitation:
+          type: ["string", "null"]
+          description: Human-readable explanation when the provider is not connectable.
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
     PaymentProvider:
       type: object
       required: [id, type, name, isActive, config, createdAt]
+      description: Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.
       properties:
         id:
           type: integer

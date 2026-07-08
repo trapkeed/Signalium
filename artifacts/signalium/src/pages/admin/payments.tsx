@@ -4,7 +4,7 @@ import {
   useConfirmPayment,
   useRejectPayment,
   useReportPaymentConfirmations,
-  useListPaymentProviders,
+  useListPaymentProvidersAdmin,
   useCreatePaymentProvider,
   useUpdatePaymentProvider,
   useDeletePaymentProvider,
@@ -49,9 +49,7 @@ const isUsdt = (type: string) => type.startsWith("usdt_");
 
 type ProviderForm = {
   type: string; name: string; isActive: boolean;
-  wallet?: string; memo?: string; requiredConfirmations?: string;
-  secretKey?: string; publicKey?: string; webhookSecret?: string;
-  clientId?: string; clientSecret?: string; webhookId?: string;
+  walletAddress?: string; memo?: string; requiredConfirmations?: string;
 };
 
 const INVOICE_STATUS_COLOR: Record<string, string> = {
@@ -74,7 +72,7 @@ export default function AdminPayments() {
   });
 
   const { data: payments = [], refetch: refetchPayments } = useListAllPayments();
-  const { data: providers = [], refetch: refetchProviders } = useListPaymentProviders();
+  const { data: providers = [], refetch: refetchProviders } = useListPaymentProvidersAdmin();
   const { data: invoices = [] } = useListAllInvoices();
   const confirmPayment = useConfirmPayment();
   const rejectPayment = useRejectPayment();
@@ -135,24 +133,16 @@ export default function AdminPayments() {
     setEditProviderId(p.id);
     setProviderForm({
       type: p.type, name: p.name, isActive: p.isActive,
-      wallet: cfg.wallet, memo: cfg.memo, requiredConfirmations: cfg.requiredConfirmations,
-      secretKey: cfg.secretKey, publicKey: cfg.publicKey, webhookSecret: cfg.webhookSecret,
-      clientId: cfg.clientId, clientSecret: cfg.clientSecret, webhookId: cfg.webhookId,
+      walletAddress: cfg.walletAddress, memo: cfg.memo, requiredConfirmations: cfg.requiredConfirmations,
     });
     setProviderDialogOpen(true);
   }
 
   async function handleSaveProvider() {
     const config: Record<string, string> = {};
-    if (providerForm.wallet) config.wallet = providerForm.wallet;
+    if (providerForm.walletAddress) config.walletAddress = providerForm.walletAddress;
     if (providerForm.memo) config.memo = providerForm.memo;
     if (providerForm.requiredConfirmations) config.requiredConfirmations = providerForm.requiredConfirmations;
-    if (providerForm.secretKey) config.secretKey = providerForm.secretKey;
-    if (providerForm.publicKey) config.publicKey = providerForm.publicKey;
-    if (providerForm.webhookSecret) config.webhookSecret = providerForm.webhookSecret;
-    if (providerForm.clientId) config.clientId = providerForm.clientId;
-    if (providerForm.clientSecret) config.clientSecret = providerForm.clientSecret;
-    if (providerForm.webhookId) config.webhookId = providerForm.webhookId;
 
     try {
       if (editProviderId) {
@@ -320,7 +310,7 @@ export default function AdminPayments() {
                         )}
                       </div>
                       {p.limitation && <div className="text-xs text-yellow-500/90 mb-1">{p.limitation}</div>}
-                      {cfg.wallet && <div className="text-xs text-muted-foreground font-mono">Wallet: {cfg.wallet.slice(0, 20)}...</div>}
+                      {cfg.walletAddress && <div className="text-xs text-muted-foreground font-mono">Wallet: {cfg.walletAddress.slice(0, 20)}...</div>}
                       {isUsdt(p.type) && cfg.requiredConfirmations && <div className="text-xs text-muted-foreground">Required confirmations: {cfg.requiredConfirmations}</div>}
                     </div>
                     <div className="flex gap-2 shrink-0">
@@ -464,7 +454,7 @@ export default function AdminPayments() {
               <>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Wallet Address</Label>
-                  <Input value={providerForm.wallet ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, wallet: e.target.value }))} placeholder="T... or 0x..." className="rounded-sm font-mono text-sm" />
+                  <Input value={providerForm.walletAddress ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, walletAddress: e.target.value }))} placeholder="T... or 0x..." className="rounded-sm font-mono text-sm" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Required Confirmations</Label>
@@ -480,50 +470,25 @@ export default function AdminPayments() {
               </>
             )}
 
-            {/* Stripe fields */}
+            {/* Stripe/PayPal/Flutterwave: credentials are environment secrets, not
+                stored in this DB config — never collect them here, so nothing
+                secret-like ends up in a payment_providers row. */}
             {providerForm.type === "stripe" && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Secret Key</Label>
-                  <Input type="password" value={providerForm.secretKey ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder="sk_live_..." className="rounded-sm font-mono text-sm" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook Signing Secret</Label>
-                  <Input type="password" value={providerForm.webhookSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookSecret: e.target.value }))} placeholder="whsec_..." className="rounded-sm font-mono text-sm" />
-                </div>
-              </>
+              <p className="text-xs text-muted-foreground">
+                Stripe is configured via the <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> environment secrets, not through this form. Connect the Stripe integration and set those secrets to make Stripe connectable.
+              </p>
             )}
 
-            {/* PayPal fields */}
             {providerForm.type === "paypal" && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Client ID</Label>
-                  <Input value={providerForm.clientId ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, clientId: e.target.value }))} className="rounded-sm font-mono text-sm" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Client Secret</Label>
-                  <Input type="password" value={providerForm.clientSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, clientSecret: e.target.value }))} className="rounded-sm font-mono text-sm" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook ID</Label>
-                  <Input value={providerForm.webhookId ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookId: e.target.value }))} className="rounded-sm font-mono text-sm" />
-                </div>
-              </>
+              <p className="text-xs text-muted-foreground">
+                PayPal is configured via the <code className="font-mono">PAYPAL_CLIENT_ID</code>, <code className="font-mono">PAYPAL_CLIENT_SECRET</code>, and <code className="font-mono">PAYPAL_WEBHOOK_ID</code> environment secrets, not through this form. Connect the PayPal integration and set those secrets to make PayPal connectable.
+              </p>
             )}
 
-            {/* Flutterwave fields */}
             {providerForm.type === "flutterwave" && (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Secret Key</Label>
-                  <Input type="password" value={providerForm.secretKey ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder="FLWSECK-..." className="rounded-sm font-mono text-sm" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Webhook Secret Hash</Label>
-                  <Input type="password" value={providerForm.webhookSecret ?? ""} onChange={(e) => setProviderForm((f) => ({ ...f, webhookSecret: e.target.value }))} className="rounded-sm font-mono text-sm" />
-                </div>
-              </>
+              <p className="text-xs text-muted-foreground">
+                Flutterwave is configured via the <code className="font-mono">FLUTTERWAVE_SECRET_KEY</code> and <code className="font-mono">FLUTTERWAVE_WEBHOOK_HASH</code> environment secrets, not through this form (Replit has no first-party Flutterwave connector). Set those secrets to make Flutterwave connectable.
+              </p>
             )}
 
             <div className="flex items-center gap-3">

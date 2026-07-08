@@ -628,19 +628,18 @@ export const UpdateUserResponse = zod.object({
 
 
 /**
- * @summary List payment providers
+ * @summary List active payment providers (safe fields only, no config/secrets — any authenticated user)
  */
 export const ListPaymentProvidersResponseItem = zod.object({
   "id": zod.number(),
   "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
   "name": zod.string(),
   "isActive": zod.boolean(),
-  "config": zod.record(zod.string(), zod.string()),
-  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "connectable": zod.boolean().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
   "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
-})
+}).describe('Safe, non-admin view of a payment provider — never includes `config` (which may hold secrets\/credentials).')
 export const ListPaymentProvidersResponse = zod.array(ListPaymentProvidersResponseItem)
 
 
@@ -664,11 +663,28 @@ export const CreatePaymentProviderResponse = zod.object({
   "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
-})
+}).describe('Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.')
 
 
 /**
- * @summary Get a payment provider
+ * @summary List all payment providers with full config (admin)
+ */
+export const ListPaymentProvidersAdminResponseItem = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['usdt_trc20', 'usdt_erc20', 'usdt_bep20', 'stripe', 'paypal', 'flutterwave']),
+  "name": zod.string(),
+  "isActive": zod.boolean(),
+  "config": zod.record(zod.string(), zod.string()),
+  "connectable": zod.boolean().optional().describe('Whether the provider currently has the credentials\/config needed to actually process a payment.'),
+  "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+}).describe('Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.')
+export const ListPaymentProvidersAdminResponse = zod.array(ListPaymentProvidersAdminResponseItem)
+
+
+/**
+ * @summary Get a payment provider with full config (admin)
  */
 export const GetPaymentProviderParams = zod.object({
   "id": zod.coerce.number()
@@ -684,7 +700,7 @@ export const GetPaymentProviderResponse = zod.object({
   "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
-})
+}).describe('Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.')
 
 
 /**
@@ -710,7 +726,7 @@ export const UpdatePaymentProviderResponse = zod.object({
   "limitation": zod.string().nullish().describe('Human-readable explanation when the provider is not connectable.'),
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
-})
+}).describe('Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.')
 
 
 /**

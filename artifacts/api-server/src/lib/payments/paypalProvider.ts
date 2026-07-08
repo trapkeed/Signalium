@@ -108,18 +108,51 @@ export const paypalProvider: PaymentProvider = {
       const resource = body.resource ?? {};
       const orderId: string | undefined = resource.supplementary_data?.related_ids?.order_id ?? resource.id;
 
-      if (eventType === "CHECKOUT.ORDER.APPROVED" || eventType === "PAYMENT.CAPTURE.COMPLETED") {
+      if (eventType === "PAYMENT.CAPTURE.COMPLETED") {
         return {
           ok: true,
           externalId: eventId,
           event: {
             externalReference: orderId ?? "",
-            outcome: eventType === "PAYMENT.CAPTURE.COMPLETED" ? "succeeded" : "pending",
+            outcome: "succeeded",
             amount: resource.amount ? Number(resource.amount.value) : undefined,
             currency: resource.amount?.currency_code,
             raw: body,
           },
         };
+      }
+
+      if (eventType === "CHECKOUT.ORDER.APPROVED") {
+        // Orders are created with intent=CAPTURE but the redirect flow used
+        // here (approveUrl) never calls the client-side SDK's actionsCapture,
+        // so nothing captures the order unless we do it here. Capture now;
+        // the resulting PAYMENT.CAPTURE.COMPLETED webhook (or this call's own
+        // outcome) is what actually marks the payment succeeded.
+        try {
+          const captureAccessToken = await getAccessToken();
+          const captureRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${captureAccessToken}`, "Content-Type": "application/json" },
+          });
+          const captured = captureRes.ok && captureRes.status !== 422;
+          return {
+            ok: true,
+            externalId: eventId,
+            event: {
+              externalReference: orderId ?? "",
+              outcome: captured ? "succeeded" : "pending",
+              amount: resource.amount ? Number(resource.amount.value) : undefined,
+              currency: resource.amount?.currency_code,
+              raw: body,
+            },
+          };
+        } catch {
+          return {
+            ok: true,
+            externalId: eventId,
+            event: { externalReference: orderId ?? "", outcome: "pending", raw: body },
+          };
+        }
       }
       if (eventType === "PAYMENT.CAPTURE.DENIED" || eventType === "CHECKOUT.ORDER.VOIDED" || eventType === "PAYMENT.CAPTURE.DECLINED") {
         return { ok: true, externalId: eventId, event: { externalReference: orderId ?? "", outcome: "failed", raw: body } };

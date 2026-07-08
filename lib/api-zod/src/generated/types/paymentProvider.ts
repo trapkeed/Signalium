@@ -8,6 +8,9 @@
 import type { PaymentProviderConfig } from './paymentProviderConfig';
 import type { PaymentProviderType } from './paymentProviderType';
 
+/**
+ * Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.
+ */
 export interface PaymentProvider {
   id: number;
   type: PaymentProviderType;

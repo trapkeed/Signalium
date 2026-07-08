@@ -157,6 +157,11 @@ Some transitive deps (e.g. `pdfkit` → `fontkit` → `brotli`) do a runtime `re
 
 **Why:** the externals list in `build.mjs` is shared boilerplate for many possible packages, not something to remove broadly — the real fix is making the missing package locally resolvable, not un-externalizing `@swc/*`.
 
+## List endpoints returning provider/integration config must split public vs admin
+Any "list configured providers/integrations" endpoint (payment providers, data providers, etc.) needs two routes from the start: an unauthenticated/low-privilege one returning only display fields (id/type/name/isActive/connectable), and a separate `requireAdmin` route returning the full row including `config`. Never let the public list handler serialize the raw config object, even behind a "config might not contain secrets" assumption — provider config columns are exactly where API keys/webhook secrets/wallet details end up. Admin UI forms should also only collect fields the provider actually reads from DB config; if a provider's real credentials come from env secrets (Stripe/PayPal-style), don't add form inputs for them at all — it just risks secrets landing in the DB for no functional benefit.
+
+**Why:** caught by code review on the payments provider list endpoint, which was unauthenticated and returned full `config` (live API keys/webhook secrets) to anyone; the fix mirrors an existing public/admin split already used for data providers.
+
 ## Admin nav grouping
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 

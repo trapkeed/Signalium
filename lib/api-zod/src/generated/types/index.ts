@@ -118,6 +118,7 @@ export * from './paymentProvider';
 export * from './paymentProviderConfig';
 export * from './paymentProviderInput';
 export * from './paymentProviderInputConfig';
+export * from './paymentProviderPublic';
 export * from './paymentProviderType';
 export * from './paymentProviderUpdate';
 export * from './paymentProviderUpdateConfig';

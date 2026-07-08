@@ -443,8 +443,30 @@ export const PaymentProviderType = {
   flutterwave: 'flutterwave',
 } as const;
 
+/**
+ * Safe, non-admin view of a payment provider — never includes `config` (which may hold secrets/credentials).
+ */
+export interface PaymentProviderPublic {
+  id: number;
+  type: PaymentProviderType;
+  name: string;
+  isActive: boolean;
+  /** Whether the provider currently has the credentials/config needed to actually process a payment. */
+  connectable: boolean;
+  /**
+     * Human-readable explanation when the provider is not connectable.
+     * @nullable
+     */
+  limitation?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export type PaymentProviderConfig = {[key: string]: string};
 
+/**
+ * Full admin view of a payment provider, including `config` (may hold secrets) — only ever returned to admins.
+ */
 export interface PaymentProvider {
   id: number;
   type: PaymentProviderType;

@@ -62,9 +62,10 @@ export default function Payments({ embedded = false }: { embedded?: boolean } = 
         data: { planId: selectedPlan, providerId: selectedProvider },
       });
       const intent = result as PaymentIntent;
-      const checkoutUrl = intent.provider.instructions?.checkoutUrl as string | undefined;
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      const instructions = intent.provider.instructions ?? {};
+      const redirectUrl = (instructions.checkoutUrl ?? instructions.approveUrl ?? instructions.paymentLink) as string | undefined;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
         return;
       }
       setActiveIntent(intent);

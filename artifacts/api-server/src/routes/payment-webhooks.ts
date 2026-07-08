@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { db, paymentsTable, webhookEventsTable, type PaymentProviderRow } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getPaymentProvider } from "../lib/payments/registry";
 import { applySuccessfulPayment, applyFailedPayment } from "../lib/payments/paymentLifecycle";
 
@@ -33,6 +33,12 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
 
   const payloadHash = crypto.createHash("sha256").update(rawBody).digest("hex");
 
+  // Scope every dedup/status lookup by (provider, externalId) together — the
+  // same externalId string can independently occur across different
+  // providers, and scoping by externalId alone would let one provider's
+  // event mutate another provider's webhook_events row.
+  const eventKey = and(eq(webhookEventsTable.provider, providerType), eq(webhookEventsTable.externalId, verification.externalId));
+
   let dedupInserted = true;
   try {
     await db.insert(webhookEventsTable).values({
@@ -53,15 +59,13 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
   try {
     const { event } = verification;
     if (!event.externalReference) {
-      await db.update(webhookEventsTable).set({ status: "ignored", processedAt: new Date() })
-        .where(eq(webhookEventsTable.externalId, verification.externalId));
+      await db.update(webhookEventsTable).set({ status: "ignored", processedAt: new Date() }).where(eventKey);
       return { status: 200 as const, body: { ignored: true } };
     }
 
     const [payment] = await db.select().from(paymentsTable).where(eq(paymentsTable.externalReference, event.externalReference));
     if (!payment) {
-      await db.update(webhookEventsTable).set({ status: "ignored", processedAt: new Date() })
-        .where(eq(webhookEventsTable.externalId, verification.externalId));
+      await db.update(webhookEventsTable).set({ status: "ignored", processedAt: new Date() }).where(eventKey);
       return { status: 200 as const, body: { ignored: true, reason: "No matching payment" } };
     }
 
@@ -71,13 +75,11 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
       await applyFailedPayment(payment.id, "Provider webhook reported failure");
     }
 
-    await db.update(webhookEventsTable).set({ status: "processed", processedAt: new Date() })
-      .where(eq(webhookEventsTable.externalId, verification.externalId));
+    await db.update(webhookEventsTable).set({ status: "processed", processedAt: new Date() }).where(eventKey);
 
     return { status: 200 as const, body: { ok: true } };
   } catch (err) {
-    await db.update(webhookEventsTable).set({ status: "failed", error: (err as Error).message, processedAt: new Date() })
-      .where(eq(webhookEventsTable.externalId, verification.externalId));
+    await db.update(webhookEventsTable).set({ status: "failed", error: (err as Error).message, processedAt: new Date() }).where(eventKey);
     throw err;
   }
 }

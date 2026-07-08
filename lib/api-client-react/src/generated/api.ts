@@ -87,6 +87,7 @@ import type {
   PaymentProofInput,
   PaymentProvider,
   PaymentProviderInput,
+  PaymentProviderPublic,
   PaymentProviderUpdate,
   Plan,
   PlanInput,
@@ -2130,11 +2131,11 @@ export const getListPaymentProvidersUrl = () => {
 }
 
 /**
- * @summary List payment providers
+ * @summary List active payment providers (safe fields only, no config/secrets — any authenticated user)
  */
-export const listPaymentProviders = async ( options?: RequestInit): Promise<PaymentProvider[]> => {
+export const listPaymentProviders = async ( options?: RequestInit): Promise<PaymentProviderPublic[]> => {
 
-  return customFetch<PaymentProvider[]>(getListPaymentProvidersUrl(),
+  return customFetch<PaymentProviderPublic[]>(getListPaymentProvidersUrl(),
   {
     ...options,
     method: 'GET'
@@ -2177,7 +2178,7 @@ export type ListPaymentProvidersQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List payment providers
+ * @summary List active payment providers (safe fields only, no config/secrets — any authenticated user)
  */
 
 export function useListPaymentProviders<TData = Awaited<ReturnType<typeof listPaymentProviders>>, TError = ErrorType<unknown>>(
@@ -2269,6 +2270,83 @@ export const useCreatePaymentProvider = <TError = ErrorType<unknown>,
       return useMutation(getCreatePaymentProviderMutationOptions(options));
     }
 
+export const getListPaymentProvidersAdminUrl = () => {
+
+
+
+
+  return `/api/payments/providers/admin`
+}
+
+/**
+ * @summary List all payment providers with full config (admin)
+ */
+export const listPaymentProvidersAdmin = async ( options?: RequestInit): Promise<PaymentProvider[]> => {
+
+  return customFetch<PaymentProvider[]>(getListPaymentProvidersAdminUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPaymentProvidersAdminQueryKey = () => {
+    return [
+    `/api/payments/providers/admin`
+    ] as const;
+    }
+
+
+export const getListPaymentProvidersAdminQueryOptions = <TData = Awaited<ReturnType<typeof listPaymentProvidersAdmin>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPaymentProvidersAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPaymentProvidersAdminQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPaymentProvidersAdmin>>> = ({ signal }) => listPaymentProvidersAdmin({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPaymentProvidersAdmin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPaymentProvidersAdminQueryResult = NonNullable<Awaited<ReturnType<typeof listPaymentProvidersAdmin>>>
+export type ListPaymentProvidersAdminQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all payment providers with full config (admin)
+ */
+
+export function useListPaymentProvidersAdmin<TData = Awaited<ReturnType<typeof listPaymentProvidersAdmin>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPaymentProvidersAdmin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPaymentProvidersAdminQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetPaymentProviderUrl = (id: number,) => {
 
 
@@ -2278,7 +2356,7 @@ export const getGetPaymentProviderUrl = (id: number,) => {
 }
 
 /**
- * @summary Get a payment provider
+ * @summary Get a payment provider with full config (admin)
  */
 export const getPaymentProvider = async (id: number, options?: RequestInit): Promise<PaymentProvider> => {
 
@@ -2325,7 +2403,7 @@ export type GetPaymentProviderQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get a payment provider
+ * @summary Get a payment provider with full config (admin)
  */
 
 export function useGetPaymentProvider<TData = Awaited<ReturnType<typeof getPaymentProvider>>, TError = ErrorType<unknown>>(

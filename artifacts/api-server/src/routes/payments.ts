@@ -18,7 +18,35 @@ async function syncPayments(rows: Payment[]): Promise<Payment[]> {
 
 // ─── Payment Providers (admin-managed config, provider connectivity is code-driven) ──
 
+// Public/authenticated-user view — NEVER includes `config` (wallet secrets, API
+// keys, webhook secrets, etc. may live there). Only safe display fields.
 router.get("/providers", async (req, res) => {
+  try {
+    const rows = await db.select().from(paymentProvidersTable).orderBy(paymentProvidersTable.type);
+    const publicRows = rows.map((row) => {
+      const impl = getPaymentProvider(row.type);
+      const configured = impl ? impl.isConfigured(row.config) : false;
+      const limitation = impl ? impl.connectivityNote(row.config) : "No implementation registered for this provider type.";
+      return {
+        id: row.id,
+        type: row.type,
+        name: row.name,
+        isActive: row.isActive,
+        connectable: configured,
+        limitation,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      };
+    });
+    return res.json(publicRows);
+  } catch (err) {
+    req.log.error(err, "Failed to list payment providers");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin view — includes full `config`, used to populate the provider edit form.
+router.get("/providers/admin", requireAdmin, async (req, res) => {
   try {
     const rows = await db.select().from(paymentProvidersTable).orderBy(paymentProvidersTable.type);
     const withConnectivity = rows.map((row) => {
@@ -29,7 +57,7 @@ router.get("/providers", async (req, res) => {
     });
     return res.json(withConnectivity);
   } catch (err) {
-    req.log.error(err, "Failed to list payment providers");
+    req.log.error(err, "Failed to list payment providers (admin)");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -55,7 +83,7 @@ router.post("/providers", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/providers/:id", async (req, res) => {
+router.get("/providers/:id", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   try {
