@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "cuD_Ks-DY460xrEbo6wfQ"
+uri = "file://artifacts/signalium/public/trading-floor.jpg"
+type = "image"
+title = "financial trading floor professional"
