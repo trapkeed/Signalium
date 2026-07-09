@@ -229,6 +229,7 @@ function ManagedSecretsTab() {
   const [rows, setRows] = useState<ManagedSecret[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState<Record<number, string>>({});
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   function refresh() {
     api<ManagedSecret[]>("/").then(setRows).catch((e) => setError(e.message));
@@ -289,6 +290,11 @@ function ManagedSecretsTab() {
 
   if (error) return <div className="text-sm text-destructive font-mono">{error}</div>;
 
+  const visibleRows = rows ? (categoryFilter === "all" ? rows : rows.filter((r) => r.category === categoryFilter)) : null;
+  const categoryCounts = rows
+    ? rows.reduce<Record<string, number>>((acc, r) => { acc[r.category] = (acc[r.category] ?? 0) + 1; return acc; }, {})
+    : {};
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-2 rounded-sm bg-amber-500/10 border border-amber-500/30 px-4 py-3">
@@ -298,14 +304,33 @@ function ManagedSecretsTab() {
         </p>
       </div>
 
-      <AddSecretForm onCreated={refresh} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <AddSecretForm onCreated={refresh} />
+        <div className="flex items-center gap-1 flex-wrap ml-2">
+          <button
+            onClick={() => setCategoryFilter("all")}
+            className={`px-2.5 py-1 rounded-sm text-[11px] font-mono border ${categoryFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+          >
+            all{rows ? ` (${rows.length})` : ""}
+          </button>
+          {CATEGORIES.filter((c) => categoryCounts[c]).map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategoryFilter(c)}
+              className={`px-2.5 py-1 rounded-sm text-[11px] font-mono border ${categoryFilter === c ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
+            >
+              {c} ({categoryCounts[c]})
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {!rows ? (
+      {!visibleRows ? (
         <div className="text-sm text-muted-foreground font-mono">Loading…</div>
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <div className="border border-border bg-card rounded-sm p-12 text-center text-muted-foreground">
           <KeyRound className="w-8 h-8 mx-auto mb-3 opacity-30" />
-          No managed secrets yet.
+          {rows && rows.length > 0 ? "No secrets in this category." : "No managed secrets yet."}
         </div>
       ) : (
         <div className="border border-border rounded-sm overflow-hidden">
@@ -318,7 +343,7 @@ function ManagedSecretsTab() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                   <td className="px-4 py-3 font-mono text-xs font-medium">{row.key}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{row.category}</td>

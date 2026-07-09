@@ -23,6 +23,9 @@ interface SyncStatus {
     latencyMs: number | null;
     error: string | null;
     checkedAt: string;
+    lastSuccessfulCheckAt: string | null;
+    lastFailedCheckAt: string | null;
+    lastFailureReason: string | null;
   };
   failureState: { consecutiveFailures: number; lastFailureAt: string | null };
   configVersionHash: string;
@@ -92,6 +95,15 @@ export default function AdminSyncStatus() {
                 <div className="font-mono text-xs text-muted-foreground">latency: {status.trainer.latencyMs != null ? `${status.trainer.latencyMs}ms` : "—"}</div>
                 {status.trainer.error && <div className="font-mono text-xs text-destructive">error: {status.trainer.error}</div>}
                 <div className="font-mono text-xs text-muted-foreground">checked: {new Date(status.trainer.checkedAt).toLocaleString()}</div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  last success: {status.trainer.lastSuccessfulCheckAt ? new Date(status.trainer.lastSuccessfulCheckAt).toLocaleString() : "none"}
+                </div>
+                <div className="font-mono text-xs text-muted-foreground">
+                  last failure: {status.trainer.lastFailedCheckAt ? new Date(status.trainer.lastFailedCheckAt).toLocaleString() : "none"}
+                </div>
+                {status.trainer.lastFailureReason && (
+                  <div className="font-mono text-xs text-destructive">last failure reason: {status.trainer.lastFailureReason}</div>
+                )}
               </>
             )}
             {!status.trainer.configured && (
