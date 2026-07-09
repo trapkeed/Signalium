@@ -2592,6 +2592,54 @@ paths:
         "404":
           description: Not found
 
+  /data-providers/admin/{id}/adapter:
+    get:
+      operationId: getProviderAdapterInfo
+      tags: [data-providers]
+      summary: Get adapter registration/configuration info for a provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Adapter info
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [hasAdapter, isConfigured]
+                properties:
+                  hasAdapter:
+                    type: boolean
+                  isConfigured:
+                    type: boolean
+        "404":
+          description: Provider not found
+
+  /data-providers/registered-adapters:
+    get:
+      operationId: listRegisteredAdapters
+      tags: [data-providers]
+      summary: List provider slugs with a registered market-data adapter (admin)
+      responses:
+        "200":
+          description: Registered adapters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [slug, name]
+                  properties:
+                    slug:
+                      type: string
+                    name:
+                      type: string
+
   /brokers:
     get:
       operationId: listBrokers

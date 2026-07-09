@@ -3488,6 +3488,16 @@ export type UpdateProviderPriorityBody = {
   fallbackForProviderId?: number | null;
 };
 
+export type GetProviderAdapterInfo200 = {
+  hasAdapter: boolean;
+  isConfigured: boolean;
+};
+
+export type ListRegisteredAdapters200Item = {
+  slug: string;
+  name: string;
+};
+
 export type CreateBrokerBody = {
   name: string;
   slug: string;

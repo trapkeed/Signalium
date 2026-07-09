@@ -18,6 +18,7 @@ import {
   useDeleteProviderSymbolMapping,
   useUpdateProviderPriority,
   useListSymbols,
+  useGetProviderAdapterInfo,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -36,6 +37,8 @@ import {
   WifiOff,
   ChevronDown,
   ChevronRight,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,11 +121,24 @@ function AddDataProviderDialog() {
   );
 }
 
-function ProviderRow({ provider }: { provider: DataProvider }) {
+function ProviderRow({
+  provider,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+}: {
+  provider: DataProvider;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
   const { toast } = useToast();
   const [expanded, setExpanded] = useState(false);
   const updateProvider = useUpdateDataProvider();
   const deleteProvider = useDeleteDataProvider();
+  const { data: adapterInfo } = useGetProviderAdapterInfo(provider.id);
 
   async function handleToggle() {
     try {
@@ -151,9 +167,31 @@ function ProviderRow({ provider }: { provider: DataProvider }) {
             {provider.name}
           </button>
         </td>
-        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{provider.slug}</td>
+        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            {provider.slug}
+            {adapterInfo && (
+              <Badge
+                variant={adapterInfo.hasAdapter ? (adapterInfo.isConfigured ? "default" : "secondary") : "secondary"}
+                className="text-[10px] px-1.5 py-0 font-mono"
+              >
+                {!adapterInfo.hasAdapter ? "not connected" : adapterInfo.isConfigured ? "configured" : "no api key"}
+              </Badge>
+            )}
+          </div>
+        </td>
         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{provider.apiEndpoint ?? "—"}</td>
-        <td className="px-4 py-3 font-mono text-xs text-center">{provider.priority}</td>
+        <td className="px-4 py-3 font-mono text-xs">
+          <div className="flex items-center justify-center gap-1.5">
+            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" disabled={!canMoveUp} onClick={onMoveUp}>
+              <ArrowUp className="w-3 h-3" />
+            </Button>
+            <span className="w-4 text-center">{provider.priority}</span>
+            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" disabled={!canMoveDown} onClick={onMoveDown}>
+              <ArrowDown className="w-3 h-3" />
+            </Button>
+          </div>
+        </td>
         <td className="px-4 py-3">
           <button onClick={handleToggle} className="flex items-center gap-1 text-xs font-mono">
             {provider.isActive ? (
@@ -342,9 +380,7 @@ function StatusPanel({ providerId, apiEndpoint }: { providerId: number; apiEndpo
           <RotateCw className={`w-3 h-3 ${check.isPending ? "animate-spin" : ""}`} />
           Run Connectivity Check
         </Button>
-        {!apiEndpoint && (
-          <span className="text-xs text-muted-foreground font-mono">No API endpoint configured — check will fail</span>
-        )}
+        <span className="text-xs text-muted-foreground font-mono">Also checked automatically every 5 minutes</span>
       </div>
 
       {isLoading ? (
@@ -455,6 +491,21 @@ function SymbolMappingsPanel({ providerId }: { providerId: number }) {
 
 export default function AdminDataProviders() {
   const { data: providers = [], isLoading } = useListDataProvidersAdmin();
+  const { toast } = useToast();
+  const updatePriority = useUpdateProviderPriority();
+
+  const sorted = [...(providers as DataProvider[])].sort((a, b) => a.priority - b.priority);
+
+  async function swapPriority(a: DataProvider, b: DataProvider) {
+    try {
+      await Promise.all([
+        updatePriority.mutateAsync({ id: a.id, data: { priority: b.priority } }),
+        updatePriority.mutateAsync({ id: b.id, data: { priority: a.priority } }),
+      ]);
+    } catch (err: any) {
+      toast({ title: "Failed to reorder", description: err?.message, variant: "destructive" });
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -481,10 +532,19 @@ export default function AdminDataProviders() {
             <tbody>
               {isLoading ? (
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">Loading...</td></tr>
-              ) : providers.length === 0 ? (
+              ) : sorted.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No data providers yet</td></tr>
               ) : (
-                (providers as DataProvider[]).map((p) => <ProviderRow key={p.id} provider={p} />)
+                sorted.map((p, i) => (
+                  <ProviderRow
+                    key={p.id}
+                    provider={p}
+                    canMoveUp={i > 0}
+                    canMoveDown={i < sorted.length - 1}
+                    onMoveUp={() => swapPriority(p, sorted[i - 1])}
+                    onMoveDown={() => swapPriority(p, sorted[i + 1])}
+                  />
+                ))
               )}
             </tbody>
           </table>

@@ -1,0 +1,88 @@
+/**
+ * Concrete market-data adapters. OANDA (live) and Tiingo (historical) are
+ * real implementations; everything else is a placeholder satisfying the
+ * same interface so it shows up in the registry as "not connected" until a
+ * real adapter is written for it.
+ *
+ * API keys are always resolved vault-first / env-fallback via
+ * `resolveManagedConfig` — never hardcoded, never read from the generic
+ * `provider_credentials` table (that table remains available for ad-hoc
+ * provider config, but the two shipped adapters use the same vault pattern
+ * as every other admin-configurable secret in this codebase).
+ */
+import { resolveManagedConfig } from "../secretsVault";
+import type { HealthCheckResult, MarketDataAdapter } from "./types";
+
+const PROBE_TIMEOUT_MS = 5_000;
+
+async function timedFetch(url: string, init: RequestInit): Promise<HealthCheckResult> {
+  const start = Date.now();
+  try {
+    const resp = await fetch(url, { ...init, signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+    const latencyMs = Date.now() - start;
+    if (!resp.ok) {
+      return { reachable: false, latencyMs, errorMessage: `HTTP ${resp.status}` };
+    }
+    return { reachable: true, latencyMs, errorMessage: null };
+  } catch (err) {
+    return {
+      reachable: false,
+      latencyMs: Date.now() - start,
+      errorMessage: err instanceof Error ? err.message : "Connection failed",
+    };
+  }
+}
+
+const oandaAdapter: MarketDataAdapter = {
+  slug: "oanda",
+  name: "OANDA",
+  async isConfigured() {
+    return (await resolveManagedConfig("market_data.oanda_api_key")) !== null;
+  },
+  async checkHealth() {
+    const apiKey = await resolveManagedConfig("market_data.oanda_api_key");
+    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.oanda_api_key)" };
+    const baseUrl = (await resolveManagedConfig("market_data.oanda_api_base_url")) ?? "https://api-fxpractice.oanda.com";
+    // Lightweight authenticated ping — lists accounts, doesn't touch pricing/orders.
+    return timedFetch(`${baseUrl}/v3/accounts`, { headers: { Authorization: `Bearer ${apiKey}` } });
+  },
+};
+
+const tiingoAdapter: MarketDataAdapter = {
+  slug: "tiingo",
+  name: "Tiingo",
+  async isConfigured() {
+    return (await resolveManagedConfig("market_data.tiingo_api_key")) !== null;
+  },
+  async checkHealth() {
+    const apiKey = await resolveManagedConfig("market_data.tiingo_api_key");
+    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.tiingo_api_key)" };
+    // Tiingo's own low-cost status/utilities endpoint, authenticated via query token.
+    return timedFetch(`https://api.tiingo.com/api/test/?token=${encodeURIComponent(apiKey)}`, {});
+  },
+};
+
+/** Not-yet-implemented providers — visible in the registry so the admin UI can list them as "not connected" without any code change once a real adapter ships. */
+function placeholderAdapter(slug: string, name: string): MarketDataAdapter {
+  return {
+    slug,
+    name,
+    async isConfigured() {
+      return false;
+    },
+    async checkHealth() {
+      return { reachable: false, latencyMs: null, errorMessage: "Adapter not yet implemented" };
+    },
+  };
+}
+
+export const MARKET_DATA_ADAPTERS: MarketDataAdapter[] = [
+  oandaAdapter,
+  tiingoAdapter,
+  placeholderAdapter("polygon", "Polygon.io"),
+  placeholderAdapter("twelvedata", "Twelve Data"),
+  placeholderAdapter("finnhub", "Finnhub"),
+  placeholderAdapter("alphavantage", "Alpha Vantage"),
+  placeholderAdapter("dxfeed", "DXfeed"),
+  placeholderAdapter("interactive_brokers", "Interactive Brokers"),
+];

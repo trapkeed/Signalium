@@ -2925,6 +2925,29 @@ export const UpdateProviderPriorityResponse = zod.object({
 
 
 /**
+ * @summary Get adapter registration/configuration info for a provider (admin)
+ */
+export const GetProviderAdapterInfoParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProviderAdapterInfoResponse = zod.object({
+  "hasAdapter": zod.boolean(),
+  "isConfigured": zod.boolean()
+})
+
+
+/**
+ * @summary List provider slugs with a registered market-data adapter (admin)
+ */
+export const ListRegisteredAdaptersResponseItem = zod.object({
+  "slug": zod.string(),
+  "name": zod.string()
+})
+export const ListRegisteredAdaptersResponse = zod.array(ListRegisteredAdaptersResponseItem)
+
+
+/**
  * @summary List active brokers (any authenticated user)
  */
 export const ListBrokersResponseItem = zod.object({

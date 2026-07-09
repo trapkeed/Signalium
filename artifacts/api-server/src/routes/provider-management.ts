@@ -36,6 +36,8 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
+import { checkAndRecordProviderHealth } from "../lib/marketData/health";
+import { getAdapterForSlug, listRegisteredAdapters } from "../lib/marketData/registry";
 
 const router = Router();
 
@@ -296,56 +298,40 @@ router.post("/admin/:id/status/check", requireAdmin, async (req, res) => {
       .where(eq(dataProvidersTable.id, providerId));
     if (!provider) return res.status(404).json({ error: "Provider not found" });
 
-    let isReachable = false;
-    let latencyMs: number | null = null;
-    let errorMessage: string | null = null;
-
-    if (provider.apiEndpoint) {
-      const start = Date.now();
-      try {
-        const resp = await fetch(provider.apiEndpoint, { method: "HEAD", signal: AbortSignal.timeout(5000) });
-        isReachable = resp.status < 500;
-        latencyMs = Date.now() - start;
-      } catch (err) {
-        errorMessage = err instanceof Error ? err.message : "Connection failed";
-        latencyMs = Date.now() - start;
-      }
-    } else {
-      errorMessage = "No API endpoint configured";
-    }
-
-    const [statusRow] = await db
-      .insert(providerStatusTable)
-      .values({
-        providerId,
-        isReachable,
-        lastCheckedAt: new Date(),
-        lastSuccessAt: isReachable ? new Date() : undefined,
-        latencyMs: latencyMs ?? undefined,
-        errorMessage,
-        consecutiveFailures: isReachable ? 0 : 1,
-      })
-      .onConflictDoUpdate({
-        target: providerStatusTable.providerId,
-        set: {
-          isReachable,
-          lastCheckedAt: new Date(),
-          lastSuccessAt: isReachable ? new Date() : undefined,
-          consecutiveFailures: isReachable
-            ? 0
-            : sql`${providerStatusTable.consecutiveFailures} + 1`,
-          latencyMs: latencyMs ?? undefined,
-          errorMessage,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-
+    const statusRow = await checkAndRecordProviderHealth(provider);
     return res.json(statusRow);
   } catch (err) {
     req.log.error(err, "Failed to run connectivity check");
     return res.status(500).json({ error: "Internal server error" });
   }
+});
+
+/**
+ * Adapter metadata for this provider slug (whether a real adapter is
+ * registered and whether it currently has credentials configured). Lets the
+ * admin UI show "not connected" for stub providers before any check runs.
+ */
+router.get("/admin/:id/adapter", requireAdmin, async (req, res) => {
+  const providerId = Number(req.params.id);
+  if (isNaN(providerId)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [provider] = await db.select().from(dataProvidersTable).where(eq(dataProvidersTable.id, providerId));
+    if (!provider) return res.status(404).json({ error: "Provider not found" });
+
+    const adapter = getAdapterForSlug(provider.slug);
+    if (!adapter) return res.json({ hasAdapter: false, isConfigured: false });
+
+    return res.json({ hasAdapter: true, isConfigured: await adapter.isConfigured() });
+  } catch (err) {
+    req.log.error(err, "Failed to get adapter info");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/** Lists every provider slug that has a real (or stub) adapter registered — for admin UI reference. */
+router.get("/registered-adapters", requireAdmin, async (_req, res) => {
+  return res.json(listRegisteredAdapters().map((a) => ({ slug: a.slug, name: a.name })));
 });
 
 // ─── Symbol mappings ──────────────────────────────────────────────────────────

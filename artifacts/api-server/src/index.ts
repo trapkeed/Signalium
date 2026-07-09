@@ -14,6 +14,8 @@ import { startAuditRetentionSweep } from "./lib/auditRetention";
 import { seedSecretRotationTracking } from "./lib/secretRotation";
 import { startAccountDeletionSweep } from "./lib/dataGovernance";
 import { runStartupDiagnostics } from "./lib/productionReadiness";
+import { seedMarketDataProviders } from "./lib/marketData/seed";
+import { startMarketDataHealthSweep } from "./lib/marketData/health";
 
 const rawPort = process.env["PORT"];
 
@@ -40,6 +42,12 @@ const server = app.listen(port, (err) => {
   seedSymbolRegistry().catch((seedErr) => {
     logger.error({ err: seedErr }, "Failed to seed symbol registry");
   });
+
+  seedMarketDataProviders()
+    .then(() => startMarketDataHealthSweep(5 * 60_000)) // sweep every 5 minutes
+    .catch((seedErr) => {
+      logger.error({ err: seedErr }, "Failed to seed market data providers");
+    });
 
   // S30: post-listen startup diagnostics — logs a dependency readiness
   // report and, in production, exits if a required env var is missing.

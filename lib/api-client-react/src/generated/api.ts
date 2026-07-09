@@ -106,6 +106,7 @@ import type {
   GetOperationalTelemetryReplay200,
   GetOperationalTelemetryReplayParams,
   GetOpsDashboardOverview200,
+  GetProviderAdapterInfo200,
   GetQdeAdminCounterfactualsParams,
   GetQdeAdminDecisions200,
   GetQdeAdminDecisionsId200,
@@ -185,6 +186,7 @@ import type {
   ListKbArticlesParams,
   ListMarketMemoryParams,
   ListMediaAssetsParams,
+  ListRegisteredAdapters200Item,
   ListResearchLabArtifactHistory200,
   ListResearchLabDeploymentCandidates200,
   ListResearchLabDeploymentCandidatesParams,
@@ -9414,6 +9416,160 @@ export const useUpdateProviderPriority = <TError = ErrorType<void>,
       > => {
       return useMutation(getUpdateProviderPriorityMutationOptions(options));
     }
+
+export const getGetProviderAdapterInfoUrl = (id: number,) => {
+
+
+
+
+  return `/api/data-providers/admin/${id}/adapter`
+}
+
+/**
+ * @summary Get adapter registration/configuration info for a provider (admin)
+ */
+export const getProviderAdapterInfo = async (id: number, options?: RequestInit): Promise<GetProviderAdapterInfo200> => {
+
+  return customFetch<GetProviderAdapterInfo200>(getGetProviderAdapterInfoUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetProviderAdapterInfoQueryKey = (id: number,) => {
+    return [
+    `/api/data-providers/admin/${id}/adapter`
+    ] as const;
+    }
+
+
+export const getGetProviderAdapterInfoQueryOptions = <TData = Awaited<ReturnType<typeof getProviderAdapterInfo>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProviderAdapterInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProviderAdapterInfoQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProviderAdapterInfo>>> = ({ signal }) => getProviderAdapterInfo(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProviderAdapterInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetProviderAdapterInfoQueryResult = NonNullable<Awaited<ReturnType<typeof getProviderAdapterInfo>>>
+export type GetProviderAdapterInfoQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get adapter registration/configuration info for a provider (admin)
+ */
+
+export function useGetProviderAdapterInfo<TData = Awaited<ReturnType<typeof getProviderAdapterInfo>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getProviderAdapterInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetProviderAdapterInfoQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListRegisteredAdaptersUrl = () => {
+
+
+
+
+  return `/api/data-providers/registered-adapters`
+}
+
+/**
+ * @summary List provider slugs with a registered market-data adapter (admin)
+ */
+export const listRegisteredAdapters = async ( options?: RequestInit): Promise<ListRegisteredAdapters200Item[]> => {
+
+  return customFetch<ListRegisteredAdapters200Item[]>(getListRegisteredAdaptersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRegisteredAdaptersQueryKey = () => {
+    return [
+    `/api/data-providers/registered-adapters`
+    ] as const;
+    }
+
+
+export const getListRegisteredAdaptersQueryOptions = <TData = Awaited<ReturnType<typeof listRegisteredAdapters>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegisteredAdapters>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRegisteredAdaptersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRegisteredAdapters>>> = ({ signal }) => listRegisteredAdapters({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRegisteredAdapters>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRegisteredAdaptersQueryResult = NonNullable<Awaited<ReturnType<typeof listRegisteredAdapters>>>
+export type ListRegisteredAdaptersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List provider slugs with a registered market-data adapter (admin)
+ */
+
+export function useListRegisteredAdapters<TData = Awaited<ReturnType<typeof listRegisteredAdapters>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRegisteredAdapters>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRegisteredAdaptersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListBrokersUrl = () => {
 
