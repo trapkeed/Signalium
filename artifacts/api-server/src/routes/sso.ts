@@ -15,7 +15,7 @@ import { Router } from "express";
 import { getAuth } from "../lib/auth";
 import { requireStaff } from "../middlewares/requireAdmin";
 import { getEffectiveAdminRoles } from "../lib/adminRoles";
-import { getJwks, issueTokenPair, refreshTokenPair, revokeRefreshToken, revokeAllTokensForUser, verifyAccessToken, rotateSigningKey, type SsoAudience } from "../lib/sso";
+import { getJwks, issueTokenPair, refreshTokenPair, revokeRefreshToken, revokeAllTokensForUser, verifyAccessToken, rotateSigningKey, getSsoKeyStatus, type SsoAudience } from "../lib/sso";
 import { requireSuperAdmin } from "../middlewares/requireAdmin";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -101,6 +101,13 @@ router.post("/rotate-signing-key", requireSuperAdmin, async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const result = await rotateSigningKey(userId);
   return res.json(result);
+});
+
+// Admin-facing status: rotation history + resolved issuer/expiration config.
+// Never returns private key material — only kid/isActive/createdAt per key.
+router.get("/key-status", requireSuperAdmin, async (_req, res) => {
+  const status = await getSsoKeyStatus();
+  return res.json(status);
 });
 
 export default router;

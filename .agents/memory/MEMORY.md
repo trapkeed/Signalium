@@ -15,4 +15,5 @@
 - [S29 Security Hardening and Production Lockdown](s29-security-hardening.md) — idle-timeout fail-closed pattern, CORS allowlist fail-closed default, hidden-endpoint audit method, maker-checker table design.
 - [S30 Launch Readiness and Go Live](s30-launch-readiness.md) — audit-before-build, non-mutating dependency probes, computed vs stored onboarding checklist, ticket-assignment role validation, orval looseObject fix.
 - [S31 Homepage CMS & Glassmorphism](s31-homepage-cms-glassmorphism.md) — singleton jsonb CMS pattern, 3-layer JSON validation (zod + runtime type guards + null-as-default), error-middleware status clamping.
+- [SSO issuer/TTL vault config](sso-key-vault-config.md) — split config (generic vault) from crypto material (dedicated table) when adding admin-configurable settings to a security-critical service.
 - [S32 Clerk-to-custom-auth migration](s32-clerk-to-custom-auth.md) — passwordHash leak trap, drizzle-kit push TTY prompt workaround, grep whole backend for provider env vars, app-side UUID default pattern.

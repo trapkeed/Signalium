@@ -82,6 +82,9 @@ const KNOWN_KEYS: { group: string; key: string; category: string; description: s
   { group: "OpenAI", key: "openai.api_key", category: "api_key", description: "OpenAI API key." },
   { group: "OpenAI", key: "openai.model", category: "other", description: "Default OpenAI model name." },
   { group: "General", key: "general.debug_mode", category: "other", description: "Set to \"true\" to enable verbose platform debug logging." },
+  { group: "SSO", key: "sso.issuer", category: "other", description: "JWT issuer claim for Signalium-issued SSO tokens. Overrides JWT_ISSUER env var." },
+  { group: "SSO", key: "sso.access_token_ttl_seconds", category: "other", description: "SSO access token lifetime in seconds. Overrides JWT_EXPIRATION env var." },
+  { group: "SSO", key: "sso.refresh_token_ttl_days", category: "other", description: "SSO refresh token lifetime in days. Overrides JWT_REFRESH_EXPIRATION env var." },
 ];
 
 function SystemSecretsTab() {
@@ -326,6 +329,119 @@ function ManagedSecretsTab() {
   );
 }
 
+interface SsoKeyStatus {
+  activeKid: string | null;
+  activeKeyCreatedAt: string | null;
+  totalKeys: number;
+  keys: { kid: string; isActive: boolean; createdAt: string }[];
+  config: { issuer: string; accessTokenTtlSeconds: number; refreshTokenTtlDays: number };
+}
+
+async function ssoApi<T>(path: string, opts: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${BASE}api/sso${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "x-requested-with": "XMLHttpRequest", ...(opts.headers ?? {}) },
+    ...opts,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+function SsoKeysTab() {
+  const { toast } = useToast();
+  const [status, setStatus] = useState<SsoKeyStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [rotating, setRotating] = useState(false);
+
+  function refresh() {
+    ssoApi<SsoKeyStatus>("/key-status").then(setStatus).catch((e) => setError(e.message));
+  }
+
+  useEffect(() => { refresh(); }, []);
+
+  async function rotate() {
+    if (!confirm("Rotate the SSO signing key? The previous key stays valid for verification, but every new token will use the new key.")) return;
+    setRotating(true);
+    try {
+      await ssoApi("/rotate-signing-key", { method: "POST" });
+      toast({ title: "SSO signing key rotated" });
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to rotate signing key", description: err.message, variant: "destructive" });
+    } finally {
+      setRotating(false);
+    }
+  }
+
+  if (error) return <div className="text-sm text-destructive font-mono">{error}</div>;
+
+  return (
+    <div className="flex flex-col gap-4 max-w-2xl">
+      <div className="flex items-start gap-2 rounded-sm bg-amber-500/10 border border-amber-500/30 px-4 py-3">
+        <ShieldAlert className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+        <p className="text-xs font-mono text-amber-600 dark:text-amber-400">
+          Signing keys are ES256 key pairs generated and stored server-side — the private key is never displayed here. Issuer and token lifetimes can be overridden from the Managed Secrets tab (keys: sso.issuer, sso.access_token_ttl_seconds, sso.refresh_token_ttl_days).
+        </p>
+      </div>
+
+      {!status ? (
+        <div className="text-sm text-muted-foreground font-mono">Loading…</div>
+      ) : (
+        <>
+          <div className="border border-border rounded-sm bg-card p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Active key</span>
+              <Button size="sm" className="font-mono text-xs" onClick={rotate} disabled={rotating}>{rotating ? "Rotating…" : "Rotate signing key"}</Button>
+            </div>
+            <div className="font-mono text-xs">kid: {status.activeKid ?? "—"}</div>
+            <div className="font-mono text-xs text-muted-foreground">
+              created: {status.activeKeyCreatedAt ? new Date(status.activeKeyCreatedAt).toLocaleString() : "—"}
+            </div>
+            <div className="font-mono text-xs text-muted-foreground">total keys retained for verification: {status.totalKeys}</div>
+          </div>
+
+          <div className="border border-border rounded-sm bg-card p-4 flex flex-col gap-2">
+            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Resolved config</span>
+            <div className="font-mono text-xs">issuer: {status.config.issuer}</div>
+            <div className="font-mono text-xs">access token ttl: {status.config.accessTokenTtlSeconds}s</div>
+            <div className="font-mono text-xs">refresh token ttl: {status.config.refreshTokenTtlDays} days</div>
+          </div>
+
+          <div className="border border-border rounded-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  {["Kid", "Status", "Created"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {status.keys.map((k) => (
+                  <tr key={k.kid} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                    <td className="px-4 py-3 font-mono text-xs truncate max-w-[220px]">{k.kid}</td>
+                    <td className="px-4 py-3 text-xs font-mono">
+                      {k.isActive ? (
+                        <span className="flex items-center gap-1 text-success"><CheckCircle2 className="w-3 h-3" /> active</span>
+                      ) : (
+                        <span className="text-muted-foreground">retired (verify-only)</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(k.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 interface GoogleOAuthStatus {
   configured: boolean;
   clientId: string | null;
@@ -433,10 +549,12 @@ export default function AdminSecrets() {
           <TabsList className="rounded-sm mb-6 bg-secondary/50 border border-border">
             <TabsTrigger value="system" className="rounded-sm font-mono text-xs">System Environment</TabsTrigger>
             <TabsTrigger value="managed" className="rounded-sm font-mono text-xs">Managed Secrets</TabsTrigger>
+            <TabsTrigger value="sso-keys" className="rounded-sm font-mono text-xs">SSO Keys</TabsTrigger>
             <TabsTrigger value="google-oauth" className="rounded-sm font-mono text-xs">Google OAuth</TabsTrigger>
           </TabsList>
           <TabsContent value="system"><SystemSecretsTab /></TabsContent>
           <TabsContent value="managed"><ManagedSecretsTab /></TabsContent>
+          <TabsContent value="sso-keys"><SsoKeysTab /></TabsContent>
           <TabsContent value="google-oauth"><GoogleOAuthTab /></TabsContent>
         </Tabs>
       </div>

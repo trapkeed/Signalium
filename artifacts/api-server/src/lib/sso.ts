@@ -17,16 +17,44 @@ import { randomUUID, randomBytes, createHash, generateKeyPair as generateKeyPair
 import { promisify } from "node:util";
 import { SignJWT, importJWK, exportJWK, jwtVerify, type JWK } from "jose";
 import { db, ssoSigningKeysTable, ssoRefreshTokensTable } from "@workspace/db";
-import { and, eq, isNull, gt } from "drizzle-orm";
+import { and, eq, isNull, gt, desc } from "drizzle-orm";
 import { logAudit } from "./auditLog";
 import type { AdminRoleName } from "./roles";
 import { logger } from "./logger";
+import { resolveManagedConfig } from "./secretsVault";
 
 const generateKeyPair = promisify(generateKeyPairNode);
 
-export const SSO_ISSUER = "signalium";
-const ACCESS_TOKEN_TTL_SECONDS = 5 * 60; // 5 minutes — short-lived by design
-const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+// Defaults — overridable per-deployment via the managed secrets vault
+// (`sso.issuer`, `sso.access_token_ttl_seconds`, `sso.refresh_token_ttl_days`)
+// with env-var fallback (JWT_ISSUER, JWT_EXPIRATION, JWT_REFRESH_EXPIRATION),
+// so rotating these doesn't require a redeploy. Resolved lazily rather than
+// once at import time so an admin change takes effect on next issuance
+// without a restart.
+const DEFAULT_ISSUER = "signalium";
+const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 5 * 60; // 5 minutes — short-lived by design
+const DEFAULT_REFRESH_TOKEN_TTL_DAYS = 30;
+
+export async function getSsoIssuer(): Promise<string> {
+  const v = await resolveManagedConfig("sso.issuer", "JWT_ISSUER");
+  return v && v.trim() ? v.trim() : DEFAULT_ISSUER;
+}
+
+export async function getAccessTokenTtlSeconds(): Promise<number> {
+  const v = await resolveManagedConfig("sso.access_token_ttl_seconds", "JWT_EXPIRATION");
+  const n = v ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_ACCESS_TOKEN_TTL_SECONDS;
+}
+
+export async function getRefreshTokenTtlMs(): Promise<number> {
+  const v = await resolveManagedConfig("sso.refresh_token_ttl_days", "JWT_REFRESH_EXPIRATION");
+  const days = v ? Number(v) : NaN;
+  const resolvedDays = Number.isFinite(days) && days > 0 ? days : DEFAULT_REFRESH_TOKEN_TTL_DAYS;
+  return resolvedDays * 24 * 60 * 60 * 1000;
+}
+
+/** @deprecated kept for any external references — prefer `getSsoIssuer()` for the resolved, admin-configurable value. */
+export const SSO_ISSUER = DEFAULT_ISSUER;
 const SERVICE_TOKEN_AUDIENCE = "signalium-trainer";
 export type SsoAudience = "signalium-trainer" | "signalium-platform";
 
@@ -95,20 +123,47 @@ export async function getJwks(): Promise<{ keys: JWK[] }> {
   return { keys: rows.map((r) => JSON.parse(r.publicKeyJwk) as JWK) };
 }
 
+/** Admin-facing status summary — never exposes private key material, only rotation metadata + resolved config. */
+export async function getSsoKeyStatus() {
+  await ensureActiveKey();
+  const rows = await db
+    .select({ kid: ssoSigningKeysTable.kid, isActive: ssoSigningKeysTable.isActive, createdAt: ssoSigningKeysTable.createdAt })
+    .from(ssoSigningKeysTable)
+    .orderBy(desc(ssoSigningKeysTable.createdAt));
+  const active = rows.find((r) => r.isActive === "true");
+  const [issuer, accessTokenTtlSeconds, refreshTokenTtlMs] = await Promise.all([
+    getSsoIssuer(),
+    getAccessTokenTtlSeconds(),
+    getRefreshTokenTtlMs(),
+  ]);
+  return {
+    activeKid: active?.kid ?? null,
+    activeKeyCreatedAt: active?.createdAt ?? null,
+    totalKeys: rows.length,
+    keys: rows.map((r) => ({ kid: r.kid, isActive: r.isActive === "true", createdAt: r.createdAt })),
+    config: {
+      issuer,
+      accessTokenTtlSeconds,
+      refreshTokenTtlDays: Math.round(refreshTokenTtlMs / (24 * 60 * 60 * 1000)),
+    },
+  };
+}
+
 /** Issues a short-lived signed SSO access token for an authenticated admin, carrying their identity + effective roles. */
 export async function issueAccessToken(userId: string, roles: AdminRoleName[], email: string | undefined, audience: SsoAudience, scope?: string[]): Promise<{ token: string; expiresIn: number }> {
   const { kid, privateKey } = await ensureActiveKey();
+  const [issuer, ttlSeconds] = await Promise.all([getSsoIssuer(), getAccessTokenTtlSeconds()]);
   const now = Math.floor(Date.now() / 1000);
   const token = await new SignJWT({ roles, email, ...(scope ? { scope } : {}) })
     .setProtectedHeader({ alg: "ES256", kid })
     .setSubject(userId)
-    .setIssuer(SSO_ISSUER)
+    .setIssuer(issuer)
     .setAudience(audience)
     .setIssuedAt(now)
-    .setExpirationTime(now + ACCESS_TOKEN_TTL_SECONDS)
+    .setExpirationTime(now + ttlSeconds)
     .setJti(randomUUID())
     .sign(privateKey);
-  return { token, expiresIn: ACCESS_TOKEN_TTL_SECONDS };
+  return { token, expiresIn: ttlSeconds };
 }
 
 /**
@@ -124,12 +179,12 @@ export async function issueAccessToken(userId: string, roles: AdminRoleName[], e
  * against another (e.g. `signalium-trainer`) — a token-confusion attack.
  */
 export async function verifyAccessToken(token: string, audience: SsoAudience): Promise<SsoTokenClaims> {
-  const { keys } = await getJwks();
+  const [{ keys }, issuer] = await Promise.all([getJwks(), getSsoIssuer()]);
   let lastErr: unknown;
   for (const jwk of keys) {
     try {
       const key = await importJWK(jwk, "ES256");
-      const { payload } = await jwtVerify(token, key, { issuer: SSO_ISSUER, audience });
+      const { payload } = await jwtVerify(token, key, { issuer, audience });
       return payload as unknown as SsoTokenClaims;
     } catch (err) {
       lastErr = err;
@@ -146,7 +201,7 @@ function hashToken(token: string): string {
 export async function issueTokenPair(userId: string, roles: AdminRoleName[], email: string | undefined, audience: SsoAudience) {
   const access = await issueAccessToken(userId, roles, email, audience);
   const rawRefreshToken = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+  const expiresAt = new Date(Date.now() + (await getRefreshTokenTtlMs()));
   await db.insert(ssoRefreshTokensTable).values({ userId, tokenHash: hashToken(rawRefreshToken), audience, expiresAt });
   await logAudit(userId, "sso.token_issued", "sso_token", userId, { audience, roles });
   return { accessToken: access.token, expiresIn: access.expiresIn, refreshToken: rawRefreshToken };

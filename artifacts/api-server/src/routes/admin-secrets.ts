@@ -27,6 +27,9 @@ const SYSTEM_ENV_KEYS: { key: string; category: string; description: string }[] 
   { key: "QDE_TRAINER_URL", category: "other", description: "Base URL of the signalium-trainer service the QDE loop talks to." },
   { key: "QDE_TRAINER_API_KEY", category: "api_key", description: "Service credential used to authenticate to signalium-trainer." },
   { key: "QDE_RESEARCH_LAB_URL", category: "other", description: "Base URL of the Research Lab integration hub." },
+  { key: "JWT_ISSUER", category: "other", description: "Fallback SSO JWT issuer if no vault value (sso.issuer) is set." },
+  { key: "JWT_EXPIRATION", category: "other", description: "Fallback SSO access token TTL in seconds if no vault value (sso.access_token_ttl_seconds) is set." },
+  { key: "JWT_REFRESH_EXPIRATION", category: "other", description: "Fallback SSO refresh token TTL in days if no vault value (sso.refresh_token_ttl_days) is set." },
   { key: "PRIVATE_OBJECT_DIR", category: "other", description: "Private object storage bucket path for EA builds/exports." },
   { key: "SECRETS_ENCRYPTION_KEY", category: "signing_key", description: "Optional dedicated key for this admin-secrets vault (falls back to SESSION_SECRET if unset)." },
 ];
