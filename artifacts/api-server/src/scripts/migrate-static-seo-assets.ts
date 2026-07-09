@@ -164,13 +164,13 @@ async function main() {
     await db.insert(seoPagesTable).values({
       path: "/",
       title: "Signalium",
-      description: "Signalium — built on Replit. Update this description to reflect the app.",
+      description: "Signalium — an algorithmic trading signal platform.",
       ogTitle: "Signalium",
-      ogDescription: "Signalium — built on Replit. Update this description to reflect the app.",
+      ogDescription: "Signalium — an algorithmic trading signal platform.",
       ogImage: ogImageUrl,
       twitterCard: "summary_large_image",
       twitterTitle: "Signalium",
-      twitterDescription: "Signalium — built on Replit. Update this description to reflect the app.",
+      twitterDescription: "Signalium — an algorithmic trading signal platform.",
       twitterImage: ogImageUrl,
     });
     console.log("  seeded seo_pages row for path \"/\" from index.html meta tags");
