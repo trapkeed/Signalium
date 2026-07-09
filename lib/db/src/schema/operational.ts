@@ -280,3 +280,65 @@ export const platformAlertsTable = pgTable(
 );
 
 export type PlatformAlert = typeof platformAlertsTable.$inferSelect;
+
+// ─── 7. Platform Health Snapshots ─────────────────────────────────────────────
+// S23a — periodic system-level health samples for the API server process.
+// Collected in-memory and flushed on an interval, following the same
+// snapshot-then-reset pattern as qdeDeploymentHealthTable.
+
+export const platformHealthSnapshotsTable = pgTable(
+  "platform_health_snapshots",
+  {
+    id: serial("id").primaryKey(),
+
+    cpuUsagePct: real("cpu_usage_pct"),
+    memoryUsageMb: real("memory_usage_mb"),
+    memoryTotalMb: real("memory_total_mb"),
+    eventLoopLagMs: real("event_loop_lag_ms"),
+
+    dbLatencyMs: real("db_latency_ms"),
+    dbHealthy: boolean("db_healthy").notNull().default(true),
+
+    /** Null when no Redis/queue infra is configured on the platform. */
+    redisLatencyMs: real("redis_latency_ms"),
+    redisConfigured: boolean("redis_configured").notNull().default(false),
+
+    activeWebsocketConnections: integer("active_websocket_connections").notNull().default(0),
+
+    /** Last time the deployment-poll / health-flush background scheduler ran. */
+    schedulerLastRunAt: timestamp("scheduler_last_run_at", { withTimezone: true }),
+    workerHealthy: boolean("worker_healthy").notNull().default(true),
+
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("platform_health_recorded_at_idx").on(t.recordedAt)],
+);
+
+export type PlatformHealthSnapshot = typeof platformHealthSnapshotsTable.$inferSelect;
+
+// ─── 8. Service Deployments ───────────────────────────────────────────────────
+// S23a — version + git-commit tracking for each platform service (frontend,
+// backend/API, trainer). Separate from qdeDeploymentsTable, which tracks the
+// QDE model itself. One row per recorded deployment event per service —
+// the most recent row per service is the "current" version; older rows are
+// the rollback-reference history.
+
+export const serviceDeploymentsTable = pgTable(
+  "service_deployments",
+  {
+    id: serial("id").primaryKey(),
+    service: text("service", {
+      enum: ["frontend", "backend", "trainer"],
+    }).notNull(),
+    version: text("version").notNull(),
+    gitCommitHash: text("git_commit_hash"),
+    notes: text("notes"),
+    deployedAt: timestamp("deployed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("service_deployments_service_idx").on(t.service),
+    index("service_deployments_deployed_at_idx").on(t.deployedAt),
+  ],
+);
+
+export type ServiceDeployment = typeof serviceDeploymentsTable.$inferSelect;

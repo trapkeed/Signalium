@@ -9,11 +9,27 @@ import {
   useGetQdeAdminDeploymentsHealthCurrent,
   useGetQdeAdminDeploymentsIdEvents,
   usePostQdeAdminDeploymentsPoll,
+  useGetOperationalDeploymentsVersions,
+  usePostOperationalDeploymentsVersions,
+  useGetOperationalQdeRuntimeHealth,
+  getGetOperationalDeploymentsVersionsQueryKey,
   type GetQdeAdminDeployments200,
   type GetQdeAdminDeploymentsActive200,
   type GetQdeAdminDeploymentsHealthCurrent200,
   type GetQdeAdminDeploymentsIdEvents200,
+  type GetOperationalDeploymentsVersions200,
+  type QdeRuntimeHealth,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   CheckCircle2,
   XCircle,
@@ -420,6 +436,211 @@ function DeploymentEventsList({ deploymentId }: { deploymentId: number }) {
   );
 }
 
+// ─── Service Versions Tab ──────────────────────────────────────────────────────
+
+type VersionsData = NonNullable<GetOperationalDeploymentsVersions200>;
+type ServiceRow = NonNullable<VersionsData["history"]>[number];
+type RuntimeHealthData = QdeRuntimeHealth;
+
+const SERVICE_LABELS: Record<string, string> = {
+  frontend: "Frontend",
+  backend: "Backend / API",
+  trainer: "Trainer",
+};
+
+function QdeRuntimeHealthCard() {
+  const { data } = useGetOperationalQdeRuntimeHealth();
+  const health = data as RuntimeHealthData | undefined;
+  if (!health) return null;
+
+  const acceptancePct = health.tradeAcceptanceRate != null ? `${(health.tradeAcceptanceRate * 100).toFixed(1)}%` : "—";
+  const avgConfidencePct = health.avgConfidence != null ? `${(health.avgConfidence * 100).toFixed(0)}%` : "—";
+  const avgHolding = health.avgHoldingDurationSeconds != null
+    ? `${Math.round(health.avgHoldingDurationSeconds / 60)}m`
+    : "—";
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Activity className="w-4 h-4 text-primary" />
+          QDE Runtime Health (24h)
+        </CardTitle>
+        <CardDescription>Live signals derived from opportunity and trade-timeline data.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="text-xl font-bold">{health.tradeGenerationFrequencyPerDay ?? 0}</div>
+            <div className="text-xs text-muted-foreground">Opportunities / day</div>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="text-xl font-bold">{acceptancePct}</div>
+            <div className="text-xs text-muted-foreground">Acceptance rate</div>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="text-xl font-bold">{avgConfidencePct}</div>
+            <div className="text-xs text-muted-foreground">Avg. confidence</div>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="text-xl font-bold">{avgHolding}</div>
+            <div className="text-xs text-muted-foreground">Avg. holding time</div>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="text-xl font-bold">
+              {health.activeTraders?.autonomous ?? 0} / {health.activeTraders?.manual ?? 0}
+            </div>
+            <div className="text-xs text-muted-foreground">Autonomous / Manual traders</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RecordVersionForm() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [service, setService] = useState<string>("frontend");
+  const [version, setVersion] = useState("");
+  const [notes, setNotes] = useState("");
+  const record = usePostOperationalDeploymentsVersions();
+
+  const handleSubmit = () => {
+    if (!version.trim()) {
+      toast({ title: "Version is required", variant: "destructive" });
+      return;
+    }
+    record.mutate(
+      { data: { service: service as "frontend" | "backend" | "trainer", version: version.trim(), notes: notes.trim() || undefined } },
+      {
+        onSuccess: () => {
+          toast({ title: "Deployment version recorded" });
+          setVersion("");
+          setNotes("");
+          queryClient.invalidateQueries({ queryKey: getGetOperationalDeploymentsVersionsQueryKey() });
+        },
+        onError: () => toast({ title: "Failed to record version", variant: "destructive" }),
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm">Record a Deployment</CardTitle>
+        <CardDescription>Display-only reference for the rollback history below. Does not trigger any action.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col md:flex-row gap-3 md:items-end">
+        <div className="space-y-1.5 w-full md:w-40">
+          <Label className="text-xs">Service</Label>
+          <Select value={service} onValueChange={setService}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="frontend">Frontend</SelectItem>
+              <SelectItem value="backend">Backend / API</SelectItem>
+              <SelectItem value="trainer">Trainer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5 w-full md:w-40">
+          <Label className="text-xs">Version</Label>
+          <Input value={version} onChange={(e) => setVersion(e.target.value)} placeholder="v1.4.2" />
+        </div>
+        <div className="space-y-1.5 flex-1">
+          <Label className="text-xs">Notes (optional)</Label>
+          <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What changed?" />
+        </div>
+        <Button onClick={handleSubmit} disabled={record.isPending}>Record</Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ServiceVersionsTab() {
+  const { data, isLoading } = useGetOperationalDeploymentsVersions();
+  const versions = data as VersionsData | undefined;
+  const current = versions?.current;
+  const history = (versions?.history ?? []) as ServiceRow[];
+
+  return (
+    <div className="space-y-4">
+      <QdeRuntimeHealthCard />
+      <RecordVersionForm />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {(["frontend", "backend", "trainer"] as const).map((svc) => {
+          const row = current?.[svc];
+          return (
+            <Card key={svc}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Server className="w-4 h-4 text-primary" />
+                  {SERVICE_LABELS[svc]}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {row ? (
+                  <>
+                    <div className="text-xl font-bold">{row.version}</div>
+                    {row.gitCommitHash && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                        <Hash className="w-3 h-3" />{row.gitCommitHash.slice(0, 7)}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-1">{timeAgo(row.deployedAt)}</div>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No version recorded</div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Deployment History</CardTitle>
+          <CardDescription>Reference for manual rollback — most recent first.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-muted-foreground text-sm py-6">Loading…</div>
+          ) : history.length === 0 ? (
+            <div className="text-muted-foreground text-sm py-6 text-center">No deployments recorded yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground text-xs border-b border-border/50">
+                    <th className="pb-2 pr-4">Service</th>
+                    <th className="pb-2 pr-4">Version</th>
+                    <th className="pb-2 pr-4">Commit</th>
+                    <th className="pb-2 pr-4">Notes</th>
+                    <th className="text-right pb-2">Deployed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((row) => (
+                    <tr key={row.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4">{SERVICE_LABELS[row.service ?? ""] ?? row.service}</td>
+                      <td className="py-2 pr-4 font-medium">{row.version}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">{row.gitCommitHash ? row.gitCommitHash.slice(0, 7) : "—"}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">{row.notes ?? "—"}</td>
+                      <td className="text-right py-2 text-muted-foreground">{timeAgo(row.deployedAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDeployments() {
@@ -449,12 +670,16 @@ export default function AdminDeployments() {
           <TabsTrigger value="events" className="flex items-center gap-1.5">
             <Activity className="w-3.5 h-3.5" />Events
           </TabsTrigger>
+          <TabsTrigger value="versions" className="flex items-center gap-1.5">
+            <Server className="w-3.5 h-3.5" />Service Versions
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active"><ActiveDeploymentTab /></TabsContent>
         <TabsContent value="history"><DeploymentHistoryTab /></TabsContent>
         <TabsContent value="health"><HealthMetricsTab /></TabsContent>
         <TabsContent value="events"><EventsLogTab /></TabsContent>
+        <TabsContent value="versions"><ServiceVersionsTab /></TabsContent>
       </Tabs>
     </div>
   );

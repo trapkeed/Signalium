@@ -40,6 +40,12 @@ import {
   operationalIncidentsTable,
   platformAlertsTable,
   runtimeStatusTable,
+  platformHealthSnapshotsTable,
+  serviceDeploymentsTable,
+  opportunitiesTable,
+  tradeTimelineTable,
+  userTradingSettingsTable,
+  qdeDeploymentsTable,
 } from "@workspace/db";
 import {
   eq,
@@ -57,6 +63,7 @@ import {
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { requireStaff } from "../middlewares/requireAdmin";
 import { requireApiKeyAuth } from "../middlewares/requireApiKeyAuth";
+import { getLatestSnapshot } from "../lib/platformHealth";
 import pino from "pino";
 
 const logger = pino({ name: "operational-routes" });
@@ -945,6 +952,174 @@ router.get("/support/user/:userId", requireStaff, async (req, res) => {
     });
   } catch (err) {
     req.log.error(err, "Support user view error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /operational/platform-health ────────────────────────────────────────
+// S23a — latest + recent history of system-level health snapshots (CPU, RAM,
+// event-loop lag, DB latency, Redis (not configured), WS connections, worker).
+
+router.get("/platform-health", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(288, Math.max(1, parseInt(String(req.query["limit"] ?? "60"), 10) || 60));
+
+    const [latest, history] = await Promise.all([
+      getLatestSnapshot(),
+      db
+        .select()
+        .from(platformHealthSnapshotsTable)
+        .orderBy(desc(platformHealthSnapshotsTable.recordedAt))
+        .limit(limit),
+    ]);
+
+    // history is already ordered newest-first (matches `latest`).
+    return res.json({
+      latest,
+      history,
+    });
+  } catch (err) {
+    req.log.error(err, "Platform health fetch error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /operational/qde-runtime-health ─────────────────────────────────────
+// S23a — QDE runtime signals derived live from opportunities/trade-timeline
+// data: trade generation frequency, acceptance rate, avg holding duration,
+// confidence distribution, and active autonomous vs. manual trader counts.
+
+router.get("/qde-runtime-health", requireAdmin, async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60_000);
+
+    const [
+      generatedRow,
+      enteredRow,
+      confidenceRow,
+      holdingRow,
+      tradingModeRows,
+    ] = await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(opportunitiesTable)
+        .where(gte(opportunitiesTable.observedAt, since)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(opportunitiesTable)
+        .where(and(gte(opportunitiesTable.observedAt, since), sql`${opportunitiesTable.enteredAt} is not null`)),
+      db
+        .select({ avgConfidence: sql<number | null>`avg(${opportunitiesTable.confidence})` })
+        .from(opportunitiesTable)
+        .where(and(gte(opportunitiesTable.observedAt, since), sql`${opportunitiesTable.confidence} is not null`)),
+      db
+        .select({ avgDurationSeconds: sql<number | null>`avg(${tradeTimelineTable.durationSeconds})` })
+        .from(tradeTimelineTable)
+        .where(and(gte(tradeTimelineTable.exitAt, since), sql`${tradeTimelineTable.durationSeconds} is not null`)),
+      db
+        .select({
+          tradingMode: userTradingSettingsTable.tradingMode,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(userTradingSettingsTable)
+        .groupBy(userTradingSettingsTable.tradingMode),
+    ]);
+
+    const generatedCount = generatedRow[0]?.count ?? 0;
+    const enteredCount = enteredRow[0]?.count ?? 0;
+    const acceptanceRate = generatedCount > 0 ? enteredCount / generatedCount : null;
+
+    const modeCounts = { manual: 0, autonomous: 0 };
+    for (const row of tradingModeRows) {
+      if (row.tradingMode === "manual" || row.tradingMode === "autonomous") {
+        modeCounts[row.tradingMode] = row.count;
+      }
+    }
+
+    const activeDeployment = await db
+      .select()
+      .from(qdeDeploymentsTable)
+      .where(eq(qdeDeploymentsTable.status, "active"))
+      .orderBy(desc(qdeDeploymentsTable.activatedAt))
+      .limit(1);
+
+    return res.json({
+      windowHours: 24,
+      tradeGenerationFrequencyPerDay: generatedCount,
+      tradeAcceptanceRate: acceptanceRate,
+      avgConfidence: confidenceRow[0]?.avgConfidence ?? null,
+      avgHoldingDurationSeconds: holdingRow[0]?.avgDurationSeconds ?? null,
+      activeTraders: modeCounts,
+      activeDeploymentVersion: activeDeployment[0]?.version ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    req.log.error(err, "QDE runtime health fetch error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /operational/deployments/versions ───────────────────────────────────
+// S23a — current version + git commit per service, plus deployment history
+// for rollback reference. Display-only: does not trigger any rollback.
+
+router.get("/deployments/versions", requireAdmin, async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(serviceDeploymentsTable)
+      .orderBy(desc(serviceDeploymentsTable.deployedAt))
+      .limit(200);
+
+    const current: Record<string, typeof rows[number] | null> = {
+      frontend: null,
+      backend: null,
+      trainer: null,
+    };
+    for (const row of rows) {
+      if (!current[row.service]) current[row.service] = row;
+    }
+
+    return res.json({ current, history: rows });
+  } catch (err) {
+    req.log.error(err, "Service deployment versions fetch error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── POST /operational/deployments/versions ──────────────────────────────────
+// S23a — admin: record a new deployment version for a service.
+
+router.post("/deployments/versions", requireAdmin, async (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+    const service = body.service as string;
+    if (!["frontend", "backend", "trainer"].includes(service)) {
+      return res.status(400).json({ error: "service must be one of frontend, backend, trainer" });
+    }
+    if (typeof body.version !== "string" || !body.version.trim() || body.version.length > 100) {
+      return res.status(400).json({ error: "version is required and must be at most 100 characters" });
+    }
+    if (typeof body.notes === "string" && body.notes.length > 2000) {
+      return res.status(400).json({ error: "notes must be at most 2000 characters" });
+    }
+    if (typeof body.gitCommitHash === "string" && body.gitCommitHash.length > 100) {
+      return res.status(400).json({ error: "gitCommitHash must be at most 100 characters" });
+    }
+
+    const [row] = await db
+      .insert(serviceDeploymentsTable)
+      .values({
+        service: service as "frontend" | "backend" | "trainer",
+        version: body.version.trim(),
+        gitCommitHash: typeof body.gitCommitHash === "string" ? body.gitCommitHash.trim() : null,
+        notes: typeof body.notes === "string" ? body.notes.trim() : null,
+      })
+      .returning();
+
+    return res.status(201).json({ deployment: row });
+  } catch (err) {
+    req.log.error(err, "Record service deployment error");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

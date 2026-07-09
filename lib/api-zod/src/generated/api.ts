@@ -6156,6 +6156,130 @@ export const GetOperationalDashboardResponse = zod.object({
 
 
 /**
+ * @summary Admin — latest + recent platform system health snapshots
+ */
+export const getOperationalPlatformHealthQueryLimitDefault = 60;
+
+export const GetOperationalPlatformHealthQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getOperationalPlatformHealthQueryLimitDefault)
+})
+
+export const GetOperationalPlatformHealthResponse = zod.object({
+  "latest": zod.object({
+  "id": zod.number().optional(),
+  "cpuUsagePct": zod.number().nullish(),
+  "memoryUsageMb": zod.number().nullish(),
+  "memoryTotalMb": zod.number().nullish(),
+  "eventLoopLagMs": zod.number().nullish(),
+  "dbLatencyMs": zod.number().nullish(),
+  "dbHealthy": zod.boolean().optional(),
+  "redisLatencyMs": zod.number().nullish(),
+  "redisConfigured": zod.boolean().optional(),
+  "activeWebsocketConnections": zod.number().optional(),
+  "schedulerLastRunAt": zod.string().nullish(),
+  "workerHealthy": zod.boolean().optional(),
+  "recordedAt": zod.string().optional()
+}).nullish(),
+  "history": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "cpuUsagePct": zod.number().nullish(),
+  "memoryUsageMb": zod.number().nullish(),
+  "memoryTotalMb": zod.number().nullish(),
+  "eventLoopLagMs": zod.number().nullish(),
+  "dbLatencyMs": zod.number().nullish(),
+  "dbHealthy": zod.boolean().optional(),
+  "redisLatencyMs": zod.number().nullish(),
+  "redisConfigured": zod.boolean().optional(),
+  "activeWebsocketConnections": zod.number().optional(),
+  "schedulerLastRunAt": zod.string().nullish(),
+  "workerHealthy": zod.boolean().optional(),
+  "recordedAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Admin — QDE runtime health signals (trade frequency, acceptance rate, confidence, holding duration)
+ */
+export const GetOperationalQdeRuntimeHealthResponse = zod.object({
+  "windowHours": zod.number().optional(),
+  "tradeGenerationFrequencyPerDay": zod.number().optional(),
+  "tradeAcceptanceRate": zod.number().nullish(),
+  "avgConfidence": zod.number().nullish(),
+  "avgHoldingDurationSeconds": zod.number().nullish(),
+  "activeTraders": zod.object({
+  "manual": zod.number().optional(),
+  "autonomous": zod.number().optional()
+}).optional(),
+  "activeDeploymentVersion": zod.string().nullish(),
+  "timestamp": zod.string().optional()
+})
+
+
+/**
+ * @summary Admin — current + historical service deployment versions (frontend/backend/trainer)
+ */
+export const GetOperationalDeploymentsVersionsResponse = zod.object({
+  "current": zod.object({
+  "frontend": zod.object({
+  "id": zod.number().optional(),
+  "service": zod.enum(['frontend', 'backend', 'trainer']).optional(),
+  "version": zod.string().optional(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "deployedAt": zod.string().optional()
+}).nullish(),
+  "backend": zod.object({
+  "id": zod.number().optional(),
+  "service": zod.enum(['frontend', 'backend', 'trainer']).optional(),
+  "version": zod.string().optional(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "deployedAt": zod.string().optional()
+}).nullish(),
+  "trainer": zod.object({
+  "id": zod.number().optional(),
+  "service": zod.enum(['frontend', 'backend', 'trainer']).optional(),
+  "version": zod.string().optional(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "deployedAt": zod.string().optional()
+}).nullish()
+}).optional(),
+  "history": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "service": zod.enum(['frontend', 'backend', 'trainer']).optional(),
+  "version": zod.string().optional(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "deployedAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Admin — record a new service deployment version
+ */
+export const PostOperationalDeploymentsVersionsBody = zod.object({
+  "service": zod.enum(['frontend', 'backend', 'trainer']),
+  "version": zod.string(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})
+
+export const PostOperationalDeploymentsVersionsResponse = zod.object({
+  "deployment": zod.object({
+  "id": zod.number().optional(),
+  "service": zod.enum(['frontend', 'backend', 'trainer']).optional(),
+  "version": zod.string().optional(),
+  "gitCommitHash": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "deployedAt": zod.string().optional()
+}).optional()
+})
+
+
+/**
  * @summary Staff — safe user support view (no credentials)
  */
 export const GetOperationalSupportUserUserIdParams = zod.object({

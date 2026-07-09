@@ -3,6 +3,8 @@ import { logger } from "./lib/logger";
 import { seedSymbolRegistry } from "./lib/symbolNormalizer";
 import { attachEaGateway } from "./ws/eaGateway";
 import { deploymentManager } from "./lib/deploymentManager";
+import { startPlatformHealthMonitor, markSchedulerHeartbeat } from "./lib/platformHealth";
+import { recordBackendDeploymentIfChanged } from "./lib/serviceVersion";
 
 const rawPort = process.env["PORT"];
 
@@ -33,6 +35,16 @@ const server = app.listen(port, (err) => {
 
 attachEaGateway(server);
 
+// S23a: Platform-level system health monitoring (CPU/RAM/event-loop lag/DB
+// latency/WS connections), independent of QDE deployment health.
+startPlatformHealthMonitor(60 * 1_000); // sample every 60 seconds
+
+// S23a: Record the backend's current git commit as a deployment version
+// (display-only, for the admin deployment dashboard's rollback reference).
+recordBackendDeploymentIfChanged().catch((err) => {
+  logger.warn({ err }, "Failed to record backend service deployment version");
+});
+
 // S21B: Initialize deployment manager from DB, then start background polling
 deploymentManager
   .initialize()
@@ -40,6 +52,7 @@ deploymentManager
     deploymentManager.startPolling(5 * 60 * 1_000); // poll every 5 minutes
     // Flush health samples every 5 minutes aligned with the polling interval
     setInterval(() => {
+      markSchedulerHeartbeat();
       deploymentManager.flushHealthSample().catch((err) => {
         logger.warn({ err }, "Failed to flush deployment health sample");
       });

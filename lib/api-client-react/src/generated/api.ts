@@ -70,6 +70,7 @@ import type {
   FeatureFlag,
   GetOperationalAlerts200,
   GetOperationalAlertsParams,
+  GetOperationalDeploymentsVersions200,
   GetOperationalExecutionQuality200,
   GetOperationalExecutionQualityParams,
   GetOperationalHeartbeatOffline200,
@@ -77,6 +78,8 @@ import type {
   GetOperationalHeartbeatStatusParams,
   GetOperationalIncidents200,
   GetOperationalIncidentsParams,
+  GetOperationalPlatformHealth200,
+  GetOperationalPlatformHealthParams,
   GetOperationalRiskAlerts200,
   GetOperationalRiskAlertsParams,
   GetOperationalTelemetry200,
@@ -169,6 +172,8 @@ import type {
   PositionTelemetry,
   PositionTelemetryInput,
   PostOperationalAlertsIdAcknowledge200,
+  PostOperationalDeploymentsVersions201,
+  PostOperationalDeploymentsVersionsBody,
   PostOperationalExecutionQuality200,
   PostOperationalHeartbeat200,
   PostOperationalIncidents201,
@@ -184,6 +189,7 @@ import type {
   ProviderCredential,
   ProviderStatus,
   ProviderSymbolMapping,
+  QdeRuntimeHealth,
   QdeStatsOverview,
   ReasoningAccuracy,
   ReasoningValidation,
@@ -20925,6 +20931,315 @@ export function useGetOperationalDashboard<TData = Awaited<ReturnType<typeof get
 
 
 
+
+export const getGetOperationalPlatformHealthUrl = (params?: GetOperationalPlatformHealthParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/platform-health?${stringifiedParams}` : `/api/operational/platform-health`
+}
+
+/**
+ * @summary Admin — latest + recent platform system health snapshots
+ */
+export const getOperationalPlatformHealth = async (params?: GetOperationalPlatformHealthParams, options?: RequestInit): Promise<GetOperationalPlatformHealth200> => {
+
+  return customFetch<GetOperationalPlatformHealth200>(getGetOperationalPlatformHealthUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalPlatformHealthQueryKey = (params?: GetOperationalPlatformHealthParams,) => {
+    return [
+    `/api/operational/platform-health`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalPlatformHealthQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalPlatformHealth>>, TError = ErrorType<unknown>>(params?: GetOperationalPlatformHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalPlatformHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalPlatformHealthQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalPlatformHealth>>> = ({ signal }) => getOperationalPlatformHealth(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalPlatformHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalPlatformHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalPlatformHealth>>>
+export type GetOperationalPlatformHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — latest + recent platform system health snapshots
+ */
+
+export function useGetOperationalPlatformHealth<TData = Awaited<ReturnType<typeof getOperationalPlatformHealth>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalPlatformHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalPlatformHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalPlatformHealthQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalQdeRuntimeHealthUrl = () => {
+
+
+
+
+  return `/api/operational/qde-runtime-health`
+}
+
+/**
+ * @summary Admin — QDE runtime health signals (trade frequency, acceptance rate, confidence, holding duration)
+ */
+export const getOperationalQdeRuntimeHealth = async ( options?: RequestInit): Promise<QdeRuntimeHealth> => {
+
+  return customFetch<QdeRuntimeHealth>(getGetOperationalQdeRuntimeHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalQdeRuntimeHealthQueryKey = () => {
+    return [
+    `/api/operational/qde-runtime-health`
+    ] as const;
+    }
+
+
+export const getGetOperationalQdeRuntimeHealthQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalQdeRuntimeHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>> = ({ signal }) => getOperationalQdeRuntimeHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalQdeRuntimeHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>>
+export type GetOperationalQdeRuntimeHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — QDE runtime health signals (trade frequency, acceptance rate, confidence, holding duration)
+ */
+
+export function useGetOperationalQdeRuntimeHealth<TData = Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalQdeRuntimeHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalQdeRuntimeHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalDeploymentsVersionsUrl = () => {
+
+
+
+
+  return `/api/operational/deployments/versions`
+}
+
+/**
+ * @summary Admin — current + historical service deployment versions (frontend/backend/trainer)
+ */
+export const getOperationalDeploymentsVersions = async ( options?: RequestInit): Promise<GetOperationalDeploymentsVersions200> => {
+
+  return customFetch<GetOperationalDeploymentsVersions200>(getGetOperationalDeploymentsVersionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalDeploymentsVersionsQueryKey = () => {
+    return [
+    `/api/operational/deployments/versions`
+    ] as const;
+    }
+
+
+export const getGetOperationalDeploymentsVersionsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalDeploymentsVersionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>> = ({ signal }) => getOperationalDeploymentsVersions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalDeploymentsVersionsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>>
+export type GetOperationalDeploymentsVersionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — current + historical service deployment versions (frontend/backend/trainer)
+ */
+
+export function useGetOperationalDeploymentsVersions<TData = Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalDeploymentsVersions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalDeploymentsVersionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalDeploymentsVersionsUrl = () => {
+
+
+
+
+  return `/api/operational/deployments/versions`
+}
+
+/**
+ * @summary Admin — record a new service deployment version
+ */
+export const postOperationalDeploymentsVersions = async (postOperationalDeploymentsVersionsBody: PostOperationalDeploymentsVersionsBody, options?: RequestInit): Promise<PostOperationalDeploymentsVersions201> => {
+
+  return customFetch<PostOperationalDeploymentsVersions201>(getPostOperationalDeploymentsVersionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postOperationalDeploymentsVersionsBody)
+  }
+);}
+
+
+
+
+
+export const getPostOperationalDeploymentsVersionsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>, TError,{data: BodyType<PostOperationalDeploymentsVersionsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>, TError,{data: BodyType<PostOperationalDeploymentsVersionsBody>}, TContext> => {
+
+const mutationKey = ['postOperationalDeploymentsVersions'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>, {data: BodyType<PostOperationalDeploymentsVersionsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postOperationalDeploymentsVersions(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalDeploymentsVersionsMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>>
+    export type PostOperationalDeploymentsVersionsMutationBody = BodyType<PostOperationalDeploymentsVersionsBody>
+    export type PostOperationalDeploymentsVersionsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — record a new service deployment version
+ */
+export const usePostOperationalDeploymentsVersions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>, TError,{data: BodyType<PostOperationalDeploymentsVersionsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalDeploymentsVersions>>,
+        TError,
+        {data: BodyType<PostOperationalDeploymentsVersionsBody>},
+        TContext
+      > => {
+      return useMutation(getPostOperationalDeploymentsVersionsMutationOptions(options));
+    }
 
 export const getGetOperationalSupportUserUserIdUrl = (userId: string,) => {
 

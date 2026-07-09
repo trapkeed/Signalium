@@ -5335,6 +5335,87 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OperationalDashboard" }
 
+  /operational/platform-health:
+    get:
+      summary: Admin — latest + recent platform system health snapshots
+      tags: [Operational]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, default: 60 } }
+      responses:
+        "200":
+          description: Platform health snapshots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  latest:
+                    allOf: [{ $ref: "#/components/schemas/PlatformHealthSnapshot" }]
+                    nullable: true
+                  history: { type: array, items: { $ref: "#/components/schemas/PlatformHealthSnapshot" } }
+
+  /operational/qde-runtime-health:
+    get:
+      summary: Admin — QDE runtime health signals (trade frequency, acceptance rate, confidence, holding duration)
+      tags: [Operational]
+      responses:
+        "200":
+          description: QDE runtime health
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QdeRuntimeHealth" }
+
+  /operational/deployments/versions:
+    get:
+      summary: Admin — current + historical service deployment versions (frontend/backend/trainer)
+      tags: [Operational]
+      responses:
+        "200":
+          description: Service deployment versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current:
+                    type: object
+                    properties:
+                      frontend:
+                        allOf: [{ $ref: "#/components/schemas/ServiceDeployment" }]
+                        nullable: true
+                      backend:
+                        allOf: [{ $ref: "#/components/schemas/ServiceDeployment" }]
+                        nullable: true
+                      trainer:
+                        allOf: [{ $ref: "#/components/schemas/ServiceDeployment" }]
+                        nullable: true
+                  history: { type: array, items: { $ref: "#/components/schemas/ServiceDeployment" } }
+    post:
+      summary: Admin — record a new service deployment version
+      tags: [Operational]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service, version]
+              properties:
+                service: { type: string, enum: [frontend, backend, trainer] }
+                version: { type: string }
+                gitCommitHash: { type: string, nullable: true }
+                notes: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployment:
+                    allOf: [{ $ref: "#/components/schemas/ServiceDeployment" }]
+
   /operational/support/user/{userId}:
     get:
       summary: Staff — safe user support view (no credentials)
@@ -8526,6 +8607,49 @@ components:
         criticalRiskAlerts: { type: integer }
         avgVpsLatencyMs: { type: number, nullable: true }
         timestamp: { type: string }
+
+    PlatformHealthSnapshot:
+      type: object
+      properties:
+        id: { type: integer }
+        cpuUsagePct: { type: number, nullable: true }
+        memoryUsageMb: { type: number, nullable: true }
+        memoryTotalMb: { type: number, nullable: true }
+        eventLoopLagMs: { type: number, nullable: true }
+        dbLatencyMs: { type: number, nullable: true }
+        dbHealthy: { type: boolean }
+        redisLatencyMs: { type: number, nullable: true }
+        redisConfigured: { type: boolean }
+        activeWebsocketConnections: { type: integer }
+        schedulerLastRunAt: { type: string, nullable: true }
+        workerHealthy: { type: boolean }
+        recordedAt: { type: string }
+
+    QdeRuntimeHealth:
+      type: object
+      properties:
+        windowHours: { type: integer }
+        tradeGenerationFrequencyPerDay: { type: integer }
+        tradeAcceptanceRate: { type: number, nullable: true }
+        avgConfidence: { type: number, nullable: true }
+        avgHoldingDurationSeconds: { type: number, nullable: true }
+        activeTraders:
+          type: object
+          properties:
+            manual: { type: integer }
+            autonomous: { type: integer }
+        activeDeploymentVersion: { type: string, nullable: true }
+        timestamp: { type: string }
+
+    ServiceDeployment:
+      type: object
+      properties:
+        id: { type: integer }
+        service: { type: string, enum: [frontend, backend, trainer] }
+        version: { type: string }
+        gitCommitHash: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        deployedAt: { type: string }
 
     UserSupportView:
       type: object

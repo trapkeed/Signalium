@@ -3,3 +3,4 @@
 - [S19 Trade Telemetry & Learning Loop](s19-trade-telemetry.md) — R-multiple correctness, finalise safe/throwing split, dedup guards, null-aware averages, orval looseObject fix.
 - [S21B Deployment Manager](s21b-deployment-manager.md) — atomic activation via DB transaction, DB-authoritative rollback, health flush atomicity, warm-up fail-closed gate, recordError in all catch blocks, db composite build step.
 - [S22A Ops Infrastructure](s22a-ops-infrastructure.md) — heartbeat identity binding, risk-alert dedup guard, dashboard state math, requireStaff/requireApiKeyAuth locations, enum cast workaround.
+- [S23a Platform Health & Deployment Tracking](s23a-platform-health-deployment.md) — no Redis infra exists (report unconfigured, don't fake), live-computed vs persisted metrics split, service-version vs QDE-model-deployment separation, interval reentrancy guard.

@@ -2757,6 +2757,56 @@ export interface OperationalDashboard {
   timestamp?: string;
 }
 
+export interface PlatformHealthSnapshot {
+  id?: number;
+  cpuUsagePct?: number | null;
+  memoryUsageMb?: number | null;
+  memoryTotalMb?: number | null;
+  eventLoopLagMs?: number | null;
+  dbLatencyMs?: number | null;
+  dbHealthy?: boolean;
+  redisLatencyMs?: number | null;
+  redisConfigured?: boolean;
+  activeWebsocketConnections?: number;
+  schedulerLastRunAt?: string | null;
+  workerHealthy?: boolean;
+  recordedAt?: string;
+}
+
+export type QdeRuntimeHealthActiveTraders = {
+  manual?: number;
+  autonomous?: number;
+};
+
+export interface QdeRuntimeHealth {
+  windowHours?: number;
+  tradeGenerationFrequencyPerDay?: number;
+  tradeAcceptanceRate?: number | null;
+  avgConfidence?: number | null;
+  avgHoldingDurationSeconds?: number | null;
+  activeTraders?: QdeRuntimeHealthActiveTraders;
+  activeDeploymentVersion?: string | null;
+  timestamp?: string;
+}
+
+export type ServiceDeploymentService = typeof ServiceDeploymentService[keyof typeof ServiceDeploymentService];
+
+
+export const ServiceDeploymentService = {
+  frontend: 'frontend',
+  backend: 'backend',
+  trainer: 'trainer',
+} as const;
+
+export interface ServiceDeployment {
+  id?: number;
+  service?: ServiceDeploymentService;
+  version?: string;
+  gitCommitHash?: string | null;
+  notes?: string | null;
+  deployedAt?: string;
+}
+
 export type UserSupportViewEaInstancesItem = {
   eaInstanceId?: string;
   state?: string;
@@ -3539,5 +3589,45 @@ export type GetOperationalAlerts200 = {
 
 export type PostOperationalAlertsIdAcknowledge200 = {
   ok?: boolean;
+};
+
+export type GetOperationalPlatformHealthParams = {
+limit?: number;
+};
+
+export type GetOperationalPlatformHealth200 = {
+  latest?: PlatformHealthSnapshot | null;
+  history?: PlatformHealthSnapshot[];
+};
+
+export type GetOperationalDeploymentsVersions200Current = {
+  frontend?: ServiceDeployment | null;
+  backend?: ServiceDeployment | null;
+  trainer?: ServiceDeployment | null;
+};
+
+export type GetOperationalDeploymentsVersions200 = {
+  current?: GetOperationalDeploymentsVersions200Current;
+  history?: ServiceDeployment[];
+};
+
+export type PostOperationalDeploymentsVersionsBodyService = typeof PostOperationalDeploymentsVersionsBodyService[keyof typeof PostOperationalDeploymentsVersionsBodyService];
+
+
+export const PostOperationalDeploymentsVersionsBodyService = {
+  frontend: 'frontend',
+  backend: 'backend',
+  trainer: 'trainer',
+} as const;
+
+export type PostOperationalDeploymentsVersionsBody = {
+  service: PostOperationalDeploymentsVersionsBodyService;
+  version: string;
+  gitCommitHash?: string | null;
+  notes?: string | null;
+};
+
+export type PostOperationalDeploymentsVersions201 = {
+  deployment?: ServiceDeployment;
 };
 

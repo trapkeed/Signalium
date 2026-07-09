@@ -29,6 +29,7 @@ import {
   warmDeployment,
   type TrainerDeploymentSummary,
 } from "./deploymentClient";
+import { markSchedulerHeartbeat } from "./platformHealth";
 
 // ─── In-memory active deployment state (hot path) ────────────────────────────
 
@@ -106,6 +107,7 @@ class DeploymentManager {
   startPolling(intervalMs: number = 5 * 60 * 1_000 /* 5 min */): void {
     this.stopPolling();
     this._pollingTimer = setInterval(() => {
+      markSchedulerHeartbeat();
       this.pollAndSync().catch((err) =>
         logger.error({ err }, "DeploymentManager: poll cycle failed"),
       );
