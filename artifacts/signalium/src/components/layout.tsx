@@ -40,6 +40,8 @@ import {
   Sparkles,
   Gauge,
   LogOut,
+  Settings2,
+  RefreshCw,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -73,6 +75,8 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/payments", label: "Payments", icon: Wallet },
       { href: "/admin/api-keys", label: "API Keys", icon: Key },
       { href: "/admin/secrets", label: "Secrets Vault (Super Admin)", icon: Key, superAdminOnly: true },
+      { href: "/admin/system-settings", label: "System Settings", icon: Settings2 },
+      { href: "/admin/sync-status", label: "Trainer Sync Status", icon: RefreshCw },
     ],
   },
   {

@@ -13,25 +13,28 @@ import { getAuth } from "../lib/auth";
 import { db, adminSecretsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireSuperAdmin } from "../middlewares/requireAdmin";
-import { encryptSecret, decryptSecret, maskSecret } from "../lib/secretsVault";
+import { encryptSecret, decryptSecret, maskSecret, resolveManagedConfig } from "../lib/secretsVault";
 import { logAudit } from "../lib/auditLog";
 import { getGoogleCredentials, setGoogleCredentials } from "../lib/googleOAuth";
+import crypto from "crypto";
+import { SETTINGS_DEFINITIONS, getDefinitionsByCategory, getTrainerRelevantKeys } from "../lib/settingsDefinitions";
+import { getTrainerFailureState, checkTrainerReachability } from "../lib/qdeTrainer";
 
 const router = Router();
 
 // Known process.env-backed secrets the platform reads directly. Read-only
 // here — actual rotation happens via Replit Secrets / the VPS environment.
 const SYSTEM_ENV_KEYS: { key: string; category: string; description: string }[] = [
-  { key: "DATABASE_URL", category: "db_credential", description: "PostgreSQL connection string." },
-  { key: "SESSION_SECRET", category: "signing_key", description: "Signs sessions, tokens, and encrypts admin secrets." },
-  { key: "QDE_TRAINER_URL", category: "other", description: "Base URL of the signalium-trainer service the QDE loop talks to." },
-  { key: "QDE_TRAINER_API_KEY", category: "api_key", description: "Service credential used to authenticate to signalium-trainer." },
-  { key: "QDE_RESEARCH_LAB_URL", category: "other", description: "Base URL of the Research Lab integration hub." },
-  { key: "JWT_ISSUER", category: "other", description: "Fallback SSO JWT issuer if no vault value (sso.issuer) is set." },
-  { key: "JWT_EXPIRATION", category: "other", description: "Fallback SSO access token TTL in seconds if no vault value (sso.access_token_ttl_seconds) is set." },
-  { key: "JWT_REFRESH_EXPIRATION", category: "other", description: "Fallback SSO refresh token TTL in days if no vault value (sso.refresh_token_ttl_days) is set." },
-  { key: "PRIVATE_OBJECT_DIR", category: "other", description: "Private object storage bucket path for EA builds/exports." },
-  { key: "SECRETS_ENCRYPTION_KEY", category: "signing_key", description: "Optional dedicated key for this admin-secrets vault (falls back to SESSION_SECRET if unset)." },
+  { key: "DATABASE_URL", category: "infra", description: "PostgreSQL connection string." },
+  { key: "SESSION_SECRET", category: "auth", description: "Signs sessions, tokens, and encrypts admin secrets." },
+  { key: "QDE_TRAINER_URL", category: "trainer", description: "Base URL of the signalium-trainer service the QDE loop talks to." },
+  { key: "QDE_TRAINER_API_KEY", category: "trainer", description: "Service credential used to authenticate to signalium-trainer." },
+  { key: "QDE_RESEARCH_LAB_URL", category: "trainer", description: "Base URL of the Research Lab integration hub." },
+  { key: "JWT_ISSUER", category: "auth", description: "Fallback SSO JWT issuer if no vault value (sso.issuer) is set." },
+  { key: "JWT_EXPIRATION", category: "auth", description: "Fallback SSO access token TTL in seconds if no vault value (sso.access_token_ttl_seconds) is set." },
+  { key: "JWT_REFRESH_EXPIRATION", category: "auth", description: "Fallback SSO refresh token TTL in days if no vault value (sso.refresh_token_ttl_days) is set." },
+  { key: "PRIVATE_OBJECT_DIR", category: "infra", description: "Private object storage bucket path for EA builds/exports." },
+  { key: "SECRETS_ENCRYPTION_KEY", category: "infra", description: "Optional dedicated key for this admin-secrets vault (falls back to SESSION_SECRET if unset)." },
 ];
 
 router.get("/system", requireSuperAdmin, async (_req, res) => {
@@ -51,6 +54,8 @@ router.get("/", requireSuperAdmin, async (req, res) => {
       key: r.key,
       category: r.category,
       description: r.description,
+      isActive: r.isActive,
+      rotatedAt: r.rotatedAt,
       maskedValue: (() => {
         try { return maskSecret(decryptSecret(r.encryptedValue)); } catch { return "••••••••"; }
       })(),
@@ -60,6 +65,72 @@ router.get("/", requireSuperAdmin, async (req, res) => {
     })));
   } catch (err) {
     req.log.error(err, "Failed to list admin secrets");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Structured settings definitions (categories, sync-relevance) ─────────
+
+router.get("/definitions", requireSuperAdmin, async (_req, res) => {
+  return res.json({ definitions: SETTINGS_DEFINITIONS, byCategory: getDefinitionsByCategory() });
+});
+
+// System Settings page: for every known definition, report configured status
+// pulled from whichever source (vault or env) actually backs it.
+router.get("/settings-status", requireSuperAdmin, async (_req, res) => {
+  const vaultRows = await db.select().from(adminSecretsTable);
+  const vaultByKey = new Map(vaultRows.map((r) => [r.key, r]));
+
+  const results = await Promise.all(SETTINGS_DEFINITIONS.map(async (def) => {
+    const vaultRow = vaultByKey.get(def.key);
+    const vaultConfigured = !!vaultRow && vaultRow.isActive;
+    const envConfigured = def.envVarName ? !!process.env[def.envVarName] : (def.source === "env" ? !!process.env[def.key] : false);
+    return {
+      key: def.key,
+      category: def.category,
+      description: def.description,
+      managePath: def.managePath,
+      trainerRelevant: !!def.trainerRelevant,
+      configured: vaultConfigured || envConfigured,
+      configuredVia: vaultConfigured ? "vault" as const : envConfigured ? "env" as const : null,
+      vaultDisabled: !!vaultRow && !vaultRow.isActive,
+    };
+  }));
+
+  return res.json(results);
+});
+
+// ─── Synchronization status (read-only; no secrets ever leave Signalium) ──
+// Computes a hash over the *non-secret* trainer-relevant config keys so
+// operators can see at a glance whether the resolved trainer config has
+// changed, without ever transmitting secret material to the trainer.
+router.get("/sync-status", requireSuperAdmin, async (req, res) => {
+  try {
+    const reachability = await checkTrainerReachability();
+    const trainerKeys = getTrainerRelevantKeys();
+    const resolvedEntries = await Promise.all(trainerKeys.map(async (key) => {
+      const def = SETTINGS_DEFINITIONS.find((d) => d.key === key)!;
+      const value = await resolveManagedConfig(key, def.envVarName);
+      return [key, value ?? null] as const;
+    }));
+    const configVersionInput = JSON.stringify(resolvedEntries.sort(([a], [b]) => a.localeCompare(b)));
+    const configVersionHash = crypto.createHash("sha256").update(configVersionInput).digest("hex").slice(0, 16);
+
+    return res.json({
+      trainer: {
+        configured: reachability.configured,
+        reachable: reachability.reachable,
+        latencyMs: reachability.latencyMs,
+        error: reachability.error,
+        checkedAt: new Date().toISOString(),
+      },
+      failureState: getTrainerFailureState(),
+      configVersionHash,
+      trainerRelevantKeyCount: trainerKeys.length,
+      note: "Signalium never transmits secret values to the trainer — this status reflects reachability and a hash of non-secret, trainer-relevant configuration only.",
+    });
+  } catch (err) {
+    req.log.error(err, "Failed to compute sync status");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -127,6 +198,73 @@ router.patch("/:id", requireSuperAdmin, async (req, res) => {
     return res.json({ id: row.id, key: row.key, maskedValue: maskSecret(decryptSecret(row.encryptedValue)) });
   } catch (err) {
     req.log.error(err, "Failed to update admin secret");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Rotate: replace the stored value while keeping the row (and its id/audit
+// history) intact, distinct from delete + recreate.
+router.post("/:id/rotate", requireSuperAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  const { value } = req.body as { value?: string };
+  if (!value) return res.status(400).json({ error: "value is required" });
+
+  try {
+    const now = new Date();
+    const [row] = await db.update(adminSecretsTable)
+      .set({ encryptedValue: encryptSecret(value), rotatedAt: now, updatedAt: now, updatedBy: userId, isActive: true })
+      .where(eq(adminSecretsTable.id, id))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    await logAudit(userId, "admin_secret.rotated", "admin_secret", String(id), { key: row.key });
+    return res.json({ id: row.id, key: row.key, maskedValue: maskSecret(value), rotatedAt: row.rotatedAt });
+  } catch (err) {
+    req.log.error(err, "Failed to rotate admin secret");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Disable: soft-disable so resolveManagedConfig() falls back to env, without
+// deleting the stored (encrypted) value.
+router.post("/:id/disable", requireSuperAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [row] = await db.update(adminSecretsTable)
+      .set({ isActive: false, updatedAt: new Date(), updatedBy: userId })
+      .where(eq(adminSecretsTable.id, id))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    await logAudit(userId, "admin_secret.disabled", "admin_secret", String(id), { key: row.key });
+    return res.json({ id: row.id, key: row.key, isActive: row.isActive });
+  } catch (err) {
+    req.log.error(err, "Failed to disable admin secret");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/:id/enable", requireSuperAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const id = Number(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [row] = await db.update(adminSecretsTable)
+      .set({ isActive: true, updatedAt: new Date(), updatedBy: userId })
+      .where(eq(adminSecretsTable.id, id))
+      .returning();
+    if (!row) return res.status(404).json({ error: "Not found" });
+    await logAudit(userId, "admin_secret.enabled", "admin_secret", String(id), { key: row.key });
+    return res.json({ id: row.id, key: row.key, isActive: row.isActive });
+  } catch (err) {
+    req.log.error(err, "Failed to enable admin secret");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

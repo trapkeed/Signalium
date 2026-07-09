@@ -124,6 +124,9 @@ export const auditLogTable = pgTable("audit_log", {
       "admin_secret.updated",
       "admin_secret.deleted",
       "admin_secret.revealed",
+      "admin_secret.rotated",
+      "admin_secret.disabled",
+      "admin_secret.enabled",
       // RunPod GPU orchestration
       "runpod_pod.launched",
       "runpod_pod.stopped",

@@ -54,7 +54,10 @@ export async function getManagedSecretValue(key: string): Promise<string | null>
   const { db, adminSecretsTable } = await import("@workspace/db");
   const { eq } = await import("drizzle-orm");
   const [row] = await db.select().from(adminSecretsTable).where(eq(adminSecretsTable.key, key));
-  if (!row) return null;
+  // A soft-disabled row (isActive: false) is treated as absent so callers
+  // fall back to process.env — this is what "Disable" in the vault UI does,
+  // distinct from deleting the row outright.
+  if (!row || !row.isActive) return null;
   try {
     return decryptSecret(row.encryptedValue);
   } catch {

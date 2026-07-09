@@ -23,6 +23,8 @@ import AdminPayments from "@/pages/admin/payments";
 import AdminSmtp from "@/pages/admin/smtp";
 import AdminApiKeys from "@/pages/admin/api-keys";
 import AdminSecrets from "@/pages/admin/secrets";
+import AdminSystemSettings from "@/pages/admin/system-settings";
+import AdminSyncStatus from "@/pages/admin/sync-status";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
 import EaBuilds from "@/pages/ea-builds";
@@ -175,6 +177,8 @@ function AppRoutes() {
               <Route path="/admin/smtp"><ProtectedRoute component={AdminSmtp} /></Route>
               <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
               <Route path="/admin/secrets"><ProtectedRoute component={AdminSecrets} /></Route>
+              <Route path="/admin/system-settings"><ProtectedRoute component={AdminSystemSettings} /></Route>
+              <Route path="/admin/sync-status"><ProtectedRoute component={AdminSyncStatus} /></Route>
               <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
               <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
               <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>

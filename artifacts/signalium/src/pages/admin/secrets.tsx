@@ -45,46 +45,49 @@ interface ManagedSecret {
   key: string;
   category: string;
   description: string | null;
+  isActive: boolean;
+  rotatedAt: string | null;
   maskedValue: string;
   updatedBy: string;
   createdAt: string;
   updatedAt: string;
 }
 
-const CATEGORIES = ["api_key", "db_credential", "signing_key", "webhook_secret", "other"];
+const CATEGORIES = ["auth", "payments", "email", "infra", "ai", "trainer", "market_data", "runpod", "ea_feed", "other"];
 
 // Curated catalog of known managed-secret keys for quick-add, grouped by
 // area. Purely a UI convenience (autofills key/category/description) — the
 // backend accepts any freeform key, so this list never blocks a custom key.
 const KNOWN_KEYS: { group: string; key: string; category: string; description: string }[] = [
-  { group: "Trainer", key: "trainer.url", category: "other", description: "Base URL of the signalium-trainer service (inference, training, Research Lab). Leave unset to run on local heuristics." },
-  { group: "Trainer", key: "trainer.api_key", category: "api_key", description: "Optional trainer-side API key, additive to the signed SSO service token." },
-  { group: "Trainer", key: "trainer.timeout_ms", category: "other", description: "Request timeout (ms) for outbound trainer calls." },
-  { group: "Trainer", key: "trainer.retry_count", category: "other", description: "Retry attempts for outbound trainer calls." },
-  { group: "Trainer", key: "trainer.circuit_breaker_threshold", category: "other", description: "Consecutive failures before the trainer circuit breaker opens." },
-  { group: "Trainer", key: "trainer.circuit_breaker_reset_ms", category: "other", description: "Cooldown (ms) before the trainer circuit breaker retries after opening." },
-  { group: "Payments", key: "payments.nowpayments_api_key", category: "api_key", description: "NOWPayments API key." },
-  { group: "Payments", key: "payments.nowpayments_ipn_secret", category: "webhook_secret", description: "NOWPayments IPN callback signing secret." },
-  { group: "Payments", key: "payments.stripe_secret_key", category: "api_key", description: "Stripe secret key. Overrides STRIPE_SECRET_KEY env var." },
-  { group: "Payments", key: "payments.stripe_webhook_secret", category: "webhook_secret", description: "Stripe webhook signing secret. Overrides STRIPE_WEBHOOK_SECRET env var." },
-  { group: "Payments", key: "payments.paypal_client_id", category: "api_key", description: "PayPal REST client id. Overrides PAYPAL_CLIENT_ID env var." },
-  { group: "Payments", key: "payments.paypal_client_secret", category: "api_key", description: "PayPal REST client secret. Overrides PAYPAL_CLIENT_SECRET env var." },
-  { group: "Payments", key: "payments.paypal_webhook_id", category: "webhook_secret", description: "PayPal webhook resource id. Overrides PAYPAL_WEBHOOK_ID env var." },
-  { group: "Market Data", key: "market_data.tiingo_api_key", category: "api_key", description: "Tiingo market data API key." },
-  { group: "Market Data", key: "market_data.oanda_api_key", category: "api_key", description: "OANDA API key." },
-  { group: "Market Data", key: "market_data.twelvedata_api_key", category: "api_key", description: "Twelve Data API key." },
-  { group: "Market Data", key: "market_data.polygon_api_key", category: "api_key", description: "Polygon.io API key." },
-  { group: "Market Data", key: "market_data.finnhub_api_key", category: "api_key", description: "Finnhub API key." },
-  { group: "RunPod", key: "runpod.api_key", category: "api_key", description: "RunPod API key for GPU training infrastructure." },
-  { group: "RunPod", key: "runpod.endpoint_id", category: "other", description: "RunPod serverless endpoint id." },
-  { group: "RunPod", key: "runpod.gpu_template", category: "other", description: "RunPod GPU pod template id." },
-  { group: "RunPod", key: "runpod.volume_id", category: "other", description: "RunPod persistent volume id." },
-  { group: "OpenAI", key: "openai.api_key", category: "api_key", description: "OpenAI API key." },
-  { group: "OpenAI", key: "openai.model", category: "other", description: "Default OpenAI model name." },
+  { group: "Trainer", key: "trainer.url", category: "trainer", description: "Base URL of the signalium-trainer service (inference, training, Research Lab). Leave unset to run on local heuristics." },
+  { group: "Trainer", key: "trainer.api_key", category: "trainer", description: "Optional trainer-side API key, additive to the signed SSO service token." },
+  { group: "Trainer", key: "trainer.timeout_ms", category: "trainer", description: "Request timeout (ms) for outbound trainer calls." },
+  { group: "Trainer", key: "trainer.retry_count", category: "trainer", description: "Retry attempts for outbound trainer calls." },
+  { group: "Trainer", key: "trainer.circuit_breaker_threshold", category: "trainer", description: "Consecutive failures before the trainer circuit breaker opens." },
+  { group: "Trainer", key: "trainer.circuit_breaker_reset_ms", category: "trainer", description: "Cooldown (ms) before the trainer circuit breaker retries after opening." },
+  { group: "Payments", key: "payments.nowpayments_api_key", category: "payments", description: "NOWPayments API key." },
+  { group: "Payments", key: "payments.nowpayments_ipn_secret", category: "payments", description: "NOWPayments IPN callback signing secret." },
+  { group: "Payments", key: "payments.stripe_secret_key", category: "payments", description: "Stripe secret key. Overrides STRIPE_SECRET_KEY env var." },
+  { group: "Payments", key: "payments.stripe_webhook_secret", category: "payments", description: "Stripe webhook signing secret. Overrides STRIPE_WEBHOOK_SECRET env var." },
+  { group: "Payments", key: "payments.paypal_client_id", category: "payments", description: "PayPal REST client id. Overrides PAYPAL_CLIENT_ID env var." },
+  { group: "Payments", key: "payments.paypal_client_secret", category: "payments", description: "PayPal REST client secret. Overrides PAYPAL_CLIENT_SECRET env var." },
+  { group: "Payments", key: "payments.paypal_webhook_id", category: "payments", description: "PayPal webhook resource id. Overrides PAYPAL_WEBHOOK_ID env var." },
+  { group: "Market Data", key: "market_data.tiingo_api_key", category: "market_data", description: "Tiingo market data API key." },
+  { group: "Market Data", key: "market_data.oanda_api_key", category: "market_data", description: "OANDA API key." },
+  { group: "Market Data", key: "market_data.twelvedata_api_key", category: "market_data", description: "Twelve Data API key." },
+  { group: "Market Data", key: "market_data.polygon_api_key", category: "market_data", description: "Polygon.io API key." },
+  { group: "Market Data", key: "market_data.finnhub_api_key", category: "market_data", description: "Finnhub API key." },
+  { group: "RunPod", key: "runpod.api_key", category: "runpod", description: "RunPod API key for GPU training infrastructure." },
+  { group: "RunPod", key: "runpod.endpoint_id", category: "runpod", description: "RunPod serverless endpoint id." },
+  { group: "RunPod", key: "runpod.gpu_template", category: "runpod", description: "RunPod GPU pod template id." },
+  { group: "RunPod", key: "runpod.volume_id", category: "runpod", description: "RunPod persistent volume id." },
+  { group: "AI", key: "openai.api_key", category: "ai", description: "OpenAI API key." },
+  { group: "AI", key: "openai.model", category: "ai", description: "Default OpenAI model name." },
   { group: "General", key: "general.debug_mode", category: "other", description: "Set to \"true\" to enable verbose platform debug logging." },
-  { group: "SSO", key: "sso.issuer", category: "other", description: "JWT issuer claim for Signalium-issued SSO tokens. Overrides JWT_ISSUER env var." },
-  { group: "SSO", key: "sso.access_token_ttl_seconds", category: "other", description: "SSO access token lifetime in seconds. Overrides JWT_EXPIRATION env var." },
-  { group: "SSO", key: "sso.refresh_token_ttl_days", category: "other", description: "SSO refresh token lifetime in days. Overrides JWT_REFRESH_EXPIRATION env var." },
+  { group: "Auth", key: "sso.issuer", category: "auth", description: "JWT issuer claim for Signalium-issued SSO tokens. Overrides JWT_ISSUER env var." },
+  { group: "Auth", key: "sso.access_token_ttl_seconds", category: "auth", description: "SSO access token lifetime in seconds. Overrides JWT_EXPIRATION env var." },
+  { group: "Auth", key: "sso.refresh_token_ttl_days", category: "auth", description: "SSO refresh token lifetime in days. Overrides JWT_REFRESH_EXPIRATION env var." },
+  { group: "EA Feed", key: "ea_feed.symbols", category: "ea_feed", description: "Data providers / symbol mappings driving the EA telemetry feed." },
 ];
 
 function SystemSecretsTab() {
@@ -257,6 +260,28 @@ function ManagedSecretsTab() {
     }
   }
 
+  async function rotate(id: number) {
+    const value = prompt("Enter the new secret value:");
+    if (!value) return;
+    try {
+      await api(`/${id}/rotate`, { method: "POST", body: JSON.stringify({ value }) });
+      toast({ title: "Secret rotated" });
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to rotate secret", description: err.message, variant: "destructive" });
+    }
+  }
+
+  async function toggleActive(id: number, isActive: boolean) {
+    try {
+      await api(`/${id}/${isActive ? "disable" : "enable"}`, { method: "POST" });
+      toast({ title: isActive ? "Secret disabled" : "Secret enabled" });
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to update secret", description: err.message, variant: "destructive" });
+    }
+  }
+
   function copy(value: string) {
     navigator.clipboard.writeText(value);
     toast({ title: "Copied to clipboard" });
@@ -287,7 +312,7 @@ function ManagedSecretsTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30">
-                {["Key", "Category", "Description", "Value", "Updated", "Actions"].map((h) => (
+                {["Key", "Category", "Description", "Value", "Status", "Updated", "Actions"].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -308,11 +333,27 @@ function ManagedSecretsTab() {
                       )}
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-xs font-mono">
+                    {row.isActive ? (
+                      <span className="flex items-center gap-1 text-success"><CheckCircle2 className="w-3 h-3" /> active</span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-muted-foreground"><XCircle className="w-3 h-3" /> disabled</span>
+                    )}
+                    {row.rotatedAt && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">rotated {new Date(row.rotatedAt).toLocaleDateString()}</div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(row.updatedAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-sm" onClick={() => toggleReveal(row.id)} title={revealed[row.id] ? "Hide" : "Reveal"}>
                         {revealed[row.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 rounded-sm font-mono text-[10px]" onClick={() => rotate(row.id)} title="Rotate">
+                        Rotate
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 rounded-sm font-mono text-[10px]" onClick={() => toggleActive(row.id, row.isActive)} title={row.isActive ? "Disable" : "Enable"}>
+                        {row.isActive ? "Disable" : "Enable"}
                       </Button>
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-sm text-destructive hover:text-destructive" onClick={() => remove(row.id)} title="Delete">
                         <Trash2 className="w-3.5 h-3.5" />

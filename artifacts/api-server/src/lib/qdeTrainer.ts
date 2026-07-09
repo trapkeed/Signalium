@@ -154,6 +154,34 @@ async function resolveTrainerUrl(): Promise<string | null> {
   return resolveManagedConfig("trainer.url", "QDE_TRAINER_URL");
 }
 
+/** Whether a trainer URL is currently configured (vault or env). Used by the sync-status dashboard to distinguish "unconfigured" from "configured but unreachable". */
+export async function isQdeTrainerConfigured(): Promise<boolean> {
+  return !!(await resolveTrainerUrl());
+}
+
+/**
+ * Lightweight reachability probe for the sync-status dashboard — hits the
+ * trainer base URL directly rather than reusing the heavier inference
+ * circuit breaker, so a status-page view never trips or resets it.
+ */
+export async function checkTrainerReachability(): Promise<{ configured: boolean; reachable: boolean; latencyMs: number | null; error: string | null }> {
+  const trainerUrl = await resolveTrainerUrl();
+  if (!trainerUrl) return { configured: false, reachable: false, latencyMs: null, error: null };
+  const started = Date.now();
+  try {
+    const serviceToken = await getServiceToken();
+    const res = await fetch(`${trainerUrl.replace(/\/$/, "")}/health`, {
+      headers: { Authorization: `Bearer ${serviceToken}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    const latencyMs = Date.now() - started;
+    if (!res.ok) return { configured: true, reachable: false, latencyMs, error: `HTTP ${res.status}` };
+    return { configured: true, reachable: true, latencyMs, error: null };
+  } catch (err) {
+    return { configured: true, reachable: false, latencyMs: Date.now() - started, error: (err as Error).message };
+  }
+}
+
 /**
  * Builds request-signing metadata headers, additive to the existing signed
  * JWT service token: a per-request nonce + id (replay/dedup hints for the

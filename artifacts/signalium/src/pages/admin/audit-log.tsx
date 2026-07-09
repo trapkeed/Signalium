@@ -30,6 +30,9 @@ const ACTIONS = [
   "model_request.action_issued",
   "security_incident.acknowledged",
   "security_incident.resolved",
+  "admin_secret.rotated",
+  "admin_secret.disabled",
+  "admin_secret.enabled",
 ] as const;
 
 function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
