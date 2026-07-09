@@ -56,7 +56,7 @@ async function proxy<T>(res: import("express").Response, fn: () => Promise<T>): 
 }
 
 router.get("/status", async (_req, res) => {
-  res.json({ configured: researchLab.isResearchLabConfigured() });
+  res.json({ configured: await researchLab.isResearchLabConfigured() });
 });
 
 // ─── 1. Experiments ───────────────────────────────────────────────────────────

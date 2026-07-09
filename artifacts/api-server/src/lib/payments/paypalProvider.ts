@@ -13,9 +13,9 @@ import type { PaymentProvider, PaymentIntentContext, PaymentIntentResult, Webhoo
 
 const PAYPAL_API_BASE = process.env.PAYPAL_ENV === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 
-async function getAccessToken(): Promise<string> {
-  const clientId = process.env.PAYPAL_CLIENT_ID as string;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET as string;
+async function getAccessToken(config: Record<string, string> = {}): Promise<string> {
+  const clientId = (config.PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID) as string;
+  const clientSecret = (config.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_CLIENT_SECRET) as string;
   const res = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -32,22 +32,26 @@ async function getAccessToken(): Promise<string> {
 export const paypalProvider: PaymentProvider = {
   type: "paypal",
 
-  isConfigured() {
-    return !!process.env.PAYPAL_CLIENT_ID && !!process.env.PAYPAL_CLIENT_SECRET && !!process.env.PAYPAL_WEBHOOK_ID;
+  isConfigured(config: Record<string, string> = {}) {
+    return (
+      !!(config.PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID) &&
+      !!(config.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_CLIENT_SECRET) &&
+      !!(config.PAYPAL_WEBHOOK_ID || process.env.PAYPAL_WEBHOOK_ID)
+    );
   },
 
-  connectivityNote() {
-    if (!this.isConfigured({})) {
-      return "PayPal is not connected. An admin needs to connect the PayPal integration (client id/secret + webhook id) before this provider can accept payments.";
+  connectivityNote(config: Record<string, string> = {}) {
+    if (!this.isConfigured(config)) {
+      return "PayPal is not connected. An admin needs to set the PayPal client id/secret + webhook id in Admin → Managed Secrets (or PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_WEBHOOK_ID env vars) before this provider can accept payments.";
     }
     return null;
   },
 
-  async createIntent(ctx: PaymentIntentContext): Promise<PaymentIntentResult> {
-    if (!this.isConfigured({})) {
+  async createIntent(ctx: PaymentIntentContext, config: Record<string, string> = {}): Promise<PaymentIntentResult> {
+    if (!this.isConfigured(config)) {
       throw new Error("PayPal is not configured (missing PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_WEBHOOK_ID).");
     }
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(config);
     const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
@@ -77,12 +81,12 @@ export const paypalProvider: PaymentProvider = {
     };
   },
 
-  async verifyWebhook(headers, rawBody): Promise<WebhookVerificationResult> {
-    if (!this.isConfigured({})) {
+  async verifyWebhook(headers, rawBody, config: Record<string, string> = {}): Promise<WebhookVerificationResult> {
+    if (!this.isConfigured(config)) {
       return { ok: false, reason: "PayPal is not configured." };
     }
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await getAccessToken(config);
       const body = JSON.parse(rawBody.toString("utf8"));
       const verifyRes = await fetch(`${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`, {
         method: "POST",
@@ -93,7 +97,7 @@ export const paypalProvider: PaymentProvider = {
           transmission_id: headers["paypal-transmission-id"],
           transmission_sig: headers["paypal-transmission-sig"],
           transmission_time: headers["paypal-transmission-time"],
-          webhook_id: process.env.PAYPAL_WEBHOOK_ID,
+          webhook_id: config.PAYPAL_WEBHOOK_ID || process.env.PAYPAL_WEBHOOK_ID,
           webhook_event: body,
         }),
       });
@@ -129,7 +133,7 @@ export const paypalProvider: PaymentProvider = {
         // the resulting PAYMENT.CAPTURE.COMPLETED webhook (or this call's own
         // outcome) is what actually marks the payment succeeded.
         try {
-          const captureAccessToken = await getAccessToken();
+          const captureAccessToken = await getAccessToken(config);
           const captureRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`, {
             method: "POST",
             headers: { Authorization: `Bearer ${captureAccessToken}`, "Content-Type": "application/json" },

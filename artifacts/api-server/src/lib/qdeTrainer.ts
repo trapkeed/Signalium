@@ -1,6 +1,8 @@
+import crypto from "crypto";
 import { retryWithBackoff } from "./retry";
 import { getServiceToken } from "./sso";
 import { getCircuitBreaker } from "./circuitBreaker";
+import { resolveManagedConfig } from "./secretsVault";
 
 // S26: fail fast + degrade gracefully once the external trainer is clearly
 // down, instead of retrying (and timing out) on every single EA tick while
@@ -141,8 +143,33 @@ export async function callTrainerInference(request: InferenceRequest): Promise<I
   return retryWithBackoff(() => runInference(request), { retries: 2, baseDelayMs: 100 });
 }
 
+/**
+ * Resolves the trainer base URL from the admin-managed vault first (key
+ * `trainer.url`, set via Admin → Managed Secrets), falling back to the
+ * `QDE_TRAINER_URL` env var. Neither is hardcoded — an unconfigured trainer
+ * means the platform runs entirely on local heuristics until an admin sets
+ * one of these.
+ */
+async function resolveTrainerUrl(): Promise<string | null> {
+  return resolveManagedConfig("trainer.url", "QDE_TRAINER_URL");
+}
+
+/**
+ * Builds request-signing metadata headers, additive to the existing signed
+ * JWT service token: a per-request nonce + id (replay/dedup hints for the
+ * trainer side) and a timestamp, plus the caller's service identity.
+ */
+function buildSigningHeaders(): Record<string, string> {
+  return {
+    "X-Signalium-Nonce": crypto.randomBytes(16).toString("hex"),
+    "X-Signalium-Request-Id": crypto.randomUUID(),
+    "X-Signalium-Service-Id": "signalium-platform",
+    "X-Signalium-Timestamp": new Date().toISOString(),
+  };
+}
+
 async function runInference(request: InferenceRequest): Promise<InferenceResponse> {
-  const trainerUrl = process.env["QDE_TRAINER_URL"];
+  const trainerUrl = await resolveTrainerUrl();
   if (trainerUrl) {
     return callExternalInference(trainerUrl, request);
   }
@@ -156,7 +183,11 @@ async function callExternalInference(baseUrl: string, request: InferenceRequest)
   const serviceToken = await getServiceToken();
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceToken}`,
+      ...buildSigningHeaders(),
+    },
     body: JSON.stringify(request),
     signal: AbortSignal.timeout(5000),
   });
@@ -276,7 +307,7 @@ export async function decideAction(telemetry: TelemetrySnapshot): Promise<Traine
 }
 
 async function runTrainer(t: TelemetrySnapshot): Promise<TrainerDecision> {
-  const trainerUrl = process.env["QDE_TRAINER_URL"];
+  const trainerUrl = await resolveTrainerUrl();
   if (!trainerUrl) {
     return simulateTrainerHeuristic(t);
   }
@@ -293,7 +324,11 @@ async function callExternalTrainer(url: string, telemetry: TelemetrySnapshot): P
   const serviceToken = await getServiceToken();
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceToken}`,
+      ...buildSigningHeaders(),
+    },
     body: JSON.stringify(telemetry),
   });
   if (!res.ok) {

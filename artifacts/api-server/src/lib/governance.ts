@@ -129,7 +129,7 @@ interface ExternalGovernanceSignals {
 }
 
 async function getExternalGovernanceSignals(activeVersion: string | null): Promise<ExternalGovernanceSignals> {
-  if (!researchLab.isResearchLabConfigured()) {
+  if (!(await researchLab.isResearchLabConfigured())) {
     return { certificationStatus: null, validationScore: null, shadowTestingStatus: null, configured: false };
   }
 

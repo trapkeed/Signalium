@@ -12,22 +12,22 @@ import type { PaymentProvider, PaymentIntentContext, PaymentIntentResult, Webhoo
 export const stripeProvider: PaymentProvider = {
   type: "stripe",
 
-  isConfigured() {
-    return !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_WEBHOOK_SECRET;
+  isConfigured(config: Record<string, string> = {}) {
+    return !!(config.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY) && !!(config.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET);
   },
 
-  connectivityNote() {
-    if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
-      return "Stripe is not connected. An admin needs to connect the Stripe integration (secret key + webhook signing secret) before this provider can accept payments.";
+  connectivityNote(config: Record<string, string> = {}) {
+    if (!this.isConfigured(config)) {
+      return "Stripe is not connected. An admin needs to set the Stripe secret key + webhook signing secret in Admin → Managed Secrets (or STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET env vars) before this provider can accept payments.";
     }
     return null;
   },
 
-  async createIntent(ctx: PaymentIntentContext): Promise<PaymentIntentResult> {
-    if (!this.isConfigured({})) {
+  async createIntent(ctx: PaymentIntentContext, config: Record<string, string> = {}): Promise<PaymentIntentResult> {
+    if (!this.isConfigured(config)) {
       throw new Error("Stripe is not configured (missing STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET).");
     }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    const stripe = new Stripe((config.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY) as string);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -53,18 +53,18 @@ export const stripeProvider: PaymentProvider = {
     };
   },
 
-  async verifyWebhook(headers, rawBody): Promise<WebhookVerificationResult> {
-    if (!this.isConfigured({})) {
+  async verifyWebhook(headers, rawBody, config: Record<string, string> = {}): Promise<WebhookVerificationResult> {
+    if (!this.isConfigured(config)) {
       return { ok: false, reason: "Stripe is not configured." };
     }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+    const stripe = new Stripe((config.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY) as string);
     const signature = headers["stripe-signature"];
     if (!signature || Array.isArray(signature)) {
       return { ok: false, reason: "Missing or invalid Stripe-Signature header." };
     }
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET as string);
+      event = stripe.webhooks.constructEvent(rawBody, signature, (config.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET) as string);
     } catch (err) {
       return { ok: false, reason: `Stripe signature verification failed: ${(err as Error).message}` };
     }

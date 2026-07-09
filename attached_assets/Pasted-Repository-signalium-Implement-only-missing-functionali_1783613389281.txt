@@ -1,0 +1,130 @@
+Repository: signalium
+
+Implement only missing functionality.
+
+Build the Signalium Internal Infrastructure Management System.
+
+The admin dashboard becomes the control plane for the entire ecosystem.
+
+ENVIRONMENT MANAGEMENT
+
+Create encrypted settings management.
+
+Requirements:
+
+* AES-256 encryption for sensitive values
+* master encryption key remains server-side only
+* values never shown after save
+* values may only be replaced
+* audit all changes
+
+Support:
+
+SMTP:
+
+* host
+* port
+* username
+* password
+* sender address
+
+Trainer:
+
+* trainer_url
+* internal_api_key
+* timeout settings
+* retry settings
+* circuit breaker settings
+
+Payments:
+
+* NOWPayments
+* Stripe
+* PayPal
+
+Market Data:
+
+* Tiingo
+* OANDA
+* TwelveData
+* Polygon
+* Finnhub
+
+RunPod:
+
+* api_key
+* endpoint_id
+* gpu_template
+* volume_id
+
+OpenAI:
+
+* api_key
+* model
+
+General:
+
+* feature flags
+* maintenance mode
+* debug mode
+
+TRAINER CONNECTION
+
+Primary trainer endpoint:
+
+https://trainer.signaliumai.com
+
+Platform URL:
+
+https://signaliumai.com
+
+Implement signed internal communication.
+
+Every request to trainer contains:
+
+* timestamp
+* nonce
+* HMAC signature
+* request id
+* originating service id
+
+Implement:
+
+* retries
+* exponential backoff
+* circuit breakers
+* health monitoring
+* latency monitoring
+* automatic fail detection
+
+NORMAL AUTHENTICATION
+
+Remove SSO requirements.
+
+Signalium owns authentication.
+
+Trainer trusts Signalium authentication.
+
+Trainer never authenticates customers directly.
+
+ADMIN CONTROL
+
+Signalium admin panel can fully manage trainer:
+
+* start training
+* stop training
+* create experiment
+* deploy model
+* rollback model
+* launch shadow test
+* inspect datasets
+* inspect experiments
+* inspect feature discovery
+* inspect memory findings
+* inspect deployment history
+* inspect certification history
+* inspect research reports
+
+Trainer becomes headless infrastructure controlled by Signalium.
+
+Implement only missing functionality.

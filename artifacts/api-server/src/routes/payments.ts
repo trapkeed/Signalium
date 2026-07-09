@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import { getPaymentProvider } from "../lib/payments/registry";
+import { resolveProviderConfig } from "../lib/payments/resolveProviderConfig";
 import { applySuccessfulPayment, applyFailedPayment, expireStalePayment } from "../lib/payments/paymentLifecycle";
 import { resolvePlanPrice } from "../lib/payments/pricing";
 import { logSubscriptionEvent, resolveCurrentSubscription } from "../lib/entitlementEngine";
@@ -27,10 +28,11 @@ router.get("/providers", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
     const rows = await db.select().from(paymentProvidersTable).orderBy(paymentProvidersTable.type);
-    const publicRows = rows.map((row) => {
+    const publicRows = await Promise.all(rows.map(async (row) => {
       const impl = getPaymentProvider(row.type);
-      const configured = impl ? impl.isConfigured(row.config) : false;
-      const limitation = impl ? impl.connectivityNote(row.config) : "No implementation registered for this provider type.";
+      const resolvedConfig = await resolveProviderConfig(row.type, row.config);
+      const configured = impl ? impl.isConfigured(resolvedConfig) : false;
+      const limitation = impl ? impl.connectivityNote(resolvedConfig) : "No implementation registered for this provider type.";
       return {
         id: row.id,
         type: row.type,
@@ -41,7 +43,7 @@ router.get("/providers", async (req, res) => {
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       };
-    });
+    }));
     return res.json(publicRows);
   } catch (err) {
     req.log.error(err, "Failed to list payment providers");
@@ -53,12 +55,13 @@ router.get("/providers", async (req, res) => {
 router.get("/providers/admin", requireAdmin, async (req, res) => {
   try {
     const rows = await db.select().from(paymentProvidersTable).orderBy(paymentProvidersTable.type);
-    const withConnectivity = rows.map((row) => {
+    const withConnectivity = await Promise.all(rows.map(async (row) => {
       const impl = getPaymentProvider(row.type);
-      const configured = impl ? impl.isConfigured(row.config) : false;
-      const limitation = impl ? impl.connectivityNote(row.config) : "No implementation registered for this provider type.";
+      const resolvedConfig = await resolveProviderConfig(row.type, row.config);
+      const configured = impl ? impl.isConfigured(resolvedConfig) : false;
+      const limitation = impl ? impl.connectivityNote(resolvedConfig) : "No implementation registered for this provider type.";
       return { ...row, connectable: configured, limitation };
-    });
+    }));
     return res.json(withConnectivity);
   } catch (err) {
     req.log.error(err, "Failed to list payment providers (admin)");
@@ -94,10 +97,11 @@ router.get("/providers/:id", requireAdmin, async (req, res) => {
     const [provider] = await db.select().from(paymentProvidersTable).where(eq(paymentProvidersTable.id, id));
     if (!provider) return res.status(404).json({ error: "Not found" });
     const impl = getPaymentProvider(provider.type);
+    const resolvedConfig = await resolveProviderConfig(provider.type, provider.config);
     return res.json({
       ...provider,
-      connectable: impl ? impl.isConfigured(provider.config) : false,
-      limitation: impl ? impl.connectivityNote(provider.config) : "No implementation registered for this provider type.",
+      connectable: impl ? impl.isConfigured(resolvedConfig) : false,
+      limitation: impl ? impl.connectivityNote(resolvedConfig) : "No implementation registered for this provider type.",
     });
   } catch (err) {
     req.log.error(err, "Failed to get payment provider");
@@ -185,11 +189,12 @@ router.post("/intent", async (req, res) => {
 
     const providerImpl = getPaymentProvider(providerRow.type);
     if (!providerImpl) return res.status(400).json({ error: "Payment provider not implemented" });
-    if (!providerImpl.isConfigured(providerRow.config)) {
+    const resolvedProviderConfig = await resolveProviderConfig(providerRow.type, providerRow.config);
+    if (!providerImpl.isConfigured(resolvedProviderConfig)) {
       return res.status(400).json({
         error: "Payment provider is not connectable",
         code: "PROVIDER_NOT_CONNECTABLE",
-        detail: providerImpl.connectivityNote(providerRow.config),
+        detail: providerImpl.connectivityNote(resolvedProviderConfig),
       });
     }
 
@@ -210,7 +215,7 @@ router.post("/intent", async (req, res) => {
     try {
       intentResult = await providerImpl.createIntent(
         { paymentId: payment.id, userId, amount, currency: "USD", planId: body.planId, planName: plan.name, reference },
-        providerRow.config,
+        resolvedProviderConfig,
       );
     } catch (err) {
       await db.update(paymentsTable).set({ status: "failed", notes: (err as Error).message }).where(eq(paymentsTable.id, payment.id));

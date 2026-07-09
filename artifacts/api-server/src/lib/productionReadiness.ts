@@ -7,12 +7,14 @@
  * "can this dependency be reached with the credentials we have", not
  * "did we exercise its full business logic".
  */
-import { db, smtpSettingsTable } from "@workspace/db";
+import { db, smtpSettingsTable, paymentProvidersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import { listPaymentProviderImpls } from "./payments/registry";
+import { resolveProviderConfig } from "./payments/resolveProviderConfig";
 import { isResearchLabConfigured } from "./researchLab";
 import { getTrainerFailureState } from "./qdeTrainer";
+import { resolveManagedConfig } from "./secretsVault";
 import { logger } from "./logger";
 
 export type ReadinessStatus = "ok" | "degraded" | "unconfigured" | "error";
@@ -44,21 +46,25 @@ async function checkSmtp(): Promise<ReadinessCheck> {
   }
 }
 
-function checkPaymentProviders(): ReadinessCheck[] {
-  return listPaymentProviderImpls().map((provider) => {
-    const configured = provider.isConfigured({});
+async function checkPaymentProviders(): Promise<ReadinessCheck[]> {
+  const rows = await db.select().from(paymentProvidersTable);
+  const rowByType = new Map(rows.map((r) => [r.type, r]));
+  return Promise.all(listPaymentProviderImpls().map(async (provider) => {
+    const config = await resolveProviderConfig(provider.type, rowByType.get(provider.type)?.config);
+    const configured = provider.isConfigured(config);
     return {
       name: `payment:${provider.type}`,
       status: configured ? "ok" : "unconfigured",
-      detail: configured ? "Configured." : (provider.connectivityNote({}) ?? "Not configured."),
+      detail: configured ? "Configured." : (provider.connectivityNote(config) ?? "Not configured."),
     };
-  });
+  }));
 }
 
-function checkTrainer(): ReadinessCheck {
+async function checkTrainer(): Promise<ReadinessCheck> {
   const { consecutiveFailures, lastFailureAt } = getTrainerFailureState();
-  if (!process.env["QDE_TRAINER_URL"]) {
-    return { name: "trainer", status: "unconfigured", detail: "QDE_TRAINER_URL not set — running on heuristic fallback only." };
+  const trainerUrl = await resolveManagedConfig("trainer.url", "QDE_TRAINER_URL");
+  if (!trainerUrl) {
+    return { name: "trainer", status: "unconfigured", detail: "No trainer URL set (vault trainer.url / QDE_TRAINER_URL) — running on heuristic fallback only." };
   }
   if (consecutiveFailures >= 3) {
     return { name: "trainer", status: "degraded", detail: `${consecutiveFailures} consecutive failures, last at ${lastFailureAt?.toISOString() ?? "unknown"}.` };
@@ -66,10 +72,10 @@ function checkTrainer(): ReadinessCheck {
   return { name: "trainer", status: "ok", detail: "Configured, circuit closed." };
 }
 
-function checkResearchLab(): ReadinessCheck {
-  return isResearchLabConfigured()
-    ? { name: "research_lab", status: "ok", detail: "QDE_RESEARCH_LAB_URL configured." }
-    : { name: "research_lab", status: "unconfigured", detail: "QDE_RESEARCH_LAB_URL not set." };
+async function checkResearchLab(): Promise<ReadinessCheck> {
+  return (await isResearchLabConfigured())
+    ? { name: "research_lab", status: "ok", detail: "Trainer URL configured (vault trainer.url or QDE_RESEARCH_LAB_URL)." }
+    : { name: "research_lab", status: "unconfigured", detail: "No trainer URL set (vault trainer.url / QDE_RESEARCH_LAB_URL)." };
 }
 
 async function checkDatabase(): Promise<ReadinessCheck> {
@@ -100,9 +106,9 @@ export async function runReadinessChecks(): Promise<{ overall: ReadinessStatus; 
     checkRequiredEnvVars(),
     await checkDatabase(),
     await checkSmtp(),
-    ...checkPaymentProviders(),
-    checkTrainer(),
-    checkResearchLab(),
+    ...(await checkPaymentProviders()),
+    await checkTrainer(),
+    await checkResearchLab(),
   ];
 
   const overall: ReadinessStatus = checks.some((c) => c.status === "error")

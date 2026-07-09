@@ -53,6 +53,37 @@ interface ManagedSecret {
 
 const CATEGORIES = ["api_key", "db_credential", "signing_key", "webhook_secret", "other"];
 
+// Curated catalog of known managed-secret keys for quick-add, grouped by
+// area. Purely a UI convenience (autofills key/category/description) — the
+// backend accepts any freeform key, so this list never blocks a custom key.
+const KNOWN_KEYS: { group: string; key: string; category: string; description: string }[] = [
+  { group: "Trainer", key: "trainer.url", category: "other", description: "Base URL of the signalium-trainer service (inference, training, Research Lab). Leave unset to run on local heuristics." },
+  { group: "Trainer", key: "trainer.api_key", category: "api_key", description: "Optional trainer-side API key, additive to the signed SSO service token." },
+  { group: "Trainer", key: "trainer.timeout_ms", category: "other", description: "Request timeout (ms) for outbound trainer calls." },
+  { group: "Trainer", key: "trainer.retry_count", category: "other", description: "Retry attempts for outbound trainer calls." },
+  { group: "Trainer", key: "trainer.circuit_breaker_threshold", category: "other", description: "Consecutive failures before the trainer circuit breaker opens." },
+  { group: "Trainer", key: "trainer.circuit_breaker_reset_ms", category: "other", description: "Cooldown (ms) before the trainer circuit breaker retries after opening." },
+  { group: "Payments", key: "payments.nowpayments_api_key", category: "api_key", description: "NOWPayments API key." },
+  { group: "Payments", key: "payments.nowpayments_ipn_secret", category: "webhook_secret", description: "NOWPayments IPN callback signing secret." },
+  { group: "Payments", key: "payments.stripe_secret_key", category: "api_key", description: "Stripe secret key. Overrides STRIPE_SECRET_KEY env var." },
+  { group: "Payments", key: "payments.stripe_webhook_secret", category: "webhook_secret", description: "Stripe webhook signing secret. Overrides STRIPE_WEBHOOK_SECRET env var." },
+  { group: "Payments", key: "payments.paypal_client_id", category: "api_key", description: "PayPal REST client id. Overrides PAYPAL_CLIENT_ID env var." },
+  { group: "Payments", key: "payments.paypal_client_secret", category: "api_key", description: "PayPal REST client secret. Overrides PAYPAL_CLIENT_SECRET env var." },
+  { group: "Payments", key: "payments.paypal_webhook_id", category: "webhook_secret", description: "PayPal webhook resource id. Overrides PAYPAL_WEBHOOK_ID env var." },
+  { group: "Market Data", key: "market_data.tiingo_api_key", category: "api_key", description: "Tiingo market data API key." },
+  { group: "Market Data", key: "market_data.oanda_api_key", category: "api_key", description: "OANDA API key." },
+  { group: "Market Data", key: "market_data.twelvedata_api_key", category: "api_key", description: "Twelve Data API key." },
+  { group: "Market Data", key: "market_data.polygon_api_key", category: "api_key", description: "Polygon.io API key." },
+  { group: "Market Data", key: "market_data.finnhub_api_key", category: "api_key", description: "Finnhub API key." },
+  { group: "RunPod", key: "runpod.api_key", category: "api_key", description: "RunPod API key for GPU training infrastructure." },
+  { group: "RunPod", key: "runpod.endpoint_id", category: "other", description: "RunPod serverless endpoint id." },
+  { group: "RunPod", key: "runpod.gpu_template", category: "other", description: "RunPod GPU pod template id." },
+  { group: "RunPod", key: "runpod.volume_id", category: "other", description: "RunPod persistent volume id." },
+  { group: "OpenAI", key: "openai.api_key", category: "api_key", description: "OpenAI API key." },
+  { group: "OpenAI", key: "openai.model", category: "other", description: "Default OpenAI model name." },
+  { group: "General", key: "general.debug_mode", category: "other", description: "Set to \"true\" to enable verbose platform debug logging." },
+];
+
 function SystemSecretsTab() {
   const [rows, setRows] = useState<SystemSecret[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -131,11 +162,39 @@ function AddSecretForm({ onCreated }: { onCreated: () => void }) {
     );
   }
 
+  function applyKnownKey(k: string) {
+    const found = KNOWN_KEYS.find((kk) => kk.key === k);
+    if (!found) return;
+    setKey(found.key);
+    setCategory(found.category);
+    setDescription(found.description);
+  }
+
   return (
     <div className="border border-border rounded-sm bg-card p-4 flex flex-col gap-3 max-w-lg">
       <div className="flex flex-col gap-1">
+        <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Quick add (optional)</label>
+        <select
+          defaultValue=""
+          onChange={(e) => applyKnownKey(e.target.value)}
+          className="h-9 rounded-sm border border-border bg-background px-2 font-mono text-xs"
+        >
+          <option value="" disabled>Choose a known key…</option>
+          {Object.entries(
+            KNOWN_KEYS.reduce<Record<string, typeof KNOWN_KEYS>>((acc, k) => {
+              (acc[k.group] ??= []).push(k);
+              return acc;
+            }, {}),
+          ).map(([group, keys]) => (
+            <optgroup key={group} label={group}>
+              {keys.map((k) => <option key={k.key} value={k.key}>{k.key}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1">
         <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Key</label>
-        <Input value={key} onChange={(e) => setKey(e.target.value)} placeholder="e.g. QDE_TRAINER_API_KEY" className="font-mono text-xs" />
+        <Input value={key} onChange={(e) => setKey(e.target.value)} placeholder="e.g. trainer.url" className="font-mono text-xs" />
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Value</label>

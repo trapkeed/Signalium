@@ -1,8 +1,9 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { db, paymentsTable, webhookEventsTable, type PaymentProviderRow } from "@workspace/db";
+import { db, paymentsTable, webhookEventsTable, paymentProvidersTable, type PaymentProviderRow } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { getPaymentProvider } from "../lib/payments/registry";
+import { resolveProviderConfig } from "../lib/payments/resolveProviderConfig";
 import { applySuccessfulPayment, applyFailedPayment } from "../lib/payments/paymentLifecycle";
 import { emitSecurityIncident } from "../lib/securityIncidents";
 
@@ -31,7 +32,9 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
   const provider = getPaymentProvider(providerType);
   if (!provider) return { status: 404 as const, body: { error: "Unknown provider" } };
 
-  const verification = await provider.verifyWebhook(headers, rawBody, {});
+  const [providerRow] = await db.select().from(paymentProvidersTable).where(eq(paymentProvidersTable.type, providerType));
+  const resolvedConfig = await resolveProviderConfig(providerType, providerRow?.config);
+  const verification = await provider.verifyWebhook(headers, rawBody, resolvedConfig);
   if (!verification.ok) {
     void emitSecurityIncident({
       type: "invalid_webhook_signature",

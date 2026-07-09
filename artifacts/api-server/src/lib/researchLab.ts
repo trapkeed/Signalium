@@ -20,6 +20,7 @@
  */
 import { logger } from "./logger";
 import { getServiceToken } from "./sso";
+import { resolveManagedConfig } from "./secretsVault";
 
 export class ResearchLabUnavailableError extends Error {
   constructor(detail?: string) {
@@ -28,18 +29,21 @@ export class ResearchLabUnavailableError extends Error {
   }
 }
 
-function getBaseUrl(): string | null {
-  return process.env["QDE_RESEARCH_LAB_URL"] || null;
+// Admin-managed vault key `trainer.url` takes priority over QDE_RESEARCH_LAB_URL
+// (same trainer endpoint used for inference — see qdeTrainer.ts). Neither is
+// hardcoded to a production domain; both stay blank until an admin sets one.
+async function getBaseUrl(): Promise<string | null> {
+  return resolveManagedConfig("trainer.url", "QDE_RESEARCH_LAB_URL");
 }
 
-export function isResearchLabConfigured(): boolean {
-  return !!getBaseUrl();
+export async function isResearchLabConfigured(): Promise<boolean> {
+  return !!(await getBaseUrl());
 }
 
 async function labFetch<T>(path: string, opts?: RequestInit): Promise<T> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = await getBaseUrl();
   if (!baseUrl) {
-    throw new ResearchLabUnavailableError("QDE_RESEARCH_LAB_URL is not configured");
+    throw new ResearchLabUnavailableError("Trainer URL is not configured (set trainer.url in Admin → Managed Secrets or QDE_RESEARCH_LAB_URL)");
   }
   const url = `${baseUrl.replace(/\/$/, "")}${path}`;
   try {
