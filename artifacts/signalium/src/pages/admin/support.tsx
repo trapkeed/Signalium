@@ -6,6 +6,8 @@ import {
   useGetSupportTicket,
   useCreateSupportTicketReply,
   useRequestSupportTicketAttachmentUploadUrl,
+  useAssignSupportTicket,
+  useEscalateSupportTicket,
 } from "@workspace/api-client-react";
 import type { SupportTicket } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -104,6 +106,52 @@ function AdminTicketQueue() {
   );
 }
 
+function TicketAssignmentBar({ ticket, onChanged }: { ticket: SupportTicket; onChanged: () => void }) {
+  const { toast } = useToast();
+  const assign = useAssignSupportTicket();
+  const escalate = useEscalateSupportTicket();
+  const [adminIdInput, setAdminIdInput] = useState(ticket.assignedAdminId ?? "");
+
+  async function handleAssign() {
+    try {
+      await assign.mutateAsync({ id: ticket.id, data: { adminId: adminIdInput.trim() || null } });
+      toast({ title: adminIdInput.trim() ? "Ticket assigned" : "Ticket unassigned" });
+      onChanged();
+    } catch {
+      toast({ title: "Failed to update assignment", variant: "destructive" });
+    }
+  }
+
+  async function handleEscalate() {
+    try {
+      await escalate.mutateAsync({ id: ticket.id });
+      toast({ title: "Ticket escalated to urgent" });
+      onChanged();
+    } catch {
+      toast({ title: "Failed to escalate", variant: "destructive" });
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-3 flex-wrap">
+      <input
+        placeholder="Admin user ID"
+        value={adminIdInput}
+        onChange={(e) => setAdminIdInput(e.target.value)}
+        className="h-8 w-48 rounded-sm border border-border bg-background px-2 text-xs font-mono"
+      />
+      <Button size="sm" variant="outline" className="h-8 rounded-sm text-xs" onClick={handleAssign} disabled={assign.isPending}>
+        {ticket.assignedAdminId ? "Reassign" : "Assign"}
+      </Button>
+      {!ticket.escalatedAt && (
+        <Button size="sm" variant="destructive" className="h-8 rounded-sm text-xs" onClick={handleEscalate} disabled={escalate.isPending}>
+          Escalate
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function AdminTicketDetail({ id }: { id: number }) {
   const { toast } = useToast();
   const { data: ticket, isLoading, refetch } = useGetSupportTicket(id);
@@ -152,8 +200,14 @@ function AdminTicketDetail({ id }: { id: number }) {
           <h1 className="text-xl font-bold text-foreground">{ticket.subject}</h1>
           <Badge variant="outline" className="text-xs font-mono rounded-sm">{ticket.status}</Badge>
           <Badge variant="outline" className="text-xs font-mono rounded-sm">{ticket.priority}</Badge>
+          {ticket.category && <Badge variant="secondary" className="text-xs font-mono rounded-sm">{ticket.category}</Badge>}
+          {ticket.escalatedAt && <Badge variant="destructive" className="text-xs font-mono rounded-sm">Escalated</Badge>}
         </div>
-        <p className="text-xs text-muted-foreground font-mono">User {ticket.userId} · Opened {new Date(ticket.createdAt).toLocaleString()}</p>
+        <p className="text-xs text-muted-foreground font-mono">
+          User {ticket.userId} · Opened {new Date(ticket.createdAt).toLocaleString()}
+          {ticket.assignedAdminId && <> · Assigned to {ticket.assignedAdminId}</>}
+        </p>
+        <TicketAssignmentBar ticket={ticket} onChanged={refetch} />
       </div>
 
       <div className="flex flex-col gap-3">

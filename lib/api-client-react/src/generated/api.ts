@@ -62,6 +62,7 @@ import type {
   DeleteProviderCapability200,
   DeleteProviderCredential200,
   DeleteProviderSymbolMapping200,
+  DismissOnboardingChecklist200,
   DownloadToken,
   Ea,
   EaBuild,
@@ -214,6 +215,7 @@ import type {
   NormalizeSymbol422,
   NormalizeSymbolBody,
   Notification,
+  OnboardingChecklist,
   OperationalDashboard,
   Opportunity,
   PatchOperationalAlertChannelsBody,
@@ -265,6 +267,7 @@ import type {
   QdeStatsOverview,
   ReadinessCheck200,
   ReadinessCheck503,
+  ReadinessReport,
   ReasoningAccuracy,
   ReasoningValidation,
   RecordConsentBody,
@@ -315,6 +318,7 @@ import type {
   SubscriptionUpdate,
   SupportTicket,
   SupportTicketAdminUpdate,
+  SupportTicketAssignInput,
   SupportTicketInput,
   SupportTicketReply,
   SupportTicketReplyInput,
@@ -15821,6 +15825,149 @@ export const useUpdateSupportTicketAdmin = <TError = ErrorType<unknown>,
       return useMutation(getUpdateSupportTicketAdminMutationOptions(options));
     }
 
+export const getAssignSupportTicketUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/tickets/admin/${id}/assign`
+}
+
+/**
+ * @summary Assign (or unassign) a ticket to an admin (admin)
+ */
+export const assignSupportTicket = async (id: number,
+    supportTicketAssignInput: SupportTicketAssignInput, options?: RequestInit): Promise<SupportTicket> => {
+
+  return customFetch<SupportTicket>(getAssignSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(supportTicketAssignInput)
+  }
+);}
+
+
+
+
+
+export const getAssignSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignSupportTicket>>, TError,{id: number;data: BodyType<SupportTicketAssignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof assignSupportTicket>>, TError,{id: number;data: BodyType<SupportTicketAssignInput>}, TContext> => {
+
+const mutationKey = ['assignSupportTicket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignSupportTicket>>, {id: number;data: BodyType<SupportTicketAssignInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  assignSupportTicket(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssignSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof assignSupportTicket>>>
+    export type AssignSupportTicketMutationBody = BodyType<SupportTicketAssignInput>
+    export type AssignSupportTicketMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Assign (or unassign) a ticket to an admin (admin)
+ */
+export const useAssignSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignSupportTicket>>, TError,{id: number;data: BodyType<SupportTicketAssignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof assignSupportTicket>>,
+        TError,
+        {id: number;data: BodyType<SupportTicketAssignInput>},
+        TContext
+      > => {
+      return useMutation(getAssignSupportTicketMutationOptions(options));
+    }
+
+export const getEscalateSupportTicketUrl = (id: number,) => {
+
+
+
+
+  return `/api/support/tickets/admin/${id}/escalate`
+}
+
+/**
+ * @summary Escalate a ticket to urgent priority (admin)
+ */
+export const escalateSupportTicket = async (id: number, options?: RequestInit): Promise<SupportTicket> => {
+
+  return customFetch<SupportTicket>(getEscalateSupportTicketUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getEscalateSupportTicketMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof escalateSupportTicket>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof escalateSupportTicket>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['escalateSupportTicket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof escalateSupportTicket>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  escalateSupportTicket(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EscalateSupportTicketMutationResult = NonNullable<Awaited<ReturnType<typeof escalateSupportTicket>>>
+
+    export type EscalateSupportTicketMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Escalate a ticket to urgent priority (admin)
+ */
+export const useEscalateSupportTicket = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof escalateSupportTicket>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof escalateSupportTicket>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getEscalateSupportTicketMutationOptions(options));
+    }
+
 export const getGetSupportTicketUrl = (id: number,) => {
 
 
@@ -26337,4 +26484,300 @@ export function useListResearchLabArtifactHistory<TData = Awaited<ReturnType<typ
 
 
 
+
+export const getGetOnboardingChecklistUrl = () => {
+
+
+
+
+  return `/api/onboarding/checklist`
+}
+
+/**
+ * @summary Compute the current user's onboarding/account-completion checklist
+ */
+export const getOnboardingChecklist = async ( options?: RequestInit): Promise<OnboardingChecklist> => {
+
+  return customFetch<OnboardingChecklist>(getGetOnboardingChecklistUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOnboardingChecklistQueryKey = () => {
+    return [
+    `/api/onboarding/checklist`
+    ] as const;
+    }
+
+
+export const getGetOnboardingChecklistQueryOptions = <TData = Awaited<ReturnType<typeof getOnboardingChecklist>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingChecklist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOnboardingChecklistQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOnboardingChecklist>>> = ({ signal }) => getOnboardingChecklist({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOnboardingChecklist>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOnboardingChecklistQueryResult = NonNullable<Awaited<ReturnType<typeof getOnboardingChecklist>>>
+export type GetOnboardingChecklistQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Compute the current user's onboarding/account-completion checklist
+ */
+
+export function useGetOnboardingChecklist<TData = Awaited<ReturnType<typeof getOnboardingChecklist>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingChecklist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOnboardingChecklistQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDismissOnboardingChecklistUrl = () => {
+
+
+
+
+  return `/api/onboarding/dismiss`
+}
+
+/**
+ * @summary Dismiss the onboarding checklist widget
+ */
+export const dismissOnboardingChecklist = async ( options?: RequestInit): Promise<DismissOnboardingChecklist200> => {
+
+  return customFetch<DismissOnboardingChecklist200>(getDismissOnboardingChecklistUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDismissOnboardingChecklistMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dismissOnboardingChecklist>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dismissOnboardingChecklist>>, TError,void, TContext> => {
+
+const mutationKey = ['dismissOnboardingChecklist'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dismissOnboardingChecklist>>, void> = () => {
+
+
+          return  dismissOnboardingChecklist(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DismissOnboardingChecklistMutationResult = NonNullable<Awaited<ReturnType<typeof dismissOnboardingChecklist>>>
+
+    export type DismissOnboardingChecklistMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Dismiss the onboarding checklist widget
+ */
+export const useDismissOnboardingChecklist = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dismissOnboardingChecklist>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof dismissOnboardingChecklist>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDismissOnboardingChecklistMutationOptions(options));
+    }
+
+export const getGetReadinessReportUrl = () => {
+
+
+
+
+  return `/api/ops-readiness`
+}
+
+/**
+ * @summary Aggregated dependency readiness report (admin)
+ */
+export const getReadinessReport = async ( options?: RequestInit): Promise<ReadinessReport> => {
+
+  return customFetch<ReadinessReport>(getGetReadinessReportUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReadinessReportQueryKey = () => {
+    return [
+    `/api/ops-readiness`
+    ] as const;
+    }
+
+
+export const getGetReadinessReportQueryOptions = <TData = Awaited<ReturnType<typeof getReadinessReport>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReadinessReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReadinessReportQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReadinessReport>>> = ({ signal }) => getReadinessReport({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReadinessReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReadinessReportQueryResult = NonNullable<Awaited<ReturnType<typeof getReadinessReport>>>
+export type GetReadinessReportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Aggregated dependency readiness report (admin)
+ */
+
+export function useGetReadinessReport<TData = Awaited<ReturnType<typeof getReadinessReport>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReadinessReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReadinessReportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRunReadinessSmokeTestUrl = () => {
+
+
+
+
+  return `/api/ops-readiness/smoke-test`
+}
+
+/**
+ * @summary Run and audit-log a release smoke test (admin)
+ */
+export const runReadinessSmokeTest = async ( options?: RequestInit): Promise<ReadinessReport> => {
+
+  return customFetch<ReadinessReport>(getRunReadinessSmokeTestUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRunReadinessSmokeTestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runReadinessSmokeTest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runReadinessSmokeTest>>, TError,void, TContext> => {
+
+const mutationKey = ['runReadinessSmokeTest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runReadinessSmokeTest>>, void> = () => {
+
+
+          return  runReadinessSmokeTest(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunReadinessSmokeTestMutationResult = NonNullable<Awaited<ReturnType<typeof runReadinessSmokeTest>>>
+
+    export type RunReadinessSmokeTestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Run and audit-log a release smoke test (admin)
+ */
+export const useRunReadinessSmokeTest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runReadinessSmokeTest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runReadinessSmokeTest>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRunReadinessSmokeTestMutationOptions(options));
+    }
 

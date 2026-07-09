@@ -107,6 +107,12 @@ export const auditLogTable = pgTable("audit_log", {
       "role_escalation.cancelled",
       "ea_build.signed",
       "admin_session.idle_expired",
+      // S30 — Launch Readiness and Go Live
+      "support_ticket.assigned",
+      "support_ticket.escalated",
+      "support_ticket.categorized",
+      "onboarding.step_completed",
+      "release.smoke_test_run",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

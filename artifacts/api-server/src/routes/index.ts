@@ -45,6 +45,8 @@ import opsDashboardRouter from "./ops-dashboard";
 import resilienceRouter from "./resilience";
 import governanceRouter from "./governance";
 import complianceRouter from "./compliance";
+import opsReadinessRouter from "./ops-readiness";
+import onboardingRouter from "./onboarding";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -116,5 +118,8 @@ router.use("/governance", governanceRouter);
 // export, and data-governance oversight (self-service equivalents live under
 // /account, mounted above, always scoped to the caller)
 router.use("/compliance", complianceRouter);
+
+router.use("/ops-readiness", opsReadinessRouter);
+router.use("/onboarding", onboardingRouter);
 
 export default router;

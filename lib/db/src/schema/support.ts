@@ -11,10 +11,19 @@ export const supportTicketsTable = pgTable("support_tickets", {
   subject: text("subject").notNull(),
   status: text("status", { enum: ["open", "pending", "resolved", "closed"] }).notNull().default("open"),
   priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).notNull().default("normal"),
+  // S30 — issue categorization, used for queue filtering/routing. Free-form
+  // enough to cover the common cases without a separate lookup table.
+  category: text("category", { enum: ["billing", "technical", "ea_broker", "account", "other"] }).notNull().default("other"),
+  // S30 — explicit agent assignment (nullable = unassigned, shared queue).
+  assignedAdminId: text("assigned_admin_id"),
+  // S30 — set when priority is bumped via the explicit escalate action
+  // (as opposed to the implicit reopen-on-reply behavior below).
+  escalatedAt: timestamp("escalated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("support_tickets_user_id_idx").on(table.userId),
+  index("support_tickets_assigned_admin_id_idx").on(table.assignedAdminId),
 ]);
 
 export const insertSupportTicketSchema = createInsertSchema(supportTicketsTable).omit({ id: true, createdAt: true, updatedAt: true, status: true });

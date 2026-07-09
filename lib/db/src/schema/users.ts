@@ -18,6 +18,9 @@ export const usersTable = pgTable("users", {
   // key constraint at the DB level to avoid cross-schema-file import
   // ordering issues — validated at the route layer instead.
   preferredPaymentProviderId: integer("preferred_payment_provider_id"),
+  // S30 — set when the user dismisses the onboarding checklist widget
+  // without necessarily completing every step (e.g. an experienced user).
+  onboardingDismissedAt: timestamp("onboarding_dismissed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

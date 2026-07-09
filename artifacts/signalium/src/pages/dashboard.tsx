@@ -1,5 +1,6 @@
 import { useGetRuntimeStatus, useGetRuntimeSummary, useListTelemetry, useGetMySubscription } from "@workspace/api-client-react";
 import { Activity, Wifi, WifiOff, TrendingUp, TrendingDown, AlertCircle, Clock, Cpu } from "lucide-react";
+import { OnboardingChecklist } from "../components/onboarding-checklist";
 
 function StatusDot({ connected }: { connected: boolean }) {
   return (
@@ -39,6 +40,8 @@ export default function Dashboard() {
       </div>
 
       <div className="p-8 space-y-8">
+        <OnboardingChecklist />
+
         {/* Runtime status */}
         <div className="grid md:grid-cols-2 gap-6">
           <div className="border border-border bg-card rounded-lg p-6">

@@ -4208,6 +4208,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/SupportTicket"
 
+  /support/tickets/admin/{id}/assign:
+    post:
+      tags: [support-tickets]
+      operationId: assignSupportTicket
+      summary: Assign (or unassign) a ticket to an admin (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportTicketAssignInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
+  /support/tickets/admin/{id}/escalate:
+    post:
+      tags: [support-tickets]
+      operationId: escalateSupportTicket
+      summary: Escalate a ticket to urgent priority (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportTicket"
+
   /support/tickets/{id}:
     get:
       tags: [support-tickets]
@@ -6607,6 +6651,60 @@ paths:
                   artifacts: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
         "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
 
+  /onboarding/checklist:
+    get:
+      tags: [onboarding]
+      operationId: getOnboardingChecklist
+      summary: Compute the current user's onboarding/account-completion checklist
+      responses:
+        "200":
+          description: Checklist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingChecklist"
+
+  /onboarding/dismiss:
+    post:
+      tags: [onboarding]
+      operationId: dismissOnboardingChecklist
+      summary: Dismiss the onboarding checklist widget
+      responses:
+        "200":
+          description: Dismissed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dismissed: { type: boolean }
+
+  /ops-readiness:
+    get:
+      tags: [ops-readiness]
+      operationId: getReadinessReport
+      summary: Aggregated dependency readiness report (admin)
+      responses:
+        "200":
+          description: Readiness report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessReport"
+
+  /ops-readiness/smoke-test:
+    post:
+      tags: [ops-readiness]
+      operationId: runReadinessSmokeTest
+      summary: Run and audit-log a release smoke test (admin)
+      responses:
+        "200":
+          description: Readiness report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessReport"
+
 components:
   responses:
     ResearchLabUnavailable:
@@ -8522,6 +8620,13 @@ components:
         priority:
           type: string
           enum: [low, normal, high, urgent]
+        category:
+          type: string
+          enum: [billing, technical, ea_broker, account, other]
+        assignedAdminId:
+          type: ["string", "null"]
+        escalatedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -8569,6 +8674,9 @@ components:
         priority:
           type: string
           enum: [low, normal, high, urgent]
+        category:
+          type: string
+          enum: [billing, technical, ea_broker, account, other]
         attachmentPath:
           type: string
 
@@ -8590,6 +8698,71 @@ components:
         priority:
           type: string
           enum: [low, normal, high, urgent]
+        category:
+          type: string
+          enum: [billing, technical, ea_broker, account, other]
+
+    SupportTicketAssignInput:
+      type: object
+      properties:
+        adminId:
+          type: ["string", "null"]
+
+    OnboardingStep:
+      type: object
+      required: [key, title, guide, completed]
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        guide:
+          type: string
+        completed:
+          type: boolean
+
+    OnboardingChecklist:
+      type: object
+      required: [steps, completedCount, totalCount, percentComplete, isComplete]
+      properties:
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/OnboardingStep"
+        completedCount:
+          type: integer
+        totalCount:
+          type: integer
+        percentComplete:
+          type: integer
+        isComplete:
+          type: boolean
+        dismissed:
+          type: boolean
+
+    ReadinessCheck:
+      type: object
+      required: [name, status, detail]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ok, degraded, unconfigured, error]
+        detail:
+          type: string
+
+    ReadinessReport:
+      type: object
+      required: [overall, checks]
+      properties:
+        overall:
+          type: string
+          enum: [ok, degraded, unconfigured, error]
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReadinessCheck"
 
     ContactMessage:
       type: object

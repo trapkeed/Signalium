@@ -13,6 +13,7 @@ import { startBackupScheduler } from "./lib/backupService";
 import { startAuditRetentionSweep } from "./lib/auditRetention";
 import { seedSecretRotationTracking } from "./lib/secretRotation";
 import { startAccountDeletionSweep } from "./lib/dataGovernance";
+import { runStartupDiagnostics } from "./lib/productionReadiness";
 
 const rawPort = process.env["PORT"];
 
@@ -38,6 +39,15 @@ const server = app.listen(port, (err) => {
 
   seedSymbolRegistry().catch((seedErr) => {
     logger.error({ err: seedErr }, "Failed to seed symbol registry");
+  });
+
+  // S30: post-listen startup diagnostics — logs a dependency readiness
+  // report and, in production, exits if a required env var is missing.
+  // Runs after listen() so the port is already bound (no delay to first
+  // health-check response) but before real traffic is expected.
+  runStartupDiagnostics().catch((diagErr) => {
+    logger.error({ err: diagErr }, "Startup diagnostics failed");
+    if (process.env.NODE_ENV === "production") process.exit(1);
   });
 });
 

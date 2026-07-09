@@ -5,11 +5,13 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportTicketInputCategory } from './supportTicketInputCategory';
 import type { SupportTicketInputPriority } from './supportTicketInputPriority';
 
 export interface SupportTicketInput {
   subject: string;
   message: string;
   priority?: SupportTicketInputPriority;
+  category?: SupportTicketInputCategory;
   attachmentPath?: string;
 }

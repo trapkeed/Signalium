@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SupportTicketCategory } from './supportTicketCategory';
 import type { SupportTicketPriority } from './supportTicketPriority';
 import type { SupportTicketStatus } from './supportTicketStatus';
 
@@ -14,6 +15,11 @@ export interface SupportTicket {
   subject: string;
   status: SupportTicketStatus;
   priority: SupportTicketPriority;
+  category?: SupportTicketCategory;
+  /** @nullable */
+  assignedAdminId?: string | null;
+  /** @nullable */
+  escalatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

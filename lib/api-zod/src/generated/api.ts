@@ -4432,6 +4432,9 @@ export const ListMySupportTicketsResponseItem = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4445,6 +4448,7 @@ export const CreateSupportTicketBody = zod.object({
   "subject": zod.string(),
   "message": zod.string(),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
   "attachmentPath": zod.string().optional()
 })
 
@@ -4454,6 +4458,9 @@ export const CreateSupportTicketResponse = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }).and(zod.object({
@@ -4491,6 +4498,9 @@ export const ListAllSupportTicketsResponseItem = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4506,7 +4516,8 @@ export const UpdateSupportTicketAdminParams = zod.object({
 
 export const UpdateSupportTicketAdminBody = zod.object({
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']).optional(),
-  "priority": zod.enum(['low', 'normal', 'high', 'urgent']).optional()
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional()
 })
 
 export const UpdateSupportTicketAdminResponse = zod.object({
@@ -4515,6 +4526,55 @@ export const UpdateSupportTicketAdminResponse = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Assign (or unassign) a ticket to an admin (admin)
+ */
+export const AssignSupportTicketParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AssignSupportTicketBody = zod.object({
+  "adminId": zod.string().nullish()
+})
+
+export const AssignSupportTicketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Escalate a ticket to urgent priority (admin)
+ */
+export const EscalateSupportTicketParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const EscalateSupportTicketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
+  "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -4533,6 +4593,9 @@ export const GetSupportTicketResponse = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['open', 'pending', 'resolved', 'closed']),
   "priority": zod.enum(['low', 'normal', 'high', 'urgent']),
+  "category": zod.enum(['billing', 'technical', 'ea_broker', 'account', 'other']).optional(),
+  "assignedAdminId": zod.string().nullish(),
+  "escalatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }).and(zod.object({
@@ -7164,6 +7227,58 @@ export const ListResearchLabArtifactHistoryParams = zod.object({
 
 export const ListResearchLabArtifactHistoryResponse = zod.object({
   "artifacts": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Compute the current user's onboarding/account-completion checklist
+ */
+export const GetOnboardingChecklistResponse = zod.object({
+  "steps": zod.array(zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "guide": zod.string(),
+  "completed": zod.boolean()
+})),
+  "completedCount": zod.number(),
+  "totalCount": zod.number(),
+  "percentComplete": zod.number(),
+  "isComplete": zod.boolean(),
+  "dismissed": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Dismiss the onboarding checklist widget
+ */
+export const DismissOnboardingChecklistResponse = zod.object({
+  "dismissed": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Aggregated dependency readiness report (admin)
+ */
+export const GetReadinessReportResponse = zod.object({
+  "overall": zod.enum(['ok', 'degraded', 'unconfigured', 'error']),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "status": zod.enum(['ok', 'degraded', 'unconfigured', 'error']),
+  "detail": zod.string()
+}))
+})
+
+
+/**
+ * @summary Run and audit-log a release smoke test (admin)
+ */
+export const RunReadinessSmokeTestResponse = zod.object({
+  "overall": zod.enum(['ok', 'degraded', 'unconfigured', 'error']),
+  "checks": zod.array(zod.object({
+  "name": zod.string(),
+  "status": zod.enum(['ok', 'degraded', 'unconfigured', 'error']),
+  "detail": zod.string()
+}))
 })
 
 

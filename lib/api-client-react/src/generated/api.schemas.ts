@@ -1621,12 +1621,28 @@ export const SupportTicketPriority = {
   urgent: 'urgent',
 } as const;
 
+export type SupportTicketCategory = typeof SupportTicketCategory[keyof typeof SupportTicketCategory];
+
+
+export const SupportTicketCategory = {
+  billing: 'billing',
+  technical: 'technical',
+  ea_broker: 'ea_broker',
+  account: 'account',
+  other: 'other',
+} as const;
+
 export interface SupportTicket {
   id: number;
   userId: string;
   subject: string;
   status: SupportTicketStatus;
   priority: SupportTicketPriority;
+  category?: SupportTicketCategory;
+  /** @nullable */
+  assignedAdminId?: string | null;
+  /** @nullable */
+  escalatedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1664,10 +1680,22 @@ export const SupportTicketInputPriority = {
   urgent: 'urgent',
 } as const;
 
+export type SupportTicketInputCategory = typeof SupportTicketInputCategory[keyof typeof SupportTicketInputCategory];
+
+
+export const SupportTicketInputCategory = {
+  billing: 'billing',
+  technical: 'technical',
+  ea_broker: 'ea_broker',
+  account: 'account',
+  other: 'other',
+} as const;
+
 export interface SupportTicketInput {
   subject: string;
   message: string;
   priority?: SupportTicketInputPriority;
+  category?: SupportTicketInputCategory;
   attachmentPath?: string;
 }
 
@@ -1696,9 +1724,73 @@ export const SupportTicketAdminUpdatePriority = {
   urgent: 'urgent',
 } as const;
 
+export type SupportTicketAdminUpdateCategory = typeof SupportTicketAdminUpdateCategory[keyof typeof SupportTicketAdminUpdateCategory];
+
+
+export const SupportTicketAdminUpdateCategory = {
+  billing: 'billing',
+  technical: 'technical',
+  ea_broker: 'ea_broker',
+  account: 'account',
+  other: 'other',
+} as const;
+
 export interface SupportTicketAdminUpdate {
   status?: SupportTicketAdminUpdateStatus;
   priority?: SupportTicketAdminUpdatePriority;
+  category?: SupportTicketAdminUpdateCategory;
+}
+
+export interface SupportTicketAssignInput {
+  /** @nullable */
+  adminId?: string | null;
+}
+
+export interface OnboardingStep {
+  key: string;
+  title: string;
+  guide: string;
+  completed: boolean;
+}
+
+export interface OnboardingChecklist {
+  steps: OnboardingStep[];
+  completedCount: number;
+  totalCount: number;
+  percentComplete: number;
+  isComplete: boolean;
+  dismissed?: boolean;
+}
+
+export type ReadinessCheckStatus = typeof ReadinessCheckStatus[keyof typeof ReadinessCheckStatus];
+
+
+export const ReadinessCheckStatus = {
+  ok: 'ok',
+  degraded: 'degraded',
+  unconfigured: 'unconfigured',
+  error: 'error',
+} as const;
+
+export interface ReadinessCheck {
+  name: string;
+  status: ReadinessCheckStatus;
+  detail: string;
+}
+
+export type ReadinessReportOverall = typeof ReadinessReportOverall[keyof typeof ReadinessReportOverall];
+
+
+export const ReadinessReportOverall = {
+  ok: 'ok',
+  degraded: 'degraded',
+  unconfigured: 'unconfigured',
+  error: 'error',
+} as const;
+
+export interface ReadinessReport {
+  overall: ReadinessReportOverall;
+  checks: ReadinessCheck[];
 }
 
 export type ContactMessageStatus = typeof ContactMessageStatus[keyof typeof ContactMessageStatus];
@@ -4188,5 +4280,9 @@ export type GetResearchLabModelGenealogy200 = {
 
 export type ListResearchLabArtifactHistory200 = {
   artifacts?: ResearchLabPassthrough[];
+};
+
+export type DismissOnboardingChecklist200 = {
+  dismissed?: boolean;
 };
 

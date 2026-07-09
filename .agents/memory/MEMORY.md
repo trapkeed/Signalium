@@ -13,3 +13,4 @@
 - [S27 Deployment Governance Visibility](s27-deployment-governance.md) — DB-level field allowlisting (not tier-based post-filtering), tier resolution via effective-roles (role-assumption-aware), split 401/403/503 UI states.
 - [S28 Compliance and Audit Infrastructure](s28-compliance-audit.md) — hash-chain vs retention pruning, exhaustive PII anonymization across linked tables, unique-column bulk-update pitfall, dedup race backstop pattern.
 - [S29 Security Hardening and Production Lockdown](s29-security-hardening.md) — idle-timeout fail-closed pattern, CORS allowlist fail-closed default, hidden-endpoint audit method, maker-checker table design.
+- [S30 Launch Readiness and Go Live](s30-launch-readiness.md) — audit-before-build, non-mutating dependency probes, computed vs stored onboarding checklist, ticket-assignment role validation, orval looseObject fix.
