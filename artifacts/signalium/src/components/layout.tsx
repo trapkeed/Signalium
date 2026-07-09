@@ -27,6 +27,7 @@ import {
   ScrollText,
   Building2,
   Flag,
+  Brain,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/eas", label: "EAs", icon: Box },
       { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
       { href: "/admin/qde", label: "QDE Loop", icon: Radio },
+      { href: "/admin/inference-gateway", label: "Inference Gateway", icon: Brain },
     ],
   },
   {

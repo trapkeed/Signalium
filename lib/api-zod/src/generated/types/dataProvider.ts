@@ -13,5 +13,8 @@ export interface DataProvider {
   /** @nullable */
   apiEndpoint?: string | null;
   isActive: boolean;
+  priority: number;
+  fallbackForProviderId?: number | null;
+  inferenceEnabled: boolean;
   createdAt: string;
 }

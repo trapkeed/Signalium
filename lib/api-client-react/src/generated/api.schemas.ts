@@ -989,6 +989,9 @@ export interface DataProvider {
   /** @nullable */
   apiEndpoint?: string | null;
   isActive: boolean;
+  priority: number;
+  fallbackForProviderId?: number | null;
+  inferenceEnabled: boolean;
   createdAt: string;
 }
 
@@ -2009,6 +2012,162 @@ export interface EntitlementError {
   code: string;
 }
 
+export type InferenceResponsePositionsItem = {
+  symbol: string;
+  action: string;
+  reasoning: string;
+  confidence?: number | null;
+};
+
+export interface InferenceResponse {
+  direction?: string | null;
+  confidence?: number | null;
+  risk_signal?: string | null;
+  size_signal?: string | null;
+  entry_urgency?: string | null;
+  exit_horizon?: string | null;
+  reasoning: string;
+  warnings?: string[];
+  model_version?: string | null;
+  latency_ms?: number | null;
+  positions?: InferenceResponsePositionsItem[] | null;
+}
+
+export interface InferenceResult {
+  inference: InferenceResponse;
+  opportunityId: number;
+}
+
+export interface InferenceControls {
+  id: string;
+  inferenceEnabled: boolean;
+  autonomousPaused: boolean;
+  forcedModelVersion?: string | null;
+  liveProviderId?: number | null;
+  fallbackProviderId?: number | null;
+  updatedAt: string;
+  updatedBy?: string | null;
+}
+
+export type OpportunityState = typeof OpportunityState[keyof typeof OpportunityState];
+
+
+export const OpportunityState = {
+  WATCHING: 'WATCHING',
+  BUILDING_CONTEXT: 'BUILDING_CONTEXT',
+  PREPARING_ENTRY: 'PREPARING_ENTRY',
+  ENTRY_WINDOW: 'ENTRY_WINDOW',
+  POSITION_ACTIVE: 'POSITION_ACTIVE',
+  MANAGING_POSITION: 'MANAGING_POSITION',
+  EXIT_PREPARATION: 'EXIT_PREPARATION',
+  EXITED: 'EXITED',
+  COOLDOWN: 'COOLDOWN',
+} as const;
+
+export interface Opportunity {
+  id: number;
+  userId: string;
+  symbol: string;
+  state: OpportunityState;
+  direction?: string | null;
+  confidence?: number | null;
+  entryPrice?: number | null;
+  currentPrice?: number | null;
+  stopLoss?: number | null;
+  takeProfit?: number | null;
+  reasoning?: string | null;
+  warnings?: string[] | null;
+  riskSignal?: string | null;
+  sizeSignal?: string | null;
+  entryUrgency?: string | null;
+  exitHorizon?: string | null;
+  relatedTelemetryId?: number | null;
+  relatedActionId?: number | null;
+  observedAt?: string;
+  enteredAt?: string | null;
+  exitedAt?: string | null;
+  lastEvaluatedAt?: string | null;
+  cooldownUntil?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MarketMemoryEntryKind = typeof MarketMemoryEntryKind[keyof typeof MarketMemoryEntryKind];
+
+
+export const MarketMemoryEntryKind = {
+  failed_setup: 'failed_setup',
+  successful_setup: 'successful_setup',
+  regime_transition: 'regime_transition',
+  session_behavior: 'session_behavior',
+  volatility_behavior: 'volatility_behavior',
+} as const;
+
+export interface MarketMemoryEntry {
+  id: number;
+  symbol: string;
+  kind: MarketMemoryEntryKind;
+  description: string;
+  confidence?: number | null;
+  outcome?: string | null;
+  recordedAt: string;
+  expiresAt?: string | null;
+}
+
+export interface ProviderCredential {
+  id: number;
+  providerId: number;
+  keyName: string;
+  keyValueMasked: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  rotatedAt?: string | null;
+}
+
+export type ProviderCapabilityCapabilityType = typeof ProviderCapabilityCapabilityType[keyof typeof ProviderCapabilityCapabilityType];
+
+
+export const ProviderCapabilityCapabilityType = {
+  live: 'live',
+  historical: 'historical',
+  calendar: 'calendar',
+  news: 'news',
+  sentiment: 'sentiment',
+} as const;
+
+export interface ProviderCapability {
+  id: number;
+  providerId: number;
+  capabilityType: ProviderCapabilityCapabilityType;
+  supportedTimeframes?: string[] | null;
+  maxHistoryDays?: number | null;
+  notes?: string | null;
+}
+
+export interface ProviderStatus {
+  id: number;
+  providerId: number;
+  isReachable: boolean;
+  lastCheckedAt?: string | null;
+  lastSuccessAt?: string | null;
+  latencyMs?: number | null;
+  errorMessage?: string | null;
+  consecutiveFailures: number;
+  updatedAt: string;
+}
+
+export interface ProviderSymbolMapping {
+  id: number;
+  providerId: number;
+  providerSymbol: string;
+  canonicalSymbolId: number;
+  canonicalSymbol?: string;
+  displayName?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -2132,6 +2291,132 @@ export const UpdateTradingSettingsBodyRiskMode = {
 export type UpdateTradingSettingsBody = {
   tradingMode?: UpdateTradingSettingsBodyTradingMode;
   riskMode?: UpdateTradingSettingsBodyRiskMode;
+};
+
+export type RequestInferenceBody = {
+  symbol: string;
+};
+
+export type ReviewPositionBody = {
+  symbol: string;
+  opportunityId?: number;
+  entryPrice?: number;
+  currentPrice?: number;
+  profit?: number;
+  drawdown?: number;
+  duration?: number;
+  spread?: number;
+  slippage?: number;
+  swap?: number;
+  commission?: number;
+};
+
+export type RequestManualAnalysisBody = {
+  symbol: string;
+  timeframe?: string;
+  notes?: string;
+};
+
+export type RequestReasoningBody = {
+  symbol: string;
+  opportunityId?: number;
+  question?: string;
+};
+
+export type UpdateInferenceControlsBody = {
+  inferenceEnabled?: boolean;
+  autonomousPaused?: boolean;
+  /** @nullable */
+  forcedModelVersion?: string | null;
+  /** @nullable */
+  liveProviderId?: number | null;
+  /** @nullable */
+  fallbackProviderId?: number | null;
+};
+
+export type TransitionOpportunityBodyState = typeof TransitionOpportunityBodyState[keyof typeof TransitionOpportunityBodyState];
+
+
+export const TransitionOpportunityBodyState = {
+  WATCHING: 'WATCHING',
+  BUILDING_CONTEXT: 'BUILDING_CONTEXT',
+  PREPARING_ENTRY: 'PREPARING_ENTRY',
+  ENTRY_WINDOW: 'ENTRY_WINDOW',
+  POSITION_ACTIVE: 'POSITION_ACTIVE',
+  MANAGING_POSITION: 'MANAGING_POSITION',
+  EXIT_PREPARATION: 'EXIT_PREPARATION',
+  EXITED: 'EXITED',
+  COOLDOWN: 'COOLDOWN',
+} as const;
+
+export type TransitionOpportunityBody = {
+  state: TransitionOpportunityBodyState;
+  reason?: string;
+};
+
+export type ListMarketMemoryParams = {
+symbol?: string;
+};
+
+export type CreateMarketMemoryEntryBodyKind = typeof CreateMarketMemoryEntryBodyKind[keyof typeof CreateMarketMemoryEntryBodyKind];
+
+
+export const CreateMarketMemoryEntryBodyKind = {
+  failed_setup: 'failed_setup',
+  successful_setup: 'successful_setup',
+  regime_transition: 'regime_transition',
+  session_behavior: 'session_behavior',
+  volatility_behavior: 'volatility_behavior',
+} as const;
+
+export type CreateMarketMemoryEntryBody = {
+  symbol: string;
+  kind: CreateMarketMemoryEntryBodyKind;
+  description: string;
+  confidence?: number;
+  outcome?: string;
+  expiresAt?: string;
+};
+
+export type CreateProviderCredentialBody = {
+  keyName: string;
+  keyValue: string;
+  description?: string;
+};
+
+export type UpdateProviderCredentialBody = {
+  keyValue?: string;
+  description?: string;
+  isActive?: boolean;
+};
+
+export type DeleteProviderCredential200 = {
+  id: number;
+};
+
+export type UpsertProviderCapabilityBody = {
+  supportedTimeframes?: string[];
+  maxHistoryDays?: number;
+  notes?: string;
+};
+
+export type DeleteProviderCapability200 = {
+  id: number;
+};
+
+export type CreateProviderSymbolMappingBody = {
+  providerSymbol: string;
+  canonicalSymbolId: number;
+};
+
+export type DeleteProviderSymbolMapping200 = {
+  id: number;
+};
+
+export type UpdateProviderPriorityBody = {
+  priority?: number;
+  /** @nullable */
+  fallbackForProviderId?: number | null;
 };
 
 export type CreateBrokerBody = {

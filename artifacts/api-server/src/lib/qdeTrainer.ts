@@ -33,6 +33,194 @@ export interface TrainerDecision {
   reasoning: string;
 }
 
+// ─── Inference Gateway types ─────────────────────────────────────────────────
+
+/** Typed inference request forwarded from the platform to signalium-trainer. */
+export type InferenceRequest =
+  | {
+      type: "inference";
+      symbol: string;
+      userId: string;
+      telemetry: TelemetrySnapshot | null;
+    }
+  | {
+      type: "review-position";
+      symbol: string;
+      userId: string;
+      positionContext: {
+        entryPrice?: number;
+        currentPrice?: number;
+        profit?: number;
+        drawdown?: number;
+        duration?: number;
+        spread?: number;
+        slippage?: number;
+        swap?: number;
+        commission?: number;
+      };
+    }
+  | {
+      type: "manual-analysis";
+      symbol: string;
+      userId: string;
+      timeframe: string;
+      notes: string | null;
+      telemetry: TelemetrySnapshot | null;
+    }
+  | {
+      type: "portfolio-review";
+      userId: string;
+      positions: Array<{
+        symbol: string;
+        balance: number;
+        equity: number;
+        openPositions: number;
+        floatingPnl: number;
+        drawdown?: number | null;
+        entryPrice?: number | null;
+        currentPrice?: number | null;
+      }>;
+    }
+  | {
+      type: "reasoning";
+      symbol: string;
+      userId: string;
+      question: string | null;
+      opportunityContext: {
+        state: string;
+        direction?: string;
+        confidence?: number;
+        reasoning?: string;
+      } | null;
+    };
+
+/** Structured response the trainer returns for any inference request type. */
+export interface InferenceResponse {
+  direction?: string;          // "LONG" | "SHORT" | "NEUTRAL"
+  confidence?: number;         // 0–1
+  risk_signal?: string;        // "LOW" | "MEDIUM" | "HIGH" | "EXTREME"
+  size_signal?: string;        // "MINIMAL" | "NORMAL" | "AGGRESSIVE"
+  entry_urgency?: string;      // "IMMEDIATE" | "PENDING" | "CONDITIONAL"
+  exit_horizon?: string;       // "SCALP" | "INTRADAY" | "SWING" | "HOLD"
+  reasoning: string;
+  warnings?: string[];
+  model_version?: string;
+  latency_ms?: number;
+  // Portfolio review returns per-position assessments
+  positions?: Array<{
+    symbol: string;
+    action: TrainerActionType;
+    reasoning: string;
+    confidence?: number;
+  }>;
+}
+
+/**
+ * Forward a typed inference request to signalium-trainer.
+ *
+ * When QDE_TRAINER_URL is set, the request is proxied verbatim and the trainer
+ * response is returned. When the trainer is offline, a heuristic fallback
+ * produces a structurally-valid InferenceResponse so the gateway never
+ * hard-fails.
+ */
+export async function callTrainerInference(request: InferenceRequest): Promise<InferenceResponse> {
+  return retryWithBackoff(() => runInference(request), { retries: 2, baseDelayMs: 100 });
+}
+
+async function runInference(request: InferenceRequest): Promise<InferenceResponse> {
+  const trainerUrl = process.env["QDE_TRAINER_URL"];
+  if (trainerUrl) {
+    return callExternalInference(trainerUrl, request);
+  }
+  return simulateInferenceHeuristic(request);
+}
+
+async function callExternalInference(baseUrl: string, request: InferenceRequest): Promise<InferenceResponse> {
+  const endpoint = `${baseUrl.replace(/\/$/, "")}/qde/${request.type}`;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error(`Trainer responded with ${res.status}`);
+  const data = (await res.json()) as Partial<InferenceResponse>;
+  if (!data.reasoning) throw new Error("Trainer returned no reasoning");
+  return data as InferenceResponse;
+}
+
+/**
+ * Heuristic fallback when the trainer is not connected.
+ * Returns a structurally-valid InferenceResponse based on available telemetry.
+ */
+function simulateInferenceHeuristic(request: InferenceRequest): InferenceResponse {
+  if (request.type === "portfolio-review") {
+    return {
+      reasoning: "Portfolio review requires the trainer service. Heuristic: monitor positions individually.",
+      warnings: ["Trainer offline — portfolio review is unavailable"],
+      positions: request.positions.map((p) => ({
+        symbol: p.symbol,
+        action: "HOLD" as TrainerActionType,
+        reasoning: "Trainer offline — defaulting to HOLD",
+        confidence: 0.5,
+      })),
+    };
+  }
+
+  if (request.type === "reasoning") {
+    return {
+      reasoning: "Trainer offline. Reasoning requests require the signalium-trainer service.",
+      warnings: ["Trainer offline"],
+    };
+  }
+
+  // For inference / manual-analysis / review-position — use telemetry if available
+  const telemetry =
+    request.type === "inference" || request.type === "manual-analysis"
+      ? request.telemetry
+      : request.type === "review-position"
+        ? ({
+            balance: 10000,
+            equity: 10000,
+            margin: 0,
+            freeMargin: 10000,
+            openPositions: 1,
+            floatingPnl: request.positionContext.profit ?? 0,
+            drawdown: request.positionContext.drawdown ?? null,
+            tradeAgeSeconds: request.positionContext.duration ?? null,
+            entryPrice: request.positionContext.entryPrice ?? null,
+            currentPrice: request.positionContext.currentPrice ?? null,
+            spread: request.positionContext.spread ?? null,
+            swap: null,
+            commission: null,
+          } satisfies TelemetrySnapshot)
+        : null;
+
+  if (!telemetry) {
+    return {
+      direction: "NEUTRAL",
+      confidence: 0.5,
+      risk_signal: "MEDIUM",
+      reasoning: "Trainer offline and no telemetry available — cannot generate inference.",
+      warnings: ["Trainer offline", "No telemetry data"],
+    };
+  }
+
+  const decision = simulateTrainerHeuristic(telemetry);
+  const pnlPct = (telemetry.floatingPnl / Math.max(telemetry.equity, 1)) * 100;
+
+  return {
+    direction: pnlPct >= 0 ? "LONG" : "SHORT",
+    confidence: Math.max(0.3, Math.min(0.9, 0.5 + Math.abs(pnlPct) * 0.05)),
+    risk_signal: (telemetry.drawdown ?? 0) >= 10 ? "HIGH" : "MEDIUM",
+    size_signal: "NORMAL",
+    entry_urgency: decision.action === "ADD" ? "IMMEDIATE" : "CONDITIONAL",
+    exit_horizon: "INTRADAY",
+    reasoning: `[Heuristic fallback — trainer offline] ${decision.reasoning}`,
+    warnings: ["Trainer offline — heuristic decision only"],
+  };
+}
+
 /**
  * The QDE ("Quantitative Decision Engine" / trainer) reasons about an open
  * position exactly as a professional trader would: cut losers fast, protect

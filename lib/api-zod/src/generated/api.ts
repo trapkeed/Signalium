@@ -2246,6 +2246,640 @@ export const UpdateTradingSettingsResponse = zod.object({
 
 
 /**
+ * @summary Run a full market inference for a symbol
+ */
+export const RequestInferenceBody = zod.object({
+  "symbol": zod.string()
+})
+
+export const RequestInferenceResponse = zod.object({
+  "inference": zod.object({
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "risk_signal": zod.string().nullish(),
+  "size_signal": zod.string().nullish(),
+  "entry_urgency": zod.string().nullish(),
+  "exit_horizon": zod.string().nullish(),
+  "reasoning": zod.string(),
+  "warnings": zod.array(zod.string()).optional(),
+  "model_version": zod.string().nullish(),
+  "latency_ms": zod.number().nullish(),
+  "positions": zod.array(zod.object({
+  "symbol": zod.string(),
+  "action": zod.string(),
+  "reasoning": zod.string(),
+  "confidence": zod.number().nullish()
+})).nullish()
+}),
+  "opportunityId": zod.number()
+})
+
+
+/**
+ * @summary Re-evaluate an open position
+ */
+export const ReviewPositionBody = zod.object({
+  "symbol": zod.string(),
+  "opportunityId": zod.number().optional(),
+  "entryPrice": zod.number().optional(),
+  "currentPrice": zod.number().optional(),
+  "profit": zod.number().optional(),
+  "drawdown": zod.number().optional(),
+  "duration": zod.number().optional(),
+  "spread": zod.number().optional(),
+  "slippage": zod.number().optional(),
+  "swap": zod.number().optional(),
+  "commission": zod.number().optional()
+})
+
+export const ReviewPositionResponse = zod.object({
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "risk_signal": zod.string().nullish(),
+  "size_signal": zod.string().nullish(),
+  "entry_urgency": zod.string().nullish(),
+  "exit_horizon": zod.string().nullish(),
+  "reasoning": zod.string(),
+  "warnings": zod.array(zod.string()).optional(),
+  "model_version": zod.string().nullish(),
+  "latency_ms": zod.number().nullish(),
+  "positions": zod.array(zod.object({
+  "symbol": zod.string(),
+  "action": zod.string(),
+  "reasoning": zod.string(),
+  "confidence": zod.number().nullish()
+})).nullish()
+})
+
+
+/**
+ * @summary User-triggered on-demand market analysis
+ */
+export const RequestManualAnalysisBody = zod.object({
+  "symbol": zod.string(),
+  "timeframe": zod.string().optional(),
+  "notes": zod.string().optional()
+})
+
+export const RequestManualAnalysisResponse = zod.object({
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "risk_signal": zod.string().nullish(),
+  "size_signal": zod.string().nullish(),
+  "entry_urgency": zod.string().nullish(),
+  "exit_horizon": zod.string().nullish(),
+  "reasoning": zod.string(),
+  "warnings": zod.array(zod.string()).optional(),
+  "model_version": zod.string().nullish(),
+  "latency_ms": zod.number().nullish(),
+  "positions": zod.array(zod.object({
+  "symbol": zod.string(),
+  "action": zod.string(),
+  "reasoning": zod.string(),
+  "confidence": zod.number().nullish()
+})).nullish()
+})
+
+
+/**
+ * @summary Cross-symbol portfolio review
+ */
+export const RequestPortfolioReviewResponse = zod.object({
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "risk_signal": zod.string().nullish(),
+  "size_signal": zod.string().nullish(),
+  "entry_urgency": zod.string().nullish(),
+  "exit_horizon": zod.string().nullish(),
+  "reasoning": zod.string(),
+  "warnings": zod.array(zod.string()).optional(),
+  "model_version": zod.string().nullish(),
+  "latency_ms": zod.number().nullish(),
+  "positions": zod.array(zod.object({
+  "symbol": zod.string(),
+  "action": zod.string(),
+  "reasoning": zod.string(),
+  "confidence": zod.number().nullish()
+})).nullish()
+})
+
+
+/**
+ * @summary Get model reasoning for a specific setup or opportunity
+ */
+export const RequestReasoningBody = zod.object({
+  "symbol": zod.string(),
+  "opportunityId": zod.number().optional(),
+  "question": zod.string().optional()
+})
+
+export const RequestReasoningResponse = zod.object({
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "risk_signal": zod.string().nullish(),
+  "size_signal": zod.string().nullish(),
+  "entry_urgency": zod.string().nullish(),
+  "exit_horizon": zod.string().nullish(),
+  "reasoning": zod.string(),
+  "warnings": zod.array(zod.string()).optional(),
+  "model_version": zod.string().nullish(),
+  "latency_ms": zod.number().nullish(),
+  "positions": zod.array(zod.object({
+  "symbol": zod.string(),
+  "action": zod.string(),
+  "reasoning": zod.string(),
+  "confidence": zod.number().nullish()
+})).nullish()
+})
+
+
+/**
+ * @summary List the current user's tracked opportunities
+ */
+export const ListOpportunitiesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "state": zod.enum(['WATCHING', 'BUILDING_CONTEXT', 'PREPARING_ENTRY', 'ENTRY_WINDOW', 'POSITION_ACTIVE', 'MANAGING_POSITION', 'EXIT_PREPARATION', 'EXITED', 'COOLDOWN']),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "reasoning": zod.string().nullish(),
+  "warnings": zod.array(zod.string()).nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "relatedTelemetryId": zod.number().nullish(),
+  "relatedActionId": zod.number().nullish(),
+  "observedAt": zod.string().optional(),
+  "enteredAt": zod.string().nullish(),
+  "exitedAt": zod.string().nullish(),
+  "lastEvaluatedAt": zod.string().nullish(),
+  "cooldownUntil": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListOpportunitiesResponse = zod.array(ListOpportunitiesResponseItem)
+
+
+/**
+ * @summary Get a single opportunity
+ */
+export const GetOpportunityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetOpportunityResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "state": zod.enum(['WATCHING', 'BUILDING_CONTEXT', 'PREPARING_ENTRY', 'ENTRY_WINDOW', 'POSITION_ACTIVE', 'MANAGING_POSITION', 'EXIT_PREPARATION', 'EXITED', 'COOLDOWN']),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "reasoning": zod.string().nullish(),
+  "warnings": zod.array(zod.string()).nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "relatedTelemetryId": zod.number().nullish(),
+  "relatedActionId": zod.number().nullish(),
+  "observedAt": zod.string().optional(),
+  "enteredAt": zod.string().nullish(),
+  "exitedAt": zod.string().nullish(),
+  "lastEvaluatedAt": zod.string().nullish(),
+  "cooldownUntil": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get global inference control switches (admin)
+ */
+export const GetInferenceControlsResponse = zod.object({
+  "id": zod.string(),
+  "inferenceEnabled": zod.boolean(),
+  "autonomousPaused": zod.boolean(),
+  "forcedModelVersion": zod.string().nullish(),
+  "liveProviderId": zod.number().nullish(),
+  "fallbackProviderId": zod.number().nullish(),
+  "updatedAt": zod.string(),
+  "updatedBy": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update inference controls (admin)
+ */
+export const UpdateInferenceControlsBody = zod.object({
+  "inferenceEnabled": zod.boolean().optional(),
+  "autonomousPaused": zod.boolean().optional(),
+  "forcedModelVersion": zod.string().nullish(),
+  "liveProviderId": zod.number().nullish(),
+  "fallbackProviderId": zod.number().nullish()
+})
+
+export const UpdateInferenceControlsResponse = zod.object({
+  "id": zod.string(),
+  "inferenceEnabled": zod.boolean(),
+  "autonomousPaused": zod.boolean(),
+  "forcedModelVersion": zod.string().nullish(),
+  "liveProviderId": zod.number().nullish(),
+  "fallbackProviderId": zod.number().nullish(),
+  "updatedAt": zod.string(),
+  "updatedBy": zod.string().nullish()
+})
+
+
+/**
+ * @summary List all opportunities (admin)
+ */
+export const ListAllOpportunitiesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "state": zod.enum(['WATCHING', 'BUILDING_CONTEXT', 'PREPARING_ENTRY', 'ENTRY_WINDOW', 'POSITION_ACTIVE', 'MANAGING_POSITION', 'EXIT_PREPARATION', 'EXITED', 'COOLDOWN']),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "reasoning": zod.string().nullish(),
+  "warnings": zod.array(zod.string()).nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "relatedTelemetryId": zod.number().nullish(),
+  "relatedActionId": zod.number().nullish(),
+  "observedAt": zod.string().optional(),
+  "enteredAt": zod.string().nullish(),
+  "exitedAt": zod.string().nullish(),
+  "lastEvaluatedAt": zod.string().nullish(),
+  "cooldownUntil": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAllOpportunitiesResponse = zod.array(ListAllOpportunitiesResponseItem)
+
+
+/**
+ * @summary Force-transition an opportunity state (admin)
+ */
+export const TransitionOpportunityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const TransitionOpportunityBody = zod.object({
+  "state": zod.enum(['WATCHING', 'BUILDING_CONTEXT', 'PREPARING_ENTRY', 'ENTRY_WINDOW', 'POSITION_ACTIVE', 'MANAGING_POSITION', 'EXIT_PREPARATION', 'EXITED', 'COOLDOWN']),
+  "reason": zod.string().optional()
+})
+
+export const TransitionOpportunityResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "state": zod.enum(['WATCHING', 'BUILDING_CONTEXT', 'PREPARING_ENTRY', 'ENTRY_WINDOW', 'POSITION_ACTIVE', 'MANAGING_POSITION', 'EXIT_PREPARATION', 'EXITED', 'COOLDOWN']),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "reasoning": zod.string().nullish(),
+  "warnings": zod.array(zod.string()).nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "relatedTelemetryId": zod.number().nullish(),
+  "relatedActionId": zod.number().nullish(),
+  "observedAt": zod.string().optional(),
+  "enteredAt": zod.string().nullish(),
+  "exitedAt": zod.string().nullish(),
+  "lastEvaluatedAt": zod.string().nullish(),
+  "cooldownUntil": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List market memory entries (admin)
+ */
+export const ListMarketMemoryQueryParams = zod.object({
+  "symbol": zod.coerce.string().optional()
+})
+
+export const ListMarketMemoryResponseItem = zod.object({
+  "id": zod.number(),
+  "symbol": zod.string(),
+  "kind": zod.enum(['failed_setup', 'successful_setup', 'regime_transition', 'session_behavior', 'volatility_behavior']),
+  "description": zod.string(),
+  "confidence": zod.number().nullish(),
+  "outcome": zod.string().nullish(),
+  "recordedAt": zod.string(),
+  "expiresAt": zod.string().nullish()
+})
+export const ListMarketMemoryResponse = zod.array(ListMarketMemoryResponseItem)
+
+
+/**
+ * @summary Create a market memory entry (admin)
+ */
+export const CreateMarketMemoryEntryBody = zod.object({
+  "symbol": zod.string(),
+  "kind": zod.enum(['failed_setup', 'successful_setup', 'regime_transition', 'session_behavior', 'volatility_behavior']),
+  "description": zod.string(),
+  "confidence": zod.number().optional(),
+  "outcome": zod.string().optional(),
+  "expiresAt": zod.string().optional()
+})
+
+export const CreateMarketMemoryEntryResponse = zod.object({
+  "id": zod.number(),
+  "symbol": zod.string(),
+  "kind": zod.enum(['failed_setup', 'successful_setup', 'regime_transition', 'session_behavior', 'volatility_behavior']),
+  "description": zod.string(),
+  "confidence": zod.number().nullish(),
+  "outcome": zod.string().nullish(),
+  "recordedAt": zod.string(),
+  "expiresAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary List credentials for a data provider (masked, admin)
+ */
+export const ListProviderCredentialsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListProviderCredentialsResponseItem = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "keyName": zod.string(),
+  "keyValueMasked": zod.string(),
+  "description": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "rotatedAt": zod.string().nullish()
+})
+export const ListProviderCredentialsResponse = zod.array(ListProviderCredentialsResponseItem)
+
+
+/**
+ * @summary Add a credential to a data provider (admin)
+ */
+export const CreateProviderCredentialParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateProviderCredentialBody = zod.object({
+  "keyName": zod.string(),
+  "keyValue": zod.string(),
+  "description": zod.string().optional()
+})
+
+export const CreateProviderCredentialResponse = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "keyName": zod.string(),
+  "keyValueMasked": zod.string(),
+  "description": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "rotatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Rotate or update a credential (admin)
+ */
+export const UpdateProviderCredentialParams = zod.object({
+  "id": zod.coerce.number(),
+  "credId": zod.coerce.number()
+})
+
+export const UpdateProviderCredentialBody = zod.object({
+  "keyValue": zod.string().optional(),
+  "description": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateProviderCredentialResponse = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "keyName": zod.string(),
+  "keyValueMasked": zod.string(),
+  "description": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "rotatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a credential (admin)
+ */
+export const DeleteProviderCredentialParams = zod.object({
+  "id": zod.coerce.number(),
+  "credId": zod.coerce.number()
+})
+
+export const DeleteProviderCredentialResponse = zod.object({
+  "id": zod.number()
+})
+
+
+/**
+ * @summary List capabilities for a provider (admin)
+ */
+export const ListProviderCapabilitiesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListProviderCapabilitiesResponseItem = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "capabilityType": zod.enum(['live', 'historical', 'calendar', 'news', 'sentiment']),
+  "supportedTimeframes": zod.array(zod.string()).nullish(),
+  "maxHistoryDays": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})
+export const ListProviderCapabilitiesResponse = zod.array(ListProviderCapabilitiesResponseItem)
+
+
+/**
+ * @summary Upsert a provider capability (admin)
+ */
+export const UpsertProviderCapabilityParams = zod.object({
+  "id": zod.coerce.number(),
+  "type": zod.enum(['live', 'historical', 'calendar', 'news', 'sentiment'])
+})
+
+export const UpsertProviderCapabilityBody = zod.object({
+  "supportedTimeframes": zod.array(zod.string()).optional(),
+  "maxHistoryDays": zod.number().optional(),
+  "notes": zod.string().optional()
+})
+
+export const UpsertProviderCapabilityResponse = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "capabilityType": zod.enum(['live', 'historical', 'calendar', 'news', 'sentiment']),
+  "supportedTimeframes": zod.array(zod.string()).nullish(),
+  "maxHistoryDays": zod.number().nullish(),
+  "notes": zod.string().nullish()
+})
+
+
+/**
+ * @summary Remove a provider capability (admin)
+ */
+export const DeleteProviderCapabilityParams = zod.object({
+  "id": zod.coerce.number(),
+  "type": zod.coerce.string()
+})
+
+export const DeleteProviderCapabilityResponse = zod.object({
+  "id": zod.number()
+})
+
+
+/**
+ * @summary Get live status for a provider (admin)
+ */
+export const GetProviderStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetProviderStatusResponse = zod.union([zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "isReachable": zod.boolean(),
+  "lastCheckedAt": zod.string().nullish(),
+  "lastSuccessAt": zod.string().nullish(),
+  "latencyMs": zod.number().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "consecutiveFailures": zod.number(),
+  "updatedAt": zod.string()
+}),zod.null()])
+
+
+/**
+ * @summary Trigger a live connectivity check against the provider (admin)
+ */
+export const CheckProviderConnectivityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CheckProviderConnectivityResponse = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "isReachable": zod.boolean(),
+  "lastCheckedAt": zod.string().nullish(),
+  "lastSuccessAt": zod.string().nullish(),
+  "latencyMs": zod.number().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "consecutiveFailures": zod.number(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List symbol mappings for a provider (admin)
+ */
+export const ListProviderSymbolMappingsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListProviderSymbolMappingsResponseItem = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "providerSymbol": zod.string(),
+  "canonicalSymbolId": zod.number(),
+  "canonicalSymbol": zod.string().optional(),
+  "displayName": zod.string().optional(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListProviderSymbolMappingsResponse = zod.array(ListProviderSymbolMappingsResponseItem)
+
+
+/**
+ * @summary Add or update a symbol mapping (admin)
+ */
+export const CreateProviderSymbolMappingParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateProviderSymbolMappingBody = zod.object({
+  "providerSymbol": zod.string(),
+  "canonicalSymbolId": zod.number()
+})
+
+export const CreateProviderSymbolMappingResponse = zod.object({
+  "id": zod.number(),
+  "providerId": zod.number(),
+  "providerSymbol": zod.string(),
+  "canonicalSymbolId": zod.number(),
+  "canonicalSymbol": zod.string().optional(),
+  "displayName": zod.string().optional(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a symbol mapping (admin)
+ */
+export const DeleteProviderSymbolMappingParams = zod.object({
+  "id": zod.coerce.number(),
+  "mappingId": zod.coerce.number()
+})
+
+export const DeleteProviderSymbolMappingResponse = zod.object({
+  "id": zod.number()
+})
+
+
+/**
+ * @summary Set provider priority and fallback (admin)
+ */
+export const UpdateProviderPriorityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateProviderPriorityBody = zod.object({
+  "priority": zod.number().optional(),
+  "fallbackForProviderId": zod.number().nullish()
+})
+
+export const UpdateProviderPriorityResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "apiEndpoint": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary List active brokers (any authenticated user)
  */
 export const ListBrokersResponseItem = zod.object({
@@ -2343,6 +2977,9 @@ export const ListDataProvidersResponseItem = zod.object({
   "slug": zod.string(),
   "apiEndpoint": zod.string().nullish(),
   "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
   "createdAt": zod.string()
 })
 export const ListDataProvidersResponse = zod.array(ListDataProvidersResponseItem)
@@ -2357,6 +2994,9 @@ export const ListDataProvidersAdminResponseItem = zod.object({
   "slug": zod.string(),
   "apiEndpoint": zod.string().nullish(),
   "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
   "createdAt": zod.string()
 })
 export const ListDataProvidersAdminResponse = zod.array(ListDataProvidersAdminResponseItem)
@@ -2378,6 +3018,9 @@ export const CreateDataProviderResponse = zod.object({
   "slug": zod.string(),
   "apiEndpoint": zod.string().nullish(),
   "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
   "createdAt": zod.string()
 })
 
@@ -2402,6 +3045,9 @@ export const UpdateDataProviderResponse = zod.object({
   "slug": zod.string(),
   "apiEndpoint": zod.string().nullish(),
   "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
   "createdAt": zod.string()
 })
 
@@ -2419,6 +3065,9 @@ export const DeleteDataProviderResponse = zod.object({
   "slug": zod.string(),
   "apiEndpoint": zod.string().nullish(),
   "isActive": zod.boolean(),
+  "priority": zod.number(),
+  "fallbackForProviderId": zod.number().nullish(),
+  "inferenceEnabled": zod.boolean(),
   "createdAt": zod.string()
 })
 

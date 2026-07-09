@@ -45,6 +45,7 @@ import AdminKnowledgeBase from "@/pages/admin/knowledge-base";
 import AdminStatusPage from "@/pages/admin/status";
 import AdminBrokers from "@/pages/admin/brokers";
 import AdminDataProviders from "@/pages/admin/data-providers";
+import AdminInferenceGateway from "@/pages/admin/inference-gateway";
 import AdminFeatureFlags from "@/pages/admin/feature-flags";
 
 import { AppLayout } from "@/components/layout";
@@ -247,6 +248,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
             <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
             <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
+            <Route path="/admin/inference-gateway"><ProtectedRoute component={AdminInferenceGateway} /></Route>
             <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
             <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>

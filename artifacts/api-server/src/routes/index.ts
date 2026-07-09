@@ -32,6 +32,8 @@ import featureFlagsRouter from "./feature-flags";
 import invoicesRouter from "./invoices";
 import paymentWebhooksRouter from "./payment-webhooks";
 import tradingSettingsRouter from "./trading-settings";
+import inferenceGatewayRouter from "./inference-gateway";
+import providerManagementRouter from "./provider-management";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -74,5 +76,10 @@ router.use("/brokers", brokersRouter);
 router.use("/data-providers", dataProvidersRouter);
 router.use("/feature-flags", featureFlagsRouter);
 router.use("/trading-settings", tradingSettingsRouter);
+// S18: inference gateway routes merge into /qde namespace alongside existing qdeRouter
+router.use("/qde", inferenceGatewayRouter);
+// S18: extended provider management (credentials, capabilities, status, mappings)
+// Mounted at /data-providers so it shares the same base path as dataProvidersRouter
+router.use("/data-providers", providerManagementRouter);
 
 export default router;

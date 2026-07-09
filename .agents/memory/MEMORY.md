@@ -1,1 +1,2 @@
 - [Signalium project setup](signalium-setup.md) — key architecture decisions, auth quirks, and sharp edges for this project.
+- [S18 inference gateway patterns](s18-inference-gateway.md) — hook call conventions, audit enum, and status-check incrementing lessons from the S18 build.

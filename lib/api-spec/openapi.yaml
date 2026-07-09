@@ -1850,6 +1850,691 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntitlementError"
 
+  /qde/inference:
+    post:
+      operationId: requestInference
+      tags: [qde]
+      summary: Run a full market inference for a symbol
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol]
+              properties:
+                symbol:
+                  type: string
+      responses:
+        "201":
+          description: Inference result and created opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResult"
+        "403":
+          description: Inference disabled or access denied
+        "502":
+          description: Trainer unavailable
+
+  /qde/review-position:
+    post:
+      operationId: reviewPosition
+      tags: [qde]
+      summary: Re-evaluate an open position
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol]
+              properties:
+                symbol:
+                  type: string
+                opportunityId:
+                  type: integer
+                entryPrice:
+                  type: number
+                currentPrice:
+                  type: number
+                profit:
+                  type: number
+                drawdown:
+                  type: number
+                duration:
+                  type: number
+                spread:
+                  type: number
+                slippage:
+                  type: number
+                swap:
+                  type: number
+                commission:
+                  type: number
+      responses:
+        "200":
+          description: Position review result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResponse"
+        "403":
+          description: Autonomous access required
+        "502":
+          description: Trainer unavailable
+
+  /qde/manual-analysis:
+    post:
+      operationId: requestManualAnalysis
+      tags: [qde]
+      summary: User-triggered on-demand market analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol]
+              properties:
+                symbol:
+                  type: string
+                timeframe:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResponse"
+        "502":
+          description: Trainer unavailable
+
+  /qde/portfolio-review:
+    post:
+      operationId: requestPortfolioReview
+      tags: [qde]
+      summary: Cross-symbol portfolio review
+      responses:
+        "200":
+          description: Portfolio review result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResponse"
+        "502":
+          description: Trainer unavailable
+
+  /qde/reasoning:
+    post:
+      operationId: requestReasoning
+      tags: [qde]
+      summary: Get model reasoning for a specific setup or opportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol]
+              properties:
+                symbol:
+                  type: string
+                opportunityId:
+                  type: integer
+                question:
+                  type: string
+      responses:
+        "200":
+          description: Reasoning response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceResponse"
+        "502":
+          description: Trainer unavailable
+
+  /qde/opportunities:
+    get:
+      operationId: listOpportunities
+      tags: [qde]
+      summary: List the current user's tracked opportunities
+      responses:
+        "200":
+          description: Opportunities list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Opportunity"
+
+  /qde/opportunities/{id}:
+    get:
+      operationId: getOpportunity
+      tags: [qde]
+      summary: Get a single opportunity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
+        "404":
+          description: Not found
+
+  /qde/admin/inference-controls:
+    get:
+      operationId: getInferenceControls
+      tags: [qde]
+      summary: Get global inference control switches (admin)
+      responses:
+        "200":
+          description: Inference controls
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceControls"
+    put:
+      operationId: updateInferenceControls
+      tags: [qde]
+      summary: Update inference controls (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inferenceEnabled:
+                  type: boolean
+                autonomousPaused:
+                  type: boolean
+                forcedModelVersion:
+                  type: ["string", "null"]
+                liveProviderId:
+                  type: ["integer", "null"]
+                fallbackProviderId:
+                  type: ["integer", "null"]
+      responses:
+        "200":
+          description: Updated inference controls
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceControls"
+
+  /qde/admin/opportunities:
+    get:
+      operationId: listAllOpportunities
+      tags: [qde]
+      summary: List all opportunities (admin)
+      responses:
+        "200":
+          description: All opportunities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Opportunity"
+
+  /qde/admin/opportunities/{id}/transition:
+    post:
+      operationId: transitionOpportunity
+      tags: [qde]
+      summary: Force-transition an opportunity state (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  enum: [WATCHING, BUILDING_CONTEXT, PREPARING_ENTRY, ENTRY_WINDOW, POSITION_ACTIVE, MANAGING_POSITION, EXIT_PREPARATION, EXITED, COOLDOWN]
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Updated opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
+        "404":
+          description: Not found
+
+  /qde/admin/market-memory:
+    get:
+      operationId: listMarketMemory
+      tags: [qde]
+      summary: List market memory entries (admin)
+      parameters:
+        - name: symbol
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Market memory entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketMemoryEntry"
+    post:
+      operationId: createMarketMemoryEntry
+      tags: [qde]
+      summary: Create a market memory entry (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [symbol, kind, description]
+              properties:
+                symbol:
+                  type: string
+                kind:
+                  type: string
+                  enum: [failed_setup, successful_setup, regime_transition, session_behavior, volatility_behavior]
+                description:
+                  type: string
+                confidence:
+                  type: number
+                outcome:
+                  type: string
+                expiresAt:
+                  type: string
+      responses:
+        "201":
+          description: Created market memory entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketMemoryEntry"
+
+  /data-providers/admin/{id}/credentials:
+    get:
+      operationId: listProviderCredentials
+      tags: [data-providers]
+      summary: List credentials for a data provider (masked, admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Credentials list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderCredential"
+    post:
+      operationId: createProviderCredential
+      tags: [data-providers]
+      summary: Add a credential to a data provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [keyName, keyValue]
+              properties:
+                keyName:
+                  type: string
+                keyValue:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Created credential (masked)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderCredential"
+
+  /data-providers/admin/{id}/credentials/{credId}:
+    put:
+      operationId: updateProviderCredential
+      tags: [data-providers]
+      summary: Rotate or update a credential (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: credId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                keyValue:
+                  type: string
+                description:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated credential (masked)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderCredential"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteProviderCredential
+      tags: [data-providers]
+      summary: Delete a credential (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: credId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: integer
+        "404":
+          description: Not found
+
+  /data-providers/admin/{id}/capabilities:
+    get:
+      operationId: listProviderCapabilities
+      tags: [data-providers]
+      summary: List capabilities for a provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Capabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderCapability"
+
+  /data-providers/admin/{id}/capabilities/{type}:
+    put:
+      operationId: upsertProviderCapability
+      tags: [data-providers]
+      summary: Upsert a provider capability (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [live, historical, calendar, news, sentiment]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                supportedTimeframes:
+                  type: array
+                  items:
+                    type: string
+                maxHistoryDays:
+                  type: integer
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Upserted capability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderCapability"
+    delete:
+      operationId: deleteProviderCapability
+      tags: [data-providers]
+      summary: Remove a provider capability (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: integer
+
+  /data-providers/admin/{id}/status:
+    get:
+      operationId: getProviderStatus
+      tags: [data-providers]
+      summary: Get live status for a provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Provider status (null if never checked)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ProviderStatus"
+                  - type: "null"
+
+  /data-providers/admin/{id}/status/check:
+    post:
+      operationId: checkProviderConnectivity
+      tags: [data-providers]
+      summary: Trigger a live connectivity check against the provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated provider status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderStatus"
+        "404":
+          description: Provider not found
+
+  /data-providers/admin/{id}/symbol-mappings:
+    get:
+      operationId: listProviderSymbolMappings
+      tags: [data-providers]
+      summary: List symbol mappings for a provider (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Symbol mappings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderSymbolMapping"
+    post:
+      operationId: createProviderSymbolMapping
+      tags: [data-providers]
+      summary: Add or update a symbol mapping (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerSymbol, canonicalSymbolId]
+              properties:
+                providerSymbol:
+                  type: string
+                canonicalSymbolId:
+                  type: integer
+      responses:
+        "201":
+          description: Created mapping
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderSymbolMapping"
+
+  /data-providers/admin/{id}/symbol-mappings/{mappingId}:
+    delete:
+      operationId: deleteProviderSymbolMapping
+      tags: [data-providers]
+      summary: Delete a symbol mapping (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: mappingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: integer
+        "404":
+          description: Not found
+
+  /data-providers/admin/{id}/priority:
+    put:
+      operationId: updateProviderPriority
+      tags: [data-providers]
+      summary: Set provider priority and fallback (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: integer
+                fallbackForProviderId:
+                  type: ["integer", "null"]
+      responses:
+        "200":
+          description: Updated provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataProvider"
+        "404":
+          description: Not found
+
   /brokers:
     get:
       operationId: listBrokers
@@ -4913,7 +5598,7 @@ components:
 
     DataProvider:
       type: object
-      required: [id, name, slug, isActive, createdAt]
+      required: [id, name, slug, isActive, priority, inferenceEnabled, createdAt]
       properties:
         id:
           type: integer
@@ -4924,6 +5609,13 @@ components:
         apiEndpoint:
           type: ["string", "null"]
         isActive:
+          type: boolean
+        priority:
+          type: integer
+        fallbackForProviderId:
+          type: integer
+          nullable: true
+        inferenceEnabled:
           type: boolean
         createdAt:
           type: string
@@ -6088,4 +6780,284 @@ components:
         error:
           type: string
         code:
+          type: string
+
+    InferenceResponse:
+      type: object
+      required: [reasoning]
+      properties:
+        direction:
+          type: string
+          nullable: true
+        confidence:
+          type: number
+          nullable: true
+        risk_signal:
+          type: string
+          nullable: true
+        size_signal:
+          type: string
+          nullable: true
+        entry_urgency:
+          type: string
+          nullable: true
+        exit_horizon:
+          type: string
+          nullable: true
+        reasoning:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        model_version:
+          type: string
+          nullable: true
+        latency_ms:
+          type: number
+          nullable: true
+        positions:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [symbol, action, reasoning]
+            properties:
+              symbol:
+                type: string
+              action:
+                type: string
+              reasoning:
+                type: string
+              confidence:
+                type: number
+                nullable: true
+
+    InferenceResult:
+      type: object
+      required: [inference, opportunityId]
+      properties:
+        inference:
+          $ref: "#/components/schemas/InferenceResponse"
+        opportunityId:
+          type: integer
+
+    InferenceControls:
+      type: object
+      required: [id, inferenceEnabled, autonomousPaused, updatedAt]
+      properties:
+        id:
+          type: string
+        inferenceEnabled:
+          type: boolean
+        autonomousPaused:
+          type: boolean
+        forcedModelVersion:
+          type: string
+          nullable: true
+        liveProviderId:
+          type: integer
+          nullable: true
+        fallbackProviderId:
+          type: integer
+          nullable: true
+        updatedAt:
+          type: string
+        updatedBy:
+          type: string
+          nullable: true
+
+    Opportunity:
+      type: object
+      required: [id, userId, symbol, state, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        symbol:
+          type: string
+        state:
+          type: string
+          enum: [WATCHING, BUILDING_CONTEXT, PREPARING_ENTRY, ENTRY_WINDOW, POSITION_ACTIVE, MANAGING_POSITION, EXIT_PREPARATION, EXITED, COOLDOWN]
+        direction:
+          type: string
+          nullable: true
+        confidence:
+          type: number
+          nullable: true
+        entryPrice:
+          type: number
+          nullable: true
+        currentPrice:
+          type: number
+          nullable: true
+        stopLoss:
+          type: number
+          nullable: true
+        takeProfit:
+          type: number
+          nullable: true
+        reasoning:
+          type: string
+          nullable: true
+        warnings:
+          type: array
+          nullable: true
+          items:
+            type: string
+        riskSignal:
+          type: string
+          nullable: true
+        sizeSignal:
+          type: string
+          nullable: true
+        entryUrgency:
+          type: string
+          nullable: true
+        exitHorizon:
+          type: string
+          nullable: true
+        relatedTelemetryId:
+          type: integer
+          nullable: true
+        relatedActionId:
+          type: integer
+          nullable: true
+        observedAt:
+          type: string
+        enteredAt:
+          type: string
+          nullable: true
+        exitedAt:
+          type: string
+          nullable: true
+        lastEvaluatedAt:
+          type: string
+          nullable: true
+        cooldownUntil:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    MarketMemoryEntry:
+      type: object
+      required: [id, symbol, kind, description, recordedAt]
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        kind:
+          type: string
+          enum: [failed_setup, successful_setup, regime_transition, session_behavior, volatility_behavior]
+        description:
+          type: string
+        confidence:
+          type: number
+          nullable: true
+        outcome:
+          type: string
+          nullable: true
+        recordedAt:
+          type: string
+        expiresAt:
+          type: string
+          nullable: true
+
+    ProviderCredential:
+      type: object
+      required: [id, providerId, keyName, keyValueMasked, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        providerId:
+          type: integer
+        keyName:
+          type: string
+        keyValueMasked:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        rotatedAt:
+          type: string
+          nullable: true
+
+    ProviderCapability:
+      type: object
+      required: [id, providerId, capabilityType]
+      properties:
+        id:
+          type: integer
+        providerId:
+          type: integer
+        capabilityType:
+          type: string
+          enum: [live, historical, calendar, news, sentiment]
+        supportedTimeframes:
+          type: array
+          nullable: true
+          items:
+            type: string
+        maxHistoryDays:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    ProviderStatus:
+      type: object
+      required: [id, providerId, isReachable, consecutiveFailures, updatedAt]
+      properties:
+        id:
+          type: integer
+        providerId:
+          type: integer
+        isReachable:
+          type: boolean
+        lastCheckedAt:
+          type: string
+          nullable: true
+        lastSuccessAt:
+          type: string
+          nullable: true
+        latencyMs:
+          type: integer
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+        consecutiveFailures:
+          type: integer
+        updatedAt:
+          type: string
+
+    ProviderSymbolMapping:
+      type: object
+      required: [id, providerId, providerSymbol, canonicalSymbolId, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        providerId:
+          type: integer
+        providerSymbol:
+          type: string
+        canonicalSymbolId:
+          type: integer
+        canonicalSymbol:
+          type: string
+        displayName:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
           type: string
