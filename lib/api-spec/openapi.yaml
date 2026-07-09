@@ -5130,7 +5130,7 @@ paths:
     get:
       operationId: listAuditLog
       tags: [audit-log]
-      summary: Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+      summary: Platform-wide admin audit log (admin), filterable by action/actor/target/category/date range
       parameters:
         - name: action
           in: query
@@ -5146,6 +5146,11 @@ paths:
             type: string
         - name: targetId
           in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Filters admin_secret.* entries by settings category (auth/payments/email/infra/ai/trainer/market_data/runpod/ea_feed/other).
           schema:
             type: string
         - name: from

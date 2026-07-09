@@ -35,6 +35,8 @@ const ACTIONS = [
   "admin_secret.enabled",
 ] as const;
 
+const CATEGORIES = ["auth", "payments", "email", "infra", "ai", "trainer", "market_data", "runpod", "ea_feed", "other"] as const;
+
 function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
   if (action.endsWith("deactivated") || action.endsWith("removed")) return "destructive";
   if (action.endsWith("published") || action.endsWith("activated") || action.endsWith("overridden")) return "default";
@@ -50,6 +52,7 @@ export default function AdminAuditLog() {
   });
 
   const [action, setAction] = useState<string>("all");
+  const [category, setCategory] = useState<string>("all");
   const [targetType, setTargetType] = useState("");
   const [actorUserId, setActorUserId] = useState("");
   const [from, setFrom] = useState("");
@@ -57,6 +60,7 @@ export default function AdminAuditLog() {
 
   const { data: entries = [] } = useListAuditLog({
     action: action !== "all" ? action : undefined,
+    category: category !== "all" ? category : undefined,
     targetType: targetType.trim() || undefined,
     actorUserId: actorUserId.trim() || undefined,
     from: from ? new Date(from).toISOString() : undefined,
@@ -75,6 +79,15 @@ export default function AdminAuditLog() {
             <SelectItem value="all">All actions</SelectItem>
             {ACTIONS.map((a) => (
               <SelectItem key={a} value={a}>{a}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="w-full sm:w-48 bg-background/50 border-cyan-900/30 text-cyan-50 font-mono text-xs"><SelectValue placeholder="All categories" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
           </SelectContent>
         </Select>

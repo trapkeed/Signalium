@@ -8,12 +8,13 @@ const router = Router();
 // actor, target type/id, and date range.
 router.get("/", requireAdmin, async (req, res) => {
   try {
-    const { action, actorUserId, targetType, targetId, from, to } = req.query as Record<string, string | undefined>;
+    const { action, actorUserId, targetType, targetId, category, from, to } = req.query as Record<string, string | undefined>;
     const entries = await listAuditLog({
       action,
       actorUserId,
       targetType,
       targetId,
+      category,
       from: from ? new Date(from) : undefined,
       to: to ? new Date(to) : undefined,
     });

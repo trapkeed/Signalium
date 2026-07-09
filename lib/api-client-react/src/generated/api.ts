@@ -19038,7 +19038,7 @@ export const getListAuditLogUrl = (params?: ListAuditLogParams,) => {
 }
 
 /**
- * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/category/date range
  */
 export const listAuditLog = async (params?: ListAuditLogParams, options?: RequestInit): Promise<AuditLogEntry[]> => {
 
@@ -19085,7 +19085,7 @@ export type ListAuditLogQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/category/date range
  */
 
 export function useListAuditLog<TData = Awaited<ReturnType<typeof listAuditLog>>, TError = ErrorType<unknown>>(

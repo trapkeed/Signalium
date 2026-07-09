@@ -5323,13 +5323,14 @@ export const GetReferralLeaderboardResponse = zod.array(GetReferralLeaderboardRe
 
 
 /**
- * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/date range
+ * @summary Platform-wide admin audit log (admin), filterable by action/actor/target/category/date range
  */
 export const ListAuditLogQueryParams = zod.object({
   "action": zod.coerce.string().optional(),
   "actorUserId": zod.coerce.string().optional(),
   "targetType": zod.coerce.string().optional(),
   "targetId": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional().describe('Filters admin_secret.\* entries by settings category (auth\/payments\/email\/infra\/ai\/trainer\/market_data\/runpod\/ea_feed\/other).'),
   "from": zod.date().optional(),
   "to": zod.date().optional()
 })

@@ -3,6 +3,8 @@ import { retryWithBackoff } from "./retry";
 import { getServiceToken } from "./sso";
 import { getCircuitBreaker } from "./circuitBreaker";
 import { resolveManagedConfig } from "./secretsVault";
+import { db, trainerSyncProbesTable } from "@workspace/db";
+import { desc, eq } from "drizzle-orm";
 
 // S26: fail fast + degrade gracefully once the external trainer is clearly
 // down, instead of retrying (and timing out) on every single EA tick while
@@ -175,11 +177,55 @@ export async function checkTrainerReachability(): Promise<{ configured: boolean;
       signal: AbortSignal.timeout(5000),
     });
     const latencyMs = Date.now() - started;
-    if (!res.ok) return { configured: true, reachable: false, latencyMs, error: `HTTP ${res.status}` };
+    if (!res.ok) {
+      await recordSyncProbe(false, latencyMs, `HTTP ${res.status}`);
+      return { configured: true, reachable: false, latencyMs, error: `HTTP ${res.status}` };
+    }
+    await recordSyncProbe(true, latencyMs, null);
     return { configured: true, reachable: true, latencyMs, error: null };
   } catch (err) {
-    return { configured: true, reachable: false, latencyMs: Date.now() - started, error: (err as Error).message };
+    const latencyMs = Date.now() - started;
+    const message = (err as Error).message;
+    await recordSyncProbe(false, latencyMs, message);
+    return { configured: true, reachable: false, latencyMs, error: message };
   }
+}
+
+/**
+ * Persists every reachability probe (success or failure) so the sync-status
+ * dashboard can report real "last successful check" / "last failed check"
+ * history that survives process restarts, rather than only the outcome of
+ * whichever request happened to load the page last.
+ */
+async function recordSyncProbe(reachable: boolean, latencyMs: number | null, error: string | null): Promise<void> {
+  try {
+    await db.insert(trainerSyncProbesTable).values({ reachable, latencyMs, error });
+  } catch {
+    // Best-effort: a probe-logging failure should never break the status check itself.
+  }
+}
+
+export interface TrainerSyncHistory {
+  lastSuccessfulCheckAt: string | null;
+  lastFailedCheckAt: string | null;
+  lastFailureReason: string | null;
+}
+
+/** Reads persisted probe history for the sync-status dashboard. */
+export async function getTrainerSyncHistory(): Promise<TrainerSyncHistory> {
+  const [lastSuccess] = await db.select().from(trainerSyncProbesTable)
+    .where(eq(trainerSyncProbesTable.reachable, true))
+    .orderBy(desc(trainerSyncProbesTable.checkedAt))
+    .limit(1);
+  const [lastFailure] = await db.select().from(trainerSyncProbesTable)
+    .where(eq(trainerSyncProbesTable.reachable, false))
+    .orderBy(desc(trainerSyncProbesTable.checkedAt))
+    .limit(1);
+  return {
+    lastSuccessfulCheckAt: lastSuccess?.checkedAt.toISOString() ?? null,
+    lastFailedCheckAt: lastFailure?.checkedAt.toISOString() ?? null,
+    lastFailureReason: lastFailure?.error ?? null,
+  };
 }
 
 /**

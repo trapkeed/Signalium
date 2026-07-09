@@ -132,6 +132,8 @@ export interface AuditLogFilters {
   actorUserId?: string;
   targetType?: string;
   targetId?: string;
+  /** Filters on `detail->>'category'` — populated for admin_secret.* actions with the secret's settings category (auth/payments/email/infra/ai/trainer/market_data/runpod/ea_feed/other). */
+  category?: string;
   from?: Date;
   to?: Date;
 }
@@ -142,6 +144,7 @@ export async function listAuditLog(filters: AuditLogFilters, limit = 500) {
   if (filters.actorUserId) conditions.push(eq(auditLogTable.actorUserId, filters.actorUserId));
   if (filters.targetType) conditions.push(eq(auditLogTable.targetType, filters.targetType));
   if (filters.targetId) conditions.push(eq(auditLogTable.targetId, filters.targetId));
+  if (filters.category) conditions.push(sql`${auditLogTable.detail}->>'category' = ${filters.category}`);
   if (filters.from) conditions.push(gte(auditLogTable.createdAt, filters.from));
   if (filters.to) conditions.push(lte(auditLogTable.createdAt, filters.to));
 

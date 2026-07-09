@@ -39,3 +39,4 @@ export * from "./security-hardening";
 export * from "./admin-secrets";
 export * from "./auth";
 export * from "./runpod";
+export * from "./trainer-sync-status";

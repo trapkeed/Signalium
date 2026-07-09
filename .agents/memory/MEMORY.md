@@ -20,5 +20,5 @@
 - [SSO issuer/TTL vault config](sso-key-vault-config.md) — split config (generic vault) from crypto material (dedicated table) when adding admin-configurable settings to a security-critical service.
 - [S32 Clerk-to-custom-auth migration](s32-clerk-to-custom-auth.md) — passwordHash leak trap, drizzle-kit push TTY prompt workaround, grep whole backend for provider env vars, app-side UUID default pattern.
 - [Trainer Admin Control Plane](s32-trainer-control-plane.md) — audit-both-paths for trainer mutations, link out to existing deploy/rollback instead of duplicating, RunPod reads stay DB-authoritative, recurring orval looseObject sed fix.
-- [Config Vault Categories, Rotation & Sync Status](s35-config-vault-categories.md) — keep secret-push-to-external-service out of scope, additive rotate/disable over delete, thin link-out status pages, no separate category filter needed on audit log.
-- [EA broker-aware market gateway](s35-ea-market-gateway.md) — layered symbol resolution (local→trainer→regex) with conflict logging, double self-join to resolve conflict symbol IDs to names for admin UI.
+- [Config Vault Categories, Rotation & Sync Status](config-vault-categories-sync-status.md) — keep secret-push-to-external-service out of scope, additive rotate/disable over delete, server-enforced category enum, persisted sync-probe history.
+- [EA broker-aware market gateway](ea-broker-market-gateway.md) — layered symbol resolution (local→trainer→regex) with conflict logging, double self-join to resolve conflict symbol IDs to names for admin UI.

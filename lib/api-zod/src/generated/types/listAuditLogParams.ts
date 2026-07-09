@@ -11,6 +11,10 @@ action?: string;
 actorUserId?: string;
 targetType?: string;
 targetId?: string;
+/**
+ * Filters admin_secret.* entries by settings category (auth/payments/email/infra/ai/trainer/market_data/runpod/ea_feed/other).
+ */
+category?: string;
 from?: Date;
 to?: Date;
 };

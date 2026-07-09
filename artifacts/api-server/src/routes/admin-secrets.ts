@@ -18,7 +18,12 @@ import { logAudit } from "../lib/auditLog";
 import { getGoogleCredentials, setGoogleCredentials } from "../lib/googleOAuth";
 import crypto from "crypto";
 import { SETTINGS_DEFINITIONS, getDefinitionsByCategory, getTrainerRelevantKeys } from "../lib/settingsDefinitions";
-import { getTrainerFailureState, checkTrainerReachability } from "../lib/qdeTrainer";
+import { getTrainerFailureState, checkTrainerReachability, getTrainerSyncHistory } from "../lib/qdeTrainer";
+import { SETTINGS_CATEGORIES, type SettingsCategory } from "@workspace/db";
+
+function isValidCategory(value: unknown): value is SettingsCategory {
+  return typeof value === "string" && (SETTINGS_CATEGORIES as readonly string[]).includes(value);
+}
 
 const router = Router();
 
@@ -107,6 +112,7 @@ router.get("/settings-status", requireSuperAdmin, async (_req, res) => {
 router.get("/sync-status", requireSuperAdmin, async (req, res) => {
   try {
     const reachability = await checkTrainerReachability();
+    const history = await getTrainerSyncHistory();
     const trainerKeys = getTrainerRelevantKeys();
     const resolvedEntries = await Promise.all(trainerKeys.map(async (key) => {
       const def = SETTINGS_DEFINITIONS.find((d) => d.key === key)!;
@@ -123,6 +129,9 @@ router.get("/sync-status", requireSuperAdmin, async (req, res) => {
         latencyMs: reachability.latencyMs,
         error: reachability.error,
         checkedAt: new Date().toISOString(),
+        lastSuccessfulCheckAt: history.lastSuccessfulCheckAt,
+        lastFailedCheckAt: history.lastFailedCheckAt,
+        lastFailureReason: history.lastFailureReason,
       },
       failureState: getTrainerFailureState(),
       configVersionHash,
@@ -147,7 +156,7 @@ router.get("/:id/reveal", requireSuperAdmin, async (req, res) => {
     if (!row) return res.status(404).json({ error: "Not found" });
 
     const value = decryptSecret(row.encryptedValue);
-    await logAudit(userId, "admin_secret.revealed", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.revealed", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ key: row.key, value });
   } catch (err) {
     req.log.error(err, "Failed to reveal admin secret");
@@ -160,17 +169,20 @@ router.post("/", requireSuperAdmin, async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const { key, value, category, description } = req.body as { key?: string; value?: string; category?: string; description?: string };
   if (!key || !value) return res.status(400).json({ error: "key and value are required" });
+  if (category !== undefined && !isValidCategory(category)) {
+    return res.status(400).json({ error: `category must be one of: ${SETTINGS_CATEGORIES.join(", ")}` });
+  }
 
   try {
     const encryptedValue = encryptSecret(value);
     const [row] = await db.insert(adminSecretsTable).values({
       key,
       encryptedValue,
-      category: (category as any) ?? "other",
+      category: category ?? "other",
       description,
       updatedBy: userId,
     }).returning();
-    await logAudit(userId, "admin_secret.created", "admin_secret", String(row.id), { key });
+    await logAudit(userId, "admin_secret.created", "admin_secret", String(row.id), { key, category: row.category });
     return res.status(201).json({ id: row.id, key: row.key, maskedValue: maskSecret(value) });
   } catch (err: any) {
     if (err?.code === "23505") return res.status(409).json({ error: "A secret with this key already exists — use update instead" });
@@ -185,6 +197,9 @@ router.patch("/:id", requireSuperAdmin, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
   const { value, category, description } = req.body as { value?: string; category?: string; description?: string };
+  if (category !== undefined && !isValidCategory(category)) {
+    return res.status(400).json({ error: `category must be one of: ${SETTINGS_CATEGORIES.join(", ")}` });
+  }
 
   try {
     const updates: Record<string, unknown> = { updatedBy: userId, updatedAt: new Date() };
@@ -194,7 +209,7 @@ router.patch("/:id", requireSuperAdmin, async (req, res) => {
 
     const [row] = await db.update(adminSecretsTable).set(updates).where(eq(adminSecretsTable.id, id)).returning();
     if (!row) return res.status(404).json({ error: "Not found" });
-    await logAudit(userId, "admin_secret.updated", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.updated", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ id: row.id, key: row.key, maskedValue: maskSecret(decryptSecret(row.encryptedValue)) });
   } catch (err) {
     req.log.error(err, "Failed to update admin secret");
@@ -219,7 +234,7 @@ router.post("/:id/rotate", requireSuperAdmin, async (req, res) => {
       .where(eq(adminSecretsTable.id, id))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
-    await logAudit(userId, "admin_secret.rotated", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.rotated", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ id: row.id, key: row.key, maskedValue: maskSecret(value), rotatedAt: row.rotatedAt });
   } catch (err) {
     req.log.error(err, "Failed to rotate admin secret");
@@ -241,7 +256,7 @@ router.post("/:id/disable", requireSuperAdmin, async (req, res) => {
       .where(eq(adminSecretsTable.id, id))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
-    await logAudit(userId, "admin_secret.disabled", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.disabled", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ id: row.id, key: row.key, isActive: row.isActive });
   } catch (err) {
     req.log.error(err, "Failed to disable admin secret");
@@ -261,7 +276,7 @@ router.post("/:id/enable", requireSuperAdmin, async (req, res) => {
       .where(eq(adminSecretsTable.id, id))
       .returning();
     if (!row) return res.status(404).json({ error: "Not found" });
-    await logAudit(userId, "admin_secret.enabled", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.enabled", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ id: row.id, key: row.key, isActive: row.isActive });
   } catch (err) {
     req.log.error(err, "Failed to enable admin secret");
@@ -278,7 +293,7 @@ router.delete("/:id", requireSuperAdmin, async (req, res) => {
   try {
     const [row] = await db.delete(adminSecretsTable).where(eq(adminSecretsTable.id, id)).returning();
     if (!row) return res.status(404).json({ error: "Not found" });
-    await logAudit(userId, "admin_secret.deleted", "admin_secret", String(id), { key: row.key });
+    await logAudit(userId, "admin_secret.deleted", "admin_secret", String(id), { key: row.key, category: row.category });
     return res.json({ success: true });
   } catch (err) {
     req.log.error(err, "Failed to delete admin secret");
