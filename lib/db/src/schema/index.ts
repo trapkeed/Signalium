@@ -30,3 +30,5 @@ export * from "./telemetry-intelligence";
 export * from "./deployments";
 export * from "./operational";
 export * from "./security-incidents";
+export * from "./admin-roles";
+export * from "./sso";

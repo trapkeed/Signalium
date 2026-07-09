@@ -39,6 +39,8 @@ import operationalRouter from "./operational";
 import providerManagementRouter from "./provider-management";
 import securityRouter from "./security";
 import researchLabRouter from "./research-lab";
+import rolesRouter from "./roles";
+import ssoRouter from "./sso";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -96,5 +98,9 @@ router.use("/data-providers", providerManagementRouter);
 router.use("/security", securityRouter);
 // S24B: Research Lab Integration Hub — admin gateway/proxy to signalium-trainer's research/training/deployment APIs
 router.use("/research-lab", researchLabRouter);
+// S24C: fine-grained admin role management (SuperAdmin-only) — grant/revoke/assume
+router.use("/admin/roles", rolesRouter);
+// S24C: SSO Identity Provider — token issuance/refresh/revocation/verification for trusted internal services
+router.use("/sso", ssoRouter);
 
 export default router;

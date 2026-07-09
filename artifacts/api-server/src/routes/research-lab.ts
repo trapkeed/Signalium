@@ -15,14 +15,25 @@
  */
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { requireAdmin } from "../middlewares/requireAdmin";
+import { requireAdmin, requireAnyPermission } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import * as researchLab from "../lib/researchLab";
 import { ResearchLabUnavailableError } from "../lib/researchLab";
 
 const router = Router();
 
+// Baseline: still admin-panel-gated for everyone (401/403 for non-admin-tier
+// accounts). S24C layers finer-grained per-section permission checks below —
+// e.g. Experiments/Shadow Testing need QuantResearcher (or read-only
+// Founder/Auditor visibility), not just generic Admin.
 router.use(requireAdmin);
+
+const quantOrView = requireAnyPermission("research.quant", "research.view");
+const mlOrView = requireAnyPermission("research.ml", "research.view");
+const anyResearchView = requireAnyPermission("research.quant", "research.ml", "research.view");
+const deploymentView = requireAnyPermission("deployment.view");
+const deploymentApprove = requireAnyPermission("deployment.approve");
+const deploymentRollback = requireAnyPermission("deployment.rollback");
 
 /**
  * Wraps a proxy call so an unavailable trainer degrades to a clean 503 signal
@@ -50,96 +61,96 @@ router.get("/status", async (_req, res) => {
 
 // ─── 1. Experiments ───────────────────────────────────────────────────────────
 
-router.get("/experiments", async (req, res) => {
+router.get("/experiments", quantOrView, async (req, res) => {
   await proxy(res, () => researchLab.listExperiments({
     limit: req.query.limit ? Number(req.query.limit) : undefined,
     status: req.query.status as string | undefined,
   }));
 });
-router.get("/experiments/:id", async (req, res) => {
-  await proxy(res, () => researchLab.getExperiment(req.params.id));
+router.get("/experiments/:id", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getExperiment((req.params.id as string)));
 });
-router.get("/experiments/:id/lineage", async (req, res) => {
-  await proxy(res, () => researchLab.getExperimentLineage(req.params.id));
+router.get("/experiments/:id/lineage", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getExperimentLineage((req.params.id as string)));
 });
-router.get("/experiments/:id/history", async (req, res) => {
-  await proxy(res, () => researchLab.getExperimentHistory(req.params.id));
+router.get("/experiments/:id/history", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getExperimentHistory((req.params.id as string)));
 });
 
 // ─── 2. Training ──────────────────────────────────────────────────────────────
 
-router.get("/training/runs", async (req, res) => {
+router.get("/training/runs", mlOrView, async (req, res) => {
   await proxy(res, () => researchLab.listTrainingRuns({
     status: req.query.status as string | undefined,
     limit: req.query.limit ? Number(req.query.limit) : undefined,
   }));
 });
-router.get("/training/runs/:id", async (req, res) => {
-  await proxy(res, () => researchLab.getTrainingRun(req.params.id));
+router.get("/training/runs/:id", mlOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getTrainingRun((req.params.id as string)));
 });
-router.get("/training/resource-usage", async (_req, res) => {
+router.get("/training/resource-usage", mlOrView, async (_req, res) => {
   await proxy(res, () => researchLab.getTrainingResourceUsage());
 });
 
 // ─── 3. Validation ────────────────────────────────────────────────────────────
 
-router.get("/validation/reports", async (req, res) => {
+router.get("/validation/reports", mlOrView, async (req, res) => {
   await proxy(res, () => researchLab.listValidationReports({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
-router.get("/validation/reports/:id", async (req, res) => {
-  await proxy(res, () => researchLab.getValidationReport(req.params.id));
+router.get("/validation/reports/:id", mlOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getValidationReport((req.params.id as string)));
 });
-router.get("/validation/drift", async (_req, res) => {
+router.get("/validation/drift", mlOrView, async (_req, res) => {
   await proxy(res, () => researchLab.getDriftMonitoring());
 });
-router.get("/validation/robustness", async (req, res) => {
+router.get("/validation/robustness", mlOrView, async (req, res) => {
   await proxy(res, () => researchLab.getRobustnessTests({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
 
 // ─── 4. Shadow Testing ────────────────────────────────────────────────────────
 
-router.get("/shadow-testing/deployments", async (req, res) => {
+router.get("/shadow-testing/deployments", quantOrView, async (req, res) => {
   await proxy(res, () => researchLab.listShadowDeployments({ status: req.query.status as string | undefined }));
 });
-router.get("/shadow-testing/deployments/:id/comparison", async (req, res) => {
-  await proxy(res, () => researchLab.getShadowComparison(req.params.id));
+router.get("/shadow-testing/deployments/:id/comparison", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getShadowComparison((req.params.id as string)));
 });
-router.get("/shadow-testing/deployments/:id/agreement", async (req, res) => {
-  await proxy(res, () => researchLab.getShadowAgreementAnalysis(req.params.id));
+router.get("/shadow-testing/deployments/:id/agreement", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getShadowAgreementAnalysis((req.params.id as string)));
 });
-router.get("/shadow-testing/deployments/:id/regimes", async (req, res) => {
-  await proxy(res, () => researchLab.getShadowRegimeComparison(req.params.id));
+router.get("/shadow-testing/deployments/:id/regimes", quantOrView, async (req, res) => {
+  await proxy(res, () => researchLab.getShadowRegimeComparison((req.params.id as string)));
 });
 
 // ─── 5. Deployment (candidates) — sensitive: audited on read and action ──────
 
-router.get("/deployment-candidates", async (req, res) => {
+router.get("/deployment-candidates", deploymentView, async (req, res) => {
   const { userId } = getAuth(req);
   const ok = await proxy(res, () => researchLab.listDeploymentCandidates({ status: req.query.status as string | undefined }));
   if (ok && userId) {
     await logAudit(userId, "research_lab.sensitive_view_accessed", "research_lab_deployment_candidates", "list").catch(() => {});
   }
 });
-router.get("/deployment-candidates/history", async (req, res) => {
+router.get("/deployment-candidates/history", deploymentView, async (req, res) => {
   const { userId } = getAuth(req);
   const ok = await proxy(res, () => researchLab.getResearchDeploymentHistory({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
   if (ok && userId) {
     await logAudit(userId, "research_lab.sensitive_view_accessed", "research_lab_deployment_candidates", "history").catch(() => {});
   }
 });
-router.get("/deployment-candidates/:id", async (req, res) => {
+router.get("/deployment-candidates/:id", deploymentView, async (req, res) => {
   const { userId } = getAuth(req);
-  const ok = await proxy(res, () => researchLab.getDeploymentCandidate(req.params.id));
+  const ok = await proxy(res, () => researchLab.getDeploymentCandidate((req.params.id as string)));
   if (ok && userId) {
-    await logAudit(userId, "research_lab.sensitive_view_accessed", "research_lab_deployment_candidate", req.params.id).catch(() => {});
+    await logAudit(userId, "research_lab.sensitive_view_accessed", "research_lab_deployment_candidate", (req.params.id as string)).catch(() => {});
   }
 });
-router.post("/deployment-candidates/:id/approve", async (req, res) => {
+router.post("/deployment-candidates/:id/approve", deploymentApprove, async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   try {
-    const data = await researchLab.approveDeploymentCandidate(req.params.id, userId);
-    await logAudit(userId, "research_lab.candidate_approved", "research_lab_deployment_candidate", req.params.id, { result: data });
+    const data = await researchLab.approveDeploymentCandidate((req.params.id as string), userId);
+    await logAudit(userId, "research_lab.candidate_approved", "research_lab_deployment_candidate", (req.params.id as string), { result: data });
     return res.json(data);
   } catch (err) {
     if (err instanceof ResearchLabUnavailableError) {
@@ -148,13 +159,13 @@ router.post("/deployment-candidates/:id/approve", async (req, res) => {
     throw err;
   }
 });
-router.post("/deployment-candidates/:id/rollback", async (req, res) => {
+router.post("/deployment-candidates/:id/rollback", deploymentRollback, async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const reason = typeof req.body?.reason === "string" ? req.body.reason : undefined;
   try {
-    const data = await researchLab.rollbackDeploymentCandidate(req.params.id, userId, reason);
-    await logAudit(userId, "research_lab.candidate_rolled_back", "research_lab_deployment_candidate", req.params.id, { reason: reason ?? null, result: data });
+    const data = await researchLab.rollbackDeploymentCandidate((req.params.id as string), userId, reason);
+    await logAudit(userId, "research_lab.candidate_rolled_back", "research_lab_deployment_candidate", (req.params.id as string), { reason: reason ?? null, result: data });
     return res.json(data);
   } catch (err) {
     if (err instanceof ResearchLabUnavailableError) {
@@ -166,29 +177,29 @@ router.post("/deployment-candidates/:id/rollback", async (req, res) => {
 
 // ─── 6. Research Intelligence ─────────────────────────────────────────────────
 
-router.get("/research-intelligence/features", async (req, res) => {
+router.get("/research-intelligence/features", anyResearchView, async (req, res) => {
   await proxy(res, () => researchLab.listDiscoveredFeatures({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
-router.get("/research-intelligence/failure-investigations", async (req, res) => {
+router.get("/research-intelligence/failure-investigations", anyResearchView, async (req, res) => {
   await proxy(res, () => researchLab.listFailureInvestigations({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
-router.get("/research-intelligence/self-evaluations", async (req, res) => {
+router.get("/research-intelligence/self-evaluations", anyResearchView, async (req, res) => {
   await proxy(res, () => researchLab.listSelfEvaluationFindings({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
-router.get("/research-intelligence/retraining-recommendations", async (req, res) => {
+router.get("/research-intelligence/retraining-recommendations", anyResearchView, async (req, res) => {
   await proxy(res, () => researchLab.listRetrainingRecommendations({ limit: req.query.limit ? Number(req.query.limit) : undefined }));
 });
 
 // ─── 7. QDE Genealogy ──────────────────────────────────────────────────────────
 
-router.get("/genealogy/tree", async (req, res) => {
+router.get("/genealogy/tree", anyResearchView, async (req, res) => {
   await proxy(res, () => researchLab.getGenealogyTree(req.query.root as string | undefined));
 });
-router.get("/genealogy/:modelVersion", async (req, res) => {
-  await proxy(res, () => researchLab.getModelGenealogy(req.params.modelVersion));
+router.get("/genealogy/:modelVersion", anyResearchView, async (req, res) => {
+  await proxy(res, () => researchLab.getModelGenealogy((req.params.modelVersion as string)));
 });
-router.get("/genealogy/:modelVersion/artifacts", async (req, res) => {
-  await proxy(res, () => researchLab.listArtifactHistory(req.params.modelVersion));
+router.get("/genealogy/:modelVersion/artifacts", anyResearchView, async (req, res) => {
+  await proxy(res, () => researchLab.listArtifactHistory((req.params.modelVersion as string)));
 });
 
 export default router;

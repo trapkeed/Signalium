@@ -7,3 +7,4 @@
 - [S23b Alerting Engine & Symbol Health](s23b-alerting-symbol-health.md) — delivery-channel gating on optional secrets, generalized platform-alert dedup, sweep reentrancy guard, symbol health approximated from provider_status (no candle table).
 - [S23c Security Operations & Audit Logs](s23c-security-operations.md) — scopeKey dedup requirement, security_incidents vs operational_incidents, audit-log volume control, shared IP threading for auth.
 - [S24B Research Lab Integration Hub](s24b-research-lab-hub.md) — trainer-proxy gateway pattern, ResearchLabPassthrough opaque schema, audit-on-success-only for sensitive reads.
+- [S24C SSO Identity Provider](s24c-sso-identity-provider.md) — additive role table over enum rewrite, DB-persisted signing key, atomic refresh rotation, mandatory JWT audience, least-privilege service-token scope.

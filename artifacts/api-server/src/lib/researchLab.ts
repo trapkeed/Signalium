@@ -19,6 +19,7 @@
  * state instead of synthesizing data.
  */
 import { logger } from "./logger";
+import { getServiceToken } from "./sso";
 
 export class ResearchLabUnavailableError extends Error {
   constructor(detail?: string) {
@@ -42,9 +43,14 @@ async function labFetch<T>(path: string, opts?: RequestInit): Promise<T> {
   }
   const url = `${baseUrl.replace(/\/$/, "")}${path}`;
   try {
+    // S24C: Signalium is the ecosystem's identity authority — every outbound
+    // call to the trainer carries a signed SSO service token so Trainer
+    // never has to trust an unauthenticated caller (and never needs its own
+    // administrator auth or password store).
+    const serviceToken = await getServiceToken();
     const res = await fetch(url, {
       ...opts,
-      headers: { "Content-Type": "application/json", ...(opts?.headers ?? {}) },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}`, ...(opts?.headers ?? {}) },
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {

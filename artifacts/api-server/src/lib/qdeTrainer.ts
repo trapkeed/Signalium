@@ -1,4 +1,5 @@
 import { retryWithBackoff } from "./retry";
+import { getServiceToken } from "./sso";
 
 export const TRAINER_ACTIONS = [
   "HOLD",
@@ -143,9 +144,12 @@ async function runInference(request: InferenceRequest): Promise<InferenceRespons
 
 async function callExternalInference(baseUrl: string, request: InferenceRequest): Promise<InferenceResponse> {
   const endpoint = `${baseUrl.replace(/\/$/, "")}/qde/${request.type}`;
+  // S24C: attach a signed SSO service token — Trainer verifies it against
+  // Signalium's JWKS instead of trusting an unauthenticated caller.
+  const serviceToken = await getServiceToken();
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}` },
     body: JSON.stringify(request),
     signal: AbortSignal.timeout(5000),
   });
@@ -273,9 +277,10 @@ async function runTrainer(t: TelemetrySnapshot): Promise<TrainerDecision> {
 }
 
 async function callExternalTrainer(url: string, telemetry: TelemetrySnapshot): Promise<TrainerDecision> {
+  const serviceToken = await getServiceToken();
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}` },
     body: JSON.stringify(telemetry),
   });
   if (!res.ok) {
