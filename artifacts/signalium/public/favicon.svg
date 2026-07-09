@@ -1,3 +1,15 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="36" fill="#0F1729"/>
+  <rect width="180" height="180" rx="36" fill="url(#sig-bg-gradient)" fill-opacity="0.35"/>
+  <path d="M40 122L40 96C40 92.6863 42.6863 90 46 90H50C53.3137 90 56 92.6863 56 96V122C56 125.314 53.3137 128 50 128H46C42.6863 128 40 125.314 40 122Z" fill="#D9A520"/>
+  <path d="M78 122V70C78 66.6863 80.6863 64 84 64H88C91.3137 64 94 66.6863 94 70V122C94 125.314 91.3137 128 88 128H84C80.6863 128 78 125.314 78 122Z" fill="#D9A520"/>
+  <path d="M116 122V52C116 48.6863 118.686 46 122 46H126C129.314 46 132 48.6863 132 52V122C132 125.314 129.314 128 126 128H122C118.686 128 116 125.314 116 122Z" fill="#D9A520"/>
+  <path d="M38 100L80 62L118 40" stroke="#F4D998" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="118" cy="40" r="9" fill="#F4D998"/>
+  <defs>
+    <linearGradient id="sig-bg-gradient" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B2A4A"/>
+      <stop offset="1" stop-color="#0F1729" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
 </svg>
