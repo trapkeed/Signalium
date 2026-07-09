@@ -3223,6 +3223,280 @@ paths:
                   ok:
                     type: boolean
 
+  /account/audit-log:
+    get:
+      operationId: getOwnAuditLog
+      tags: [account]
+      summary: The current user's own audit trail (self-service, always scoped to the caller)
+      responses:
+        "200":
+          description: Audit log entries for the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
+
+  /account/consent:
+    get:
+      operationId: getConsent
+      tags: [account]
+      summary: The current user's consent records
+      responses:
+        "200":
+          description: Consent records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsentRecord"
+    post:
+      operationId: recordConsent
+      tags: [account]
+      summary: Record or update consent for one consent type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consentType, version, granted]
+              properties:
+                consentType:
+                  type: string
+                  enum: [terms_of_service, privacy_policy, marketing_communications]
+                version:
+                  type: string
+                granted:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated consent record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentRecord"
+
+  /account/export-data:
+    post:
+      operationId: exportAccountData
+      tags: [account]
+      summary: Synchronous, cryptographically signed export of everything tied to the current user's account
+      responses:
+        "200":
+          description: Signed data export
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataExportResult"
+
+  /account/deletion-status:
+    get:
+      operationId: getAccountDeletionStatus
+      tags: [account]
+      summary: Whether the current user has a pending or scheduled deletion request
+      responses:
+        "200":
+          description: Deletion status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [active]
+                properties:
+                  active:
+                    allOf:
+                      - $ref: "#/components/schemas/AccountDeletionRequest"
+                    nullable: true
+
+  /account/delete-account:
+    post:
+      operationId: requestAccountDeletion
+      tags: [account]
+      summary: Begin account deletion — sends a confirmation email; nothing is deleted until confirmed
+      responses:
+        "201":
+          description: Deletion request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionRequest"
+
+  /account/delete-account/confirm:
+    post:
+      operationId: confirmAccountDeletion
+      tags: [account]
+      summary: Confirm account deletion using the emailed signed token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, scheduledFor]
+                properties:
+                  ok:
+                    type: boolean
+                  scheduledFor:
+                    type: string
+
+  /account/delete-account/cancel:
+    post:
+      operationId: cancelAccountDeletion
+      tags: [account]
+      summary: Cancel a pending or scheduled account deletion request
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+
+  /trading-settings/emergency-stop:
+    post:
+      operationId: activateEmergencyStop
+      tags: [trading]
+      summary: Self-service kill switch — immediately force the current user's trading mode to manual
+      responses:
+        "200":
+          description: Updated trading settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTradingSettings"
+
+  /compliance/audit-log/export:
+    get:
+      operationId: exportComplianceAuditLog
+      tags: [compliance]
+      summary: Full filterable audit log export for compliance review (admin)
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: actorUserId
+          in: query
+          schema:
+            type: string
+        - name: targetType
+          in: query
+          schema:
+            type: string
+        - name: targetId
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Exported audit log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries, rowCount, exportedAt]
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuditLogEntry"
+                  rowCount:
+                    type: integer
+                  exportedAt:
+                    type: string
+
+  /compliance/audit-log/verify:
+    get:
+      operationId: verifyComplianceAuditChain
+      tags: [compliance]
+      summary: Recomputes the tamper-evident audit-log hash chain and reports the first break, if any (admin)
+      responses:
+        "200":
+          description: Chain verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditChainVerification"
+
+  /compliance/data-requests:
+    get:
+      operationId: listComplianceDataRequests
+      tags: [compliance]
+      summary: Data export and account deletion requests across all users (admin)
+      responses:
+        "200":
+          description: Data governance requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exports, deletions]
+                properties:
+                  exports:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DataExportRequest"
+                  deletions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AccountDeletionRequest"
+
+  /compliance/consent:
+    get:
+      operationId: listComplianceConsent
+      tags: [compliance]
+      summary: Consent records across all users (admin)
+      responses:
+        "200":
+          description: Consent records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsentRecord"
+
+  /compliance/retention:
+    get:
+      operationId: getComplianceRetentionPolicy
+      tags: [compliance]
+      summary: The platform's data retention policy (admin)
+      responses:
+        "200":
+          description: Retention policy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceRetentionPolicy"
+
   /storage/uploads/request-url:
     post:
       tags: [storage]
@@ -8613,7 +8887,7 @@ components:
 
     AuditLogEntry:
       type: object
-      required: [id, actorUserId, action, targetType, targetId, createdAt]
+      required: [id, actorUserId, action, targetType, targetId, createdAt, eventUuid, sequenceNum, hash]
       properties:
         id:
           type: integer
@@ -8643,6 +8917,20 @@ components:
             - model_request.action_issued
             - security_incident.acknowledged
             - security_incident.resolved
+            - user.account_created
+            - user.login_succeeded
+            - trading_mode.autonomous_activated
+            - trading_mode.autonomous_deactivated
+            - trading.emergency_stop_activated
+            - trading.emergency_stop_deactivated
+            - consent.recorded
+            - data_export.requested
+            - data_export.completed
+            - account_deletion.requested
+            - account_deletion.confirmed
+            - account_deletion.cancelled
+            - account_deletion.completed
+            - compliance.audit_log_exported
         targetType:
           type: string
         targetId:
@@ -8653,6 +8941,119 @@ components:
           nullable: true
         createdAt:
           type: string
+        eventUuid:
+          type: string
+          description: Immutable, externally-referenceable event identifier (S28 tamper resistance)
+        sequenceNum:
+          type: integer
+          description: 1-based, monotonic chain position — independent of `id`
+        prevHash:
+          type: ["string", "null"]
+        hash:
+          type: string
+
+    AuditChainVerification:
+      type: object
+      required: [ok, rowsChecked, brokenAt]
+      properties:
+        ok:
+          type: boolean
+        rowsChecked:
+          type: integer
+        brokenAt:
+          type: object
+          nullable: true
+          properties:
+            sequenceNum:
+              type: integer
+            id:
+              type: integer
+
+    ConsentRecord:
+      type: object
+      required: [id, userId, consentType, version, granted, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        consentType:
+          type: string
+          enum: [terms_of_service, privacy_policy, marketing_communications]
+        version:
+          type: string
+        granted:
+          type: boolean
+        ipAddress:
+          type: ["string", "null"]
+        userAgent:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+
+    DataExportRequest:
+      type: object
+      required: [id, userId, status, requestedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [completed, failed]
+        payloadHash:
+          type: ["string", "null"]
+        requestedAt:
+          type: string
+
+    DataExportResult:
+      type: object
+      required: [data, signature, payloadHash]
+      properties:
+        data:
+          type: object
+          additionalProperties: true
+        signature:
+          type: string
+          description: HMAC-SHA256 signature over the canonical JSON of `data`, verifiable later against a re-serialized copy
+        payloadHash:
+          type: string
+
+    AccountDeletionRequest:
+      type: object
+      required: [id, userId, status, requestedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [pending_confirmation, scheduled, cancelled, completed]
+        requestedAt:
+          type: string
+        confirmedAt:
+          type: ["string", "null"]
+        scheduledFor:
+          type: ["string", "null"]
+        cancelledAt:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+
+    ComplianceRetentionPolicy:
+      type: object
+      required: [auditLogRetentionDays, accountDeletionGracePeriodDays, notes]
+      properties:
+        auditLogRetentionDays:
+          type: integer
+        accountDeletionGracePeriodDays:
+          type: integer
+        notes:
+          type: array
+          items:
+            type: string
 
     SecurityIncident:
       type: object
@@ -8668,6 +9069,7 @@ components:
             - api_abuse
             - excessive_ea_requests
             - abnormal_trading_activity
+            - login_anomaly_cluster
         severity:
           type: string
           enum: [low, medium, high, critical]

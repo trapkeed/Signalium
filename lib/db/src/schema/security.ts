@@ -19,6 +19,12 @@ export const loginEventsTable = pgTable("login_events", {
   isMobile: boolean("is_mobile").notNull().default(false),
   isNewDevice: boolean("is_new_device").notNull().default(false),
   isSuspicious: boolean("is_suspicious").notNull().default(false),
+  // S28 — session fingerprint: sha256(ipAddress|deviceType|browserName) at
+  // the time of the event. Distinct from the raw fields above because it
+  // gives compliance/anomaly-detection code one stable, opaque value to key
+  // on (e.g. "how many distinct fingerprints has this user had this month")
+  // without re-deriving the hash logic in every consumer.
+  fingerprint: text("fingerprint"),
   occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("login_events_session_idx").on(table.clerkSessionId),

@@ -1,6 +1,7 @@
 import { useUser, UserProfile } from "@clerk/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SecurityTab } from "@/components/account/security-tab";
+import { PrivacyTab } from "@/components/account/privacy-tab";
 import { ReferralsTab } from "@/components/account/referrals-tab";
 import Subscriptions from "@/pages/subscriptions";
 import Payments from "@/pages/payments";
@@ -32,6 +33,7 @@ export default function Account() {
             <TabsTrigger value="trading">Trading</TabsTrigger>
             {referralsEnabled && <TabsTrigger value="referrals">Referrals</TabsTrigger>}
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="privacy">Privacy</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6 max-w-3xl">
@@ -81,6 +83,10 @@ export default function Account() {
 
           <TabsContent value="security" className="mt-6 max-w-4xl">
             <SecurityTab />
+          </TabsContent>
+
+          <TabsContent value="privacy" className="mt-6 max-w-4xl">
+            <PrivacyTab />
           </TabsContent>
         </Tabs>
       </div>

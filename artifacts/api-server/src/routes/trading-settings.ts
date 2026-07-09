@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { db, userTradingSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { checkAutonomousAccess } from "../lib/entitlementEngine";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -89,9 +90,62 @@ router.put("/", async (req, res) => {
         .returning();
       result = inserted;
     }
+
+    if (tradingMode === "autonomous" && existing?.tradingMode !== "autonomous") {
+      await logAudit(userId, "trading_mode.autonomous_activated", "user", userId, {});
+    } else if (tradingMode === "manual" && existing?.tradingMode === "autonomous") {
+      await logAudit(userId, "trading_mode.autonomous_deactivated", "user", userId, {});
+    }
+
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Failed to update trading settings");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── POST /trading-settings/emergency-stop ───────────────────────────────────
+// Self-service kill switch: immediately forces the caller's own trading mode
+// to manual (halting autonomous QDE-driven trade requests) regardless of
+// plan entitlement checks — this must always be reachable, even for a user
+// who no longer has autonomous-plan access, since its entire purpose is to
+// stop trading, not gate it.
+router.post("/emergency-stop", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [existing] = await db
+      .select()
+      .from(userTradingSettingsTable)
+      .where(eq(userTradingSettingsTable.userId, userId));
+
+    let result: typeof userTradingSettingsTable.$inferSelect;
+    if (existing) {
+      const [updated] = await db.update(userTradingSettingsTable)
+        .set({ tradingMode: "manual", updatedAt: new Date() })
+        .where(eq(userTradingSettingsTable.userId, userId))
+        .returning();
+      result = updated;
+    } else {
+      const [inserted] = await db.insert(userTradingSettingsTable)
+        .values({ userId, tradingMode: "manual", riskMode: "manual" })
+        .returning();
+      result = inserted;
+    }
+
+    // Only log when this call actually changed something — an idle re-click
+    // (already manual, including the implicit "no settings row yet" default
+    // of manual) shouldn't add noise to the audit trail every time.
+    if (existing && existing.tradingMode !== "manual") {
+      await logAudit(userId, "trading.emergency_stop_activated", "user", userId, {
+        previousMode: existing?.tradingMode ?? "manual",
+      });
+    }
+
+    return res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to activate emergency stop");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

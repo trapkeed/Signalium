@@ -6,7 +6,7 @@
  * alertDetectors.ts sweep shape, but emits security_incidents rather than
  * platform_alerts.
  */
-import { db, trainerActionsTable } from "@workspace/db";
+import { db, trainerActionsTable, loginEventsTable } from "@workspace/db";
 import { and, gte, ne, sql } from "drizzle-orm";
 import { emitSecurityIncident } from "./securityIncidents";
 import { logger } from "./logger";
@@ -15,6 +15,14 @@ const RECENT_WINDOW_MS = 60 * 60_000; // last hour
 const BASELINE_WINDOW_MS = 7 * 24 * 60 * 60_000; // trailing 7 days
 const MIN_RECENT_ACTIONS = 10; // ignore low-volume noise
 const SPIKE_MULTIPLIER = 3; // flag when recent hourly rate is 3x the trailing baseline hourly rate
+
+// S28 — compliance-driven login anomaly detection: a cluster of suspicious
+// (new-device + unrecognized-country, see account-security.ts) sign-ins for
+// the same user in a short window is a stronger signal than any single one —
+// isolated new-device logins already get a per-event email, this sweep flags
+// the pattern that a single event can't see.
+const LOGIN_ANOMALY_WINDOW_MS = 24 * 60 * 60_000; // last 24 hours
+const LOGIN_ANOMALY_THRESHOLD = 3; // 3+ suspicious logins in the window
 
 /**
  * Flags users whose non-HOLD trainer-action rate in the last hour is a
@@ -63,6 +71,33 @@ async function checkAbnormalTradingActivity(): Promise<void> {
   }
 }
 
+/**
+ * Flags users with a cluster of suspicious logins (new device + unrecognized
+ * country) in the trailing window — see account-security.ts sync-login for
+ * how isSuspicious is computed per event.
+ */
+async function checkLoginAnomalies(): Promise<void> {
+  const since = new Date(Date.now() - LOGIN_ANOMALY_WINDOW_MS);
+
+  const rows = await db
+    .select({ userId: loginEventsTable.userId, count: sql<number>`count(*)::int` })
+    .from(loginEventsTable)
+    .where(and(gte(loginEventsTable.occurredAt, since), sql`${loginEventsTable.isSuspicious} = true`))
+    .groupBy(loginEventsTable.userId);
+
+  for (const { userId, count } of rows) {
+    if (count < LOGIN_ANOMALY_THRESHOLD) continue;
+    await emitSecurityIncident({
+      type: "login_anomaly_cluster",
+      severity: count >= LOGIN_ANOMALY_THRESHOLD * 2 ? "high" : "medium",
+      message: `User ${userId} had ${count} suspicious sign-ins (new device + unrecognized country) in the last 24 hours`,
+      userId,
+      detail: { count, windowMs: LOGIN_ANOMALY_WINDOW_MS },
+      dedupWindowMs: LOGIN_ANOMALY_WINDOW_MS,
+    });
+  }
+}
+
 let sweepInFlight = false;
 
 export async function runSecuritySweep(): Promise<void> {
@@ -72,7 +107,7 @@ export async function runSecuritySweep(): Promise<void> {
   }
   sweepInFlight = true;
   try {
-    const detectors = [checkAbnormalTradingActivity];
+    const detectors = [checkAbnormalTradingActivity, checkLoginAnomalies];
     for (const detector of detectors) {
       try {
         await detector();

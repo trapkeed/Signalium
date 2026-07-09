@@ -115,6 +115,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
     title: "Governance",
     items: [
       { href: "/admin/governance", label: "Deployment Governance", icon: ShieldCheck },
+      { href: "/admin/compliance", label: "Compliance & Audit", icon: ShieldCheck },
     ],
   },
   {

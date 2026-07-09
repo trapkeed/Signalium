@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, jsonb, uniqueIndex, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -80,14 +80,48 @@ export const auditLogTable = pgTable("audit_log", {
       "config.imported",
       "secret_rotation.marked_rotated",
       "job_queue.requeued",
+      // S27 — Deployment Governance Visibility
+      "governance.overview_viewed",
+      // S28 — Compliance and Audit Infrastructure
+      "user.account_created",
+      "user.login_succeeded",
+      "trading_mode.autonomous_activated",
+      "trading_mode.autonomous_deactivated",
+      "trading.emergency_stop_activated",
+      "trading.emergency_stop_deactivated",
+      "consent.recorded",
+      "data_export.requested",
+      "data_export.completed",
+      "account_deletion.requested",
+      "account_deletion.confirmed",
+      "account_deletion.cancelled",
+      "account_deletion.completed",
+      "compliance.audit_log_exported",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),
   targetId: text("target_id").notNull(),
   detail: jsonb("detail").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+  // ─── S28 tamper-resistance ──────────────────────────────────────────────
+  // Immutable, externally-referenceable identifier — distinct from the
+  // internal serial `id` so a compliance export can cite a stable id even if
+  // the table were ever reindexed/rebuilt.
+  eventUuid: text("event_uuid").notNull(),
+  // Hash chain: every row's `hash` commits to its own fields *and* the
+  // previous row's hash (sha256, see auditLog.ts computeEntryHash), so any
+  // retroactive edit or deletion of a row breaks the chain from that point
+  // forward — detectable via verifyAuditChain() without needing a separate
+  // WORM store. `sequenceNum` is the chain position (1-based, monotonic),
+  // independent of the serial `id` so gaps are unambiguous.
+  sequenceNum: integer("sequence_num").notNull(),
+  prevHash: text("prev_hash"),
+  hash: text("hash").notNull(),
+}, (table) => [
+  uniqueIndex("audit_log_event_uuid_idx").on(table.eventUuid),
+  uniqueIndex("audit_log_sequence_num_idx").on(table.sequenceNum),
+]);
 
-export const insertAuditLogSchema = createInsertSchema(auditLogTable).omit({ id: true, createdAt: true });
+export const insertAuditLogSchema = createInsertSchema(auditLogTable).omit({ id: true, createdAt: true, eventUuid: true, sequenceNum: true, prevHash: true, hash: true });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogTable.$inferSelect;

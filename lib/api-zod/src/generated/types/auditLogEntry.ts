@@ -16,4 +16,11 @@ export interface AuditLogEntry {
   targetId: string;
   detail?: AuditLogEntryDetail;
   createdAt: string;
+  /** Immutable, externally-referenceable event identifier (S28 tamper resistance) */
+  eventUuid: string;
+  /** 1-based, monotonic chain position — independent of `id` */
+  sequenceNum: number;
+  /** @nullable */
+  prevHash?: string | null;
+  hash: string;
 }

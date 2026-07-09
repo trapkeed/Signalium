@@ -16,6 +16,8 @@ export const securityIncidentsTable = pgTable("security_incidents", {
       "api_abuse",
       "excessive_ea_requests",
       "abnormal_trading_activity",
+      // S28 — compliance-driven login anomaly clustering
+      "login_anomaly_cluster",
     ],
   }).notNull(),
   severity: text("severity", { enum: ["low", "medium", "high", "critical"] }).notNull().default("medium"),

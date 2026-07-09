@@ -15,4 +15,5 @@ export const SecurityIncidentType = {
   api_abuse: 'api_abuse',
   excessive_ea_requests: 'excessive_ea_requests',
   abnormal_trading_activity: 'abnormal_trading_activity',
+  login_anomaly_cluster: 'login_anomaly_cluster',
 } as const;

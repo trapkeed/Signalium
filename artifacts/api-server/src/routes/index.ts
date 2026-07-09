@@ -44,6 +44,7 @@ import ssoRouter from "./sso";
 import opsDashboardRouter from "./ops-dashboard";
 import resilienceRouter from "./resilience";
 import governanceRouter from "./governance";
+import complianceRouter from "./compliance";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -111,5 +112,9 @@ router.use("/ops-dashboard", opsDashboardRouter);
 router.use("/resilience", resilienceRouter);
 // S27: Deployment Governance Visibility — read-only institutional summary (full for Admin/SuperAdmin, strategic for Founder)
 router.use("/governance", governanceRouter);
+// S28: Compliance and Audit Infrastructure — admin-only tamper-check, audit
+// export, and data-governance oversight (self-service equivalents live under
+// /account, mounted above, always scoped to the caller)
+router.use("/compliance", complianceRouter);
 
 export default router;

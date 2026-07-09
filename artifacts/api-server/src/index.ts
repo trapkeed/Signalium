@@ -12,6 +12,7 @@ import { startJobQueueWorker } from "./lib/jobQueue";
 import { startBackupScheduler } from "./lib/backupService";
 import { startAuditRetentionSweep } from "./lib/auditRetention";
 import { seedSecretRotationTracking } from "./lib/secretRotation";
+import { startAccountDeletionSweep } from "./lib/dataGovernance";
 
 const rawPort = process.env["PORT"];
 
@@ -62,6 +63,9 @@ startAuditRetentionSweep(24 * 60 * 60 * 1_000);
 seedSecretRotationTracking().catch((err) => {
   logger.warn({ err }, "Failed to seed secret rotation tracking");
 });
+
+// S28: processes account-deletion requests whose grace period has elapsed
+startAccountDeletionSweep(60 * 60 * 1_000);
 
 // S23a: Record the backend's current git commit as a deployment version
 // (display-only, for the admin deployment dashboard's rollback reference).

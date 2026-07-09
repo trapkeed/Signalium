@@ -1981,6 +1981,20 @@ export const AuditLogEntryAction = {
   model_requestaction_issued: 'model_request.action_issued',
   security_incidentacknowledged: 'security_incident.acknowledged',
   security_incidentresolved: 'security_incident.resolved',
+  useraccount_created: 'user.account_created',
+  userlogin_succeeded: 'user.login_succeeded',
+  trading_modeautonomous_activated: 'trading_mode.autonomous_activated',
+  trading_modeautonomous_deactivated: 'trading_mode.autonomous_deactivated',
+  tradingemergency_stop_activated: 'trading.emergency_stop_activated',
+  tradingemergency_stop_deactivated: 'trading.emergency_stop_deactivated',
+  consentrecorded: 'consent.recorded',
+  data_exportrequested: 'data_export.requested',
+  data_exportcompleted: 'data_export.completed',
+  account_deletionrequested: 'account_deletion.requested',
+  account_deletionconfirmed: 'account_deletion.confirmed',
+  account_deletioncancelled: 'account_deletion.cancelled',
+  account_deletioncompleted: 'account_deletion.completed',
+  complianceaudit_log_exported: 'compliance.audit_log_exported',
 } as const;
 
 export type AuditLogEntryDetail = { [key: string]: unknown } | null;
@@ -1993,6 +2007,103 @@ export interface AuditLogEntry {
   targetId: string;
   detail?: AuditLogEntryDetail;
   createdAt: string;
+  /** Immutable, externally-referenceable event identifier (S28 tamper resistance) */
+  eventUuid: string;
+  /** 1-based, monotonic chain position — independent of `id` */
+  sequenceNum: number;
+  /** @nullable */
+  prevHash?: string | null;
+  hash: string;
+}
+
+export type AuditChainVerificationBrokenAt = {
+  sequenceNum?: number;
+  id?: number;
+} | null;
+
+export interface AuditChainVerification {
+  ok: boolean;
+  rowsChecked: number;
+  brokenAt: AuditChainVerificationBrokenAt;
+}
+
+export type ConsentRecordConsentType = typeof ConsentRecordConsentType[keyof typeof ConsentRecordConsentType];
+
+
+export const ConsentRecordConsentType = {
+  terms_of_service: 'terms_of_service',
+  privacy_policy: 'privacy_policy',
+  marketing_communications: 'marketing_communications',
+} as const;
+
+export interface ConsentRecord {
+  id: number;
+  userId: string;
+  consentType: ConsentRecordConsentType;
+  version: string;
+  granted: boolean;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  userAgent?: string | null;
+  updatedAt: string;
+}
+
+export type DataExportRequestStatus = typeof DataExportRequestStatus[keyof typeof DataExportRequestStatus];
+
+
+export const DataExportRequestStatus = {
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface DataExportRequest {
+  id: number;
+  userId: string;
+  status: DataExportRequestStatus;
+  /** @nullable */
+  payloadHash?: string | null;
+  requestedAt: string;
+}
+
+export type DataExportResultData = { [key: string]: unknown };
+
+export interface DataExportResult {
+  data: DataExportResultData;
+  /** HMAC-SHA256 signature over the canonical JSON of `data`, verifiable later against a re-serialized copy */
+  signature: string;
+  payloadHash: string;
+}
+
+export type AccountDeletionRequestStatus = typeof AccountDeletionRequestStatus[keyof typeof AccountDeletionRequestStatus];
+
+
+export const AccountDeletionRequestStatus = {
+  pending_confirmation: 'pending_confirmation',
+  scheduled: 'scheduled',
+  cancelled: 'cancelled',
+  completed: 'completed',
+} as const;
+
+export interface AccountDeletionRequest {
+  id: number;
+  userId: string;
+  status: AccountDeletionRequestStatus;
+  requestedAt: string;
+  /** @nullable */
+  confirmedAt?: string | null;
+  /** @nullable */
+  scheduledFor?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+}
+
+export interface ComplianceRetentionPolicy {
+  auditLogRetentionDays: number;
+  accountDeletionGracePeriodDays: number;
+  notes: string[];
 }
 
 export type SecurityIncidentType = typeof SecurityIncidentType[keyof typeof SecurityIncidentType];
@@ -2004,6 +2115,7 @@ export const SecurityIncidentType = {
   api_abuse: 'api_abuse',
   excessive_ea_requests: 'excessive_ea_requests',
   abnormal_trading_activity: 'abnormal_trading_activity',
+  login_anomaly_cluster: 'login_anomaly_cluster',
 } as const;
 
 export type SecurityIncidentSeverity = typeof SecurityIncidentSeverity[keyof typeof SecurityIncidentSeverity];
@@ -3328,6 +3440,58 @@ export type UnlockAccountBody = {
 
 export type UnlockAccount200 = {
   ok: boolean;
+};
+
+export type RecordConsentBodyConsentType = typeof RecordConsentBodyConsentType[keyof typeof RecordConsentBodyConsentType];
+
+
+export const RecordConsentBodyConsentType = {
+  terms_of_service: 'terms_of_service',
+  privacy_policy: 'privacy_policy',
+  marketing_communications: 'marketing_communications',
+} as const;
+
+export type RecordConsentBody = {
+  consentType: RecordConsentBodyConsentType;
+  version: string;
+  granted: boolean;
+};
+
+export type GetAccountDeletionStatus200 = {
+  active: AccountDeletionRequest | null;
+};
+
+export type ConfirmAccountDeletionBody = {
+  token: string;
+};
+
+export type ConfirmAccountDeletion200 = {
+  ok: boolean;
+  scheduledFor: string;
+};
+
+export type CancelAccountDeletion200 = {
+  ok: boolean;
+};
+
+export type ExportComplianceAuditLogParams = {
+action?: string;
+actorUserId?: string;
+targetType?: string;
+targetId?: string;
+from?: string;
+to?: string;
+};
+
+export type ExportComplianceAuditLog200 = {
+  entries: AuditLogEntry[];
+  rowCount: number;
+  exportedAt: string;
+};
+
+export type ListComplianceDataRequests200 = {
+  exports: DataExportRequest[];
+  deletions: AccountDeletionRequest[];
 };
 
 export type ResolveSeoPageParams = {

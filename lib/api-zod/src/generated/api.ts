@@ -3535,6 +3535,230 @@ export const UnlockAccountResponse = zod.object({
 
 
 /**
+ * @summary The current user's own audit trail (self-service, always scoped to the caller)
+ */
+export const GetOwnAuditLogResponseItem = zod.object({
+  "id": zod.number(),
+  "actorUserId": zod.string(),
+  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed', 'api_key.created', 'api_key.revoked', 'api_key.rotated', 'api_key.suspended', 'api_key.reactivated', 'ea_registration.created', 'ea_registration.deactivated', 'model_request.action_issued', 'security_incident.acknowledged', 'security_incident.resolved', 'user.account_created', 'user.login_succeeded', 'trading_mode.autonomous_activated', 'trading_mode.autonomous_deactivated', 'trading.emergency_stop_activated', 'trading.emergency_stop_deactivated', 'consent.recorded', 'data_export.requested', 'data_export.completed', 'account_deletion.requested', 'account_deletion.confirmed', 'account_deletion.cancelled', 'account_deletion.completed', 'compliance.audit_log_exported']),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "eventUuid": zod.string().describe('Immutable, externally-referenceable event identifier (S28 tamper resistance)'),
+  "sequenceNum": zod.number().describe('1-based, monotonic chain position — independent of `id`'),
+  "prevHash": zod.string().nullish(),
+  "hash": zod.string()
+})
+export const GetOwnAuditLogResponse = zod.array(GetOwnAuditLogResponseItem)
+
+
+/**
+ * @summary The current user's consent records
+ */
+export const GetConsentResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "consentType": zod.enum(['terms_of_service', 'privacy_policy', 'marketing_communications']),
+  "version": zod.string(),
+  "granted": zod.boolean(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+export const GetConsentResponse = zod.array(GetConsentResponseItem)
+
+
+/**
+ * @summary Record or update consent for one consent type
+ */
+export const RecordConsentBody = zod.object({
+  "consentType": zod.enum(['terms_of_service', 'privacy_policy', 'marketing_communications']),
+  "version": zod.string(),
+  "granted": zod.boolean()
+})
+
+export const RecordConsentResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "consentType": zod.enum(['terms_of_service', 'privacy_policy', 'marketing_communications']),
+  "version": zod.string(),
+  "granted": zod.boolean(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Synchronous, cryptographically signed export of everything tied to the current user's account
+ */
+export const ExportAccountDataResponse = zod.object({
+  "data": zod.record(zod.string(), zod.unknown()),
+  "signature": zod.string().describe('HMAC-SHA256 signature over the canonical JSON of `data`, verifiable later against a re-serialized copy'),
+  "payloadHash": zod.string()
+})
+
+
+/**
+ * @summary Whether the current user has a pending or scheduled deletion request
+ */
+export const GetAccountDeletionStatusResponse = zod.object({
+  "active": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "status": zod.enum(['pending_confirmation', 'scheduled', 'cancelled', 'completed']),
+  "requestedAt": zod.string(),
+  "confirmedAt": zod.string().nullish(),
+  "scheduledFor": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "completedAt": zod.string().nullish()
+}).nullable()
+})
+
+
+/**
+ * @summary Begin account deletion — sends a confirmation email; nothing is deleted until confirmed
+ */
+export const RequestAccountDeletionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "status": zod.enum(['pending_confirmation', 'scheduled', 'cancelled', 'completed']),
+  "requestedAt": zod.string(),
+  "confirmedAt": zod.string().nullish(),
+  "scheduledFor": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "completedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Confirm account deletion using the emailed signed token
+ */
+export const ConfirmAccountDeletionBody = zod.object({
+  "token": zod.string()
+})
+
+export const ConfirmAccountDeletionResponse = zod.object({
+  "ok": zod.boolean(),
+  "scheduledFor": zod.string()
+})
+
+
+/**
+ * @summary Cancel a pending or scheduled account deletion request
+ */
+export const CancelAccountDeletionResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Self-service kill switch — immediately force the current user's trading mode to manual
+ */
+export const ActivateEmergencyStopResponse = zod.object({
+  "userId": zod.string(),
+  "tradingMode": zod.enum(['manual', 'autonomous']),
+  "riskMode": zod.enum(['manual', 'qde']),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Full filterable audit log export for compliance review (admin)
+ */
+export const ExportComplianceAuditLogQueryParams = zod.object({
+  "action": zod.coerce.string().optional(),
+  "actorUserId": zod.coerce.string().optional(),
+  "targetType": zod.coerce.string().optional(),
+  "targetId": zod.coerce.string().optional(),
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const ExportComplianceAuditLogResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "id": zod.number(),
+  "actorUserId": zod.string(),
+  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed', 'api_key.created', 'api_key.revoked', 'api_key.rotated', 'api_key.suspended', 'api_key.reactivated', 'ea_registration.created', 'ea_registration.deactivated', 'model_request.action_issued', 'security_incident.acknowledged', 'security_incident.resolved', 'user.account_created', 'user.login_succeeded', 'trading_mode.autonomous_activated', 'trading_mode.autonomous_deactivated', 'trading.emergency_stop_activated', 'trading.emergency_stop_deactivated', 'consent.recorded', 'data_export.requested', 'data_export.completed', 'account_deletion.requested', 'account_deletion.confirmed', 'account_deletion.cancelled', 'account_deletion.completed', 'compliance.audit_log_exported']),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "eventUuid": zod.string().describe('Immutable, externally-referenceable event identifier (S28 tamper resistance)'),
+  "sequenceNum": zod.number().describe('1-based, monotonic chain position — independent of `id`'),
+  "prevHash": zod.string().nullish(),
+  "hash": zod.string()
+})),
+  "rowCount": zod.number(),
+  "exportedAt": zod.string()
+})
+
+
+/**
+ * @summary Recomputes the tamper-evident audit-log hash chain and reports the first break, if any (admin)
+ */
+export const VerifyComplianceAuditChainResponse = zod.object({
+  "ok": zod.boolean(),
+  "rowsChecked": zod.number(),
+  "brokenAt": zod.object({
+  "sequenceNum": zod.number().optional(),
+  "id": zod.number().optional()
+}).nullable()
+})
+
+
+/**
+ * @summary Data export and account deletion requests across all users (admin)
+ */
+export const ListComplianceDataRequestsResponse = zod.object({
+  "exports": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "status": zod.enum(['completed', 'failed']),
+  "payloadHash": zod.string().nullish(),
+  "requestedAt": zod.string()
+})),
+  "deletions": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "status": zod.enum(['pending_confirmation', 'scheduled', 'cancelled', 'completed']),
+  "requestedAt": zod.string(),
+  "confirmedAt": zod.string().nullish(),
+  "scheduledFor": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "completedAt": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Consent records across all users (admin)
+ */
+export const ListComplianceConsentResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "consentType": zod.enum(['terms_of_service', 'privacy_policy', 'marketing_communications']),
+  "version": zod.string(),
+  "granted": zod.boolean(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "updatedAt": zod.string()
+})
+export const ListComplianceConsentResponse = zod.array(ListComplianceConsentResponseItem)
+
+
+/**
+ * @summary The platform's data retention policy (admin)
+ */
+export const GetComplianceRetentionPolicyResponse = zod.object({
+  "auditLogRetentionDays": zod.number(),
+  "accountDeletionGracePeriodDays": zod.number(),
+  "notes": zod.array(zod.string())
+})
+
+
+/**
  * Returns a presigned GCS URL for direct upload. The client sends JSON
  * metadata here, then uploads the file directly to the returned URL.
  * @summary Request a presigned URL for file upload
@@ -4790,11 +5014,15 @@ export const ListAuditLogQueryParams = zod.object({
 export const ListAuditLogResponseItem = zod.object({
   "id": zod.number(),
   "actorUserId": zod.string(),
-  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed', 'api_key.created', 'api_key.revoked', 'api_key.rotated', 'api_key.suspended', 'api_key.reactivated', 'ea_registration.created', 'ea_registration.deactivated', 'model_request.action_issued', 'security_incident.acknowledged', 'security_incident.resolved']),
+  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed', 'api_key.created', 'api_key.revoked', 'api_key.rotated', 'api_key.suspended', 'api_key.reactivated', 'ea_registration.created', 'ea_registration.deactivated', 'model_request.action_issued', 'security_incident.acknowledged', 'security_incident.resolved', 'user.account_created', 'user.login_succeeded', 'trading_mode.autonomous_activated', 'trading_mode.autonomous_deactivated', 'trading.emergency_stop_activated', 'trading.emergency_stop_deactivated', 'consent.recorded', 'data_export.requested', 'data_export.completed', 'account_deletion.requested', 'account_deletion.confirmed', 'account_deletion.cancelled', 'account_deletion.completed', 'compliance.audit_log_exported']),
   "targetType": zod.string(),
   "targetId": zod.string(),
   "detail": zod.record(zod.string(), zod.unknown()).nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "eventUuid": zod.string().describe('Immutable, externally-referenceable event identifier (S28 tamper resistance)'),
+  "sequenceNum": zod.number().describe('1-based, monotonic chain position — independent of `id`'),
+  "prevHash": zod.string().nullish(),
+  "hash": zod.string()
 })
 export const ListAuditLogResponse = zod.array(ListAuditLogResponseItem)
 
@@ -4810,7 +5038,7 @@ export const ListSecurityIncidentsQueryParams = zod.object({
 
 export const ListSecurityIncidentsResponseItem = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity']),
+  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity', 'login_anomaly_cluster']),
   "severity": zod.enum(['low', 'medium', 'high', 'critical']),
   "userId": zod.string().nullish(),
   "ipAddress": zod.string().nullish(),
@@ -4840,7 +5068,7 @@ export const UpdateSecurityIncidentStatusBody = zod.object({
 
 export const UpdateSecurityIncidentStatusResponse = zod.object({
   "id": zod.number(),
-  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity']),
+  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity', 'login_anomaly_cluster']),
   "severity": zod.enum(['low', 'medium', 'high', 'critical']),
   "userId": zod.string().nullish(),
   "ipAddress": zod.string().nullish(),

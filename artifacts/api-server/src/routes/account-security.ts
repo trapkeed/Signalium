@@ -1,12 +1,19 @@
 import { Router } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
-import { db, loginEventsTable, accountSecurityTable, usersTable, referralsTable } from "@workspace/db";
+import { db, loginEventsTable, accountSecurityTable, usersTable, referralsTable, consentRecordsTable, accountDeletionRequestsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import crypto from "crypto";
 import { sendMail } from "../lib/mailer";
 import { generateUniqueReferralCode } from "../lib/referrals";
+import { logAudit, listOwnAuditLog } from "../lib/auditLog";
+import { buildUserDataExport, recordDataExport, requestAccountDeletion, confirmAccountDeletion, cancelAccountDeletion } from "../lib/dataGovernance";
 
 const router = Router();
+
+function computeFingerprint(ip?: string, deviceType?: string, browserName?: string): string | null {
+  if (!ip && !deviceType && !browserName) return null;
+  return crypto.createHash("sha256").update(`${ip ?? ""}|${deviceType ?? ""}|${browserName ?? ""}`).digest("hex");
+}
 
 const SUSPICIOUS_LOCK_THRESHOLD = 3;
 const SUSPICIOUS_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -65,6 +72,10 @@ async function ensureUserProvisioned(userId: string, referralCodeInput?: string 
         referralCode: trimmedInput,
       }).onConflictDoNothing();
     }
+  }
+
+  if (created) {
+    await logAudit(userId, "user.account_created", "user", userId, { email: created.email });
   }
 
   return user;
@@ -144,7 +155,12 @@ router.post("/sync-login", async (req, res) => {
       isMobile: activity.isMobile ?? false,
       isNewDevice,
       isSuspicious,
+      fingerprint: computeFingerprint(activity.ipAddress, activity.deviceType, activity.browserName),
     }).returning();
+
+    await logAudit(userId, "user.login_succeeded", "user", userId, {
+      isNewDevice, isSuspicious, city: activity.city ?? null, country: activity.country ?? null,
+    });
 
     let security = await getOrCreateSecurity(userId);
 
@@ -351,6 +367,155 @@ router.post("/unlock", async (req, res) => {
     return res.json({ ok: true });
   } catch (err) {
     req.log.error(err, "Failed to unlock account");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── S28 Data Governance — self-service only, always scoped to the caller ───
+
+// GET /account/audit-log — the caller's own audit trail (self-service view
+// of the admin-only /audit-log listing, scoped so a normal user can never
+// see another user's entries).
+router.get("/audit-log", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const entries = await listOwnAuditLog(userId);
+    return res.json(entries);
+  } catch (err) {
+    req.log.error(err, "Failed to fetch own audit log");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /account/consent — current consent state for the caller
+router.get("/consent", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const records = await db.select().from(consentRecordsTable).where(eq(consentRecordsTable.userId, userId));
+    return res.json(records);
+  } catch (err) {
+    req.log.error(err, "Failed to fetch consent");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /account/consent — record/update consent for one type
+router.post("/consent", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const { consentType, version, granted } = req.body as {
+    consentType?: string; version?: string; granted?: boolean;
+  };
+  if (!consentType || !["terms_of_service", "privacy_policy", "marketing_communications"].includes(consentType)) {
+    return res.status(400).json({ error: "Invalid consentType" });
+  }
+  if (!version) return res.status(400).json({ error: "version is required" });
+  if (typeof granted !== "boolean") return res.status(400).json({ error: "granted must be a boolean" });
+
+  try {
+    const [record] = await db.insert(consentRecordsTable).values({
+      userId,
+      consentType: consentType as "terms_of_service" | "privacy_policy" | "marketing_communications",
+      version,
+      granted,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"] as string | undefined,
+    }).onConflictDoUpdate({
+      target: [consentRecordsTable.userId, consentRecordsTable.consentType],
+      set: { version, granted, ipAddress: req.ip, userAgent: req.headers["user-agent"] as string | undefined, updatedAt: new Date() },
+    }).returning();
+
+    await logAudit(userId, "consent.recorded", "user", userId, { consentType, version, granted });
+    return res.json(record);
+  } catch (err) {
+    req.log.error(err, "Failed to record consent");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /account/export-data — synchronous export of everything tied to the
+// caller's account, cryptographically signed so the download can be
+// verified later to be unmodified.
+router.post("/export-data", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const { data, signature, payloadHash } = await buildUserDataExport(userId);
+    await recordDataExport(userId, payloadHash);
+    return res.json({ data, signature, payloadHash });
+  } catch (err) {
+    req.log.error(err, "Failed to export account data");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /account/deletion-status — whether the caller has a pending/scheduled deletion
+router.get("/deletion-status", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const requests = await db.select().from(accountDeletionRequestsTable).where(eq(accountDeletionRequestsTable.userId, userId));
+    const active = requests.find((r) => r.status === "pending_confirmation" || r.status === "scheduled");
+    return res.json({ active: active ?? null });
+  } catch (err) {
+    req.log.error(err, "Failed to fetch deletion status");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /account/delete-account — begin the deletion flow; sends a confirmation email
+router.post("/delete-account", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    const request = await requestAccountDeletion(userId, user?.email ?? null);
+    if ("alreadyActive" in request) {
+      return res.status(409).json({ error: "A deletion request is already pending or scheduled for this account" });
+    }
+    return res.status(201).json(request);
+  } catch (err) {
+    // The pre-check in requestAccountDeletion has a narrow race window
+    // (two concurrent requests can both pass it before either inserts) —
+    // the partial unique index on accountDeletionRequestsTable is the real
+    // backstop, so a unique-violation here still means "already active",
+    // not a server error.
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
+      return res.status(409).json({ error: "A deletion request is already pending or scheduled for this account" });
+    }
+    req.log.error(err, "Failed to request account deletion");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /account/delete-account/confirm — confirm via the emailed signed token
+router.post("/delete-account/confirm", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const { token } = req.body as { token?: string };
+  if (!token) return res.status(400).json({ error: "token required" });
+  try {
+    const result = await confirmAccountDeletion(userId, token);
+    if (!result.ok) return res.status(400).json({ error: `Invalid confirmation: ${result.reason}` });
+    return res.json({ ok: true, scheduledFor: result.scheduledFor });
+  } catch (err) {
+    req.log.error(err, "Failed to confirm account deletion");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /account/delete-account/cancel — cancel a pending/scheduled deletion
+router.post("/delete-account/cancel", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  try {
+    const result = await cancelAccountDeletion(userId);
+    if (!result.ok) return res.status(400).json({ error: "No pending deletion request" });
+    return res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err, "Failed to cancel account deletion");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
