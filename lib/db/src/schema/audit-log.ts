@@ -113,6 +113,9 @@ export const auditLogTable = pgTable("audit_log", {
       "support_ticket.categorized",
       "onboarding.step_completed",
       "release.smoke_test_run",
+      // Homepage/landing-page content CMS
+      "site_content.updated",
+      "site_content.reset",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

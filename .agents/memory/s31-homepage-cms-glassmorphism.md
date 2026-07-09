@@ -1,0 +1,10 @@
+---
+name: S31 Homepage CMS & Glassmorphism Redesign
+description: Singleton jsonb site-content CMS pattern, defense-in-depth validation for admin-editable JSON blobs, and global error-handling additions.
+---
+
+- For a page with many nested, evolving copy fields (landing page hero/steps/FAQ/etc.), model the admin-editable content as a **single jsonb blob on a singleton row** (id fixed to 1), not one column per field. New sections don't need a migration. Transmit the JSON over the wire as a **string** field in OpenAPI (matching the existing `seo.ts` `structuredData` convention) to keep orval/zod codegen closed-shaped instead of open `additionalProperties` schemas.
+- **Validate the JSON blob in three independent layers**, since it round-trips through DB → API → frontend and any one layer could see a stale/malformed shape: (1) a strict zod schema on the PATCH route rejecting anything not matching the exact expected shape, (2) a frontend deep-merge helper with per-field runtime type guards (falls back to defaults instead of crashing `.map()`/property access on a bad shape), (3) treat `content: null` as "no override yet, render built-in defaults" rather than an error state.
+  **Why:** a code-review pass caught that "is it a JSON object" alone is not enough — a hand-crafted PATCH with wrong nested types would pass validation, get stored, and crash the public homepage on render.
+- Global Express error middleware (must be last `app.use`) should **clamp any caller-supplied `err.status`/`statusCode` to the 400-599 range** before trusting it, and only echo `err.message` back to the client when the clamped status isn't 500 — otherwise a thrown object with a bogus/2xx `status` field can leak internal messages under a misleading status code.
+- `artifacts/api-server` did not have `zod` as a direct dependency (validation there normally goes through drizzle-zod via `@workspace/db`) — needed `"zod": "catalog:"` added to its `package.json` + `pnpm install` before importing `zod/v4` directly in a route file.

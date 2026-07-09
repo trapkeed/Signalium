@@ -7257,6 +7257,28 @@ export const DismissOnboardingChecklistResponse = zod.object({
 
 
 /**
+ * @summary Current homepage/landing-page content override (public; null content means "use built-in defaults")
+ */
+export const GetSiteContentResponse = zod.object({
+  "content": zod.string().nullish().describe('JSON-encoded homepage content override, or null to use built-in defaults.'),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Replace the homepage/landing-page content override (admin). Pass content=null to reset to defaults.
+ */
+export const UpdateSiteContentBody = zod.object({
+  "content": zod.string().nullish().describe('JSON-encoded homepage content override, or null to reset to built-in defaults.')
+})
+
+export const UpdateSiteContentResponse = zod.object({
+  "content": zod.string().nullish().describe('JSON-encoded homepage content override, or null to use built-in defaults.'),
+  "updatedAt": zod.coerce.date().nullish()
+})
+
+
+/**
  * @summary Aggregated dependency readiness report (admin)
  */
 export const GetReadinessReportResponse = zod.object({

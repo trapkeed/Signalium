@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { UserButton, useUser } from "@clerk/react";
 import {
   LayoutDashboard,
+  Layout,
   Box,
   Activity,
   CreditCard,
@@ -121,6 +122,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
   {
     title: "Content & Growth",
     items: [
+      { href: "/admin/site-content", label: "Homepage Content", icon: Layout },
       { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
       { href: "/admin/seo", label: "SEO", icon: Search },
       { href: "/admin/media", label: "Media Library", icon: Image },

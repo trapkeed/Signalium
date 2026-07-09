@@ -1753,6 +1753,17 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
+export interface SiteContent {
+  /** JSON-encoded homepage content override, or null to use built-in defaults. */
+  content?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface SiteContentInput {
+  /** JSON-encoded homepage content override, or null to reset to built-in defaults. */
+  content?: string | null;
+}
+
 export interface OnboardingChecklist {
   steps: OnboardingStep[];
   completedCount: number;
@@ -4284,5 +4295,13 @@ export type ListResearchLabArtifactHistory200 = {
 
 export type DismissOnboardingChecklist200 = {
   dismissed?: boolean;
+};
+
+export type UpdateSiteContent400 = {
+  error?: string;
+};
+
+export type UpdateSiteContent401 = {
+  error?: string;
 };
 

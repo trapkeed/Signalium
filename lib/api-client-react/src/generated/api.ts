@@ -303,6 +303,8 @@ import type {
   SeoSettings,
   SeoSettingsInput,
   SeoSettingsPublic,
+  SiteContent,
+  SiteContentInput,
   SmtpSettings,
   SmtpSettingsInput,
   SmtpSettingsUpdate,
@@ -355,6 +357,8 @@ import type {
   UpdateProviderCredentialBody,
   UpdateProviderPriorityBody,
   UpdateSecurityIncidentStatusBody,
+  UpdateSiteContent400,
+  UpdateSiteContent401,
   UpdateSymbolBody,
   UpdateTradingSettingsBody,
   UploadUrlRequest,
@@ -26631,6 +26635,154 @@ export const useDismissOnboardingChecklist = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDismissOnboardingChecklistMutationOptions(options));
+    }
+
+export const getGetSiteContentUrl = () => {
+
+
+
+
+  return `/api/site-content`
+}
+
+/**
+ * @summary Current homepage/landing-page content override (public; null content means "use built-in defaults")
+ */
+export const getSiteContent = async ( options?: RequestInit): Promise<SiteContent> => {
+
+  return customFetch<SiteContent>(getGetSiteContentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteContentQueryKey = () => {
+    return [
+    `/api/site-content`
+    ] as const;
+    }
+
+
+export const getGetSiteContentQueryOptions = <TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteContentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteContent>>> = ({ signal }) => getSiteContent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteContentQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteContent>>>
+export type GetSiteContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current homepage/landing-page content override (public; null content means "use built-in defaults")
+ */
+
+export function useGetSiteContent<TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteContentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSiteContentUrl = () => {
+
+
+
+
+  return `/api/site-content`
+}
+
+/**
+ * @summary Replace the homepage/landing-page content override (admin). Pass content=null to reset to defaults.
+ */
+export const updateSiteContent = async (siteContentInput: SiteContentInput, options?: RequestInit): Promise<SiteContent> => {
+
+  return customFetch<SiteContent>(getUpdateSiteContentUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(siteContentInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateSiteContentMutationOptions = <TError = ErrorType<UpdateSiteContent400 | UpdateSiteContent401>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,{data: BodyType<SiteContentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,{data: BodyType<SiteContentInput>}, TContext> => {
+
+const mutationKey = ['updateSiteContent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSiteContent>>, {data: BodyType<SiteContentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateSiteContent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSiteContentMutationResult = NonNullable<Awaited<ReturnType<typeof updateSiteContent>>>
+    export type UpdateSiteContentMutationBody = BodyType<SiteContentInput>
+    export type UpdateSiteContentMutationError = ErrorType<UpdateSiteContent400 | UpdateSiteContent401>
+
+    /**
+ * @summary Replace the homepage/landing-page content override (admin). Pass content=null to reset to defaults.
+ */
+export const useUpdateSiteContent = <TError = ErrorType<UpdateSiteContent400 | UpdateSiteContent401>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError,{data: BodyType<SiteContentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSiteContent>>,
+        TError,
+        {data: BodyType<SiteContentInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSiteContentMutationOptions(options));
     }
 
 export const getGetReadinessReportUrl = () => {

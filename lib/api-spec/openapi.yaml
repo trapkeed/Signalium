@@ -6679,6 +6679,52 @@ paths:
                 properties:
                   dismissed: { type: boolean }
 
+  /site-content:
+    get:
+      tags: [site-content]
+      operationId: getSiteContent
+      summary: Current homepage/landing-page content override (public; null content means "use built-in defaults")
+      responses:
+        "200":
+          description: Site content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+    patch:
+      tags: [site-content]
+      operationId: updateSiteContent
+      summary: Replace the homepage/landing-page content override (admin). Pass content=null to reset to defaults.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteContentInput"
+      responses:
+        "200":
+          description: Updated site content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteContent"
+        "400":
+          description: Invalid content payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+
   /ops-readiness:
     get:
       tags: [ops-readiness]
@@ -8720,6 +8766,26 @@ components:
           type: string
         completed:
           type: boolean
+
+    SiteContent:
+      type: object
+      properties:
+        content:
+          type: string
+          nullable: true
+          description: JSON-encoded homepage content override, or null to use built-in defaults.
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SiteContentInput:
+      type: object
+      properties:
+        content:
+          type: string
+          nullable: true
+          description: JSON-encoded homepage content override, or null to reset to built-in defaults.
 
     OnboardingChecklist:
       type: object

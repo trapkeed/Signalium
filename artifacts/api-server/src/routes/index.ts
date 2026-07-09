@@ -47,6 +47,7 @@ import governanceRouter from "./governance";
 import complianceRouter from "./compliance";
 import opsReadinessRouter from "./ops-readiness";
 import onboardingRouter from "./onboarding";
+import siteContentRouter from "./site-content";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -121,5 +122,7 @@ router.use("/compliance", complianceRouter);
 
 router.use("/ops-readiness", opsReadinessRouter);
 router.use("/onboarding", onboardingRouter);
+// Homepage/landing-page content CMS (public GET, admin PATCH)
+router.use("/site-content", siteContentRouter);
 
 export default router;

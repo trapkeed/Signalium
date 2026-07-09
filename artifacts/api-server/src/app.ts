@@ -134,4 +134,24 @@ app.get("/sitemap.xml", sitemapXmlHandler);
 
 app.use("/api", router);
 
+// Global error handler — must be registered last, after all routes. Any
+// error a route handler throws or forwards via next(err) (instead of
+// catching it itself) lands here instead of Express's default HTML handler,
+// which would otherwise leak stack traces. Always responds with a small,
+// structured JSON body; the full error (with stack) still goes to the
+// request-scoped logger for debugging.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  req.log?.error(err, "Unhandled error");
+  if (res.headersSent) return;
+  const rawStatus = (err as { status?: unknown; statusCode?: unknown })?.status ?? (err as { statusCode?: unknown })?.statusCode;
+  // Only trust a caller-supplied status if it's actually a valid HTTP error
+  // code (4xx/5xx) — anything else (missing, a 2xx, a bogus number) falls
+  // back to a generic 500 so we never echo an internal error's free-text
+  // `message` under a misleading "success-ish" status.
+  const status = typeof rawStatus === "number" && Number.isInteger(rawStatus) && rawStatus >= 400 && rawStatus < 600 ? rawStatus : 500;
+  const message = status !== 500 && typeof (err as { message?: unknown })?.message === "string" ? (err as { message: string }).message : "Internal server error";
+  res.status(status).json({ error: message });
+});
+
 export default app;

@@ -3,6 +3,7 @@ import { motion, type Variants } from "framer-motion";
 import { Activity, Shield, LineChart, Target, ChevronRight, Lock, Server, BarChart4, MousePointerClick, Cpu, Coins, TrendingUp, Layers, Plus, Minus } from "lucide-react";
 import { useState } from "react";
 import { useListPlans } from "@workspace/api-client-react";
+import { useSiteContent } from "@/hooks/use-site-content";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -14,13 +15,28 @@ const stagger = {
   show: { transition: { staggerChildren: 0.15 } },
 };
 
+// Shared glassmorphism treatment for cards/panels across the landing page:
+// translucent surface + backdrop blur + soft border + subtle shadow, with a
+// `hover` variant for interactive cards (pricing, trading modes, markets).
+const GLASS = "backdrop-blur-xl bg-white/[0.04] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.28)]";
+const GLASS_HOVER = "transition-all duration-300 hover:bg-white/[0.07] hover:border-white/20 hover:shadow-[0_8px_40px_rgba(201,151,32,0.12)] hover:-translate-y-0.5";
+
 export default function Home() {
   const { data: plans } = useListPlans();
+  const content = useSiteContent();
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30 selection:text-primary">
+      {/* Ambient background glow — sits behind everything so the glass
+          panels have something translucent to actually reveal. */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[140px]" />
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] bg-accent/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[140px]" />
+      </div>
+
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-background/90 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-background/70 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 text-white font-medium text-lg tracking-wide">
             <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
@@ -34,7 +50,7 @@ export default function Home() {
             </Link>
             <Link
               href="/sign-up"
-              className="text-sm bg-white text-background px-5 py-2.5 rounded shadow hover:bg-white/90 transition-all font-medium"
+              className="text-sm bg-white text-background px-5 py-2.5 rounded shadow hover:bg-white/90 hover:shadow-lg hover:-translate-y-0.5 transition-all font-medium"
             >
               Open Account
             </Link>
@@ -43,17 +59,17 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-40 pb-32 px-6">
+      <section className="relative z-10 pt-40 pb-32 px-6">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="/trading-floor.jpg" 
-            alt="Professional Trading Environment" 
+          <img
+            src="/trading-floor.jpg"
+            alt="Professional Trading Environment"
             className="w-full h-full object-cover opacity-10"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
         </div>
-        
+
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
             variants={stagger}
@@ -61,31 +77,30 @@ export default function Home() {
             animate="show"
             className="max-w-3xl"
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 text-xs font-medium text-primary tracking-widest uppercase mb-6">
+            <motion.div variants={fadeUp} className={`inline-flex items-center gap-2 text-xs font-medium text-primary tracking-widest uppercase mb-6 px-4 py-2 rounded-full ${GLASS}`}>
               <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-              Institutional Trading Infrastructure
+              {content.hero.badge}
             </motion.div>
             <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-normal tracking-tight text-white mb-8 leading-[1.1]">
-              Capital precision. <br />
-              <span className="text-muted-foreground">Flawless execution.</span>
+              {content.hero.headlineLine1} <br />
+              <span className="text-muted-foreground">{content.hero.headlineLine2}</span>
             </motion.h1>
             <motion.p variants={fadeUp} className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-12 leading-relaxed font-light">
-              Signalium provides the unshakeable foundation for professional traders. 
-              Direct market access, sub-millisecond execution routing, and rigorous capital protection protocols—built for those who treat trading as a business, not a game.
+              {content.hero.subheadline}
             </motion.p>
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link
                 href="/sign-up"
-                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-primary text-background px-8 py-4 rounded font-medium hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(201,151,32,0.3)]"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-primary text-background px-8 py-4 rounded font-medium hover:bg-primary/90 hover:-translate-y-0.5 transition-all shadow-[0_0_20px_rgba(201,151,32,0.3)]"
               >
-                Access Platform
+                {content.hero.primaryCtaLabel}
                 <ChevronRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/sign-in"
-                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-8 py-4 rounded border border-border text-white hover:bg-white/5 transition-colors"
+                className={`w-full sm:w-auto inline-flex justify-center items-center gap-2 px-8 py-4 rounded text-white hover:-translate-y-0.5 transition-all ${GLASS}`}
               >
-                Contact Sales
+                {content.hero.secondaryCtaLabel}
               </Link>
             </motion.div>
           </motion.div>
@@ -93,7 +108,7 @@ export default function Home() {
       </section>
 
       {/* Philosophy */}
-      <section className="py-24 px-6 border-y border-white/5 bg-card">
+      <section className="relative z-10 py-24 px-6 border-y border-white/10">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -104,18 +119,13 @@ export default function Home() {
           >
             <div>
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-normal text-white mb-6 leading-tight">
-                Quietly confident. <br/>Loudly capable.
+                {content.philosophy.heading}
               </motion.h2>
               <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-6 font-light">
-                We reject the noise of retail trading platforms. Signalium is designed for the serious capital allocator who requires stability, absolute discretion, and performance.
+                {content.philosophy.body}
               </motion.p>
               <motion.div variants={fadeUp} className="space-y-4">
-                {[
-                  "Direct integration with institutional liquidity pools",
-                  "Encrypted, isolated execution environments",
-                  "Granular risk management parameters",
-                  "Zero-latency internal routing architectures"
-                ].map((item, i) => (
+                {content.philosophy.bullets.map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full" />
@@ -126,7 +136,7 @@ export default function Home() {
               </motion.div>
             </div>
             <motion.div variants={fadeUp} className="relative">
-              <div className="aspect-[4/3] rounded bg-secondary border border-white/10 overflow-hidden p-8 flex flex-col justify-between relative shadow-2xl">
+              <div className={`aspect-[4/3] rounded-xl overflow-hidden p-8 flex flex-col justify-between relative ${GLASS}`}>
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
                 <div className="relative z-10 flex justify-between items-start mb-12">
                   <div className="space-y-2">
@@ -136,17 +146,17 @@ export default function Home() {
                   <Activity className="w-6 h-6 text-primary" />
                 </div>
                 <div className="space-y-6 relative z-10">
-                  <div className="h-px w-full bg-white/5" />
+                  <div className="h-px w-full bg-white/10" />
                   <div className="flex justify-between items-center text-sm font-mono">
                     <span className="text-muted-foreground">LATENCY</span>
                     <span className="text-white">0.4ms</span>
                   </div>
-                  <div className="h-px w-full bg-white/5" />
+                  <div className="h-px w-full bg-white/10" />
                   <div className="flex justify-between items-center text-sm font-mono">
                     <span className="text-muted-foreground">UPTIME</span>
                     <span className="text-success">99.999%</span>
                   </div>
-                  <div className="h-px w-full bg-white/5" />
+                  <div className="h-px w-full bg-white/10" />
                   <div className="flex justify-between items-center text-sm font-mono">
                     <span className="text-muted-foreground">CAPITAL ALLOCATED</span>
                     <span className="text-white">SECURE</span>
@@ -159,7 +169,7 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-32 px-6 border-y border-white/5 bg-card">
+      <section className="relative z-10 py-32 px-6 border-y border-white/10">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -168,9 +178,9 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="mb-16 md:mb-24 text-center"
           >
-            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">How it works</motion.div>
+            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.howItWorks.eyebrow}</motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-normal text-white max-w-2xl mx-auto leading-tight">
-              From account to execution in three steps.
+              {content.howItWorks.heading}
             </motion.h2>
           </motion.div>
 
@@ -181,25 +191,9 @@ export default function Home() {
             viewport={{ once: true, margin: "-50px" }}
             className="grid md:grid-cols-3 gap-8"
           >
-            {[
-              {
-                step: "01",
-                title: "Open your account",
-                desc: "Select an access tier, connect your MT4 or MT5 terminal, and provision your dedicated execution environment in minutes.",
-              },
-              {
-                step: "02",
-                title: "Choose your mode",
-                desc: "Trade manually with institutional-grade market intelligence at your fingertips, or deploy disciplined automated execution—your call.",
-              },
-              {
-                step: "03",
-                title: "Execute with confidence",
-                desc: "Every order is routed, monitored, and protected by capital preservation protocols built for accounts that matter.",
-              },
-            ].map((s, i) => (
-              <motion.div key={i} variants={fadeUp} className="relative p-8 rounded border border-white/10 bg-secondary">
-                <div className="text-5xl font-mono text-primary/30 mb-6">{s.step}</div>
+            {content.howItWorks.steps.map((s, i) => (
+              <motion.div key={i} variants={fadeUp} className={`relative p-8 rounded-xl ${GLASS} ${GLASS_HOVER}`}>
+                <div className="text-5xl font-mono text-primary/30 mb-6">{String(i + 1).padStart(2, "0")}</div>
                 <h3 className="text-xl font-medium text-white mb-3">{s.title}</h3>
                 <p className="text-muted-foreground font-light leading-relaxed">{s.desc}</p>
               </motion.div>
@@ -209,7 +203,7 @@ export default function Home() {
       </section>
 
       {/* Trading Modes */}
-      <section className="py-32 px-6">
+      <section className="relative z-10 py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -218,9 +212,9 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="mb-16 md:mb-24"
           >
-            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">Two ways to trade</motion.div>
+            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.tradingModes.eyebrow}</motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-normal text-white max-w-2xl leading-tight">
-              Stay hands-on, or let discipline run the desk.
+              {content.tradingModes.heading}
             </motion.h2>
           </motion.div>
 
@@ -231,16 +225,16 @@ export default function Home() {
             viewport={{ once: true, margin: "-50px" }}
             className="grid md:grid-cols-2 gap-8"
           >
-            <motion.div variants={fadeUp} className="p-10 rounded border border-white/10 bg-card">
-              <div className="w-12 h-12 rounded border border-white/10 bg-secondary flex items-center justify-center mb-8">
+            <motion.div variants={fadeUp} className={`p-10 rounded-xl ${GLASS} ${GLASS_HOVER}`}>
+              <div className={`w-12 h-12 rounded flex items-center justify-center mb-8 ${GLASS}`}>
                 <MousePointerClick className="w-5 h-5 text-primary" />
               </div>
-              <h3 className="text-2xl font-medium text-white mb-4">Manual Trading Mode</h3>
+              <h3 className="text-2xl font-medium text-white mb-4">{content.tradingModes.manual.title}</h3>
               <p className="text-muted-foreground font-light leading-relaxed mb-8">
-                Full discretionary control, backed by institutional-grade market intelligence. Place, manage, and close every position yourself while Signalium handles execution routing and capital protection in the background.
+                {content.tradingModes.manual.desc}
               </p>
               <div className="space-y-3">
-                {["Real-time market intelligence at your fingertips", "Direct order placement with sub-millisecond routing", "Manual risk controls with hard capital limits"].map((item, i) => (
+                {content.tradingModes.manual.bullets.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
                     <span className="text-sm text-white/80 font-light">{item}</span>
@@ -249,16 +243,16 @@ export default function Home() {
               </div>
             </motion.div>
 
-            <motion.div variants={fadeUp} className="p-10 rounded border border-primary/30 bg-secondary shadow-[0_0_30px_rgba(201,151,32,0.05)]">
+            <motion.div variants={fadeUp} className={`p-10 rounded-xl border border-primary/30 backdrop-blur-xl bg-primary/[0.06] shadow-[0_8px_32px_rgba(201,151,32,0.1)] ${GLASS_HOVER}`}>
               <div className="w-12 h-12 rounded border border-primary/30 bg-primary/10 flex items-center justify-center mb-8">
                 <Cpu className="w-5 h-5 text-primary" />
               </div>
-              <h3 className="text-2xl font-medium text-white mb-4">Autonomous Trading Mode</h3>
+              <h3 className="text-2xl font-medium text-white mb-4">{content.tradingModes.autonomous.title}</h3>
               <p className="text-muted-foreground font-light leading-relaxed mb-8">
-                Disciplined, rules-based execution that runs continuously across your connected terminals—no emotion, no hesitation, no missed sessions. You define the boundaries; the infrastructure enforces them.
+                {content.tradingModes.autonomous.desc}
               </p>
               <div className="space-y-3">
-                {["Continuous execution across market sessions", "Hard-coded capital preservation protocols", "Full transparency into every automated decision"].map((item, i) => (
+                {content.tradingModes.autonomous.bullets.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
                     <span className="text-sm text-white/80 font-light">{item}</span>
@@ -271,7 +265,7 @@ export default function Home() {
       </section>
 
       {/* Supported Markets */}
-      <section className="py-32 px-6 border-y border-white/5 bg-card">
+      <section className="relative z-10 py-32 px-6 border-y border-white/10">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -280,9 +274,9 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="mb-16 md:mb-24 text-center"
           >
-            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">Supported markets</motion.div>
+            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.markets.eyebrow}</motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-normal text-white max-w-2xl mx-auto leading-tight">
-              Trade across the venues that matter.
+              {content.markets.heading}
             </motion.h2>
           </motion.div>
 
@@ -293,25 +287,25 @@ export default function Home() {
             viewport={{ once: true, margin: "-50px" }}
             className="grid md:grid-cols-3 gap-8"
           >
-            {[
-              { icon: TrendingUp, title: "Forex", desc: "Major, minor, and exotic currency pairs with deep liquidity and tight spreads." },
-              { icon: Coins, title: "Metals", desc: "Gold, silver, and precious metals execution with the same capital discipline." },
-              { icon: Layers, title: "Indices", desc: "Global equity indices for diversified exposure alongside your core strategy." },
-            ].map((m, i) => (
-              <motion.div key={i} variants={fadeUp} className="p-8 rounded border border-white/10 bg-secondary text-center">
-                <div className="w-12 h-12 rounded border border-white/10 bg-card flex items-center justify-center mb-6 mx-auto">
-                  <m.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="text-xl font-medium text-white mb-3">{m.title}</h3>
-                <p className="text-muted-foreground font-light leading-relaxed">{m.desc}</p>
-              </motion.div>
-            ))}
+            {content.markets.items.map((m, i) => {
+              const icons = [TrendingUp, Coins, Layers];
+              const Icon = icons[i % icons.length];
+              return (
+                <motion.div key={i} variants={fadeUp} className={`p-8 rounded-xl text-center ${GLASS} ${GLASS_HOVER}`}>
+                  <div className={`w-12 h-12 rounded flex items-center justify-center mb-6 mx-auto ${GLASS}`}>
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-medium text-white mb-3">{m.title}</h3>
+                  <p className="text-muted-foreground font-light leading-relaxed">{m.desc}</p>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
       {/* Core Pillars */}
-      <section className="py-32 px-6">
+      <section className="relative z-10 py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -320,81 +314,49 @@ export default function Home() {
             viewport={{ once: true, margin: "-100px" }}
             className="mb-16 md:mb-24"
           >
-            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">Infrastructure capabilities</motion.div>
+            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.pillars.eyebrow}</motion.div>
             <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-normal text-white max-w-2xl leading-tight">
-              Engineered for absolute reliability under pressure.
+              {content.pillars.heading}
             </motion.h2>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-3 gap-x-8 gap-y-16"
+            className="grid md:grid-cols-3 gap-6"
           >
-            {[
-              {
-                icon: Target,
-                title: "Precision Execution",
-                desc: "Every order routed with deterministic exactness. We eliminate slippage vectors and optimize for optimal fill rates across major venues."
-              },
-              {
-                icon: Shield,
-                title: "Capital Protection",
-                desc: "Institutional-grade risk limits. Hard-stop equity preservation protocols guard your accounts against catastrophic market events."
-              },
-              {
-                icon: LineChart,
-                title: "Analytical Clarity",
-                desc: "Unflinching metrics on portfolio performance. Clean, decisive reporting that focuses on risk-adjusted returns and drawdown profiles."
-              },
-              {
-                icon: Server,
-                title: "Dedicated Resources",
-                desc: "Isolated server environments for your automated strategies. Zero resource contention ensures your algorithms execute exactly as designed."
-              },
-              {
-                icon: Lock,
-                title: "Absolute Security",
-                desc: "End-to-end encryption for all trade signals and account credentials. Your strategic intellectual property remains entirely yours."
-              },
-              {
-                icon: BarChart4,
-                title: "Multi-Terminal Management",
-                desc: "Govern an unlimited array of MT4 and MT5 instances from a single, unified command center without sacrificing granularity."
-              }
-            ].map((f, i) => (
-              <motion.div key={i} variants={fadeUp} className="group">
-                <div className="w-12 h-12 rounded border border-white/10 bg-secondary flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
-                  <f.icon className="w-5 h-5 text-white group-hover:text-primary transition-colors" />
-                </div>
-                <h3 className="text-xl font-medium text-white mb-4">{f.title}</h3>
-                <p className="text-muted-foreground font-light leading-relaxed">{f.desc}</p>
-              </motion.div>
-            ))}
+            {content.pillars.items.map((f, i) => {
+              const icons = [Target, Shield, LineChart, Server, Lock, BarChart4];
+              const Icon = icons[i % icons.length];
+              return (
+                <motion.div key={i} variants={fadeUp} className={`group p-8 rounded-xl ${GLASS} ${GLASS_HOVER}`}>
+                  <div className="w-12 h-12 rounded border border-white/10 bg-white/5 flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
+                    <Icon className="w-5 h-5 text-white group-hover:text-primary transition-colors" />
+                  </div>
+                  <h3 className="text-xl font-medium text-white mb-4">{f.title}</h3>
+                  <p className="text-muted-foreground font-light leading-relaxed">{f.desc}</p>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
       {/* Stats */}
-      <section className="border-y border-white/5 bg-[url('/trading-floor.jpg')] bg-cover bg-center bg-fixed relative">
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm" />
+      <section className="relative z-10 border-y border-white/10 bg-[url('/trading-floor.jpg')] bg-cover bg-center bg-fixed relative">
+        <div className="absolute inset-0 bg-background/90 backdrop-blur-md" />
         <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
           <motion.div
              variants={stagger}
              initial="hidden"
              whileInView="show"
              viewport={{ once: true }}
-             className="grid grid-cols-2 md:grid-cols-4 gap-12"
+             className="grid grid-cols-2 md:grid-cols-4 gap-6"
           >
-            {[
-              { label: "Execution Latency", value: "<1ms" },
-              { label: "System Uptime", value: "99.99%" },
-              { label: "Daily Volume", value: "$4.2B+" },
-              { label: "Active Institutions", value: "850+" },
-            ].map((s, i) => (
-              <motion.div key={i} variants={fadeUp} className="text-center md:text-left">
+            {content.stats.map((s, i) => (
+              <motion.div key={i} variants={fadeUp} className={`text-center md:text-left p-6 rounded-xl ${GLASS}`}>
                 <div className="text-4xl md:text-5xl font-normal text-white font-mono mb-2">{s.value}</div>
                 <div className="text-sm text-primary tracking-widest uppercase">{s.label}</div>
               </motion.div>
@@ -405,7 +367,7 @@ export default function Home() {
 
       {/* Pricing */}
       {plans && plans.length > 0 && (
-        <section className="py-32 px-6">
+        <section className="relative z-10 py-32 px-6">
           <div className="max-w-7xl mx-auto">
             <motion.div
               variants={stagger}
@@ -418,7 +380,7 @@ export default function Home() {
               <motion.h2 variants={fadeUp} className="text-4xl font-normal text-white">Transparent structuring.</motion.h2>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               variants={stagger}
               initial="hidden"
               whileInView="show"
@@ -429,10 +391,10 @@ export default function Home() {
                 <motion.div
                   key={plan.id}
                   variants={fadeUp}
-                  className={`relative p-8 flex flex-col h-full rounded border ${
-                    plan.tier === "professional" 
-                      ? "border-primary/50 bg-secondary shadow-[0_0_30px_rgba(201,151,32,0.05)]" 
-                      : "border-white/10 bg-card"
+                  className={`relative p-8 flex flex-col h-full rounded-xl transition-all duration-300 hover:-translate-y-1 ${
+                    plan.tier === "professional"
+                      ? "border border-primary/40 backdrop-blur-xl bg-primary/[0.07] shadow-[0_8px_40px_rgba(201,151,32,0.15)]"
+                      : `${GLASS} ${GLASS_HOVER}`
                   }`}
                 >
                   {plan.tier === "professional" && (
@@ -444,7 +406,7 @@ export default function Home() {
                     <h3 className="text-xl font-medium text-white mb-2">{plan.name}</h3>
                     <div className="text-muted-foreground text-sm font-light min-h-[40px]">{plan.description}</div>
                   </div>
-                  
+
                   <div className="mb-8">
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-mono text-white">${plan.priceMonthly}</span>
@@ -463,10 +425,10 @@ export default function Home() {
 
                   <Link
                     href="/sign-up"
-                    className={`block w-full py-4 text-center rounded font-medium transition-all ${
+                    className={`block w-full py-4 text-center rounded font-medium transition-all hover:-translate-y-0.5 ${
                       plan.tier === "professional"
                         ? "bg-primary text-background hover:bg-primary/90"
-                        : "bg-white/5 text-white hover:bg-white/10 border border-white/10"
+                        : "bg-white/10 text-white hover:bg-white/15 border border-white/10"
                     }`}
                   >
                     Initiate Access
@@ -479,7 +441,7 @@ export default function Home() {
       )}
 
       {/* Security & Infrastructure */}
-      <section className="py-32 px-6 border-y border-white/5 bg-card">
+      <section className="relative z-10 py-32 px-6 border-y border-white/10">
         <div className="max-w-7xl mx-auto">
           <motion.div
             variants={stagger}
@@ -489,35 +451,30 @@ export default function Home() {
             className="grid md:grid-cols-2 gap-16 items-center"
           >
             <motion.div variants={fadeUp} className="order-2 md:order-1 relative">
-              <div className="aspect-[4/3] rounded bg-secondary border border-white/10 overflow-hidden p-8 flex flex-col justify-center gap-6 relative">
+              <div className={`aspect-[4/3] rounded-xl overflow-hidden p-8 flex flex-col justify-center gap-6 relative ${GLASS}`}>
                 <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full" />
-                {[
-                  { icon: Lock, label: "End-to-end encryption" },
-                  { icon: Shield, label: "Segregated capital protocols" },
-                  { icon: Server, label: "Redundant execution infrastructure" },
-                ].map((item, i) => (
-                  <div key={i} className="relative z-10 flex items-center gap-4 p-4 rounded border border-white/10 bg-card">
-                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-sm text-white/90 font-light">{item.label}</span>
-                  </div>
-                ))}
+                {content.security.badges.map((label, i) => {
+                  const icons = [Lock, Shield, Server];
+                  const Icon = icons[i % icons.length];
+                  return (
+                    <div key={i} className="relative z-10 flex items-center gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+                      <Icon className="w-5 h-5 text-primary flex-shrink-0" />
+                      <span className="text-sm text-white/90 font-light">{label}</span>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
             <div className="order-1 md:order-2">
-              <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">Security &amp; Infrastructure</motion.div>
+              <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.security.eyebrow}</motion.div>
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-normal text-white mb-6 leading-tight">
-                Built to withstand scrutiny.
+                {content.security.heading}
               </motion.h2>
               <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-6 font-light">
-                Every credential, order, and account balance is protected by redundant, encrypted infrastructure. We hold ourselves to the same standard your capital demands.
+                {content.security.body}
               </motion.p>
               <motion.div variants={fadeUp} className="space-y-4">
-                {[
-                  "Bank-grade encryption across every connection",
-                  "Continuous uptime monitoring with automatic failover",
-                  "Independent capital preservation safeguards on every account",
-                  "Strict access controls and audited administrative actions",
-                ].map((item, i) => (
+                {content.security.bullets.map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full" />
@@ -532,7 +489,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-32 px-6">
+      <section className="relative z-10 py-32 px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             variants={stagger}
@@ -552,24 +509,7 @@ export default function Home() {
             viewport={{ once: true, margin: "-50px" }}
             className="space-y-4"
           >
-            {[
-              {
-                q: "What's the difference between manual and autonomous trading mode?",
-                a: "Manual mode gives you full discretionary control over every position while Signalium handles execution and protection in the background. Autonomous mode runs disciplined, rules-based execution continuously across your connected terminals, within boundaries you define.",
-              },
-              {
-                q: "Which terminals and markets are supported?",
-                a: "Signalium connects to MT4 and MT5 terminals and supports execution across Forex, Metals, and Indices, with more venues added over time.",
-              },
-              {
-                q: "How is my capital protected?",
-                a: "Every account runs behind hard-coded capital preservation protocols, redundant execution infrastructure, and end-to-end encryption on every credential and order.",
-              },
-              {
-                q: "Can I change or cancel my plan later?",
-                a: "Yes. You can upgrade, downgrade, or cancel your access tier at any time from your account without long-term lock-in.",
-              },
-            ].map((item, i) => (
+            {content.faq.map((item, i) => (
               <motion.div key={i} variants={fadeUp}>
                 <FaqItem question={item.q} answer={item.a} />
               </motion.div>
@@ -579,7 +519,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="py-32 px-6 bg-secondary border-t border-white/5 relative overflow-hidden">
+      <section className="relative z-10 py-32 px-6 border-t border-white/10 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
@@ -587,19 +527,20 @@ export default function Home() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
+            className={`p-12 md:p-16 rounded-2xl ${GLASS}`}
           >
             <motion.h2 variants={fadeUp} className="text-4xl md:text-6xl font-normal text-white mb-8 leading-tight">
-              Ready to professionalize your infrastructure?
+              {content.cta.heading}
             </motion.h2>
             <motion.p variants={fadeUp} className="text-xl text-muted-foreground mb-12 font-light max-w-2xl mx-auto">
-              Join the proprietary trading desks and serious individual allocators who trust Signalium with their daily execution.
+              {content.cta.body}
             </motion.p>
             <motion.div variants={fadeUp}>
               <Link
                 href="/sign-up"
-                className="inline-flex justify-center items-center gap-2 bg-white text-background px-10 py-5 rounded font-medium hover:bg-white/90 transition-all text-lg"
+                className="inline-flex justify-center items-center gap-2 bg-white text-background px-10 py-5 rounded font-medium hover:bg-white/90 hover:-translate-y-0.5 transition-all text-lg"
               >
-                Establish Connection
+                {content.cta.buttonLabel}
                 <ChevronRight className="w-5 h-5" />
               </Link>
             </motion.div>
@@ -608,7 +549,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-background pt-16 pb-8 px-6">
+      <footer className="relative z-10 border-t border-white/10 bg-background pt-16 pb-8 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3 text-white font-medium tracking-wide">
@@ -621,9 +562,9 @@ export default function Home() {
               Institutional Trading Infrastructure
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground font-light">
-              <Link href="#" className="hover:text-white transition-colors">Security</Link>
-              <Link href="#" className="hover:text-white transition-colors">Terms</Link>
-              <Link href="#" className="hover:text-white transition-colors">Privacy</Link>
+              <Link href="/status" className="hover:text-white transition-colors">Security</Link>
+              <Link href="/kb" className="hover:text-white transition-colors">Terms</Link>
+              <Link href="/contact" className="hover:text-white transition-colors">Privacy</Link>
             </div>
           </div>
           <div className="mt-12 text-center text-xs text-muted-foreground/50 font-light">
@@ -639,7 +580,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded border border-white/10 bg-card overflow-hidden">
+    <div className="rounded-xl backdrop-blur-xl bg-white/[0.04] border border-white/10 overflow-hidden transition-colors hover:bg-white/[0.06]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
