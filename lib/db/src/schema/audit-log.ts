@@ -133,6 +133,12 @@ export const auditLogTable = pgTable("audit_log", {
       "runpod_credential.issued",
       "runpod_credential.rotated",
       "runpod_credential.revoked",
+      // Trainer Admin Control Plane
+      "trainer_control.training_started",
+      "trainer_control.training_stopped",
+      "trainer_control.experiment_created",
+      "trainer_control.shadow_test_launched",
+      "trainer_control.sensitive_view_accessed",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

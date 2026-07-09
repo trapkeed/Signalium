@@ -4362,6 +4362,115 @@ export type ListResearchLabArtifactHistory200 = {
   artifacts?: ResearchLabPassthrough[];
 };
 
+export type GetTrainerControlStatus200 = {
+  configured?: boolean;
+};
+
+export type PostTrainerControlTrainingStartBody = { [key: string]: unknown };
+
+export type PostTrainerControlTrainingStart200 = {
+  run?: ResearchLabPassthrough;
+};
+
+export type PostTrainerControlTrainingStopBody = {
+  reason?: string | null;
+};
+
+export type PostTrainerControlTrainingStop200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type PostTrainerControlExperimentsBody = { [key: string]: unknown };
+
+export type PostTrainerControlExperiments201 = {
+  experiment?: ResearchLabPassthrough;
+};
+
+export type PostTrainerControlShadowTestsBody = { [key: string]: unknown };
+
+export type PostTrainerControlShadowTests201 = {
+  deployment?: ResearchLabPassthrough;
+};
+
+export type ListTrainerControlDatasetsParams = {
+limit?: number;
+};
+
+export type ListTrainerControlDatasets200 = {
+  datasets?: ResearchLabPassthrough[];
+};
+
+export type GetTrainerControlDataset200 = {
+  dataset?: ResearchLabPassthrough;
+};
+
+export type ListTrainerControlMemoryParams = {
+limit?: number;
+};
+
+export type ListTrainerControlMemory200 = {
+  entries?: ResearchLabPassthrough[];
+};
+
+export type ListTrainerControlReflectionsParams = {
+limit?: number;
+};
+
+export type ListTrainerControlReflections200 = {
+  reflections?: ResearchLabPassthrough[];
+};
+
+export type ListTrainerControlResearchReportsParams = {
+limit?: number;
+};
+
+export type ListTrainerControlResearchReports200 = {
+  reports?: ResearchLabPassthrough[];
+};
+
+export type GetTrainerControlResearchReport200 = {
+  report?: ResearchLabPassthrough;
+};
+
+export type ListTrainerControlActiveModels200 = {
+  models?: ResearchLabPassthrough[];
+};
+
+export type ListTrainerControlRunpodJobs200JobsItem = { [key: string]: unknown };
+
+export type ListTrainerControlRunpodJobs200 = {
+  jobs?: ListTrainerControlRunpodJobs200JobsItem[];
+};
+
+export type GetTrainerControlRunpodGpuUtilization200UtilizationItem = {
+  podId?: number;
+  runpodPodId?: string | null;
+  name?: string;
+  gpuType?: string;
+  utilizationPct?: number | null;
+  lastPolledAt?: string | null;
+};
+
+export type GetTrainerControlRunpodGpuUtilization200 = {
+  utilization?: GetTrainerControlRunpodGpuUtilization200UtilizationItem[];
+};
+
+export type GetTrainerControlTrainingCosts200PodsItem = {
+  podId?: number;
+  name?: string;
+  gpuType?: string;
+  status?: string;
+  accruedCostUsd?: number | null;
+  costPerHrUsd?: number | null;
+};
+
+export type GetTrainerControlTrainingCosts200 = {
+  totalAccruedUsd?: number;
+  activeHourlyUsd?: number;
+  pods?: GetTrainerControlTrainingCosts200PodsItem[];
+};
+
 export type DismissOnboardingChecklist200 = {
   dismissed?: boolean;
 };

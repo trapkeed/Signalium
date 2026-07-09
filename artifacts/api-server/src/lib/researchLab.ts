@@ -82,6 +82,13 @@ export interface ExperimentSummary {
   [key: string]: unknown;
 }
 
+export function createExperiment(config: Record<string, unknown>) {
+  return labFetch<{ experiment: ExperimentSummary }>(`/experiments`, {
+    method: "POST",
+    body: JSON.stringify(config),
+  });
+}
+
 export function listExperiments(params?: { limit?: number; status?: string }) {
   const q = new URLSearchParams();
   if (params?.limit) q.set("limit", String(params.limit));
@@ -118,6 +125,20 @@ export function getTrainingRun(id: string) {
 
 export function getTrainingResourceUsage() {
   return labFetch<{ usage: Record<string, unknown> }>(`/training/resource-usage`);
+}
+
+export function startTrainingRun(config: Record<string, unknown>) {
+  return labFetch<{ run: Record<string, unknown> }>(`/training/runs`, {
+    method: "POST",
+    body: JSON.stringify(config),
+  });
+}
+
+export function stopTrainingRun(id: string, reason?: string) {
+  return labFetch<{ ok: boolean; message?: string }>(`/training/runs/${encodeURIComponent(id)}/stop`, {
+    method: "POST",
+    body: JSON.stringify({ reason: reason ?? null }),
+  });
 }
 
 // ─── 3. Validation ────────────────────────────────────────────────────────────
@@ -157,6 +178,13 @@ export function getShadowAgreementAnalysis(id: string) {
 
 export function getShadowRegimeComparison(id: string) {
   return labFetch<{ regimes: unknown[] }>(`/shadow-testing/deployments/${encodeURIComponent(id)}/regimes`);
+}
+
+export function launchShadowTest(config: Record<string, unknown>) {
+  return labFetch<{ deployment: Record<string, unknown> }>(`/shadow-testing/deployments`, {
+    method: "POST",
+    body: JSON.stringify(config),
+  });
 }
 
 // ─── 5. Deployment (candidates) ───────────────────────────────────────────────
@@ -224,4 +252,42 @@ export function getGenealogyTree(rootModelVersion?: string) {
 
 export function listArtifactHistory(modelVersion: string) {
   return labFetch<{ artifacts: unknown[] }>(`/genealogy/${encodeURIComponent(modelVersion)}/artifacts`);
+}
+
+// ─── 8. Trainer Admin Control Plane — inspection views ────────────────────────
+// Read-only proxies for the trainer's own datasets, memory, reflections, and
+// research reports. Same no-fallback contract as everything else in this
+// file — an unconfigured/unreachable trainer surfaces as
+// ResearchLabUnavailableError, never as fabricated data.
+
+export function listDatasets(params?: { limit?: number }) {
+  const q = params?.limit ? `?limit=${params.limit}` : "";
+  return labFetch<{ datasets: unknown[] }>(`/datasets${q}`);
+}
+
+export function getDataset(id: string) {
+  return labFetch<{ dataset: Record<string, unknown> }>(`/datasets/${encodeURIComponent(id)}`);
+}
+
+export function listMemoryEntries(params?: { limit?: number }) {
+  const q = params?.limit ? `?limit=${params.limit}` : "";
+  return labFetch<{ entries: unknown[] }>(`/memory${q}`);
+}
+
+export function listReflections(params?: { limit?: number }) {
+  const q = params?.limit ? `?limit=${params.limit}` : "";
+  return labFetch<{ reflections: unknown[] }>(`/reflections${q}`);
+}
+
+export function listResearchReports(params?: { limit?: number }) {
+  const q = params?.limit ? `?limit=${params.limit}` : "";
+  return labFetch<{ reports: unknown[] }>(`/research-reports${q}`);
+}
+
+export function getResearchReport(id: string) {
+  return labFetch<{ report: Record<string, unknown> }>(`/research-reports/${encodeURIComponent(id)}`);
+}
+
+export function listActiveModels() {
+  return labFetch<{ models: unknown[] }>(`/models/active`);
 }

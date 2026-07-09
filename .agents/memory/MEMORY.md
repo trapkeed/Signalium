@@ -19,3 +19,4 @@
 - [S33 Market Data Provider Abstraction](s33-market-data-providers.md) — adapter registry pattern, shared health-check function for manual+sweep, getActiveProvider reads a previously-orphaned DB column, idempotent slug-keyed seeding.
 - [SSO issuer/TTL vault config](sso-key-vault-config.md) — split config (generic vault) from crypto material (dedicated table) when adding admin-configurable settings to a security-critical service.
 - [S32 Clerk-to-custom-auth migration](s32-clerk-to-custom-auth.md) — passwordHash leak trap, drizzle-kit push TTY prompt workaround, grep whole backend for provider env vars, app-side UUID default pattern.
+- [Trainer Admin Control Plane](s32-trainer-control-plane.md) — audit-both-paths for trainer mutations, link out to existing deploy/rollback instead of duplicating, RunPod reads stay DB-authoritative, recurring orval looseObject sed fix.

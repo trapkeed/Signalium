@@ -113,6 +113,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/research-lab/deployment", label: "Deployment", icon: Layers },
       { href: "/admin/research-lab/research-intelligence", label: "Research Intelligence", icon: Sparkles },
       { href: "/admin/research-lab/genealogy", label: "QDE Genealogy", icon: GitCommitVertical },
+      { href: "/admin/trainer-control", label: "Trainer Control", icon: Cpu },
     ],
   },
   {

@@ -51,6 +51,7 @@ import siteContentRouter from "./site-content";
 import adminSecretsRouter from "./admin-secrets";
 import authRouter from "./auth";
 import runpodRouter from "./runpod";
+import trainerControlRouter from "./trainer-control";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -132,5 +133,9 @@ router.use("/site-content", siteContentRouter);
 router.use("/admin/secrets", adminSecretsRouter);
 // RunPod GPU orchestration — pod lifecycle, budget enforcement, worker credentials
 router.use("/runpod", runpodRouter);
+// Trainer Admin Control Plane — start/stop training, experiments, shadow
+// tests, plus read-only inspection views; deploy/rollback reuse the
+// existing /qde/admin/deployments and /research-lab endpoints.
+router.use("/trainer-control", trainerControlRouter);
 
 export default router;

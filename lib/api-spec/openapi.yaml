@@ -6928,6 +6928,315 @@ paths:
                   artifacts: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
         "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
 
+  /trainer-control/status:
+    get:
+      operationId: getTrainerControlStatus
+      summary: Whether the trainer is configured for control-plane actions
+      tags: [trainer-control]
+      responses:
+        "200":
+          description: Configuration status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  configured: { type: boolean }
+
+  /trainer-control/training/start:
+    post:
+      operationId: postTrainerControlTrainingStart
+      summary: Start a training run on the trainer (audited)
+      tags: [trainer-control]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Training run started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/training/{id}/stop:
+    post:
+      operationId: postTrainerControlTrainingStop
+      summary: Stop a training run on the trainer (audited)
+      tags: [trainer-control]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Training run stopped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  message: { type: string }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/experiments:
+    post:
+      operationId: postTrainerControlExperiments
+      summary: Create a new experiment on the trainer (audited)
+      tags: [trainer-control]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Experiment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  experiment: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/shadow-tests:
+    post:
+      operationId: postTrainerControlShadowTests
+      summary: Launch a shadow test on the trainer (audited)
+      tags: [trainer-control]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Shadow test launched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployment: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/datasets:
+    get:
+      operationId: listTrainerControlDatasets
+      summary: List trainer datasets
+      tags: [trainer-control]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Datasets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/datasets/{id}:
+    get:
+      operationId: getTrainerControlDataset
+      summary: Get a trainer dataset
+      tags: [trainer-control]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dataset detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataset: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/memory:
+    get:
+      operationId: listTrainerControlMemory
+      summary: List trainer memory entries
+      tags: [trainer-control]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Memory entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/reflections:
+    get:
+      operationId: listTrainerControlReflections
+      summary: List trainer reflections
+      tags: [trainer-control]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Reflections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reflections: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/research-reports:
+    get:
+      operationId: listTrainerControlResearchReports
+      summary: List trainer research reports
+      tags: [trainer-control]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Research reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/research-reports/{id}:
+    get:
+      operationId: getTrainerControlResearchReport
+      summary: Get a trainer research report
+      tags: [trainer-control]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Research report detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/active-models:
+    get:
+      operationId: listTrainerControlActiveModels
+      summary: List currently active models known to the trainer
+      tags: [trainer-control]
+      responses:
+        "200":
+          description: Active models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /trainer-control/runpod/jobs:
+    get:
+      operationId: listTrainerControlRunpodJobs
+      summary: List RunPod pods tied to training (read from Signalium's RunPod orchestration tables)
+      tags: [trainer-control]
+      responses:
+        "200":
+          description: RunPod jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs: { type: array, items: { type: object, additionalProperties: true } }
+
+  /trainer-control/runpod/gpu-utilization:
+    get:
+      operationId: getTrainerControlRunpodGpuUtilization
+      summary: GPU utilization for currently running RunPod pods
+      tags: [trainer-control]
+      responses:
+        "200":
+          description: GPU utilization
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  utilization:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        podId: { type: integer }
+                        runpodPodId: { type: string, nullable: true }
+                        name: { type: string }
+                        gpuType: { type: string }
+                        utilizationPct: { type: number, nullable: true }
+                        lastPolledAt: { type: string, format: date-time, nullable: true }
+
+  /trainer-control/training-costs:
+    get:
+      operationId: getTrainerControlTrainingCosts
+      summary: Aggregate training GPU costs (accrued + current active hourly rate)
+      tags: [trainer-control]
+      responses:
+        "200":
+          description: Training costs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalAccruedUsd: { type: number }
+                  activeHourlyUsd: { type: number }
+                  pods:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        podId: { type: integer }
+                        name: { type: string }
+                        gpuType: { type: string }
+                        status: { type: string }
+                        accruedCostUsd: { type: number, nullable: true }
+                        costPerHrUsd: { type: number, nullable: true }
+
   /onboarding/checklist:
     get:
       tags: [onboarding]

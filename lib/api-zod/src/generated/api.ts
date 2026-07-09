@@ -6680,13 +6680,13 @@ export const PostResilienceConfigImportResponse = zod.record(zod.string(), zod.u
 
 
 /**
- * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ * @summary Admin — RunPod configuration status, launch defaults, and budget
  */
 export const GetRunpodConfigResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
- * @summary Admin — update RunPod budget guardrails (Task 4)
+ * @summary Admin — update RunPod budget guardrails
  */
 export const PutRunpodBudgetBody = zod.record(zod.string(), zod.unknown())
 
@@ -6694,14 +6694,14 @@ export const PutRunpodBudgetResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
- * @summary Admin — list RunPod pods (Task 4)
+ * @summary Admin — list RunPod pods
  */
 export const GetRunpodPodsResponseItem = zod.record(zod.string(), zod.unknown())
 export const GetRunpodPodsResponse = zod.array(GetRunpodPodsResponseItem)
 
 
 /**
- * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ * @summary Admin — launch a new RunPod pod, budget-checked
  */
 export const PostRunpodPodsBody = zod.record(zod.string(), zod.unknown())
 
@@ -6709,7 +6709,7 @@ export const PostRunpodPodsResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**
- * @summary Admin — stop a RunPod pod (Task 4)
+ * @summary Admin — stop a RunPod pod
  */
 export const PostRunpodPodsIdStopParams = zod.object({
   "id": zod.coerce.number()
@@ -6719,7 +6719,7 @@ export const PostRunpodPodsIdStopResponse = zod.record(zod.string(), zod.unknown
 
 
 /**
- * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked
  */
 export const PostRunpodPodsIdRestartParams = zod.object({
   "id": zod.coerce.number()
@@ -6729,7 +6729,7 @@ export const PostRunpodPodsIdRestartResponse = zod.record(zod.string(), zod.unkn
 
 
 /**
- * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ * @summary Admin — terminate a RunPod pod permanently
  */
 export const PostRunpodPodsIdTerminateParams = zod.object({
   "id": zod.coerce.number()
@@ -6739,7 +6739,7 @@ export const PostRunpodPodsIdTerminateResponse = zod.record(zod.string(), zod.un
 
 
 /**
- * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod
  */
 export const PostRunpodPodsIdRefreshParams = zod.object({
   "id": zod.coerce.number()
@@ -6749,7 +6749,7 @@ export const PostRunpodPodsIdRefreshResponse = zod.record(zod.string(), zod.unkn
 
 
 /**
- * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ * @summary Admin — fetch recent logs for a RunPod pod
  */
 export const GetRunpodPodsIdLogsParams = zod.object({
   "id": zod.coerce.number()
@@ -6759,7 +6759,7 @@ export const GetRunpodPodsIdLogsResponse = zod.record(zod.string(), zod.unknown(
 
 
 /**
- * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume
  */
 export const GetRunpodPodsIdArtifactsParams = zod.object({
   "id": zod.coerce.number()
@@ -6769,7 +6769,7 @@ export const GetRunpodPodsIdArtifactsResponse = zod.record(zod.string(), zod.unk
 
 
 /**
- * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod
  */
 export const GetRunpodPodsIdCredentialsParams = zod.object({
   "id": zod.coerce.number()
@@ -6780,7 +6780,7 @@ export const GetRunpodPodsIdCredentialsResponse = zod.array(GetRunpodPodsIdCrede
 
 
 /**
- * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod
  */
 export const PostRunpodPodsIdCredentialsParams = zod.object({
   "id": zod.coerce.number()
@@ -6792,7 +6792,7 @@ export const PostRunpodPodsIdCredentialsResponse = zod.record(zod.string(), zod.
 
 
 /**
- * @summary Admin — rotate a RunPod worker credential (Task 4)
+ * @summary Admin — rotate a RunPod worker credential
  */
 export const PostRunpodCredentialsCredentialIdRotateParams = zod.object({
   "credentialId": zod.coerce.number()
@@ -6802,7 +6802,7 @@ export const PostRunpodCredentialsCredentialIdRotateResponse = zod.record(zod.st
 
 
 /**
- * @summary Admin — revoke a RunPod worker credential (Task 4)
+ * @summary Admin — revoke a RunPod worker credential
  */
 export const DeleteRunpodCredentialsCredentialIdParams = zod.object({
   "credentialId": zod.coerce.number()
@@ -7418,6 +7418,181 @@ export const ListResearchLabArtifactHistoryParams = zod.object({
 
 export const ListResearchLabArtifactHistoryResponse = zod.object({
   "artifacts": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Whether the trainer is configured for control-plane actions
+ */
+export const GetTrainerControlStatusResponse = zod.object({
+  "configured": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Start a training run on the trainer (audited)
+ */
+export const PostTrainerControlTrainingStartBody = zod.record(zod.string(), zod.unknown())
+
+export const PostTrainerControlTrainingStartResponse = zod.object({
+  "run": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Stop a training run on the trainer (audited)
+ */
+export const PostTrainerControlTrainingStopParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const PostTrainerControlTrainingStopBody = zod.object({
+  "reason": zod.string().nullish()
+})
+
+export const PostTrainerControlTrainingStopResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Create a new experiment on the trainer (audited)
+ */
+export const PostTrainerControlExperimentsBody = zod.record(zod.string(), zod.unknown())
+
+export const PostTrainerControlExperimentsResponse = zod.object({
+  "experiment": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Launch a shadow test on the trainer (audited)
+ */
+export const PostTrainerControlShadowTestsBody = zod.record(zod.string(), zod.unknown())
+
+export const PostTrainerControlShadowTestsResponse = zod.object({
+  "deployment": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List trainer datasets
+ */
+export const ListTrainerControlDatasetsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListTrainerControlDatasetsResponse = zod.object({
+  "datasets": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get a trainer dataset
+ */
+export const GetTrainerControlDatasetParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetTrainerControlDatasetResponse = zod.object({
+  "dataset": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List trainer memory entries
+ */
+export const ListTrainerControlMemoryQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListTrainerControlMemoryResponse = zod.object({
+  "entries": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List trainer reflections
+ */
+export const ListTrainerControlReflectionsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListTrainerControlReflectionsResponse = zod.object({
+  "reflections": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List trainer research reports
+ */
+export const ListTrainerControlResearchReportsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListTrainerControlResearchReportsResponse = zod.object({
+  "reports": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get a trainer research report
+ */
+export const GetTrainerControlResearchReportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetTrainerControlResearchReportResponse = zod.object({
+  "report": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List currently active models known to the trainer
+ */
+export const ListTrainerControlActiveModelsResponse = zod.object({
+  "models": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List RunPod pods tied to training (read from Signalium's RunPod orchestration tables)
+ */
+export const ListTrainerControlRunpodJobsResponse = zod.object({
+  "jobs": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+/**
+ * @summary GPU utilization for currently running RunPod pods
+ */
+export const GetTrainerControlRunpodGpuUtilizationResponse = zod.object({
+  "utilization": zod.array(zod.object({
+  "podId": zod.number().optional(),
+  "runpodPodId": zod.string().nullish(),
+  "name": zod.string().optional(),
+  "gpuType": zod.string().optional(),
+  "utilizationPct": zod.number().nullish(),
+  "lastPolledAt": zod.coerce.date().nullish()
+})).optional()
+})
+
+
+/**
+ * @summary Aggregate training GPU costs (accrued + current active hourly rate)
+ */
+export const GetTrainerControlTrainingCostsResponse = zod.object({
+  "totalAccruedUsd": zod.number().optional(),
+  "activeHourlyUsd": zod.number().optional(),
+  "pods": zod.array(zod.object({
+  "podId": zod.number().optional(),
+  "name": zod.string().optional(),
+  "gpuType": zod.string().optional(),
+  "status": zod.string().optional(),
+  "accruedCostUsd": zod.number().nullish(),
+  "costPerHrUsd": zod.number().nullish()
+})).optional()
 })
 
 

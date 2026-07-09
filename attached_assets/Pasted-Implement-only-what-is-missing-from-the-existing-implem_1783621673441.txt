@@ -1,0 +1,132 @@
+Implement only what is missing from the existing implementation.
+
+Signalium Platform is the customer-facing system and Signalium Trainer is the intelligence backend.
+
+Trainer URL:
+https://trainer.signaliumai.com
+
+Platform URL:
+https://signaliumai.com
+
+Responsibilities of Signalium Platform:
+
+* User management
+* Authentication and SSO
+* Subscription management
+* Billing
+* Broker connection management
+* EA generation
+* API key management
+* User settings
+* Admin dashboards
+* Market analysis display
+* Autonomous trading controls
+* Signal history
+* Notifications
+* Portfolio dashboards
+* Research Lab administration portal embedding
+
+Implement the following integrations if they do not already exist:
+
+1. Trainer Health Monitoring
+
+* Periodically query trainer health endpoints.
+* Show trainer health status inside admin dashboard.
+* Detect degraded, unavailable or maintenance states.
+* Alert administrators immediately.
+
+2. Trainer Capability Discovery
+
+* Dynamically fetch trainer capabilities:
+
+  * supported symbols
+  * enabled asset classes
+  * active model version
+  * current champion QDE version
+  * training status
+  * shadow deployment status
+  * RunPod availability
+
+3. Symbol Synchronization
+
+* Fetch symbol registry from trainer.
+* Cache locally.
+* Allow admin enable/disable overrides.
+* Never hardcode symbol lists.
+
+4. Market Data Provider Visibility
+   Display:
+
+* active provider
+* provider latency
+* provider health
+* provider usage
+* provider quotas
+
+Supported providers:
+
+* OANDA
+* Tiingo
+
+Architecture must support future providers without code changes.
+
+5. Environment Variable Management
+   Allow Super Admins to:
+
+* create
+* edit
+* rotate
+* disable
+* audit
+
+environment variables.
+
+Requirements:
+
+* AES-256 encryption at rest
+* audit logs
+* access logs
+* role restrictions
+* masking in UI
+
+6. Trainer Administration Bridge
+   Allow Super Admins to manage Trainer directly from Signalium Admin:
+
+* start training jobs
+* launch experiments
+* view experiments
+* approve promotions
+* rollback models
+* view datasets
+* manage RunPod jobs
+* manage shadow deployments
+* inspect failures
+* inspect drift alerts
+
+The platform acts only as a control plane.
+
+The trainer remains the execution authority.
+
+7. Disaster Recovery Monitoring
+   Display:
+
+* trainer reachability
+* database health
+* queue health
+* websocket health
+* RunPod health
+* market data provider health
+
+8. Configuration Validation
+   At startup validate:
+
+* TRAINER_URL
+* TRAINER_API_KEY
+* SSO configuration
+* market data configuration
+* webhook configuration
+* notification configuration
+
+Fail fast if configuration is invalid.
+
+Maintain backward compatibility and do not duplicate existing functionality.

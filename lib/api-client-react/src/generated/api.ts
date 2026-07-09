@@ -167,6 +167,11 @@ import type {
   GetRunpodPodsIdCredentials200Item,
   GetRunpodPodsIdLogs200,
   GetSymbolNormalizationLogParams,
+  GetTrainerControlDataset200,
+  GetTrainerControlResearchReport200,
+  GetTrainerControlRunpodGpuUtilization200,
+  GetTrainerControlStatus200,
+  GetTrainerControlTrainingCosts200,
   GetUnreadNotificationCount200,
   GrantCreditBody,
   HealthStatus,
@@ -214,6 +219,16 @@ import type {
   ListResearchLabValidationReports200,
   ListResearchLabValidationReportsParams,
   ListSecurityIncidentsParams,
+  ListTrainerControlActiveModels200,
+  ListTrainerControlDatasets200,
+  ListTrainerControlDatasetsParams,
+  ListTrainerControlMemory200,
+  ListTrainerControlMemoryParams,
+  ListTrainerControlReflections200,
+  ListTrainerControlReflectionsParams,
+  ListTrainerControlResearchReports200,
+  ListTrainerControlResearchReportsParams,
+  ListTrainerControlRunpodJobs200,
   LockAccount200,
   LoginEvent,
   MaintenanceBanner,
@@ -279,6 +294,14 @@ import type {
   PostRunpodPodsIdRestart422,
   PostRunpodPodsIdStop200,
   PostRunpodPodsIdTerminate200,
+  PostTrainerControlExperiments201,
+  PostTrainerControlExperimentsBody,
+  PostTrainerControlShadowTests201,
+  PostTrainerControlShadowTestsBody,
+  PostTrainerControlTrainingStart200,
+  PostTrainerControlTrainingStartBody,
+  PostTrainerControlTrainingStop200,
+  PostTrainerControlTrainingStopBody,
   ProviderCapability,
   ProviderCredential,
   ProviderStatus,
@@ -23822,7 +23845,7 @@ export const getGetRunpodConfigUrl = () => {
 }
 
 /**
- * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ * @summary Admin — RunPod configuration status, launch defaults, and budget
  */
 export const getRunpodConfig = async ( options?: RequestInit): Promise<GetRunpodConfig200> => {
 
@@ -23869,7 +23892,7 @@ export type GetRunpodConfigQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ * @summary Admin — RunPod configuration status, launch defaults, and budget
  */
 
 export function useGetRunpodConfig<TData = Awaited<ReturnType<typeof getRunpodConfig>>, TError = ErrorType<unknown>>(
@@ -23899,7 +23922,7 @@ export const getPutRunpodBudgetUrl = () => {
 }
 
 /**
- * @summary Admin — update RunPod budget guardrails (Task 4)
+ * @summary Admin — update RunPod budget guardrails
  */
 export const putRunpodBudget = async (putRunpodBudgetBody: PutRunpodBudgetBody, options?: RequestInit): Promise<PutRunpodBudget200> => {
 
@@ -23948,7 +23971,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PutRunpodBudgetMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — update RunPod budget guardrails (Task 4)
+ * @summary Admin — update RunPod budget guardrails
  */
 export const usePutRunpodBudget = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putRunpodBudget>>, TError,{data: BodyType<PutRunpodBudgetBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -23970,7 +23993,7 @@ export const getGetRunpodPodsUrl = () => {
 }
 
 /**
- * @summary Admin — list RunPod pods (Task 4)
+ * @summary Admin — list RunPod pods
  */
 export const getRunpodPods = async ( options?: RequestInit): Promise<GetRunpodPods200Item[]> => {
 
@@ -24017,7 +24040,7 @@ export type GetRunpodPodsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Admin — list RunPod pods (Task 4)
+ * @summary Admin — list RunPod pods
  */
 
 export function useGetRunpodPods<TData = Awaited<ReturnType<typeof getRunpodPods>>, TError = ErrorType<unknown>>(
@@ -24047,7 +24070,7 @@ export const getPostRunpodPodsUrl = () => {
 }
 
 /**
- * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ * @summary Admin — launch a new RunPod pod, budget-checked
  */
 export const postRunpodPods = async (postRunpodPodsBody: PostRunpodPodsBody, options?: RequestInit): Promise<PostRunpodPods201> => {
 
@@ -24096,7 +24119,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsMutationError = ErrorType<PostRunpodPods422>
 
     /**
- * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ * @summary Admin — launch a new RunPod pod, budget-checked
  */
 export const usePostRunpodPods = <TError = ErrorType<PostRunpodPods422>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPods>>, TError,{data: BodyType<PostRunpodPodsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24118,7 +24141,7 @@ export const getPostRunpodPodsIdStopUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — stop a RunPod pod (Task 4)
+ * @summary Admin — stop a RunPod pod
  */
 export const postRunpodPodsIdStop = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdStop200> => {
 
@@ -24167,7 +24190,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsIdStopMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — stop a RunPod pod (Task 4)
+ * @summary Admin — stop a RunPod pod
  */
 export const usePostRunpodPodsIdStop = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdStop>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24189,7 +24212,7 @@ export const getPostRunpodPodsIdRestartUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked
  */
 export const postRunpodPodsIdRestart = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdRestart200> => {
 
@@ -24238,7 +24261,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsIdRestartMutationError = ErrorType<PostRunpodPodsIdRestart422>
 
     /**
- * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked
  */
 export const usePostRunpodPodsIdRestart = <TError = ErrorType<PostRunpodPodsIdRestart422>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24260,7 +24283,7 @@ export const getPostRunpodPodsIdTerminateUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ * @summary Admin — terminate a RunPod pod permanently
  */
 export const postRunpodPodsIdTerminate = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdTerminate200> => {
 
@@ -24309,7 +24332,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsIdTerminateMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ * @summary Admin — terminate a RunPod pod permanently
  */
 export const usePostRunpodPodsIdTerminate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24331,7 +24354,7 @@ export const getPostRunpodPodsIdRefreshUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod
  */
 export const postRunpodPodsIdRefresh = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdRefresh200> => {
 
@@ -24380,7 +24403,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsIdRefreshMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod
  */
 export const usePostRunpodPodsIdRefresh = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24402,7 +24425,7 @@ export const getGetRunpodPodsIdLogsUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ * @summary Admin — fetch recent logs for a RunPod pod
  */
 export const getRunpodPodsIdLogs = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdLogs200> => {
 
@@ -24449,7 +24472,7 @@ export type GetRunpodPodsIdLogsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ * @summary Admin — fetch recent logs for a RunPod pod
  */
 
 export function useGetRunpodPodsIdLogs<TData = Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError = ErrorType<unknown>>(
@@ -24479,7 +24502,7 @@ export const getGetRunpodPodsIdArtifactsUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume
  */
 export const getRunpodPodsIdArtifacts = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdArtifacts200> => {
 
@@ -24526,7 +24549,7 @@ export type GetRunpodPodsIdArtifactsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume
  */
 
 export function useGetRunpodPodsIdArtifacts<TData = Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError = ErrorType<unknown>>(
@@ -24556,7 +24579,7 @@ export const getGetRunpodPodsIdCredentialsUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod
  */
 export const getRunpodPodsIdCredentials = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdCredentials200Item[]> => {
 
@@ -24603,7 +24626,7 @@ export type GetRunpodPodsIdCredentialsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod
  */
 
 export function useGetRunpodPodsIdCredentials<TData = Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError = ErrorType<unknown>>(
@@ -24633,7 +24656,7 @@ export const getPostRunpodPodsIdCredentialsUrl = (id: number,) => {
 }
 
 /**
- * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod
  */
 export const postRunpodPodsIdCredentials = async (id: number,
     postRunpodPodsIdCredentialsBody?: PostRunpodPodsIdCredentialsBody, options?: RequestInit): Promise<PostRunpodPodsIdCredentials201> => {
@@ -24683,7 +24706,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodPodsIdCredentialsMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod
  */
 export const usePostRunpodPodsIdCredentials = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>, TError,{id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24705,7 +24728,7 @@ export const getPostRunpodCredentialsCredentialIdRotateUrl = (credentialId: numb
 }
 
 /**
- * @summary Admin — rotate a RunPod worker credential (Task 4)
+ * @summary Admin — rotate a RunPod worker credential
  */
 export const postRunpodCredentialsCredentialIdRotate = async (credentialId: number, options?: RequestInit): Promise<PostRunpodCredentialsCredentialIdRotate200> => {
 
@@ -24754,7 +24777,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostRunpodCredentialsCredentialIdRotateMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — rotate a RunPod worker credential (Task 4)
+ * @summary Admin — rotate a RunPod worker credential
  */
 export const usePostRunpodCredentialsCredentialIdRotate = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -24776,7 +24799,7 @@ export const getDeleteRunpodCredentialsCredentialIdUrl = (credentialId: number,)
 }
 
 /**
- * @summary Admin — revoke a RunPod worker credential (Task 4)
+ * @summary Admin — revoke a RunPod worker credential
  */
 export const deleteRunpodCredentialsCredentialId = async (credentialId: number, options?: RequestInit): Promise<void> => {
 
@@ -24825,7 +24848,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteRunpodCredentialsCredentialIdMutationError = ErrorType<unknown>
 
     /**
- * @summary Admin — revoke a RunPod worker credential (Task 4)
+ * @summary Admin — revoke a RunPod worker credential
  */
 export const useDeleteRunpodCredentialsCredentialId = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -27820,6 +27843,1166 @@ export function useListResearchLabArtifactHistory<TData = Awaited<ReturnType<typ
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListResearchLabArtifactHistoryQueryOptions(modelVersion,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTrainerControlStatusUrl = () => {
+
+
+
+
+  return `/api/trainer-control/status`
+}
+
+/**
+ * @summary Whether the trainer is configured for control-plane actions
+ */
+export const getTrainerControlStatus = async ( options?: RequestInit): Promise<GetTrainerControlStatus200> => {
+
+  return customFetch<GetTrainerControlStatus200>(getGetTrainerControlStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTrainerControlStatusQueryKey = () => {
+    return [
+    `/api/trainer-control/status`
+    ] as const;
+    }
+
+
+export const getGetTrainerControlStatusQueryOptions = <TData = Awaited<ReturnType<typeof getTrainerControlStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrainerControlStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainerControlStatus>>> = ({ signal }) => getTrainerControlStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTrainerControlStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainerControlStatus>>>
+export type GetTrainerControlStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether the trainer is configured for control-plane actions
+ */
+
+export function useGetTrainerControlStatus<TData = Awaited<ReturnType<typeof getTrainerControlStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTrainerControlStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostTrainerControlTrainingStartUrl = () => {
+
+
+
+
+  return `/api/trainer-control/training/start`
+}
+
+/**
+ * @summary Start a training run on the trainer (audited)
+ */
+export const postTrainerControlTrainingStart = async (postTrainerControlTrainingStartBody?: PostTrainerControlTrainingStartBody, options?: RequestInit): Promise<PostTrainerControlTrainingStart200> => {
+
+  return customFetch<PostTrainerControlTrainingStart200>(getPostTrainerControlTrainingStartUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postTrainerControlTrainingStartBody)
+  }
+);}
+
+
+
+
+
+export const getPostTrainerControlTrainingStartMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStart>>, TError,{data?: BodyType<PostTrainerControlTrainingStartBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStart>>, TError,{data?: BodyType<PostTrainerControlTrainingStartBody>}, TContext> => {
+
+const mutationKey = ['postTrainerControlTrainingStart'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainerControlTrainingStart>>, {data?: BodyType<PostTrainerControlTrainingStartBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postTrainerControlTrainingStart(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostTrainerControlTrainingStartMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainerControlTrainingStart>>>
+    export type PostTrainerControlTrainingStartMutationBody = BodyType<PostTrainerControlTrainingStartBody> | undefined
+    export type PostTrainerControlTrainingStartMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Start a training run on the trainer (audited)
+ */
+export const usePostTrainerControlTrainingStart = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStart>>, TError,{data?: BodyType<PostTrainerControlTrainingStartBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postTrainerControlTrainingStart>>,
+        TError,
+        {data?: BodyType<PostTrainerControlTrainingStartBody>},
+        TContext
+      > => {
+      return useMutation(getPostTrainerControlTrainingStartMutationOptions(options));
+    }
+
+export const getPostTrainerControlTrainingStopUrl = (id: string,) => {
+
+
+
+
+  return `/api/trainer-control/training/${id}/stop`
+}
+
+/**
+ * @summary Stop a training run on the trainer (audited)
+ */
+export const postTrainerControlTrainingStop = async (id: string,
+    postTrainerControlTrainingStopBody?: PostTrainerControlTrainingStopBody, options?: RequestInit): Promise<PostTrainerControlTrainingStop200> => {
+
+  return customFetch<PostTrainerControlTrainingStop200>(getPostTrainerControlTrainingStopUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postTrainerControlTrainingStopBody)
+  }
+);}
+
+
+
+
+
+export const getPostTrainerControlTrainingStopMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStop>>, TError,{id: string;data?: BodyType<PostTrainerControlTrainingStopBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStop>>, TError,{id: string;data?: BodyType<PostTrainerControlTrainingStopBody>}, TContext> => {
+
+const mutationKey = ['postTrainerControlTrainingStop'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainerControlTrainingStop>>, {id: string;data?: BodyType<PostTrainerControlTrainingStopBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  postTrainerControlTrainingStop(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostTrainerControlTrainingStopMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainerControlTrainingStop>>>
+    export type PostTrainerControlTrainingStopMutationBody = BodyType<PostTrainerControlTrainingStopBody> | undefined
+    export type PostTrainerControlTrainingStopMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Stop a training run on the trainer (audited)
+ */
+export const usePostTrainerControlTrainingStop = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlTrainingStop>>, TError,{id: string;data?: BodyType<PostTrainerControlTrainingStopBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postTrainerControlTrainingStop>>,
+        TError,
+        {id: string;data?: BodyType<PostTrainerControlTrainingStopBody>},
+        TContext
+      > => {
+      return useMutation(getPostTrainerControlTrainingStopMutationOptions(options));
+    }
+
+export const getPostTrainerControlExperimentsUrl = () => {
+
+
+
+
+  return `/api/trainer-control/experiments`
+}
+
+/**
+ * @summary Create a new experiment on the trainer (audited)
+ */
+export const postTrainerControlExperiments = async (postTrainerControlExperimentsBody?: PostTrainerControlExperimentsBody, options?: RequestInit): Promise<PostTrainerControlExperiments201> => {
+
+  return customFetch<PostTrainerControlExperiments201>(getPostTrainerControlExperimentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postTrainerControlExperimentsBody)
+  }
+);}
+
+
+
+
+
+export const getPostTrainerControlExperimentsMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlExperiments>>, TError,{data?: BodyType<PostTrainerControlExperimentsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlExperiments>>, TError,{data?: BodyType<PostTrainerControlExperimentsBody>}, TContext> => {
+
+const mutationKey = ['postTrainerControlExperiments'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainerControlExperiments>>, {data?: BodyType<PostTrainerControlExperimentsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postTrainerControlExperiments(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostTrainerControlExperimentsMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainerControlExperiments>>>
+    export type PostTrainerControlExperimentsMutationBody = BodyType<PostTrainerControlExperimentsBody> | undefined
+    export type PostTrainerControlExperimentsMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Create a new experiment on the trainer (audited)
+ */
+export const usePostTrainerControlExperiments = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlExperiments>>, TError,{data?: BodyType<PostTrainerControlExperimentsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postTrainerControlExperiments>>,
+        TError,
+        {data?: BodyType<PostTrainerControlExperimentsBody>},
+        TContext
+      > => {
+      return useMutation(getPostTrainerControlExperimentsMutationOptions(options));
+    }
+
+export const getPostTrainerControlShadowTestsUrl = () => {
+
+
+
+
+  return `/api/trainer-control/shadow-tests`
+}
+
+/**
+ * @summary Launch a shadow test on the trainer (audited)
+ */
+export const postTrainerControlShadowTests = async (postTrainerControlShadowTestsBody?: PostTrainerControlShadowTestsBody, options?: RequestInit): Promise<PostTrainerControlShadowTests201> => {
+
+  return customFetch<PostTrainerControlShadowTests201>(getPostTrainerControlShadowTestsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postTrainerControlShadowTestsBody)
+  }
+);}
+
+
+
+
+
+export const getPostTrainerControlShadowTestsMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlShadowTests>>, TError,{data?: BodyType<PostTrainerControlShadowTestsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlShadowTests>>, TError,{data?: BodyType<PostTrainerControlShadowTestsBody>}, TContext> => {
+
+const mutationKey = ['postTrainerControlShadowTests'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postTrainerControlShadowTests>>, {data?: BodyType<PostTrainerControlShadowTestsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postTrainerControlShadowTests(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostTrainerControlShadowTestsMutationResult = NonNullable<Awaited<ReturnType<typeof postTrainerControlShadowTests>>>
+    export type PostTrainerControlShadowTestsMutationBody = BodyType<PostTrainerControlShadowTestsBody> | undefined
+    export type PostTrainerControlShadowTestsMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Launch a shadow test on the trainer (audited)
+ */
+export const usePostTrainerControlShadowTests = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postTrainerControlShadowTests>>, TError,{data?: BodyType<PostTrainerControlShadowTestsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postTrainerControlShadowTests>>,
+        TError,
+        {data?: BodyType<PostTrainerControlShadowTestsBody>},
+        TContext
+      > => {
+      return useMutation(getPostTrainerControlShadowTestsMutationOptions(options));
+    }
+
+export const getListTrainerControlDatasetsUrl = (params?: ListTrainerControlDatasetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/trainer-control/datasets?${stringifiedParams}` : `/api/trainer-control/datasets`
+}
+
+/**
+ * @summary List trainer datasets
+ */
+export const listTrainerControlDatasets = async (params?: ListTrainerControlDatasetsParams, options?: RequestInit): Promise<ListTrainerControlDatasets200> => {
+
+  return customFetch<ListTrainerControlDatasets200>(getListTrainerControlDatasetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlDatasetsQueryKey = (params?: ListTrainerControlDatasetsParams,) => {
+    return [
+    `/api/trainer-control/datasets`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTrainerControlDatasetsQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlDatasets>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListTrainerControlDatasetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlDatasets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlDatasetsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlDatasets>>> = ({ signal }) => listTrainerControlDatasets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlDatasets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlDatasetsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlDatasets>>>
+export type ListTrainerControlDatasetsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List trainer datasets
+ */
+
+export function useListTrainerControlDatasets<TData = Awaited<ReturnType<typeof listTrainerControlDatasets>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListTrainerControlDatasetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlDatasets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlDatasetsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTrainerControlDatasetUrl = (id: string,) => {
+
+
+
+
+  return `/api/trainer-control/datasets/${id}`
+}
+
+/**
+ * @summary Get a trainer dataset
+ */
+export const getTrainerControlDataset = async (id: string, options?: RequestInit): Promise<GetTrainerControlDataset200> => {
+
+  return customFetch<GetTrainerControlDataset200>(getGetTrainerControlDatasetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTrainerControlDatasetQueryKey = (id: string,) => {
+    return [
+    `/api/trainer-control/datasets/${id}`
+    ] as const;
+    }
+
+
+export const getGetTrainerControlDatasetQueryOptions = <TData = Awaited<ReturnType<typeof getTrainerControlDataset>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlDataset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrainerControlDatasetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainerControlDataset>>> = ({ signal }) => getTrainerControlDataset(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlDataset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTrainerControlDatasetQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainerControlDataset>>>
+export type GetTrainerControlDatasetQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get a trainer dataset
+ */
+
+export function useGetTrainerControlDataset<TData = Awaited<ReturnType<typeof getTrainerControlDataset>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlDataset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTrainerControlDatasetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTrainerControlMemoryUrl = (params?: ListTrainerControlMemoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/trainer-control/memory?${stringifiedParams}` : `/api/trainer-control/memory`
+}
+
+/**
+ * @summary List trainer memory entries
+ */
+export const listTrainerControlMemory = async (params?: ListTrainerControlMemoryParams, options?: RequestInit): Promise<ListTrainerControlMemory200> => {
+
+  return customFetch<ListTrainerControlMemory200>(getListTrainerControlMemoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlMemoryQueryKey = (params?: ListTrainerControlMemoryParams,) => {
+    return [
+    `/api/trainer-control/memory`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTrainerControlMemoryQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlMemory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListTrainerControlMemoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlMemoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlMemory>>> = ({ signal }) => listTrainerControlMemory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlMemory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlMemoryQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlMemory>>>
+export type ListTrainerControlMemoryQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List trainer memory entries
+ */
+
+export function useListTrainerControlMemory<TData = Awaited<ReturnType<typeof listTrainerControlMemory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListTrainerControlMemoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlMemory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlMemoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTrainerControlReflectionsUrl = (params?: ListTrainerControlReflectionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/trainer-control/reflections?${stringifiedParams}` : `/api/trainer-control/reflections`
+}
+
+/**
+ * @summary List trainer reflections
+ */
+export const listTrainerControlReflections = async (params?: ListTrainerControlReflectionsParams, options?: RequestInit): Promise<ListTrainerControlReflections200> => {
+
+  return customFetch<ListTrainerControlReflections200>(getListTrainerControlReflectionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlReflectionsQueryKey = (params?: ListTrainerControlReflectionsParams,) => {
+    return [
+    `/api/trainer-control/reflections`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTrainerControlReflectionsQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlReflections>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListTrainerControlReflectionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlReflections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlReflectionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlReflections>>> = ({ signal }) => listTrainerControlReflections(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlReflections>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlReflectionsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlReflections>>>
+export type ListTrainerControlReflectionsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List trainer reflections
+ */
+
+export function useListTrainerControlReflections<TData = Awaited<ReturnType<typeof listTrainerControlReflections>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListTrainerControlReflectionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlReflections>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlReflectionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTrainerControlResearchReportsUrl = (params?: ListTrainerControlResearchReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/trainer-control/research-reports?${stringifiedParams}` : `/api/trainer-control/research-reports`
+}
+
+/**
+ * @summary List trainer research reports
+ */
+export const listTrainerControlResearchReports = async (params?: ListTrainerControlResearchReportsParams, options?: RequestInit): Promise<ListTrainerControlResearchReports200> => {
+
+  return customFetch<ListTrainerControlResearchReports200>(getListTrainerControlResearchReportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlResearchReportsQueryKey = (params?: ListTrainerControlResearchReportsParams,) => {
+    return [
+    `/api/trainer-control/research-reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTrainerControlResearchReportsQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlResearchReports>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListTrainerControlResearchReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlResearchReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlResearchReportsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlResearchReports>>> = ({ signal }) => listTrainerControlResearchReports(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlResearchReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlResearchReportsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlResearchReports>>>
+export type ListTrainerControlResearchReportsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List trainer research reports
+ */
+
+export function useListTrainerControlResearchReports<TData = Awaited<ReturnType<typeof listTrainerControlResearchReports>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListTrainerControlResearchReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlResearchReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlResearchReportsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTrainerControlResearchReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/trainer-control/research-reports/${id}`
+}
+
+/**
+ * @summary Get a trainer research report
+ */
+export const getTrainerControlResearchReport = async (id: string, options?: RequestInit): Promise<GetTrainerControlResearchReport200> => {
+
+  return customFetch<GetTrainerControlResearchReport200>(getGetTrainerControlResearchReportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTrainerControlResearchReportQueryKey = (id: string,) => {
+    return [
+    `/api/trainer-control/research-reports/${id}`
+    ] as const;
+    }
+
+
+export const getGetTrainerControlResearchReportQueryOptions = <TData = Awaited<ReturnType<typeof getTrainerControlResearchReport>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlResearchReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrainerControlResearchReportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainerControlResearchReport>>> = ({ signal }) => getTrainerControlResearchReport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlResearchReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTrainerControlResearchReportQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainerControlResearchReport>>>
+export type GetTrainerControlResearchReportQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get a trainer research report
+ */
+
+export function useGetTrainerControlResearchReport<TData = Awaited<ReturnType<typeof getTrainerControlResearchReport>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlResearchReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTrainerControlResearchReportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTrainerControlActiveModelsUrl = () => {
+
+
+
+
+  return `/api/trainer-control/active-models`
+}
+
+/**
+ * @summary List currently active models known to the trainer
+ */
+export const listTrainerControlActiveModels = async ( options?: RequestInit): Promise<ListTrainerControlActiveModels200> => {
+
+  return customFetch<ListTrainerControlActiveModels200>(getListTrainerControlActiveModelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlActiveModelsQueryKey = () => {
+    return [
+    `/api/trainer-control/active-models`
+    ] as const;
+    }
+
+
+export const getListTrainerControlActiveModelsQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlActiveModels>>, TError = ErrorType<ResearchLabUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlActiveModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlActiveModelsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlActiveModels>>> = ({ signal }) => listTrainerControlActiveModels({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlActiveModels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlActiveModelsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlActiveModels>>>
+export type ListTrainerControlActiveModelsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List currently active models known to the trainer
+ */
+
+export function useListTrainerControlActiveModels<TData = Awaited<ReturnType<typeof listTrainerControlActiveModels>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlActiveModels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlActiveModelsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListTrainerControlRunpodJobsUrl = () => {
+
+
+
+
+  return `/api/trainer-control/runpod/jobs`
+}
+
+/**
+ * @summary List RunPod pods tied to training (read from Signalium's RunPod orchestration tables)
+ */
+export const listTrainerControlRunpodJobs = async ( options?: RequestInit): Promise<ListTrainerControlRunpodJobs200> => {
+
+  return customFetch<ListTrainerControlRunpodJobs200>(getListTrainerControlRunpodJobsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTrainerControlRunpodJobsQueryKey = () => {
+    return [
+    `/api/trainer-control/runpod/jobs`
+    ] as const;
+    }
+
+
+export const getListTrainerControlRunpodJobsQueryOptions = <TData = Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrainerControlRunpodJobsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>> = ({ signal }) => listTrainerControlRunpodJobs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTrainerControlRunpodJobsQueryResult = NonNullable<Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>>
+export type ListTrainerControlRunpodJobsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List RunPod pods tied to training (read from Signalium's RunPod orchestration tables)
+ */
+
+export function useListTrainerControlRunpodJobs<TData = Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTrainerControlRunpodJobs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTrainerControlRunpodJobsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTrainerControlRunpodGpuUtilizationUrl = () => {
+
+
+
+
+  return `/api/trainer-control/runpod/gpu-utilization`
+}
+
+/**
+ * @summary GPU utilization for currently running RunPod pods
+ */
+export const getTrainerControlRunpodGpuUtilization = async ( options?: RequestInit): Promise<GetTrainerControlRunpodGpuUtilization200> => {
+
+  return customFetch<GetTrainerControlRunpodGpuUtilization200>(getGetTrainerControlRunpodGpuUtilizationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTrainerControlRunpodGpuUtilizationQueryKey = () => {
+    return [
+    `/api/trainer-control/runpod/gpu-utilization`
+    ] as const;
+    }
+
+
+export const getGetTrainerControlRunpodGpuUtilizationQueryOptions = <TData = Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrainerControlRunpodGpuUtilizationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>> = ({ signal }) => getTrainerControlRunpodGpuUtilization({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTrainerControlRunpodGpuUtilizationQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>>
+export type GetTrainerControlRunpodGpuUtilizationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary GPU utilization for currently running RunPod pods
+ */
+
+export function useGetTrainerControlRunpodGpuUtilization<TData = Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlRunpodGpuUtilization>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTrainerControlRunpodGpuUtilizationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTrainerControlTrainingCostsUrl = () => {
+
+
+
+
+  return `/api/trainer-control/training-costs`
+}
+
+/**
+ * @summary Aggregate training GPU costs (accrued + current active hourly rate)
+ */
+export const getTrainerControlTrainingCosts = async ( options?: RequestInit): Promise<GetTrainerControlTrainingCosts200> => {
+
+  return customFetch<GetTrainerControlTrainingCosts200>(getGetTrainerControlTrainingCostsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTrainerControlTrainingCostsQueryKey = () => {
+    return [
+    `/api/trainer-control/training-costs`
+    ] as const;
+    }
+
+
+export const getGetTrainerControlTrainingCostsQueryOptions = <TData = Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrainerControlTrainingCostsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>> = ({ signal }) => getTrainerControlTrainingCosts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTrainerControlTrainingCostsQueryResult = NonNullable<Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>>
+export type GetTrainerControlTrainingCostsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Aggregate training GPU costs (accrued + current active hourly rate)
+ */
+
+export function useGetTrainerControlTrainingCosts<TData = Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTrainerControlTrainingCosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTrainerControlTrainingCostsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -74,6 +74,7 @@ import AdminResearchLabTraining from "@/pages/admin/research-lab/training";
 import AdminResearchLabValidation from "@/pages/admin/research-lab/validation";
 import AdminResearchLabShadowTesting from "@/pages/admin/research-lab/shadow-testing";
 import AdminResearchLabDeployment from "@/pages/admin/research-lab/deployment";
+import AdminTrainerControl from "@/pages/admin/trainer-control";
 import AdminResearchLabResearchIntelligence from "@/pages/admin/research-lab/research-intelligence";
 import AdminResearchLabGenealogy from "@/pages/admin/research-lab/genealogy";
 
@@ -210,6 +211,7 @@ function AppRoutes() {
               <Route path="/admin/research-lab/validation"><ProtectedRoute component={AdminResearchLabValidation} /></Route>
               <Route path="/admin/research-lab/shadow-testing"><ProtectedRoute component={AdminResearchLabShadowTesting} /></Route>
               <Route path="/admin/research-lab/deployment"><ProtectedRoute component={AdminResearchLabDeployment} /></Route>
+              <Route path="/admin/trainer-control"><ProtectedRoute component={AdminTrainerControl} /></Route>
               <Route path="/admin/research-lab/research-intelligence"><ProtectedRoute component={AdminResearchLabResearchIntelligence} /></Route>
               <Route path="/admin/research-lab/genealogy"><ProtectedRoute component={AdminResearchLabGenealogy} /></Route>
 
