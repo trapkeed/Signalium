@@ -12,3 +12,4 @@
 - [S26 Resilience, HA & DR](s26-resilience-dr.md) — DB-backed queue/LISTEN-NOTIFY instead of Redis, honest backup/secret-rotation patterns, bucket-path parsing and backoff off-by-one bugs to avoid.
 - [S27 Deployment Governance Visibility](s27-deployment-governance.md) — DB-level field allowlisting (not tier-based post-filtering), tier resolution via effective-roles (role-assumption-aware), split 401/403/503 UI states.
 - [S28 Compliance and Audit Infrastructure](s28-compliance-audit.md) — hash-chain vs retention pruning, exhaustive PII anonymization across linked tables, unique-column bulk-update pitfall, dedup race backstop pattern.
+- [S29 Security Hardening and Production Lockdown](s29-security-hardening.md) — idle-timeout fail-closed pattern, CORS allowlist fail-closed default, hidden-endpoint audit method, maker-checker table design.

@@ -23,6 +23,10 @@ export const eaBuildsTable = pgTable("ea_builds", {
   }>().notNull(),
   storageObjectPath: text("storage_object_path").notNull(),
   checksum: text("checksum").notNull(),
+  // S29 — HMAC signature over `checksum`, proving this build artifact was
+  // produced by this server and hasn't been re-packaged/tampered with.
+  // Nullable so pre-S29 builds remain valid rows without a backfill.
+  signature: text("signature"),
   fileSizeBytes: integer("file_size_bytes").notNull(),
   downloadCount: integer("download_count").notNull().default(0),
   lastDownloadedAt: timestamp("last_downloaded_at", { withTimezone: true }),

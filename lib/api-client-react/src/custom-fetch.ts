@@ -349,6 +349,14 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
+  // CSRF mitigation (see api-server's csrfMitigation middleware): a custom
+  // header on every state-changing request, which a cross-site form/img/
+  // script tag can never attach. Safe methods are exempt server-side, but
+  // setting it unconditionally here is simplest and harmless.
+  if (!headers.has("x-signalium-client")) {
+    headers.set("x-signalium-client", "1");
+  }
+
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
   if (_authTokenGetter && !headers.has("authorization")) {

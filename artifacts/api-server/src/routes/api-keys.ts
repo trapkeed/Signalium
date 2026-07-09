@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 import { checkApiAccess } from "../lib/entitlementEngine";
 import { logAudit } from "../lib/auditLog";
+import { generateSigningSecret } from "../lib/eaRequestSigning";
 
 const router = Router();
 
@@ -40,7 +41,8 @@ router.get("/", async (req, res) => {
   try {
     const keys = await db.select().from(apiKeysTable).where(eq(apiKeysTable.userId, userId));
     const withExpiry = await Promise.all(keys.map(withLazyExpiry));
-    return res.json(withExpiry);
+    // Never re-expose the signing secret after issuance.
+    return res.json(withExpiry.map(({ signingSecret, ...rest }) => rest));
   } catch (err) {
     req.log.error(err, "Failed to list API keys");
     return res.status(500).json({ error: "Internal server error" });
@@ -62,6 +64,9 @@ router.post("/", async (req, res) => {
   try {
     const { rawKey, keyHash, keyPrefix } = generateRawKey();
     const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000) : null;
+    // S29 — every newly-issued key gets a signing secret so EA HTTP requests
+    // made with it are signed + replay-protected (see eaRequestSigning.ts).
+    const signingSecret = generateSigningSecret();
 
     const [keyRow] = await db.insert(apiKeysTable).values({
       userId,
@@ -70,14 +75,19 @@ router.post("/", async (req, res) => {
       keyPrefix,
       status: "active",
       expiresAt,
+      signingSecret,
     }).returning();
 
     await logAudit(userId, "api_key.created", "api_key", String(keyRow.id), { name });
 
-    // Return full key ONCE — never stored in plaintext
+    // Return full key + signing secret ONCE — neither is stored in plaintext
+    // recoverable form after this point (the key is one-way hashed; the
+    // secret is stored so the server can verify signatures, but is never
+    // returned by any subsequent read endpoint).
     return res.status(201).json({
       ...keyRow,
       key: rawKey,
+      signingSecret,
       warning: "Save this key — it will not be shown again.",
     });
   } catch (err) {
@@ -105,7 +115,8 @@ router.post("/:id/revoke", async (req, res) => {
       .where(eq(apiKeysTable.id, id))
       .returning();
     await logAudit(userId, "api_key.revoked", "api_key", String(id), { name: existing.name });
-    return res.json(key);
+    const { signingSecret, ...safeKey } = key;
+    return res.json(safeKey);
   } catch (err) {
     req.log.error(err, "Failed to revoke API key");
     return res.status(500).json({ error: "Internal server error" });
@@ -130,17 +141,20 @@ router.post("/:id/rotate", async (req, res) => {
     }
 
     const { rawKey, keyHash, keyPrefix } = generateRawKey();
+    const signingSecret = generateSigningSecret();
     const [key] = await db.update(apiKeysTable)
-      .set({ keyHash, keyPrefix, status: "active" })
+      .set({ keyHash, keyPrefix, status: "active", signingSecret })
       .where(eq(apiKeysTable.id, id))
       .returning();
 
     await logAudit(userId, "api_key.rotated", "api_key", String(id), { name: existing.name });
 
+    const { signingSecret: _omit, ...safeKey } = key;
     return res.json({
-      ...key,
+      ...safeKey,
       key: rawKey,
-      warning: "Save this key — it will not be shown again. Existing EA terminals must be updated with the new key.",
+      signingSecret,
+      warning: "Save this key and signing secret — neither will be shown again. Existing EA terminals must be updated.",
     });
   } catch (err) {
     req.log.error(err, "Failed to rotate API key");
@@ -207,7 +221,8 @@ router.get("/all", requireAdmin, async (req, res) => {
       const [{ registrationCount }] = await db.select({ registrationCount: count() })
         .from(eaRegistrationsTable)
         .where(eq(eaRegistrationsTable.apiKeyId, key.id));
-      return { ...key, registrationCount };
+      const { signingSecret, ...safeKey } = key;
+      return { ...safeKey, registrationCount };
     }));
 
     return res.json(withUsage);
@@ -230,7 +245,8 @@ router.post("/:id/suspend", requireAdmin, async (req, res) => {
       .returning();
     if (!key) return res.status(404).json({ error: "Not found" });
     await logAudit(actorUserId!, "api_key.suspended", "api_key", String(id), { name: key.name, userId: key.userId });
-    return res.json(key);
+    const { signingSecret, ...safeKey } = key;
+    return res.json(safeKey);
   } catch (err) {
     req.log.error(err, "Failed to suspend API key");
     return res.status(500).json({ error: "Internal server error" });
@@ -255,7 +271,8 @@ router.post("/:id/reactivate", requireAdmin, async (req, res) => {
       .where(eq(apiKeysTable.id, id))
       .returning();
     await logAudit(actorUserId!, "api_key.reactivated", "api_key", String(id), { name: existing.name, userId: existing.userId });
-    return res.json(key);
+    const { signingSecret, ...safeKey } = key;
+    return res.json(safeKey);
   } catch (err) {
     req.log.error(err, "Failed to reactivate API key");
     return res.status(500).json({ error: "Internal server error" });

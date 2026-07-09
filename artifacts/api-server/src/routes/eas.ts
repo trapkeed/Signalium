@@ -10,8 +10,14 @@ import {
   GetEaDownloadTokenParams,
 } from "@workspace/api-zod";
 import crypto from "crypto";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
+
+// S29 — the catalog listing/detail views are intentionally public (browsing
+// available EAs is part of the marketing/pricing flow), but creating,
+// editing, or deleting catalog entries had no auth at all — restrict those
+// to admins below.
 
 router.get("/", async (req, res) => {
   try {
@@ -23,7 +29,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   const parsed = CreateEaBody.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
@@ -58,7 +64,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", requireAdmin, async (req, res) => {
   const params = UpdateEaParams.safeParse({ id: Number(req.params.id) });
   const body = UpdateEaBody.safeParse(req.body);
   if (!params.success || !body.success) return res.status(400).json({ error: "Invalid request" });
@@ -76,7 +82,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   const parsed = DeleteEaParams.safeParse({ id: Number(req.params.id) });
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 

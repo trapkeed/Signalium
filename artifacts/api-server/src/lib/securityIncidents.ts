@@ -8,6 +8,7 @@ import { db, securityIncidentsTable, type SecurityIncident } from "@workspace/db
 import { and, eq, gte } from "drizzle-orm";
 import { logger } from "./logger";
 import { broadcastOpsEvent } from "../ws/adminOpsGateway";
+import { maybeAutoBlockIp } from "../middlewares/ipReputationGate";
 
 export type SecurityIncidentType = typeof securityIncidentsTable.$inferInsert["type"];
 export type SecurityIncidentSeverity = typeof securityIncidentsTable.$inferInsert["severity"];
@@ -73,6 +74,7 @@ export async function emitSecurityIncident(input: EmitSecurityIncidentInput): Pr
 
     logger.warn({ incidentId: row?.id, type: input.type, severity: input.severity }, "SecurityIncident: emitted");
     if (row) broadcastOpsEvent("security_incident.new", row);
+    if (input.ipAddress) void maybeAutoBlockIp(input.ipAddress);
     return row ?? null;
   } catch (err) {
     logger.warn({ err }, "Failed to emit security incident");

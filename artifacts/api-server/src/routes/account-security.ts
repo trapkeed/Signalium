@@ -15,6 +15,10 @@ function computeFingerprint(ip?: string, deviceType?: string, browserName?: stri
   return crypto.createHash("sha256").update(`${ip ?? ""}|${deviceType ?? ""}|${browserName ?? ""}`).digest("hex");
 }
 
+// S29 — max concurrent active sessions per user; oldest-by-activity beyond
+// this cap are revoked on each new login.
+const MAX_CONCURRENT_SESSIONS = 5;
+
 const SUSPICIOUS_LOCK_THRESHOLD = 3;
 const SUSPICIOUS_WINDOW_MS = 24 * 60 * 60 * 1000;
 const UNLOCK_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -161,6 +165,26 @@ router.post("/sync-login", async (req, res) => {
     await logAudit(userId, "user.login_succeeded", "user", userId, {
       isNewDevice, isSuspicious, city: activity.city ?? null, country: activity.country ?? null,
     });
+
+    // S29 — concurrent session limit: evict the oldest active session(s)
+    // beyond MAX_CONCURRENT_SESSIONS. Never evicts the session that just
+    // authenticated. Best-effort — a Clerk lookup failure here must not
+    // block the login itself.
+    try {
+      const { data: activeSessions } = await clerkClient.sessions.getSessionList({ userId, status: "active" });
+      const sorted = [...activeSessions].sort((a, b) => b.lastActiveAt - a.lastActiveAt);
+      const toEvict = sorted.filter((s) => s.id !== sessionId).slice(MAX_CONCURRENT_SESSIONS - 1);
+      for (const stale of toEvict) {
+        await clerkClient.sessions.revokeSession(stale.id);
+      }
+      if (toEvict.length > 0) {
+        await logAudit(userId, "user.session_evicted", "user", userId, {
+          evictedSessionIds: toEvict.map((s) => s.id), reason: "concurrent_session_limit",
+        });
+      }
+    } catch (err) {
+      req.log.warn(err, "Failed to enforce concurrent session limit");
+    }
 
     let security = await getOrCreateSecurity(userId);
 

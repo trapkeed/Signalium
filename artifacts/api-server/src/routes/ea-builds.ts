@@ -21,6 +21,7 @@ import {
 } from "../lib/eaBuilder";
 import { ObjectNotFoundError } from "../lib/objectStorage";
 import { checkEaGenerationAccess, resolveCurrentSubscription, type EntitlementDenialCode } from "../lib/entitlementEngine";
+import { signArtifact } from "../lib/requestSigning";
 
 const router = Router();
 
@@ -100,6 +101,13 @@ router.post("/generate", async (req, res) => {
     const source = generateMql5Source(metadata);
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
+    // S29 — checksum alone only detects accidental corruption; it doesn't
+    // prove the artifact came from this server unmodified, since anyone
+    // could recompute a checksum for a tampered file. Sign it with a server
+    // secret (SESSION_SECRET-keyed, see requestSigning.ts) so
+    // `verifyEaBuildSignature` below can be used at connect-time to reject
+    // tampered/re-packaged binaries.
+    const signature = signArtifact(checksum);
     const storageObjectPath = await storeEaBuild(buildId, binary);
 
     const [build] = await db.insert(eaBuildsTable).values({
@@ -114,10 +122,11 @@ router.post("/generate", async (req, res) => {
       metadata,
       storageObjectPath,
       checksum,
+      signature,
       fileSizeBytes: binary.length,
     }).returning();
 
-    await logAudit(build.id, userId, "generated", { fileName, checksum });
+    await logAudit(build.id, userId, "generated", { fileName, checksum, signed: true });
 
     return res.status(201).json(build);
   } catch (err) {
@@ -202,6 +211,12 @@ router.get("/:buildId/download", async (req, res) => {
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Content-Disposition", `attachment; filename="${build.fileName}"`);
     if (metadata.size) res.setHeader("Content-Length", String(metadata.size));
+    res.setHeader("X-Ea-Build-Checksum", build.checksum);
+    // S29 — signature over the checksum, verifiable with signArtifact-style
+    // HMAC against the same checksum (see requestSigning.ts). Lets a
+    // downloading client (or the gateway on next connect) prove this build
+    // was produced by this server and not re-packaged in transit.
+    if (build.signature) res.setHeader("X-Ea-Build-Signature", build.signature);
 
     const stream = file.createReadStream();
     stream.on("error", (err) => {
@@ -251,6 +266,7 @@ router.post("/:buildId/regenerate", async (req, res) => {
     const source = generateMql5Source(metadata);
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
+    const signature = signArtifact(checksum);
     const storageObjectPath = await storeEaBuild(newBuildId, binary);
 
     const [newBuild] = await db.insert(eaBuildsTable).values({
@@ -265,6 +281,7 @@ router.post("/:buildId/regenerate", async (req, res) => {
       metadata,
       storageObjectPath,
       checksum,
+      signature,
       fileSizeBytes: binary.length,
     }).returning();
 

@@ -6,6 +6,15 @@ import { GetUserParams, UpdateUserParams, UpdateUserBody, UpdateMyUserBody } fro
 import { requireAdmin, requireSuperAdmin, getUserRole } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import { canAssignRole, ROLE_LEVEL, type UserRole } from "../lib/roles";
+import { adminActionApprovalsTable } from "@workspace/db";
+import { and, eq as eqOp } from "drizzle-orm";
+
+// S29 — maker-checker: escalating a user TO admin or super_admin requires a
+// second, different super_admin to approve before it takes effect. Every
+// other role assignment (demotions, staff, etc) applies immediately as
+// before — this only gates the single highest-risk action (self-service
+// privilege escalation via a compromised or malicious super_admin account).
+const ESCALATION_ROLES: readonly UserRole[] = ["admin", "super_admin"];
 
 const router = Router();
 
@@ -133,6 +142,34 @@ router.patch("/:id", requireAdmin, async (req, res) => {
           error: `Cannot assign role '${body.data.role}' — target role must be below your own level`,
         });
       }
+
+      // S29 — maker-checker gate for escalation to admin/super_admin.
+      if (ESCALATION_ROLES.includes(body.data.role)) {
+        const [existingApproval] = await db.select().from(adminActionApprovalsTable).where(
+          and(eqOp(adminActionApprovalsTable.actionType, "role_escalation"), eqOp(adminActionApprovalsTable.targetId, params.data.id)),
+        );
+
+        if (existingApproval?.status === "approved" && (existingApproval.payload as { role?: string }).role === body.data.role) {
+          // A different super_admin already approved this exact escalation — consume it and proceed.
+          await db.delete(adminActionApprovalsTable).where(eqOp(adminActionApprovalsTable.id, existingApproval.id));
+        } else {
+          if (existingApproval) {
+            await db.delete(adminActionApprovalsTable).where(eqOp(adminActionApprovalsTable.id, existingApproval.id));
+          }
+          const [approval] = await db.insert(adminActionApprovalsTable).values({
+            actionType: "role_escalation",
+            requestedBy: actorUserId,
+            targetId: params.data.id,
+            payload: { role: body.data.role },
+          }).returning();
+          await logAudit(actorUserId, "role_escalation.requested", "user", params.data.id, { role: body.data.role, approvalId: approval.id });
+          return res.status(202).json({
+            pendingApproval: true,
+            approvalId: approval.id,
+            message: `Escalating this user to '${body.data.role}' requires approval from a different super admin before it takes effect.`,
+          });
+        }
+      }
     }
 
     const [user] = await db.update(usersTable)
@@ -164,6 +201,66 @@ router.patch("/:id", requireAdmin, async (req, res) => {
     return res.json({ ...user, subscriptionStatus: null });
   } catch (err) {
     req.log.error(err, "Failed to update user");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── S29 — role-escalation maker-checker approvals ─────────────────────────
+
+router.get("/role-escalations/pending", requireSuperAdmin, async (req, res) => {
+  try {
+    const pending = await db.select().from(adminActionApprovalsTable)
+      .where(and(eqOp(adminActionApprovalsTable.actionType, "role_escalation"), eqOp(adminActionApprovalsTable.status, "pending")));
+    return res.json(pending);
+  } catch (err) {
+    req.log.error(err, "Failed to list pending role escalations");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/role-escalations/:approvalId/approve", requireSuperAdmin, async (req, res) => {
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+  const approvalId = Number(req.params.approvalId);
+  if (isNaN(approvalId)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [approval] = await db.select().from(adminActionApprovalsTable).where(eqOp(adminActionApprovalsTable.id, approvalId));
+    if (!approval || approval.status !== "pending") return res.status(404).json({ error: "No pending approval found" });
+    if (approval.requestedBy === actorUserId) {
+      return res.status(403).json({ error: "A different super admin must approve this — you cannot approve your own request" });
+    }
+
+    const [updated] = await db.update(adminActionApprovalsTable)
+      .set({ status: "approved", approvedBy: actorUserId, resolvedAt: new Date() })
+      .where(eqOp(adminActionApprovalsTable.id, approvalId))
+      .returning();
+    await logAudit(actorUserId, "role_escalation.approved", "user", approval.targetId, { approvalId, role: (approval.payload as { role?: string }).role });
+    return res.json({ ...updated, note: "Approved. Re-submit the original role change to apply it now." });
+  } catch (err) {
+    req.log.error(err, "Failed to approve role escalation");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/role-escalations/:approvalId/reject", requireSuperAdmin, async (req, res) => {
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+  const approvalId = Number(req.params.approvalId);
+  if (isNaN(approvalId)) return res.status(400).json({ error: "Invalid id" });
+
+  try {
+    const [approval] = await db.select().from(adminActionApprovalsTable).where(eqOp(adminActionApprovalsTable.id, approvalId));
+    if (!approval || approval.status !== "pending") return res.status(404).json({ error: "No pending approval found" });
+
+    const [updated] = await db.update(adminActionApprovalsTable)
+      .set({ status: "rejected", approvedBy: actorUserId, resolvedAt: new Date() })
+      .where(eqOp(adminActionApprovalsTable.id, approvalId))
+      .returning();
+    await logAudit(actorUserId, "role_escalation.rejected", "user", approval.targetId, { approvalId });
+    return res.json(updated);
+  } catch (err) {
+    req.log.error(err, "Failed to reject role escalation");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

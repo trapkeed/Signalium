@@ -1,8 +1,14 @@
 import { Router } from "express";
 import { db, smtpSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/requireAdmin";
 
 const router = Router();
+
+// S29 — this router had no auth middleware at all: any unauthenticated
+// caller could read/create/update outbound-mail credentials (including
+// SMTP passwords) and trigger a test send. Gate the whole router on admin.
+router.use(requireAdmin);
 
 // GET /smtp — admin: get current SMTP config (masked password)
 router.get("/", async (req, res) => {

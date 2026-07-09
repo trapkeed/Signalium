@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { emitSecurityIncident } from "../lib/securityIncidents";
 import { recordEaRequestAndCheckExcessive, recordApiRequestAndCheckAbuse, recordFailedAuthAndCheckBruteForce } from "../lib/rateTracking";
+import { verifyEaRequestSignature } from "../lib/eaRequestSigning";
 
 export function hashApiKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
@@ -91,7 +92,19 @@ export async function resolveApiKeyAuth(rawApiKey: string, hardwareId: string, i
   return { userId: key.userId, apiKeyId: key.id, eaRegistrationId: registration.id };
 }
 
-/** Express middleware wrapper around resolveApiKeyAuth for HTTP routes (x-api-key / x-hardware-id headers). */
+/**
+ * Express middleware wrapper around resolveApiKeyAuth for HTTP routes
+ * (x-api-key / x-hardware-id headers).
+ *
+ * S29 — also enforces request signing + replay protection when the caller
+ * has a `signingSecret` provisioned (see eaRequestSigning.ts): `x-signature`
+ * (HMAC-SHA256 over method+path+timestamp+nonce+body), `x-timestamp`
+ * (rejects if outside a 5-minute skew window), and `x-nonce` (rejected if
+ * seen before within that window). Legacy keys without a signing secret
+ * fall back to key+hardwareId-only auth so existing EA installs aren't
+ * broken by this rollout — new keys are provisioned with a secret by
+ * default (see api-keys.ts).
+ */
 export async function requireApiKeyAuth(req: Request, res: Response, next: NextFunction) {
   const rawApiKey = req.headers["x-api-key"] as string | undefined;
   const hardwareId = req.headers["x-hardware-id"] as string | undefined;
@@ -102,6 +115,32 @@ export async function requireApiKeyAuth(req: Request, res: Response, next: NextF
   const result = await resolveApiKeyAuth(rawApiKey, hardwareId, req.ip);
   if ("error" in result) {
     return res.status(result.status).json({ error: result.error, code: result.code });
+  }
+
+  const [key] = await db.select({ signingSecret: apiKeysTable.signingSecret }).from(apiKeysTable).where(eq(apiKeysTable.id, result.apiKeyId));
+  if (key?.signingSecret) {
+    const signature = req.headers["x-signature"] as string | undefined;
+    const timestamp = req.headers["x-timestamp"] as string | undefined;
+    const nonce = req.headers["x-nonce"] as string | undefined;
+    const verification = verifyEaRequestSignature({
+      secret: key.signingSecret,
+      method: req.method,
+      path: req.path,
+      body: req.rawBody ?? Buffer.alloc(0),
+      signature, timestamp, nonce,
+    });
+    if (!verification.ok) {
+      void emitSecurityIncident({
+        type: "invalid_request_signature",
+        severity: "high",
+        message: `EA request signature check failed for API key ${result.apiKeyId}: ${verification.reason}`,
+        userId: result.userId,
+        apiKeyId: result.apiKeyId,
+        ipAddress: req.ip,
+        scopeKey: verification.reason,
+      });
+      return res.status(401).json({ error: `Invalid request signature: ${verification.reason}`, code: "INVALID_SIGNATURE" });
+    }
   }
 
   req.eaAuth = result;

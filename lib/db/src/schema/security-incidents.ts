@@ -18,6 +18,8 @@ export const securityIncidentsTable = pgTable("security_incidents", {
       "abnormal_trading_activity",
       // S28 — compliance-driven login anomaly clustering
       "login_anomaly_cluster",
+      // S29 — EA request signature/replay verification failure
+      "invalid_request_signature",
     ],
   }).notNull(),
   severity: text("severity", { enum: ["low", "medium", "high", "critical"] }).notNull().default("medium"),
