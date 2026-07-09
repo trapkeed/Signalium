@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getAuth } from "../lib/auth";
-import { db, runpodPodsTable, runpodBudgetConfigTable, runpodWorkerCredentialsTable } from "@workspace/db";
+import { db, runpodPodsTable, runpodWorkerCredentialsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
@@ -15,7 +15,7 @@ import {
   getRunpodLaunchDefaults,
   resolveTrustedGpuCost,
 } from "../lib/runpod/client";
-import { checkBudgetForLaunch, getBudgetConfig } from "../lib/runpod/budget";
+import { checkBudgetForLaunch, getBudgetConfig, setBudgetConfig } from "../lib/runpod/budget";
 import { pollRunpodPod } from "../lib/runpod/monitor";
 import { issueWorkerCredential, rotateWorkerCredential, revokeWorkerCredential, listCredentialsForPod } from "../lib/runpod/credentials";
 
@@ -48,16 +48,14 @@ router.put("/budget", async (req, res) => {
   };
 
   try {
-    const patch: Partial<typeof runpodBudgetConfigTable.$inferInsert> = { updatedBy: userId!, updatedAt: new Date() };
+    const patch: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null } = {};
     if (maxHourlyCostUsd !== undefined) patch.maxHourlyCostUsd = maxHourlyCostUsd;
     if (maxActivePods !== undefined) patch.maxActivePods = maxActivePods;
     if ("autoShutdownIdleMinutes" in req.body) patch.autoShutdownIdleMinutes = autoShutdownIdleMinutes ?? null;
 
-    const [result] = await db
-      .insert(runpodBudgetConfigTable)
-      .values({ id: "global", ...patch })
-      .onConflictDoUpdate({ target: runpodBudgetConfigTable.id, set: patch })
-      .returning();
+    // Budget caps are stored in the encrypted admin-secrets vault (same
+    // store as the RunPod API key / GPU pricing), not a plain DB table.
+    const result = await setBudgetConfig(patch, userId!);
 
     await logAudit(userId!, "runpod_budget.updated", "runpod_budget_config", "global", patch);
     return res.json(result);

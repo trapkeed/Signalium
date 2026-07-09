@@ -1,5 +1,5 @@
 /**
- * Task #4 — RunPod API client.
+ * RunPod API client.
  *
  * All RunPod credentials are vault-resolved (vault-first, env fallback via
  * `resolveManagedConfig`) and never leave this module/server — the trainer
@@ -35,9 +35,11 @@ async function graphql<T>(query: string, variables?: Record<string, unknown>): P
   if (!apiKey) throw new RunpodNotConfiguredError();
 
   return runpodBreaker.execute(async () => {
-    const res = await fetch(`${RUNPOD_GRAPHQL_URL}?api_key=${encodeURIComponent(apiKey)}`, {
+    // Auth via header, not query string — query params are far more likely
+    // to be captured in access logs, proxies, or error traces than headers.
+    const res = await fetch(RUNPOD_GRAPHQL_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({ query, variables }),
       signal: AbortSignal.timeout(15_000),
     });

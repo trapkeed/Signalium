@@ -1,5 +1,5 @@
 /**
- * Task #4 — RunPod GPU orchestration. Signalium owns all RunPod
+ * RunPod GPU orchestration. Signalium owns all RunPod
  * credentials/lifecycle; the trainer never holds a standing RunPod API key
  * and instead receives short-lived scoped worker credentials for a specific
  * launched pod (see runpodWorkerCredentialsTable).
@@ -69,18 +69,10 @@ export const runpodPodsTable = pgTable(
 
 export type RunpodPod = typeof runpodPodsTable.$inferSelect;
 
-// ─── Budget configuration (singleton row, id = "global") ────────────────────
-
-export const runpodBudgetConfigTable = pgTable("runpod_budget_config", {
-  id: text("id").primaryKey().default("global"),
-  maxHourlyCostUsd: real("max_hourly_cost_usd").notNull().default(10),
-  maxActivePods: integer("max_active_pods").notNull().default(2),
-  autoShutdownIdleMinutes: integer("auto_shutdown_idle_minutes"),
-  updatedBy: text("updated_by"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export type RunpodBudgetConfig = typeof runpodBudgetConfigTable.$inferSelect;
+// Budget caps (max hourly cost, max active pods, auto-shutdown idle minutes)
+// are stored in the encrypted admin-secrets vault (see lib/runpod/budget.ts
+// in api-server), not a DB table — keeps all RunPod policy config in the
+// same vault-first store as the API key and GPU pricing.
 
 // ─── Scoped worker credentials ───────────────────────────────────────────────
 // Opaque bearer tokens (hashed at rest, like API keys) that Signalium issues

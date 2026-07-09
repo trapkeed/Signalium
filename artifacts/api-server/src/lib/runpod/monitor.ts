@@ -1,5 +1,5 @@
 /**
- * Task #4 — periodic polling of active RunPod pods for status/cost/
+ * periodic polling of active RunPod pods for status/cost/
  * utilization, mirroring the marketData health-sweep pattern (health.ts).
  */
 import { db, runpodPodsTable } from "@workspace/db";

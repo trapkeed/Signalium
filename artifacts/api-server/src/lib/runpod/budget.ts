@@ -1,25 +1,72 @@
 /**
- * Task #4 — budget enforcement for RunPod pod launches. Refuses to launch a
- * pod that would exceed the configured max hourly cost or max active pod
- * count, so an admin can bound GPU spend from one place.
+ * Budget enforcement for RunPod pod launches. Refuses to launch a pod that
+ * would exceed the configured max hourly cost or max active pod count, so
+ * an admin can bound GPU spend from one place.
+ *
+ * Caps live in the encrypted admin-secrets vault (vault-first, env fallback
+ * via `resolveManagedConfig`) rather than a plain DB table — this keeps all
+ * RunPod-related configuration (API key, GPU pricing, budget caps) in the
+ * same vault-first store instead of splitting policy across two systems.
  */
-import { db, runpodBudgetConfigTable, runpodPodsTable } from "@workspace/db";
+import { db, adminSecretsTable } from "@workspace/db";
 import { inArray } from "drizzle-orm";
+import { runpodPodsTable } from "@workspace/db";
+import { resolveManagedConfig } from "../secretsVault";
+import { encryptSecret } from "../secretsVault";
 
 const ACTIVE_STATUSES = ["pending", "provisioning", "running", "restarting"] as const;
 
-export async function getBudgetConfig() {
-  const [row] = await db.select().from(runpodBudgetConfigTable);
-  return (
-    row ?? {
-      id: "global",
-      maxHourlyCostUsd: 10,
-      maxActivePods: 2,
-      autoShutdownIdleMinutes: null,
-      updatedBy: null,
-      updatedAt: new Date(),
-    }
-  );
+const DEFAULT_MAX_HOURLY_COST_USD = 10;
+const DEFAULT_MAX_ACTIVE_PODS = 2;
+
+export interface RunpodBudgetConfig {
+  maxHourlyCostUsd: number;
+  maxActivePods: number;
+  autoShutdownIdleMinutes: number | null;
+}
+
+export async function getBudgetConfig(): Promise<RunpodBudgetConfig> {
+  const [maxHourlyCostUsdRaw, maxActivePodsRaw, autoShutdownIdleMinutesRaw] = await Promise.all([
+    resolveManagedConfig("runpod.max_hourly_cost_usd", "RUNPOD_MAX_HOURLY_COST_USD"),
+    resolveManagedConfig("runpod.max_active_pods", "RUNPOD_MAX_ACTIVE_PODS"),
+    resolveManagedConfig("runpod.auto_shutdown_idle_minutes", "RUNPOD_AUTO_SHUTDOWN_IDLE_MINUTES"),
+  ]);
+
+  const maxHourlyCostUsd = maxHourlyCostUsdRaw !== null ? Number(maxHourlyCostUsdRaw) : DEFAULT_MAX_HOURLY_COST_USD;
+  const maxActivePods = maxActivePodsRaw !== null ? Number(maxActivePodsRaw) : DEFAULT_MAX_ACTIVE_PODS;
+  const autoShutdownIdleMinutes = autoShutdownIdleMinutesRaw !== null ? Number(autoShutdownIdleMinutesRaw) : null;
+
+  return {
+    maxHourlyCostUsd: Number.isFinite(maxHourlyCostUsd) ? maxHourlyCostUsd : DEFAULT_MAX_HOURLY_COST_USD,
+    maxActivePods: Number.isFinite(maxActivePods) ? maxActivePods : DEFAULT_MAX_ACTIVE_PODS,
+    autoShutdownIdleMinutes: autoShutdownIdleMinutes !== null && Number.isFinite(autoShutdownIdleMinutes) ? autoShutdownIdleMinutes : null,
+  };
+}
+
+/** Upserts a single vault key, keeping RunPod budget config in the same encrypted store as the API key/GPU pricing. */
+async function setVaultConfig(key: string, value: string, updatedBy: string): Promise<void> {
+  const encryptedValue = encryptSecret(value);
+  await db
+    .insert(adminSecretsTable)
+    .values({ key, encryptedValue, category: "other", description: "RunPod budget/config value", updatedBy })
+    .onConflictDoUpdate({
+      target: adminSecretsTable.key,
+      set: { encryptedValue, updatedBy, updatedAt: new Date() },
+    });
+}
+
+export async function setBudgetConfig(
+  input: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null },
+  updatedBy: string,
+): Promise<RunpodBudgetConfig> {
+  const writes: Promise<void>[] = [];
+  if (input.maxHourlyCostUsd !== undefined) writes.push(setVaultConfig("runpod.max_hourly_cost_usd", String(input.maxHourlyCostUsd), updatedBy));
+  if (input.maxActivePods !== undefined) writes.push(setVaultConfig("runpod.max_active_pods", String(input.maxActivePods), updatedBy));
+  if (input.autoShutdownIdleMinutes !== undefined) {
+    writes.push(setVaultConfig("runpod.auto_shutdown_idle_minutes", input.autoShutdownIdleMinutes === null ? "" : String(input.autoShutdownIdleMinutes), updatedBy));
+  }
+  await Promise.all(writes);
+  return getBudgetConfig();
 }
 
 export interface BudgetCheckResult {

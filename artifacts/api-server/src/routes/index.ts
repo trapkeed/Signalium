@@ -130,7 +130,7 @@ router.use("/onboarding", onboardingRouter);
 router.use("/site-content", siteContentRouter);
 // Secure admin panel for API keys / env-style secrets (encrypted at rest, super_admin only)
 router.use("/admin/secrets", adminSecretsRouter);
-// Task #4: RunPod GPU orchestration — pod lifecycle, budget enforcement, worker credentials
+// RunPod GPU orchestration — pod lifecycle, budget enforcement, worker credentials
 router.use("/runpod", runpodRouter);
 
 export default router;

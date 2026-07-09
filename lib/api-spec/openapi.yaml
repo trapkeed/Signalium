@@ -5991,7 +5991,7 @@ paths:
 
   /runpod/config:
     get:
-      summary: Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+      summary: Admin — RunPod configuration status, launch defaults, and budget
       tags: [RunPod]
       responses:
         "200":
@@ -6002,7 +6002,7 @@ paths:
 
   /runpod/budget:
     put:
-      summary: Admin — update RunPod budget guardrails (Task 4)
+      summary: Admin — update RunPod budget guardrails
       tags: [RunPod]
       requestBody:
         required: true
@@ -6018,7 +6018,7 @@ paths:
 
   /runpod/pods:
     get:
-      summary: Admin — list RunPod pods (Task 4)
+      summary: Admin — list RunPod pods
       tags: [RunPod]
       responses:
         "200":
@@ -6027,7 +6027,7 @@ paths:
             application/json:
               schema: { type: array, items: { type: object, additionalProperties: true } }
     post:
-      summary: Admin — launch a new RunPod pod, budget-checked (Task 4)
+      summary: Admin — launch a new RunPod pod, budget-checked
       tags: [RunPod]
       requestBody:
         required: true
@@ -6048,7 +6048,7 @@ paths:
 
   /runpod/pods/{id}/stop:
     post:
-      summary: Admin — stop a RunPod pod (Task 4)
+      summary: Admin — stop a RunPod pod
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6061,7 +6061,7 @@ paths:
 
   /runpod/pods/{id}/restart:
     post:
-      summary: Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+      summary: Admin — restart (resume) a stopped RunPod pod, budget-checked
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6079,7 +6079,7 @@ paths:
 
   /runpod/pods/{id}/terminate:
     post:
-      summary: Admin — terminate a RunPod pod permanently (Task 4)
+      summary: Admin — terminate a RunPod pod permanently
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6092,7 +6092,7 @@ paths:
 
   /runpod/pods/{id}/refresh:
     post:
-      summary: Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+      summary: Admin — poll RunPod for the latest status/cost/utilization of a pod
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6105,7 +6105,7 @@ paths:
 
   /runpod/pods/{id}/logs:
     get:
-      summary: Admin — fetch recent logs for a RunPod pod (Task 4)
+      summary: Admin — fetch recent logs for a RunPod pod
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6118,7 +6118,7 @@ paths:
 
   /runpod/pods/{id}/artifacts:
     get:
-      summary: Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+      summary: Admin — list artifacts on a RunPod pod's attached network volume
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6131,7 +6131,7 @@ paths:
 
   /runpod/pods/{id}/credentials:
     get:
-      summary: Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+      summary: Admin — list scoped worker credentials issued for a RunPod pod
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6142,7 +6142,7 @@ paths:
             application/json:
               schema: { type: array, items: { type: object, additionalProperties: true } }
     post:
-      summary: Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+      summary: Admin — issue a new short-lived scoped worker credential for a RunPod pod
       tags: [RunPod]
       parameters:
         - { in: path, name: id, required: true, schema: { type: integer } }
@@ -6160,7 +6160,7 @@ paths:
 
   /runpod/credentials/{credentialId}/rotate:
     post:
-      summary: Admin — rotate a RunPod worker credential (Task 4)
+      summary: Admin — rotate a RunPod worker credential
       tags: [RunPod]
       parameters:
         - { in: path, name: credentialId, required: true, schema: { type: integer } }
@@ -6173,7 +6173,7 @@ paths:
 
   /runpod/credentials/{credentialId}:
     delete:
-      summary: Admin — revoke a RunPod worker credential (Task 4)
+      summary: Admin — revoke a RunPod worker credential
       tags: [RunPod]
       parameters:
         - { in: path, name: credentialId, required: true, schema: { type: integer } }

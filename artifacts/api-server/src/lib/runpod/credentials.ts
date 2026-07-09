@@ -1,5 +1,5 @@
 /**
- * Task #4 — scoped, short-lived worker credentials issued to the trainer for
+ * scoped, short-lived worker credentials issued to the trainer for
  * a specific launched pod. Never hand the trainer the underlying RunPod API
  * key — issue one of these instead (60-minute default lifetime, rotatable,
  * revocable, hashed at rest like the existing API-key pattern).

@@ -137,7 +137,6 @@ function LaunchPodDialog() {
   const [gpuType, setGpuType] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [volumeId, setVolumeId] = useState("");
-  const [costPerHrUsd, setCostPerHrUsd] = useState("");
   const launchPod = usePostRunpodPods();
 
   async function handleSubmit() {
@@ -149,11 +148,10 @@ function LaunchPodDialog() {
           gpuType,
           templateId,
           volumeId: volumeId || undefined,
-          costPerHrUsd: costPerHrUsd ? Number(costPerHrUsd) : undefined,
         },
       });
       toast({ title: "Pod launch requested" });
-      setName(""); setGpuType(""); setTemplateId(""); setVolumeId(""); setCostPerHrUsd("");
+      setName(""); setGpuType(""); setTemplateId(""); setVolumeId("");
       setOpen(false);
     } catch (err: any) {
       toast({ title: "Failed to launch pod", description: err?.message ?? "Budget check failed or RunPod error", variant: "destructive" });
@@ -177,7 +175,6 @@ function LaunchPodDialog() {
             { id: "rp-gpu", label: "GPU type", val: gpuType, set: setGpuType, placeholder: "NVIDIA A100" },
             { id: "rp-template", label: "Template ID", val: templateId, set: setTemplateId, placeholder: "runpod-template-id" },
             { id: "rp-volume", label: "Volume ID (optional)", val: volumeId, set: setVolumeId, placeholder: "vol-..." },
-            { id: "rp-cost", label: "Expected cost/hr (USD)", val: costPerHrUsd, set: setCostPerHrUsd, placeholder: "1.29" },
           ].map(({ id, label, val, set, placeholder }) => (
             <div key={id} className="flex flex-col gap-1.5">
               <Label htmlFor={id} className="text-xs font-mono text-muted-foreground">{label}</Label>

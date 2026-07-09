@@ -11,9 +11,21 @@ Signalium holds the RunPod API key (vault-first via `resolveManagedConfig`, env 
 ## Budget enforcement must use server-trusted cost, never client input
 `checkBudgetForLaunch` sums `lastReportedCostPerHrUsd ?? costPerHrUsd` across all pods in active-ish statuses (pending/provisioning/running/restarting) and rejects the launch/restart call (422) if it would exceed `maxHourlyCostUsd` or `maxActivePods`. Denials are still audit-logged (`runpod_pod.launch_denied_budget`) so refusals are visible, not silent.
 
-**Why:** an early version accepted an optional `costPerHrUsd` on the launch request body and defaulted to 0 when omitted — trivially bypassable. Cost must be looked up server-side from an admin-configured GPU→price map (`runpod.gpu_pricing_json`) and the launch rejected outright if the GPU has no configured price, rather than treating unknown as free.
+**Why:** an early version accepted an optional `costPerHrUsd` on the launch request body and defaulted to 0 when omitted — trivially bypassable. Cost must be looked up server-side from an admin-configured GPU→price map (`runpod.gpu_pricing_json`) and the launch rejected outright if the GPU has no configured price, rather than treating unknown as free. The client-supplied field must also be dropped from the request contract entirely (route body type, UI form, generated client), not just ignored server-side — otherwise operators reasonably assume it does something.
 
 **How to apply:** any future GPU-cost-bearing action (e.g. a new "scale up" endpoint) must resolve its own trusted cost and call this same check before touching RunPod, not after — never accept cost as a caller-supplied field.
+
+## Budget/policy caps belong in the vault, not a plain DB table
+Max hourly cost, max active pods, and auto-shutdown idle minutes are stored as encrypted admin-secrets vault keys (`runpod.max_hourly_cost_usd` etc, upserted by key with `onConflictDoUpdate` on the unique `key` column) and read via `resolveManagedConfig`, not a dedicated `runpod_budget_config` table.
+
+**Why:** the task explicitly required all RunPod-related config (credentials, GPU pricing, cost/pod caps) to live in the same vault-first store an admin manages from one place — splitting policy into a separate plain DB table missed that requirement even though the enforcement logic itself was correct.
+
+**How to apply:** when a feature says "config should be vault-managed," check whether it's being persisted via `resolveManagedConfig`/the admin-secrets table specifically — a working DB-backed settings table is not a substitute.
+
+## RunPod API auth goes in the Authorization header, not the URL query string
+`graphql()` in client.ts sends `Authorization: Bearer <key>`, not `?api_key=...`.
+
+**Why:** query-string secrets leak far more easily via access logs, proxies, and error traces than headers do.
 
 ## Monitor sweep must reconcile local status to provider-reported status every poll
 Polling active pods uses the same setInterval + `sweepInFlight` reentrancy guard as other health sweeps, at 60s cadence (tighter than a typical 5min sweep, since GPU cost accrues continuously). Each poll maps RunPod's `desiredStatus` onto the local status enum and persists it — local status set optimistically on launch/stop/restart is not trustworthy on its own and will drift if a poll is missed or the pod changes state outside our control. Cost accrual is computed from RunPod's own reported uptime seconds × latest reported cost/hr (not local elapsed wall-clock time, and not gated on stale local status) — accrual must be gated on the freshly-reconciled status, not the pre-poll one.
