@@ -37,6 +37,7 @@ import tradeIntelligenceRouter from "./trade-intelligence";
 import deploymentsRouter from "./deployments";
 import operationalRouter from "./operational";
 import providerManagementRouter from "./provider-management";
+import securityRouter from "./security";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -90,5 +91,7 @@ router.use("/operational", operationalRouter);
 // S18: extended provider management (credentials, capabilities, status, mappings)
 // Mounted at /data-providers so it shares the same base path as dataProvidersRouter
 router.use("/data-providers", providerManagementRouter);
+// S23c: Security Operations — automated security-incident findings (distinct from audit-log's admin-action trail)
+router.use("/security", securityRouter);
 
 export default router;

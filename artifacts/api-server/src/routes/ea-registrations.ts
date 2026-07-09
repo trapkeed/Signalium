@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { isAdmin } from "../middlewares/requireAdmin";
 import { checkMaxActiveEas } from "../lib/entitlementEngine";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -87,6 +88,14 @@ router.post("/", async (req, res) => {
 
     await db.update(apiKeysTable).set({ lastUsedAt: now }).where(eq(apiKeysTable.id, key.id));
 
+    if (!existingRegistration) {
+      await logAudit(key.userId, "ea_registration.created", "ea_registration", String(registration.id), {
+        hardwareId: body.hardwareId,
+        mt5Account: body.mt5Account,
+        brokerName: body.brokerName,
+      });
+    }
+
     return res.status(201).json(registration);
   } catch (err) {
     req.log.error(err, "Failed to register EA terminal");
@@ -141,6 +150,7 @@ router.patch("/:id/deactivate", async (req, res) => {
       .set({ isActive: false })
       .where(eq(eaRegistrationsTable.id, id))
       .returning();
+    await logAudit(userId, "ea_registration.deactivated", "ea_registration", String(id), { hardwareId: existing.registration.hardwareId });
     return res.json(registration);
   } catch (err) {
     req.log.error(err, "Failed to deactivate EA registration");

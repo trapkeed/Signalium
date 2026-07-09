@@ -4,6 +4,7 @@ import { db, paymentsTable, webhookEventsTable, type PaymentProviderRow } from "
 import { eq, and } from "drizzle-orm";
 import { getPaymentProvider } from "../lib/payments/registry";
 import { applySuccessfulPayment, applyFailedPayment } from "../lib/payments/paymentLifecycle";
+import { emitSecurityIncident } from "../lib/securityIncidents";
 
 /**
  * Per-provider webhook endpoints. Every request goes through the same
@@ -32,6 +33,13 @@ async function handleWebhook(providerType: PaymentProviderRow["type"], headers: 
 
   const verification = await provider.verifyWebhook(headers, rawBody, {});
   if (!verification.ok) {
+    void emitSecurityIncident({
+      type: "invalid_webhook_signature",
+      severity: "high",
+      message: `Rejected ${providerType} webhook with invalid/unverifiable signature`,
+      scopeKey: providerType,
+      detail: { provider: providerType, reason: verification.reason },
+    });
     return { status: 400 as const, body: { error: verification.reason } };
   }
 

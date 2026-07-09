@@ -32,6 +32,7 @@ import {
   Server,
   Bell,
   Wifi,
+  ShieldAlert,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -88,6 +89,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/incidents", label: "Incidents", icon: AlertTriangle },
       { href: "/admin/alerts", label: "Alerts", icon: Bell },
       { href: "/admin/symbol-health", label: "Symbol Health", icon: Radio },
+      { href: "/admin/security-operations", label: "Security Operations", icon: ShieldAlert },
     ],
   },
   {

@@ -63,6 +63,7 @@ import { useSeoRedirects } from "@/hooks/use-seo-redirects";
 import { REFERRAL_CODE_STORAGE_KEY } from "@/lib/referral";
 import AdminReferrals from "@/pages/admin/referrals";
 import AdminAuditLog from "@/pages/admin/audit-log";
+import AdminSecurityOperations from "@/pages/admin/security-operations";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
@@ -278,6 +279,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/status"><ProtectedRoute component={AdminStatusPage} /></Route>
             <Route path="/admin/referrals"><ProtectedRoute component={AdminReferrals} /></Route>
             <Route path="/admin/audit-log"><ProtectedRoute component={AdminAuditLog} /></Route>
+            <Route path="/admin/security-operations"><ProtectedRoute component={AdminSecurityOperations} /></Route>
 
             <Route component={NotFound} />
           </Switch>

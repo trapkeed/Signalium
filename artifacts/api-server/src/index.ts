@@ -6,6 +6,7 @@ import { deploymentManager } from "./lib/deploymentManager";
 import { startPlatformHealthMonitor, markSchedulerHeartbeat } from "./lib/platformHealth";
 import { recordBackendDeploymentIfChanged } from "./lib/serviceVersion";
 import { startAlertSweep } from "./lib/alertDetectors";
+import { startSecuritySweep } from "./lib/securityDetectors";
 
 const rawPort = process.env["PORT"];
 
@@ -45,6 +46,7 @@ startPlatformHealthMonitor(60 * 1_000); // sample every 60 seconds
 // configured delivery channels (dashboard + email always; Telegram/Discord
 // when credentials are present).
 startAlertSweep(2 * 60_000); // sweep every 2 minutes
+startSecuritySweep(5 * 60_000); // sweep every 5 minutes
 
 // S23a: Record the backend's current git commit as a deployment version
 // (display-only, for the admin deployment dashboard's rollback reference).

@@ -1962,6 +1962,16 @@ export const AuditLogEntryAction = {
   knowledge_baseunpublished: 'knowledge_base.unpublished',
   maintenance_bannerupdated: 'maintenance_banner.updated',
   referralremoved: 'referral.removed',
+  api_keycreated: 'api_key.created',
+  api_keyrevoked: 'api_key.revoked',
+  api_keyrotated: 'api_key.rotated',
+  api_keysuspended: 'api_key.suspended',
+  api_keyreactivated: 'api_key.reactivated',
+  ea_registrationcreated: 'ea_registration.created',
+  ea_registrationdeactivated: 'ea_registration.deactivated',
+  model_requestaction_issued: 'model_request.action_issued',
+  security_incidentacknowledged: 'security_incident.acknowledged',
+  security_incidentresolved: 'security_incident.resolved',
 } as const;
 
 export type AuditLogEntryDetail = { [key: string]: unknown } | null;
@@ -1973,6 +1983,62 @@ export interface AuditLogEntry {
   targetType: string;
   targetId: string;
   detail?: AuditLogEntryDetail;
+  createdAt: string;
+}
+
+export type SecurityIncidentType = typeof SecurityIncidentType[keyof typeof SecurityIncidentType];
+
+
+export const SecurityIncidentType = {
+  brute_force_auth: 'brute_force_auth',
+  invalid_webhook_signature: 'invalid_webhook_signature',
+  api_abuse: 'api_abuse',
+  excessive_ea_requests: 'excessive_ea_requests',
+  abnormal_trading_activity: 'abnormal_trading_activity',
+} as const;
+
+export type SecurityIncidentSeverity = typeof SecurityIncidentSeverity[keyof typeof SecurityIncidentSeverity];
+
+
+export const SecurityIncidentSeverity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  critical: 'critical',
+} as const;
+
+export type SecurityIncidentDetail = { [key: string]: unknown } | null;
+
+export type SecurityIncidentStatus = typeof SecurityIncidentStatus[keyof typeof SecurityIncidentStatus];
+
+
+export const SecurityIncidentStatus = {
+  open: 'open',
+  acknowledged: 'acknowledged',
+  resolved: 'resolved',
+} as const;
+
+export interface SecurityIncident {
+  id: number;
+  type: SecurityIncidentType;
+  severity: SecurityIncidentSeverity;
+  /** @nullable */
+  userId?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  apiKeyId?: number | null;
+  /** @nullable */
+  scopeKey?: string | null;
+  message: string;
+  detail?: SecurityIncidentDetail;
+  status: SecurityIncidentStatus;
+  /** @nullable */
+  acknowledgedBy?: string | null;
+  /** @nullable */
+  acknowledgedAt?: string | null;
+  /** @nullable */
+  resolvedAt?: string | null;
   createdAt: string;
 }
 
@@ -3326,6 +3392,24 @@ targetType?: string;
 targetId?: string;
 from?: string;
 to?: string;
+};
+
+export type ListSecurityIncidentsParams = {
+type?: string;
+severity?: string;
+status?: string;
+};
+
+export type UpdateSecurityIncidentStatusBodyStatus = typeof UpdateSecurityIncidentStatusBodyStatus[keyof typeof UpdateSecurityIncidentStatusBodyStatus];
+
+
+export const UpdateSecurityIncidentStatusBodyStatus = {
+  acknowledged: 'acknowledged',
+  resolved: 'resolved',
+} as const;
+
+export type UpdateSecurityIncidentStatusBody = {
+  status: UpdateSecurityIncidentStatusBodyStatus;
 };
 
 export type GetQdeAdminDecisionsParams = {

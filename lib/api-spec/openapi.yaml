@@ -4441,6 +4441,64 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogEntry"
 
+  /security/incidents:
+    get:
+      operationId: listSecurityIncidents
+      tags: [security]
+      summary: List security incidents (admin), filterable by type/severity/status
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Security incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SecurityIncident"
+
+  /security/incidents/{id}:
+    patch:
+      operationId: updateSecurityIncidentStatus
+      tags: [security]
+      summary: Acknowledge or resolve a security incident (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [acknowledged, resolved]
+      responses:
+        "200":
+          description: Updated security incident
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SecurityIncident"
+
   # ── S19 Trade Intelligence ────────────────────────────────────────────────
   /qde/admin/decisions:
     get:
@@ -7767,6 +7825,16 @@ components:
             - knowledge_base.unpublished
             - maintenance_banner.updated
             - referral.removed
+            - api_key.created
+            - api_key.revoked
+            - api_key.rotated
+            - api_key.suspended
+            - api_key.reactivated
+            - ea_registration.created
+            - ea_registration.deactivated
+            - model_request.action_issued
+            - security_incident.acknowledged
+            - security_incident.resolved
         targetType:
           type: string
         targetId:
@@ -7775,6 +7843,49 @@ components:
           type: object
           additionalProperties: true
           nullable: true
+        createdAt:
+          type: string
+
+    SecurityIncident:
+      type: object
+      required: [id, type, severity, message, status, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum:
+            - brute_force_auth
+            - invalid_webhook_signature
+            - api_abuse
+            - excessive_ea_requests
+            - abnormal_trading_activity
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        userId:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        apiKeyId:
+          type: ["integer", "null"]
+        scopeKey:
+          type: ["string", "null"]
+        message:
+          type: string
+        detail:
+          type: object
+          additionalProperties: true
+          nullable: true
+        status:
+          type: string
+          enum: [open, acknowledged, resolved]
+        acknowledgedBy:
+          type: ["string", "null"]
+        acknowledgedAt:
+          type: ["string", "null"]
+        resolvedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
 

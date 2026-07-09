@@ -17,6 +17,16 @@ const ACTIONS = [
   "knowledge_base.unpublished",
   "maintenance_banner.updated",
   "referral.removed",
+  "api_key.created",
+  "api_key.revoked",
+  "api_key.rotated",
+  "api_key.suspended",
+  "api_key.reactivated",
+  "ea_registration.created",
+  "ea_registration.deactivated",
+  "model_request.action_issued",
+  "security_incident.acknowledged",
+  "security_incident.resolved",
 ] as const;
 
 function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
@@ -29,11 +39,15 @@ export default function AdminAuditLog() {
   const [action, setAction] = useState<string>("all");
   const [targetType, setTargetType] = useState("");
   const [actorUserId, setActorUserId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const { data: entries = [] } = useListAuditLog({
     action: action !== "all" ? action : undefined,
     targetType: targetType.trim() || undefined,
     actorUserId: actorUserId.trim() || undefined,
+    from: from ? new Date(from).toISOString() : undefined,
+    to: to ? new Date(to).toISOString() : undefined,
   });
 
   return (
@@ -68,6 +82,20 @@ export default function AdminAuditLog() {
           value={actorUserId}
           onChange={(e) => setActorUserId(e.target.value)}
           className="w-56"
+        />
+        <Input
+          type="date"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className="w-40"
+          aria-label="From date"
+        />
+        <Input
+          type="date"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className="w-40"
+          aria-label="To date"
         />
       </div>
 

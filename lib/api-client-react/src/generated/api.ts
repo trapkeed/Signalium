@@ -141,6 +141,7 @@ import type {
   ListKbArticlesParams,
   ListMarketMemoryParams,
   ListMediaAssetsParams,
+  ListSecurityIncidentsParams,
   LockAccount200,
   LoginEvent,
   MaintenanceBanner,
@@ -213,6 +214,7 @@ import type {
   RevokeAccountSession200,
   RuntimeStatus,
   RuntimeSummary,
+  SecurityIncident,
   SecurityReport,
   SelfEvaluationReport,
   SeoPage,
@@ -274,6 +276,7 @@ import type {
   UpdatePlatformStatusBody,
   UpdateProviderCredentialBody,
   UpdateProviderPriorityBody,
+  UpdateSecurityIncidentStatusBody,
   UpdateSymbolBody,
   UpdateTradingSettingsBody,
   UploadUrlRequest,
@@ -16641,6 +16644,162 @@ export function useListAuditLog<TData = Awaited<ReturnType<typeof listAuditLog>>
 
 
 
+
+export const getListSecurityIncidentsUrl = (params?: ListSecurityIncidentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/security/incidents?${stringifiedParams}` : `/api/security/incidents`
+}
+
+/**
+ * @summary List security incidents (admin), filterable by type/severity/status
+ */
+export const listSecurityIncidents = async (params?: ListSecurityIncidentsParams, options?: RequestInit): Promise<SecurityIncident[]> => {
+
+  return customFetch<SecurityIncident[]>(getListSecurityIncidentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSecurityIncidentsQueryKey = (params?: ListSecurityIncidentsParams,) => {
+    return [
+    `/api/security/incidents`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSecurityIncidentsQueryOptions = <TData = Awaited<ReturnType<typeof listSecurityIncidents>>, TError = ErrorType<unknown>>(params?: ListSecurityIncidentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSecurityIncidents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSecurityIncidentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSecurityIncidents>>> = ({ signal }) => listSecurityIncidents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSecurityIncidents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSecurityIncidentsQueryResult = NonNullable<Awaited<ReturnType<typeof listSecurityIncidents>>>
+export type ListSecurityIncidentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List security incidents (admin), filterable by type/severity/status
+ */
+
+export function useListSecurityIncidents<TData = Awaited<ReturnType<typeof listSecurityIncidents>>, TError = ErrorType<unknown>>(
+ params?: ListSecurityIncidentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSecurityIncidents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSecurityIncidentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSecurityIncidentStatusUrl = (id: number,) => {
+
+
+
+
+  return `/api/security/incidents/${id}`
+}
+
+/**
+ * @summary Acknowledge or resolve a security incident (admin)
+ */
+export const updateSecurityIncidentStatus = async (id: number,
+    updateSecurityIncidentStatusBody: UpdateSecurityIncidentStatusBody, options?: RequestInit): Promise<SecurityIncident> => {
+
+  return customFetch<SecurityIncident>(getUpdateSecurityIncidentStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateSecurityIncidentStatusBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateSecurityIncidentStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSecurityIncidentStatus>>, TError,{id: number;data: BodyType<UpdateSecurityIncidentStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSecurityIncidentStatus>>, TError,{id: number;data: BodyType<UpdateSecurityIncidentStatusBody>}, TContext> => {
+
+const mutationKey = ['updateSecurityIncidentStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSecurityIncidentStatus>>, {id: number;data: BodyType<UpdateSecurityIncidentStatusBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSecurityIncidentStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSecurityIncidentStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateSecurityIncidentStatus>>>
+    export type UpdateSecurityIncidentStatusMutationBody = BodyType<UpdateSecurityIncidentStatusBody>
+    export type UpdateSecurityIncidentStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Acknowledge or resolve a security incident (admin)
+ */
+export const useUpdateSecurityIncidentStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSecurityIncidentStatus>>, TError,{id: number;data: BodyType<UpdateSecurityIncidentStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSecurityIncidentStatus>>,
+        TError,
+        {id: number;data: BodyType<UpdateSecurityIncidentStatusBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateSecurityIncidentStatusMutationOptions(options));
+    }
 
 export const getGetQdeAdminDecisionsUrl = (params?: GetQdeAdminDecisionsParams,) => {
   const normalizedParams = new URLSearchParams();

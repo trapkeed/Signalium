@@ -29,3 +29,4 @@ export * from "./inference";
 export * from "./telemetry-intelligence";
 export * from "./deployments";
 export * from "./operational";
+export * from "./security-incidents";

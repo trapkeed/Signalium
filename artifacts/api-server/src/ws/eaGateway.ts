@@ -15,6 +15,7 @@ import { decideAction, type TelemetrySnapshot, type TrainerActionType } from "..
 import { logger } from "../lib/logger";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 import { ingestPositionSnapshot, emitTradeEvent } from "../lib/tradeLifecycle";
+import { logAudit } from "../lib/auditLog";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -87,7 +88,7 @@ export function attachEaGateway(server: HttpServer) {
       return;
     }
 
-    const auth = await resolveApiKeyAuth(apiKey, hardwareId);
+    const auth = await resolveApiKeyAuth(apiKey, hardwareId, req.socket.remoteAddress ?? undefined);
     if ("error" in auth) {
       safeSend(ws, { type: "error", code: auth.code, message: auth.error });
       ws.close(4001, auth.code);
@@ -313,6 +314,16 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
   // Note: trade events require a known opportunityId (FK NOT NULL). The EA gateway
   // doesn't manage opportunities — those are created by inference-gateway. Events
   // for EA autonomous decisions are captured there via captureQdeDecision.
+
+  // Audit only consequential model requests (see qde.ts HTTP fallback for the
+  // same reasoning) — HOLD is the overwhelming majority of ticks.
+  if (decision.action !== "HOLD") {
+    await logAudit(state.userId, "model_request.action_issued", "trainer_action", String(actionRow.id), {
+      action: decision.action,
+      symbol: telemetry.symbol ?? null,
+      eaRegistrationId: state.eaRegistrationId,
+    });
+  }
 
   await deliverAction(actionRow.id);
 }

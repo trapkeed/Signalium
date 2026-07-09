@@ -4781,13 +4781,70 @@ export const ListAuditLogQueryParams = zod.object({
 export const ListAuditLogResponseItem = zod.object({
   "id": zod.number(),
   "actorUserId": zod.string(),
-  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed']),
+  "action": zod.enum(['user.role_changed', 'user.deactivated', 'user.activated', 'subscription.overridden', 'payment.overridden', 'announcement.published', 'announcement.unpublished', 'knowledge_base.published', 'knowledge_base.unpublished', 'maintenance_banner.updated', 'referral.removed', 'api_key.created', 'api_key.revoked', 'api_key.rotated', 'api_key.suspended', 'api_key.reactivated', 'ea_registration.created', 'ea_registration.deactivated', 'model_request.action_issued', 'security_incident.acknowledged', 'security_incident.resolved']),
   "targetType": zod.string(),
   "targetId": zod.string(),
   "detail": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 export const ListAuditLogResponse = zod.array(ListAuditLogResponseItem)
+
+
+/**
+ * @summary List security incidents (admin), filterable by type/severity/status
+ */
+export const ListSecurityIncidentsQueryParams = zod.object({
+  "type": zod.coerce.string().optional(),
+  "severity": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListSecurityIncidentsResponseItem = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity']),
+  "severity": zod.enum(['low', 'medium', 'high', 'critical']),
+  "userId": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "apiKeyId": zod.number().nullish(),
+  "scopeKey": zod.string().nullish(),
+  "message": zod.string(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "status": zod.enum(['open', 'acknowledged', 'resolved']),
+  "acknowledgedBy": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListSecurityIncidentsResponse = zod.array(ListSecurityIncidentsResponseItem)
+
+
+/**
+ * @summary Acknowledge or resolve a security incident (admin)
+ */
+export const UpdateSecurityIncidentStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSecurityIncidentStatusBody = zod.object({
+  "status": zod.enum(['acknowledged', 'resolved'])
+})
+
+export const UpdateSecurityIncidentStatusResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['brute_force_auth', 'invalid_webhook_signature', 'api_abuse', 'excessive_ea_requests', 'abnormal_trading_activity']),
+  "severity": zod.enum(['low', 'medium', 'high', 'critical']),
+  "userId": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "apiKeyId": zod.number().nullish(),
+  "scopeKey": zod.string().nullish(),
+  "message": zod.string(),
+  "detail": zod.record(zod.string(), zod.unknown()).nullish(),
+  "status": zod.enum(['open', 'acknowledged', 'resolved']),
+  "acknowledgedBy": zod.string().nullish(),
+  "acknowledgedAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
 
 
 /**

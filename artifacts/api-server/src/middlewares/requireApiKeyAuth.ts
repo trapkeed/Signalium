@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import { db, apiKeysTable, eaRegistrationsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
+import { emitSecurityIncident } from "../lib/securityIncidents";
+import { recordEaRequestAndCheckExcessive, recordApiRequestAndCheckAbuse, recordFailedAuthAndCheckBruteForce } from "../lib/rateTracking";
 
 export function hashApiKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
@@ -30,10 +32,23 @@ declare global {
  * authenticate the EA <-> Platform telemetry/action loop (WebSocket and HTTP
  * fallback routes both funnel through this).
  */
-export async function resolveApiKeyAuth(rawApiKey: string, hardwareId: string): Promise<ApiKeyAuthContext | { error: string; code: ApiKeyAuthErrorCode; status: number }> {
+export async function resolveApiKeyAuth(rawApiKey: string, hardwareId: string, ipAddress?: string): Promise<ApiKeyAuthContext | { error: string; code: ApiKeyAuthErrorCode; status: number }> {
   const keyHash = hashApiKey(rawApiKey);
   const [key] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.keyHash, keyHash));
-  if (!key) return { error: "Invalid API key", code: "INVALID_API_KEY", status: 401 };
+  if (!key) {
+    // Repeated invalid-key attempts from the same IP look like a brute-force
+    // attempt against the EA auth surface (there's no Clerk password to
+    // brute-force here, so this is our closest analogue).
+    if (ipAddress && recordFailedAuthAndCheckBruteForce(ipAddress)) {
+      void emitSecurityIncident({
+        type: "brute_force_auth",
+        severity: "high",
+        message: `Repeated invalid API key attempts from ${ipAddress}`,
+        ipAddress,
+      });
+    }
+    return { error: "Invalid API key", code: "INVALID_API_KEY", status: 401 };
+  }
 
   if (key.status === "active" && key.expiresAt && key.expiresAt.getTime() < Date.now()) {
     await db.update(apiKeysTable).set({ status: "expired" }).where(eq(apiKeysTable.id, key.id));
@@ -53,6 +68,26 @@ export async function resolveApiKeyAuth(rawApiKey: string, hardwareId: string): 
   await db.update(apiKeysTable).set({ lastUsedAt: new Date() }).where(eq(apiKeysTable.id, key.id));
   await db.update(eaRegistrationsTable).set({ lastSeenAt: new Date() }).where(eq(eaRegistrationsTable.id, registration.id));
 
+  if (recordEaRequestAndCheckExcessive(key.id)) {
+    void emitSecurityIncident({
+      type: "excessive_ea_requests",
+      severity: "medium",
+      message: `API key ${key.id} exceeded the expected EA request rate`,
+      userId: key.userId,
+      apiKeyId: key.id,
+      detail: { hardwareId },
+    });
+  }
+  if (ipAddress && recordApiRequestAndCheckAbuse(ipAddress)) {
+    void emitSecurityIncident({
+      type: "api_abuse",
+      severity: "medium",
+      message: `Unusually high request volume from ${ipAddress}`,
+      ipAddress,
+      userId: key.userId,
+    });
+  }
+
   return { userId: key.userId, apiKeyId: key.id, eaRegistrationId: registration.id };
 }
 
@@ -64,7 +99,7 @@ export async function requireApiKeyAuth(req: Request, res: Response, next: NextF
     return res.status(401).json({ error: "x-api-key and x-hardware-id headers are required", code: "INVALID_API_KEY" });
   }
 
-  const result = await resolveApiKeyAuth(rawApiKey, hardwareId);
+  const result = await resolveApiKeyAuth(rawApiKey, hardwareId, req.ip);
   if ("error" in result) {
     return res.status(result.status).json({ error: result.error, code: result.code });
   }

@@ -13,6 +13,7 @@ import { requireApiKeyAuth } from "../middlewares/requireApiKeyAuth";
 import { decideAction, TRAINER_ACTIONS, type TelemetrySnapshot } from "../lib/qdeTrainer";
 import { deliverAction, getActiveConnections } from "../ws/eaGateway";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -120,6 +121,18 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
       .set({ status: "delivered", deliveredAt: new Date() })
       .where(eq(trainerActionsTable.id, actionRow.id))
       .returning();
+
+    // Audit only consequential model requests (an actual trading action, not
+    // every HOLD tick) — HOLD is the overwhelming majority of decisions at a
+    // 30s telemetry cadence, and per-tick logging would drown the audit log
+    // without adding security value over the dedicated telemetry/actions tables.
+    if (decision.action !== "HOLD") {
+      await logAudit(auth.userId, "model_request.action_issued", "trainer_action", String(actionRow.id), {
+        action: decision.action,
+        symbol: telemetry.symbol ?? null,
+        eaRegistrationId: auth.eaRegistrationId,
+      });
+    }
 
     return res.status(201).json({ telemetryId: row.id, action: delivered });
   } catch (err) {

@@ -5,6 +5,7 @@ import { eq, and, count } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 import { checkApiAccess } from "../lib/entitlementEngine";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
 
@@ -71,6 +72,8 @@ router.post("/", async (req, res) => {
       expiresAt,
     }).returning();
 
+    await logAudit(userId, "api_key.created", "api_key", String(keyRow.id), { name });
+
     // Return full key ONCE — never stored in plaintext
     return res.status(201).json({
       ...keyRow,
@@ -101,6 +104,7 @@ router.post("/:id/revoke", async (req, res) => {
       .set({ status: "revoked" })
       .where(eq(apiKeysTable.id, id))
       .returning();
+    await logAudit(userId, "api_key.revoked", "api_key", String(id), { name: existing.name });
     return res.json(key);
   } catch (err) {
     req.log.error(err, "Failed to revoke API key");
@@ -130,6 +134,8 @@ router.post("/:id/rotate", async (req, res) => {
       .set({ keyHash, keyPrefix, status: "active" })
       .where(eq(apiKeysTable.id, id))
       .returning();
+
+    await logAudit(userId, "api_key.rotated", "api_key", String(id), { name: existing.name });
 
     return res.json({
       ...key,
@@ -213,6 +219,7 @@ router.get("/all", requireAdmin, async (req, res) => {
 
 // Suspend a key (disable a suspected-compromised key without permanently revoking it)
 router.post("/:id/suspend", requireAdmin, async (req, res) => {
+  const { userId: actorUserId } = getAuth(req);
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -222,6 +229,7 @@ router.post("/:id/suspend", requireAdmin, async (req, res) => {
       .where(eq(apiKeysTable.id, id))
       .returning();
     if (!key) return res.status(404).json({ error: "Not found" });
+    await logAudit(actorUserId!, "api_key.suspended", "api_key", String(id), { name: key.name, userId: key.userId });
     return res.json(key);
   } catch (err) {
     req.log.error(err, "Failed to suspend API key");
@@ -231,6 +239,7 @@ router.post("/:id/suspend", requireAdmin, async (req, res) => {
 
 // Reactivate a suspended key
 router.post("/:id/reactivate", requireAdmin, async (req, res) => {
+  const { userId: actorUserId } = getAuth(req);
   const id = Number(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
@@ -245,6 +254,7 @@ router.post("/:id/reactivate", requireAdmin, async (req, res) => {
       .set({ status: "active" })
       .where(eq(apiKeysTable.id, id))
       .returning();
+    await logAudit(actorUserId!, "api_key.reactivated", "api_key", String(id), { name: existing.name, userId: existing.userId });
     return res.json(key);
   } catch (err) {
     req.log.error(err, "Failed to reactivate API key");
