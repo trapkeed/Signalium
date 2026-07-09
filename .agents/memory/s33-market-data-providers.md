@@ -1,10 +1,9 @@
 ---
 name: S33 Market Data Provider Abstraction
-description: Adapter registry pattern for pluggable market-data providers (OANDA/Tiingo real, others stubbed), health sweep, and active-provider resolution.
+description: Adapter registry pattern for pluggable market-data providers, health sweep, and active-provider resolution — lessons on making the abstraction actually load-bearing.
 ---
 
-- Provider-specific fetch/health logic lives behind a small `MarketDataAdapter` interface (slug/name/isConfigured/checkHealth), registered in one place (`registry.ts`). Adding a real provider later means writing an adapter and swapping it in — no route or UI changes.
-- Two vault-backed real adapters (OANDA, Tiingo) resolve keys via `resolveManagedConfig` (vault-first/env-fallback) — never read from the generic plaintext `provider_credentials` table, which stays reserved for ad-hoc/manual provider config in the admin UI.
-- The manual "check connectivity" admin route and the periodic background sweep share one function (`checkAndRecordProviderHealth`) so both paths write identical `provider_status` rows — avoid duplicating probe logic across a route handler and a sweep like the old code did.
-- `inference_controls.liveProviderId` was already a DB column with no reader anywhere — it's an admin-settable pin with zero consumption logic. The single `getActiveProvider(role)` abstraction function is the reader: pin takes priority for "live", otherwise resolves highest-priority active provider with a matching `provider_capabilities` row.
-- Seeding: only insert `data_providers` rows if missing (idempotent, keyed by slug), so re-running startup never duplicates or resets admin-edited priority/isActive.
+- An adapter-interface + registry pattern (slug → adapter with isConfigured/checkHealth) lets new providers be added via registration only, no route/UI changes — but a registry is only as good as who reads it. Defining a `getActiveProvider(role)` resolver is not enough; find or add a real call site (an admin/status endpoint, a settings screen, anything outside the module itself) or the abstraction is dead code that reviewers will flag as unmet.
+- When a task says "vault-first, env fallback," verify the shared config-resolution helper's fallback argument is actually passed for every managed key. Passing only the vault key silently disables the env fallback — a subtle regression when providers are configured via legacy env vars.
+- A DB column that already exists but has zero readers anywhere (e.g. an admin-settable "pin" field) is a strong signal that a required "consumption point" is genuinely missing, not just hard to find — search before assuming it's someone else's job.
+- Manual "check now" admin actions and periodic background sweeps should call one shared health-check function so both write identical status rows, rather than maintaining probe logic twice.

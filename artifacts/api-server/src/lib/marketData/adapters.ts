@@ -37,12 +37,13 @@ const oandaAdapter: MarketDataAdapter = {
   slug: "oanda",
   name: "OANDA",
   async isConfigured() {
-    return (await resolveManagedConfig("market_data.oanda_api_key")) !== null;
+    return (await resolveManagedConfig("market_data.oanda_api_key", "OANDA_API_KEY")) !== null;
   },
   async checkHealth() {
-    const apiKey = await resolveManagedConfig("market_data.oanda_api_key");
-    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.oanda_api_key)" };
-    const baseUrl = (await resolveManagedConfig("market_data.oanda_api_base_url")) ?? "https://api-fxpractice.oanda.com";
+    const apiKey = await resolveManagedConfig("market_data.oanda_api_key", "OANDA_API_KEY");
+    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.oanda_api_key / OANDA_API_KEY)" };
+    const baseUrl =
+      (await resolveManagedConfig("market_data.oanda_api_base_url", "OANDA_API_BASE_URL")) ?? "https://api-fxpractice.oanda.com";
     // Lightweight authenticated ping — lists accounts, doesn't touch pricing/orders.
     return timedFetch(`${baseUrl}/v3/accounts`, { headers: { Authorization: `Bearer ${apiKey}` } });
   },
@@ -52,11 +53,11 @@ const tiingoAdapter: MarketDataAdapter = {
   slug: "tiingo",
   name: "Tiingo",
   async isConfigured() {
-    return (await resolveManagedConfig("market_data.tiingo_api_key")) !== null;
+    return (await resolveManagedConfig("market_data.tiingo_api_key", "TIINGO_API_KEY")) !== null;
   },
   async checkHealth() {
-    const apiKey = await resolveManagedConfig("market_data.tiingo_api_key");
-    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.tiingo_api_key)" };
+    const apiKey = await resolveManagedConfig("market_data.tiingo_api_key", "TIINGO_API_KEY");
+    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.tiingo_api_key / TIINGO_API_KEY)" };
     // Tiingo's own low-cost status/utilities endpoint, authenticated via query token.
     return timedFetch(`https://api.tiingo.com/api/test/?token=${encodeURIComponent(apiKey)}`, {});
   },

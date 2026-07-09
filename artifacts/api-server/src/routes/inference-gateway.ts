@@ -46,6 +46,7 @@ import { callTrainerInference, type InferenceRequest, type InferenceResponse } f
 import { logAudit } from "../lib/auditLog";
 import { captureQdeDecision, emitTradeEvent, finaliseExitedTrade, finaliseExitedTradeSafe } from "../lib/tradeLifecycle";
 import { deploymentManager } from "../lib/deploymentManager";
+import { getActiveProvider } from "../lib/marketData/registry";
 
 const router = Router();
 
@@ -527,7 +528,14 @@ router.get("/opportunities/:id", async (req, res) => {
 router.get("/admin/inference-controls", requireAdmin, async (req, res) => {
   try {
     const controls = await getInferenceControls();
-    return res.json(controls);
+    // Resolve the currently-active live/historical market data providers
+    // through the single provider abstraction, so admins see what the
+    // liveProviderId pin (or fallback priority ordering) actually resolves to.
+    const [activeLiveProvider, activeHistoricalProvider] = await Promise.all([
+      getActiveProvider("live"),
+      getActiveProvider("historical"),
+    ]);
+    return res.json({ ...controls, activeLiveProvider, activeHistoricalProvider });
   } catch (err) {
     req.log.error(err, "Failed to get inference controls");
     return res.status(500).json({ error: "Internal server error" });

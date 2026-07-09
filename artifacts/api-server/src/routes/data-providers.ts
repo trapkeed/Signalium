@@ -4,8 +4,32 @@ import { db, dataProvidersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
+import { getActiveProvider } from "../lib/marketData/registry";
 
 const router = Router();
+
+/**
+ * Resolves which provider is currently active for a role ("live" or
+ * "historical"). This is the single point the rest of the platform should
+ * call instead of hardcoding a provider — see lib/marketData/registry.ts.
+ */
+router.get("/active/:role", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const role = req.params.role;
+  if (role !== "live" && role !== "historical") {
+    return res.status(400).json({ error: "'role' must be 'live' or 'historical'" });
+  }
+
+  try {
+    const active = await getActiveProvider(role);
+    return res.json(active);
+  } catch (err) {
+    req.log.error(err, "Failed to resolve active provider");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 router.get("/", async (req, res) => {
   const { userId } = getAuth(req);
