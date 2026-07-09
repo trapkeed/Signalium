@@ -935,6 +935,53 @@ export const DeleteUserResponse = zod.object({
 
 
 /**
+ * @summary Change a user's current subscription status (admin)
+ */
+export const UpdateUserSubscriptionStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateUserSubscriptionStatusBody = zod.object({
+  "status": zod.enum(['active', 'grace_period', 'suspended', 'expired', 'cancelled'])
+})
+
+export const UpdateUserSubscriptionStatusResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "planId": zod.number(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "priceMonthly": zod.number(),
+  "features": zod.array(zod.string()),
+  "isActive": zod.boolean(),
+  "tier": zod.enum(['starter', 'professional', 'enterprise']),
+  "maxEas": zod.number().nullish(),
+  "maxSymbols": zod.number().nullish(),
+  "autonomousAllowed": zod.boolean().optional(),
+  "apiAccessAllowed": zod.boolean().optional(),
+  "researchAccess": zod.boolean().optional(),
+  "promoPriceMonthly": zod.number().nullish(),
+  "promoLabel": zod.string().nullish(),
+  "regionalPricing": zod.record(zod.string(), zod.number()).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "status": zod.enum(['pending_payment', 'active', 'grace_period', 'suspended', 'expired', 'cancelled', 'paused']),
+  "startedAt": zod.string(),
+  "currentPeriodEnd": zod.string().nullish(),
+  "graceEndsAt": zod.string().nullish(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "pausedAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "endsAt": zod.string().nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string(),
+  "userEmail": zod.string().nullish()
+})
+
+
+/**
  * @summary List active payment providers (safe fields only, no config/secrets — any authenticated user)
  */
 export const ListPaymentProvidersResponseItem = zod.object({
@@ -2378,7 +2425,13 @@ export const GetTradingSettingsResponse = zod.object({
   "riskMode": zod.enum(['manual', 'qde']),
   "updatedAt": zod.string().nullish(),
   "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
-  "lastMarketSourceAt": zod.string().nullish()
+  "lastMarketSourceAt": zod.string().nullish(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish()
 })
 
 
@@ -2387,7 +2440,13 @@ export const GetTradingSettingsResponse = zod.object({
  */
 export const UpdateTradingSettingsBody = zod.object({
   "tradingMode": zod.enum(['manual', 'autonomous']).optional(),
-  "riskMode": zod.enum(['manual', 'qde']).optional()
+  "riskMode": zod.enum(['manual', 'qde']).optional(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish()
 })
 
 export const UpdateTradingSettingsResponse = zod.object({
@@ -2396,7 +2455,13 @@ export const UpdateTradingSettingsResponse = zod.object({
   "riskMode": zod.enum(['manual', 'qde']),
   "updatedAt": zod.string().nullish(),
   "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
-  "lastMarketSourceAt": zod.string().nullish()
+  "lastMarketSourceAt": zod.string().nullish(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish()
 })
 
 
@@ -3849,7 +3914,13 @@ export const ActivateEmergencyStopResponse = zod.object({
   "riskMode": zod.enum(['manual', 'qde']),
   "updatedAt": zod.string().nullish(),
   "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
-  "lastMarketSourceAt": zod.string().nullish()
+  "lastMarketSourceAt": zod.string().nullish(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish()
 })
 
 

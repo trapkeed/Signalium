@@ -7,6 +7,7 @@
  */
 import type { UserTradingSettingsLastMarketSource } from './userTradingSettingsLastMarketSource';
 import type { UserTradingSettingsRiskMode } from './userTradingSettingsRiskMode';
+import type { UserTradingSettingsRiskParams } from './userTradingSettingsRiskParams';
 import type { UserTradingSettingsTradingMode } from './userTradingSettingsTradingMode';
 
 export interface UserTradingSettings {
@@ -19,4 +20,6 @@ export interface UserTradingSettings {
   lastMarketSource?: UserTradingSettingsLastMarketSource;
   /** @nullable */
   lastMarketSourceAt?: string | null;
+  /** @nullable */
+  riskParams?: UserTradingSettingsRiskParams;
 }

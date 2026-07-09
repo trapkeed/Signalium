@@ -430,6 +430,7 @@ import type {
   UpdateSymbolRegexPattern404,
   UpdateSymbolRegexPatternBody,
   UpdateTradingSettingsBody,
+  UpdateUserSubscriptionStatusBody,
   UploadUrlRequest,
   UploadUrlResponse,
   UpsertProviderCapabilityBody,
@@ -3050,6 +3051,78 @@ export const useDeleteUser = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteUserMutationOptions(options));
+    }
+
+export const getUpdateUserSubscriptionStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/users/${id}/subscription-status`
+}
+
+/**
+ * @summary Change a user's current subscription status (admin)
+ */
+export const updateUserSubscriptionStatus = async (id: string,
+    updateUserSubscriptionStatusBody: UpdateUserSubscriptionStatusBody, options?: RequestInit): Promise<Subscription> => {
+
+  return customFetch<Subscription>(getUpdateUserSubscriptionStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateUserSubscriptionStatusBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateUserSubscriptionStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserSubscriptionStatus>>, TError,{id: string;data: BodyType<UpdateUserSubscriptionStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUserSubscriptionStatus>>, TError,{id: string;data: BodyType<UpdateUserSubscriptionStatusBody>}, TContext> => {
+
+const mutationKey = ['updateUserSubscriptionStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserSubscriptionStatus>>, {id: string;data: BodyType<UpdateUserSubscriptionStatusBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateUserSubscriptionStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateUserSubscriptionStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateUserSubscriptionStatus>>>
+    export type UpdateUserSubscriptionStatusMutationBody = BodyType<UpdateUserSubscriptionStatusBody>
+    export type UpdateUserSubscriptionStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Change a user's current subscription status (admin)
+ */
+export const useUpdateUserSubscriptionStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserSubscriptionStatus>>, TError,{id: string;data: BodyType<UpdateUserSubscriptionStatusBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateUserSubscriptionStatus>>,
+        TError,
+        {id: string;data: BodyType<UpdateUserSubscriptionStatusBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateUserSubscriptionStatusMutationOptions(options));
     }
 
 export const getListPaymentProvidersUrl = () => {

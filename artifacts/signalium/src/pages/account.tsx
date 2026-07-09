@@ -1,13 +1,13 @@
 import { useUser } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SecurityTab } from "@/components/account/security-tab";
+import { ProfileTab } from "@/components/account/profile-tab";
 import { PrivacyTab } from "@/components/account/privacy-tab";
 import { ReferralsTab } from "@/components/account/referrals-tab";
 import Subscriptions from "@/pages/subscriptions";
 import Payments from "@/pages/payments";
 import ApiKeys from "@/pages/api-keys";
 import EaBuilds from "@/pages/ea-builds";
-import Trading from "@/pages/trading";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 
 export default function Account() {
@@ -30,27 +30,13 @@ export default function Account() {
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="api-keys">API Keys &amp; MT5</TabsTrigger>
             <TabsTrigger value="ea-builds">EA Builds</TabsTrigger>
-            <TabsTrigger value="trading">Trading</TabsTrigger>
             {referralsEnabled && <TabsTrigger value="referrals">Referrals</TabsTrigger>}
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6 max-w-3xl">
-            <div className="bg-card border border-border rounded-lg p-6 flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</span>
-                <span className="text-sm">{[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—"}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</span>
-                <span className="text-sm">{user?.email}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sign-in method</span>
-                <span className="text-sm">{user?.googleId ? "Google" : "Email & password"}</span>
-              </div>
-            </div>
+            <ProfileTab />
           </TabsContent>
 
           <TabsContent value="billing" className="mt-6">
@@ -68,10 +54,6 @@ export default function Account() {
 
           <TabsContent value="ea-builds" className="mt-6">
             <EaBuilds embedded />
-          </TabsContent>
-
-          <TabsContent value="trading" className="mt-6">
-            <Trading embedded />
           </TabsContent>
 
           {referralsEnabled && (

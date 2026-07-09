@@ -3,6 +3,7 @@ import {
   useUpdateUser,
   useCreateUser,
   useDeleteUser,
+  useUpdateUserSubscriptionStatus,
   getListUsersQueryKey,
   useGetMyUser,
 } from "@workspace/api-client-react";
@@ -125,6 +126,68 @@ function RoleSelector({
             </DropdownMenuItem>
           );
         })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ─── Subscription status selector (admin+) ─────────────────────────────────────
+
+const SUBSCRIPTION_STATUSES = ["active", "grace_period", "suspended", "expired", "cancelled"] as const;
+type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+function SubscriptionStatusSelector({
+  userId,
+  currentStatus,
+}: {
+  userId: string;
+  currentStatus: string;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const updateStatus = useUpdateUserSubscriptionStatus();
+
+  async function assign(status: SubscriptionStatus) {
+    if (status === currentStatus) return;
+    try {
+      await updateStatus.mutateAsync(
+        { id: userId, data: { status } },
+        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }) }
+      );
+      toast({ title: `Subscription status updated to ${status}` });
+    } catch (err: any) {
+      toast({ title: "Failed to update subscription status", description: err?.data?.error ?? err?.message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          disabled={updateStatus.isPending}
+          className="inline-flex items-center gap-1 focus-visible:outline-none"
+        >
+          <span className={`text-xs font-mono ${currentStatus === "active" ? "text-success" : "text-muted-foreground"}`}>
+            {currentStatus}
+          </span>
+          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[160px]">
+        <div className="px-2 py-1 text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+          Set status
+        </div>
+        <DropdownMenuSeparator />
+        {SUBSCRIPTION_STATUSES.map((status) => (
+          <DropdownMenuItem
+            key={status}
+            onClick={() => assign(status)}
+            className={`font-mono text-xs gap-2 ${status === currentStatus ? "font-semibold" : ""}`}
+          >
+            {status}
+            {status === currentStatus && <span className="ml-auto text-[10px] text-muted-foreground">current</span>}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -380,9 +443,16 @@ export default function AdminUsers() {
                         {isPrivileged ? (
                           <span className="text-xs font-mono text-primary">internal access</span>
                         ) : user.subscriptionStatus ? (
-                          <span className={`text-xs font-mono ${user.subscriptionStatus === "active" ? "text-success" : "text-muted-foreground"}`}>
-                            {user.subscriptionStatus}
-                          </span>
+                          isSuperAdmin || actorRole === "admin" ? (
+                            <SubscriptionStatusSelector
+                              userId={user.id}
+                              currentStatus={user.subscriptionStatus}
+                            />
+                          ) : (
+                            <span className={`text-xs font-mono ${user.subscriptionStatus === "active" ? "text-success" : "text-muted-foreground"}`}>
+                              {user.subscriptionStatus}
+                            </span>
+                          )
                         ) : (
                           <span className="text-xs text-muted-foreground font-mono">none</span>
                         )}

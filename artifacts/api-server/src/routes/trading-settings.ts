@@ -37,9 +37,10 @@ router.put("/", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const { tradingMode, riskMode } = req.body as {
+  const { tradingMode, riskMode, riskParams } = req.body as {
     tradingMode?: string;
     riskMode?: string;
+    riskParams?: { lotSize?: number; stopLossPips?: number; takeProfitPips?: number; maxDailyLossPct?: number } | null;
   };
 
   if (tradingMode !== undefined && !["manual", "autonomous"].includes(tradingMode)) {
@@ -48,8 +49,17 @@ router.put("/", async (req, res) => {
   if (riskMode !== undefined && !["manual", "qde"].includes(riskMode)) {
     return res.status(400).json({ error: "riskMode must be 'manual' or 'qde'" });
   }
-  if (tradingMode === undefined && riskMode === undefined) {
-    return res.status(400).json({ error: "Provide at least one of tradingMode or riskMode" });
+  if (riskParams !== undefined && riskParams !== null) {
+    const numericFields = ["lotSize", "stopLossPips", "takeProfitPips", "maxDailyLossPct"] as const;
+    for (const field of numericFields) {
+      const value = riskParams[field];
+      if (value !== undefined && (typeof value !== "number" || !isFinite(value) || value < 0)) {
+        return res.status(400).json({ error: `riskParams.${field} must be a non-negative number` });
+      }
+    }
+  }
+  if (tradingMode === undefined && riskMode === undefined && riskParams === undefined) {
+    return res.status(400).json({ error: "Provide at least one of tradingMode, riskMode, or riskParams" });
   }
 
   // Enabling autonomous trading requires an entitlement check
@@ -71,6 +81,7 @@ router.put("/", async (req, res) => {
     };
     if (tradingMode !== undefined) updates.tradingMode = tradingMode as "manual" | "autonomous";
     if (riskMode !== undefined) updates.riskMode = riskMode as "manual" | "qde";
+    if (riskParams !== undefined) updates.riskParams = riskParams;
 
     let result: typeof userTradingSettingsTable.$inferSelect;
     if (existing) {
@@ -87,6 +98,7 @@ router.put("/", async (req, res) => {
           userId,
           tradingMode: (tradingMode ?? "manual") as "manual" | "autonomous",
           riskMode: (riskMode ?? "manual") as "manual" | "qde",
+          riskParams: riskParams ?? null,
         })
         .returning();
       result = inserted;

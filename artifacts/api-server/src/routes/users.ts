@@ -6,9 +6,12 @@ import crypto from "crypto";
 import { GetUserParams, UpdateUserParams, UpdateUserBody, UpdateMyUserBody, CreateUserBody } from "@workspace/api-zod";
 import { requireAdmin, requireSuperAdmin, getUserRole } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
+import { logSubscriptionEvent } from "../lib/entitlementEngine";
 import { canAssignRole, ROLE_LEVEL, type UserRole } from "../lib/roles";
 import { adminActionApprovalsTable } from "@workspace/db";
 import { and, eq as eqOp } from "drizzle-orm";
+
+const SUBSCRIPTION_STATUSES = ["active", "grace_period", "suspended", "expired", "cancelled"] as const;
 
 // S29 — maker-checker: escalating a user TO admin or super_admin requires a
 // second, different super_admin to approve before it takes effect. Every
@@ -231,6 +234,48 @@ router.patch("/:id", requireAdmin, async (req, res) => {
     return res.json({ ...user, subscriptionStatus: null });
   } catch (err) {
     req.log.error(err, "Failed to update user");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: change a user's current subscription status directly (e.g. force-suspend
+// or reinstate) without needing the subscription id in the UI.
+router.patch("/:id/subscription-status", requireAdmin, async (req, res) => {
+  const params = GetUserParams.safeParse({ id: req.params.id });
+  const rawStatus = req.body?.status;
+  if (!params.success || typeof rawStatus !== "string" || !SUBSCRIPTION_STATUSES.includes(rawStatus as typeof SUBSCRIPTION_STATUSES[number])) {
+    return res.status(400).json({ error: "Invalid request" });
+  }
+  const status = rawStatus as typeof SUBSCRIPTION_STATUSES[number];
+
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const [target] = await db.select().from(usersTable).where(eq(usersTable.id, params.data.id));
+    if (!target) return res.status(404).json({ error: "Not found" });
+
+    const [before] = await db.select().from(subscriptionsTable)
+      .where(eq(subscriptionsTable.userId, params.data.id))
+      .orderBy(desc(subscriptionsTable.createdAt))
+      .limit(1);
+    if (!before) return res.status(404).json({ error: "This user has no subscription to update" });
+
+    const [sub] = await db.update(subscriptionsTable)
+      .set({ status })
+      .where(eq(subscriptionsTable.id, before.id))
+      .returning();
+
+    if (status !== before.status) {
+      await logSubscriptionEvent(sub.id, sub.userId, "ADMIN_OVERRIDE", before.status, sub.status, { actorUserId, via: "user_admin_panel" });
+      await logAudit(actorUserId, "subscription.overridden", "subscription", String(sub.id), {
+        userId: sub.userId, before: before.status, after: sub.status,
+      });
+    }
+
+    return res.json(sub);
+  } catch (err) {
+    req.log.error(err, "Failed to update user's subscription status");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

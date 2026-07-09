@@ -2313,6 +2313,16 @@ export const UserTradingSettingsLastMarketSource = {
   HYBRID: 'HYBRID',
 } as const;
 
+/**
+ * @nullable
+ */
+export type UserTradingSettingsRiskParams = {
+  lotSize?: number;
+  stopLossPips?: number;
+  takeProfitPips?: number;
+  maxDailyLossPct?: number;
+} | null;
+
 export interface UserTradingSettings {
   userId: string;
   tradingMode: UserTradingSettingsTradingMode;
@@ -2323,6 +2333,8 @@ export interface UserTradingSettings {
   lastMarketSource?: UserTradingSettingsLastMarketSource;
   /** @nullable */
   lastMarketSourceAt?: string | null;
+  /** @nullable */
+  riskParams?: UserTradingSettingsRiskParams;
 }
 
 export type MarketSourceResolutionSource = typeof MarketSourceResolutionSource[keyof typeof MarketSourceResolutionSource];
@@ -3289,6 +3301,21 @@ export type DeleteUser200 = {
   success?: boolean;
 };
 
+export type UpdateUserSubscriptionStatusBodyStatus = typeof UpdateUserSubscriptionStatusBodyStatus[keyof typeof UpdateUserSubscriptionStatusBodyStatus];
+
+
+export const UpdateUserSubscriptionStatusBodyStatus = {
+  active: 'active',
+  grace_period: 'grace_period',
+  suspended: 'suspended',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const;
+
+export type UpdateUserSubscriptionStatusBody = {
+  status: UpdateUserSubscriptionStatusBodyStatus;
+};
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -3488,9 +3515,21 @@ export const UpdateTradingSettingsBodyRiskMode = {
   qde: 'qde',
 } as const;
 
+/**
+ * @nullable
+ */
+export type UpdateTradingSettingsBodyRiskParams = {
+  lotSize?: number;
+  stopLossPips?: number;
+  takeProfitPips?: number;
+  maxDailyLossPct?: number;
+} | null;
+
 export type UpdateTradingSettingsBody = {
   tradingMode?: UpdateTradingSettingsBodyTradingMode;
   riskMode?: UpdateTradingSettingsBodyRiskMode;
+  /** @nullable */
+  riskParams?: UpdateTradingSettingsBodyRiskParams;
 };
 
 export type RequestInferenceBody = {

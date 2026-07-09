@@ -687,6 +687,36 @@ paths:
                   success:
                     type: boolean
 
+  /users/{id}/subscription-status:
+    patch:
+      operationId: updateUserSubscriptionStatus
+      tags: [users]
+      summary: Change a user's current subscription status (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, grace_period, suspended, expired, cancelled]
+      responses:
+        "200":
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
   /payments/providers:
     get:
       operationId: listPaymentProviders
@@ -2138,6 +2168,17 @@ paths:
                 riskMode:
                   type: string
                   enum: [manual, qde]
+                riskParams:
+                  type: ["object", "null"]
+                  properties:
+                    lotSize:
+                      type: number
+                    stopLossPips:
+                      type: number
+                    takeProfitPips:
+                      type: number
+                    maxDailyLossPct:
+                      type: number
       responses:
         "200":
           description: Updated trading settings
@@ -10280,6 +10321,17 @@ components:
           enum: [EXTERNAL_PROVIDER, EA_FEED, HYBRID, null]
         lastMarketSourceAt:
           type: ["string", "null"]
+        riskParams:
+          type: ["object", "null"]
+          properties:
+            lotSize:
+              type: number
+            stopLossPips:
+              type: number
+            takeProfitPips:
+              type: number
+            maxDailyLossPct:
+              type: number
 
     MarketSourceResolution:
       type: object

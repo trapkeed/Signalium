@@ -6,9 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UpdateTradingSettingsBodyRiskMode } from './updateTradingSettingsBodyRiskMode';
+import type { UpdateTradingSettingsBodyRiskParams } from './updateTradingSettingsBodyRiskParams';
 import type { UpdateTradingSettingsBodyTradingMode } from './updateTradingSettingsBodyTradingMode';
 
 export type UpdateTradingSettingsBody = {
   tradingMode?: UpdateTradingSettingsBodyTradingMode;
   riskMode?: UpdateTradingSettingsBodyRiskMode;
+  /** @nullable */
+  riskParams?: UpdateTradingSettingsBodyRiskParams;
 };

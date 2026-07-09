@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetTradingSettings,
   useUpdateTradingSettings,
@@ -8,11 +9,14 @@ import {
   useRemoveUserSymbol,
   useListSymbols,
   useGetMyEntitlements,
+  getGetTradingSettingsQueryKey,
+  getListUserSymbolsQueryKey,
 } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle2, TrendingUp, Bot, ShieldCheck, BarChart2 } from "lucide-react";
@@ -45,10 +49,23 @@ function groupByCategory(symbols: UserSymbol[]) {
   return Object.values(groups).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
 }
 
+type RiskParams = { lotSize?: number; stopLossPips?: number; takeProfitPips?: number; maxDailyLossPct?: number };
+
 export default function Trading({ embedded }: TradingProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [pendingMode, setPendingMode] = useState<"manual" | "autonomous" | null>(null);
   const [pendingRisk, setPendingRisk] = useState<"manual" | "qde" | null>(null);
+  const [riskForm, setRiskForm] = useState<RiskParams>({});
+  const [riskFormDirty, setRiskFormDirty] = useState(false);
+  const [savingRiskParams, setSavingRiskParams] = useState(false);
+
+  function invalidateSettings() {
+    queryClient.invalidateQueries({ queryKey: getGetTradingSettingsQueryKey() });
+  }
+  function invalidateSymbols() {
+    queryClient.invalidateQueries({ queryKey: getListUserSymbolsQueryKey() });
+  }
 
   const { data: settings, isLoading: settingsLoading } = useGetTradingSettings();
   const { data: entitlement } = useGetMyEntitlements();
@@ -62,6 +79,32 @@ export default function Trading({ embedded }: TradingProps) {
   const currentMode = settings?.tradingMode ?? "manual";
   const currentRisk = settings?.riskMode ?? "manual";
   const autonomousAllowed = entitlement?.autonomousAllowed ?? false;
+
+  useEffect(() => {
+    if (settings && !riskFormDirty) {
+      setRiskForm((settings as { riskParams?: RiskParams }).riskParams ?? {});
+    }
+  }, [settings, riskFormDirty]);
+
+  async function handleSaveRiskParams() {
+    setSavingRiskParams(true);
+    try {
+      await updateSettings.mutateAsync({ data: { riskParams: riskForm } });
+      invalidateSettings();
+      setRiskFormDirty(false);
+      toast({ title: "Risk parameters saved", description: "These values will be used for your manual-risk trades." });
+    } catch (err) {
+      const { message } = parseApiError(err);
+      toast({ title: "Could not save risk parameters", description: message, variant: "destructive" });
+    } finally {
+      setSavingRiskParams(false);
+    }
+  }
+
+  function updateRiskField(field: keyof RiskParams, value: string) {
+    setRiskFormDirty(true);
+    setRiskForm((prev) => ({ ...prev, [field]: value === "" ? undefined : Number(value) }));
+  }
 
   const userSymbolIds = new Set((userSymbols as UserSymbol[]).map((s) => s.symbolId));
   const symbolGroups = groupByCategory(userSymbols as UserSymbol[]);
@@ -92,6 +135,7 @@ export default function Trading({ embedded }: TradingProps) {
     setPendingMode(newMode);
     try {
       await updateSettings.mutateAsync({ data: { tradingMode: newMode } });
+      invalidateSettings();
       toast({
         title: newMode === "autonomous" ? "Autonomous mode enabled" : "Manual mode enabled",
         description:
@@ -112,6 +156,7 @@ export default function Trading({ embedded }: TradingProps) {
     setPendingRisk(newRisk);
     try {
       await updateSettings.mutateAsync({ data: { riskMode: newRisk } });
+      invalidateSettings();
       toast({
         title: newRisk === "qde" ? "QDE risk management enabled" : "Manual risk management enabled",
         description:
@@ -131,6 +176,7 @@ export default function Trading({ embedded }: TradingProps) {
     if (isSelected) {
       try {
         await removeSymbol.mutateAsync({ symbolId });
+        invalidateSymbols();
       } catch (err) {
         const { message } = parseApiError(err);
         toast({ title: "Could not remove symbol", description: message, variant: "destructive" });
@@ -138,6 +184,7 @@ export default function Trading({ embedded }: TradingProps) {
     } else {
       try {
         await addSymbol.mutateAsync({ data: { symbolId } });
+        invalidateSymbols();
       } catch (err) {
         const { code, message } = parseApiError(err);
         if (code === "SYMBOL_LIMIT_REACHED") {
@@ -303,6 +350,75 @@ export default function Trading({ embedded }: TradingProps) {
                     </p>
                   </button>
                 </div>
+
+                {currentRisk === "manual" && (
+                  <div className="mt-4 rounded-lg border border-border p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+                      Manual Risk Parameters
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="risk-lot-size" className="text-xs">Lot size</Label>
+                        <Input
+                          id="risk-lot-size"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="e.g. 0.10"
+                          value={riskForm.lotSize ?? ""}
+                          onChange={(e) => updateRiskField("lotSize", e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="risk-max-daily-loss" className="text-xs">Max daily loss (%)</Label>
+                        <Input
+                          id="risk-max-daily-loss"
+                          type="number"
+                          min={0}
+                          step="0.1"
+                          placeholder="e.g. 2"
+                          value={riskForm.maxDailyLossPct ?? ""}
+                          onChange={(e) => updateRiskField("maxDailyLossPct", e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="risk-stop-loss" className="text-xs">Stop loss (pips)</Label>
+                        <Input
+                          id="risk-stop-loss"
+                          type="number"
+                          min={0}
+                          step="1"
+                          placeholder="e.g. 20"
+                          value={riskForm.stopLossPips ?? ""}
+                          onChange={(e) => updateRiskField("stopLossPips", e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="risk-take-profit" className="text-xs">Take profit (pips)</Label>
+                        <Input
+                          id="risk-take-profit"
+                          type="number"
+                          min={0}
+                          step="1"
+                          placeholder="e.g. 40"
+                          value={riskForm.takeProfitPips ?? ""}
+                          onChange={(e) => updateRiskField("takeProfitPips", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      These values are passed to the QDE so it respects your sizing and exit rules instead of computing its own.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      onClick={handleSaveRiskParams}
+                      disabled={savingRiskParams || !riskFormDirty}
+                    >
+                      {savingRiskParams ? "Saving…" : "Save Risk Parameters"}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

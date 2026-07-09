@@ -13,6 +13,7 @@ import EaDetail from "@/pages/ea/detail";
 import Runtime from "@/pages/runtime";
 import Subscriptions from "@/pages/subscriptions";
 import Account from "@/pages/account";
+import Trading from "@/pages/trading";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminSubscriptions from "@/pages/admin/subscriptions";
@@ -155,6 +156,7 @@ function AppRoutes() {
               <Route path="/ea"><ProtectedRoute component={EaList} /></Route>
               <Route path="/ea/:id"><ProtectedRoute component={EaDetail} /></Route>
               <Route path="/runtime"><ProtectedRoute component={Runtime} /></Route>
+              <Route path="/trading"><ProtectedRoute component={Trading} /></Route>
               <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
               <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
               <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>

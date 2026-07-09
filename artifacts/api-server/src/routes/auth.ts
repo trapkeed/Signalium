@@ -288,4 +288,36 @@ router.get("/me", async (req, res) => {
   return res.json({ user: toSafeUser(user) });
 });
 
+router.post("/change-password", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ error: "New password must be at least 8 characters" });
+  }
+
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    // Accounts that signed up with a password (not Google-only) must confirm
+    // their current one before it can be changed.
+    if (user.passwordHash) {
+      if (typeof currentPassword !== "string" || !(await verifyPassword(currentPassword, user.passwordHash))) {
+        return res.status(400).json({ error: "Current password is incorrect" });
+      }
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, userId));
+    await logAudit(userId, "user.password_changed", "user", userId, {});
+
+    return res.json({ success: true });
+  } catch (err) {
+    req.log.error(err, "Failed to change password");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

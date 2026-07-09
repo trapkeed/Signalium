@@ -11,6 +11,15 @@ export const userTradingSettingsTable = pgTable("user_trading_settings", {
   lastMarketSource: text("last_market_source", { enum: ["EXTERNAL_PROVIDER", "EA_FEED", "HYBRID"] }),
   lastMarketSourceAt: timestamp("last_market_source_at", { withTimezone: true }),
   lastMarketSourceDetail: jsonb("last_market_source_detail").$type<Record<string, unknown>>(),
+  // Manual risk parameters — only consulted when riskMode = "manual"; passed
+  // through to the QDE alongside signals so it respects user-specified sizing
+  // instead of dynamically computing its own.
+  riskParams: jsonb("risk_params").$type<{
+    lotSize?: number;
+    stopLossPips?: number;
+    takeProfitPips?: number;
+    maxDailyLossPct?: number;
+  }>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

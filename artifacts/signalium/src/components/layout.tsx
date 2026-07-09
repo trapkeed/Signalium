@@ -50,6 +50,7 @@ import { useFeatureFlag } from "@/hooks/use-feature-flags";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/trading", label: "Trading", icon: Radio },
   { href: "/ea", label: "EA Library", icon: Box },
   { href: "/runtime", label: "Runtime", icon: Activity },
   { href: "/support", label: "Support", icon: LifeBuoy },

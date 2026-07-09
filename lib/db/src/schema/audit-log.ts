@@ -17,6 +17,7 @@ export const auditLogTable = pgTable("audit_log", {
       "user.role_changed",
       "user.deactivated",
       "user.activated",
+      "user.password_changed",
       "subscription.overridden",
       "subscription.suspended",
       "subscription.reactivated",
