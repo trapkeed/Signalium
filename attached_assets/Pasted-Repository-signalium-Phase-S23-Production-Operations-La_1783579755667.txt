@@ -1,0 +1,147 @@
+Repository: signalium
+
+Phase S23 — Production Operations Layer
+
+Implement only missing functionality. Detect existing implementations and extend them rather than duplicating logic.
+
+Build the complete operational layer required for running Signalium as a live production trading platform.
+
+Objectives:
+
+1. Platform Health Monitoring
+
+* System CPU usage monitoring
+* RAM monitoring
+* Queue depth monitoring
+* Active websocket monitoring
+* EA connection monitoring
+* API latency monitoring
+* Trainer communication latency monitoring
+* Database performance monitoring
+* Redis performance monitoring
+* Worker health monitoring
+* Scheduler monitoring
+
+2. QDE Runtime Health
+   Display:
+
+* active model version
+* current model hash
+* deployment timestamp
+* inference latency
+* inference success rate
+* average confidence
+* symbol coverage
+* trade generation frequency
+* trade acceptance rate
+* average holding duration
+* active autonomous users
+* active manual users
+
+3. Autonomous Trading Monitoring
+   Track:
+
+* active autonomous sessions
+* symbols currently monitored
+* trades opened today
+* trades closed today
+* win rate
+* average RR
+* current exposure
+* total open risk
+* floating PnL
+* realized PnL
+* per-user risk utilization
+
+4. EA Fleet Monitoring
+   Track:
+
+* online EAs
+* offline EAs
+* last heartbeat
+* terminal build
+* broker server
+* latency to Signalium
+* account equity
+* account balance
+* account leverage
+* VPS uptime
+* connection quality
+
+5. Alerting Engine
+   Create alerts for:
+
+* trainer unavailable
+* inference failures
+* excessive latency
+* database failures
+* payment provider failures
+* abnormal drawdown
+* excessive slippage
+* EA disconnects
+* data provider outages
+* abnormal market conditions
+
+Support:
+
+* email
+* telegram
+* discord
+* admin dashboard alerts
+
+6. Symbol Health Dashboard
+   Display:
+
+* data provider status
+* symbol synchronization status
+* normalization status
+* broker mapping coverage
+* last received candle
+* feed latency
+* feed quality score
+
+7. Deployment Dashboard
+   Track:
+
+* frontend version
+* backend version
+* trainer version
+* active QDE version
+* git commit hashes
+* deployment timestamps
+* rollback points
+
+8. Operational Audit Logs
+   Track:
+
+* user actions
+* admin actions
+* deployment events
+* model requests
+* EA requests
+* subscription actions
+* payment events
+* API key actions
+
+9. Security Operations
+   Monitor:
+
+* suspicious login attempts
+* API abuse
+* excessive EA requests
+* invalid signatures
+* brute force attempts
+* abnormal trading activity
+
+10. Build an enterprise-grade operations dashboard accessible only by administrators.
+
+Requirements:
+
+* responsive UI
+* mobile friendly
+* realtime updates
+* websocket powered
+* dark futuristic design
+* no developer information exposed publicly
+
+Implement only missing functionality and preserve all existing implementations.
