@@ -1,0 +1,25 @@
+S23d: Realtime Ops Dashboard UI
+What & Why
+The four operations admin pages built in S22A (and the new ones from S23a-c) currently use standard poll/refresh React pages. S23 calls for an enterprise-grade, admin-only ops experience: realtime/websocket-powered updates, responsive/mobile-friendly layout, and a dark futuristic visual identity befitting a live trading platform's command center. This task unifies all ops pages under that experience once their data sources exist.
+
+Done looks like
+All admin ops pages (operations, ea-monitor, incidents, alerts, platform health, deployment dashboard, symbol health, security ops, audit log) push live updates over WebSocket instead of requiring manual refresh, with graceful fallback to polling if the socket drops.
+A distinct "dark futuristic" visual theme (accent colors, typography, motion) is applied consistently across all ops pages, differentiated from the rest of the app's styling, without touching any user-facing (non-admin) pages.
+All ops pages are usable on mobile viewport widths (responsive layout, no horizontal scroll, tap-friendly controls).
+No developer/internal implementation detail (stack traces, internal IDs, raw env values) is ever rendered in the UI, even on error states.
+Out of scope
+Building the underlying data/metrics themselves (depends on S23a-c being complete).
+Any changes to non-admin-facing pages or branding.
+Steps
+Admin WebSocket channel — Add a WS channel (separate from the existing EA-facing gateway) that pushes ops-relevant updates (new alerts, incident changes, fleet state changes, health snapshots) to connected admin clients, authenticated via existing admin session.
+Frontend realtime hook — Add a shared React hook/provider that ops pages use to subscribe to the admin WS channel and merge live updates into their existing data, falling back to the current polling behavior if disconnected.
+Dark futuristic design system pass — Establish a consistent visual treatment (palette, typography, layout rhythm, subtle motion) for the ops section and apply it across every admin ops page.
+Responsive/mobile pass — Audit and fix each ops page for mobile breakpoints (navigation, tables/cards, dialogs).
+Error-state audit — Review every ops page's error/loading states to ensure no internal details leak into the rendered UI.
+Relevant files
+artifacts/signalium/src/pages/admin/operations.tsx
+artifacts/signalium/src/pages/admin/ea-monitor.tsx
+artifacts/signalium/src/pages/admin/incidents.tsx
+artifacts/signalium/src/pages/admin/alerts.tsx
+artifacts/signalium/src/components/layout.tsx
+artifacts/api-server/src/services/eaGateway.ts

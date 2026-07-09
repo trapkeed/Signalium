@@ -18,6 +18,8 @@ import { AlertTriangle, Plus, CheckCircle2, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { OpsShell } from "@/components/ops/ops-shell";
+import { useOpsRealtimeTypes } from "@/hooks/use-ops-realtime";
 
 function timeAgo(v: string | null | undefined) {
   if (!v) return "—";
@@ -29,16 +31,16 @@ type IncidentCategory = "BROKER" | "EA" | "SERVER" | "PAYMENT" | "MODEL" | "NETW
 type IncidentSeverity = "low" | "medium" | "high" | "critical";
 
 const STATUS_COLORS: Record<IncidentStatus, string> = {
-  INCIDENT_OPEN: "bg-red-500/10 text-red-400 border-red-500/20",
-  INVESTIGATING: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  RESOLVED:      "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  INCIDENT_OPEN: "bg-red-950/30 text-red-400 border-red-900/50",
+  INVESTIGATING: "bg-yellow-950/30 text-yellow-400 border-yellow-900/50",
+  RESOLVED:      "bg-emerald-950/30 text-emerald-400 border-emerald-900/50",
 };
 
 const SEV_COLORS: Record<IncidentSeverity, string> = {
-  low:      "bg-blue-500/10 text-blue-400",
-  medium:   "bg-yellow-500/10 text-yellow-400",
-  high:     "bg-orange-500/10 text-orange-400",
-  critical: "bg-red-500/10 text-red-400",
+  low:      "bg-cyan-950/50 text-cyan-400",
+  medium:   "bg-yellow-950/50 text-yellow-400",
+  high:     "bg-orange-950/50 text-orange-400",
+  critical: "bg-red-950/50 text-red-400",
 };
 
 const CATEGORIES: IncidentCategory[] = ["BROKER", "EA", "SERVER", "PAYMENT", "MODEL", "NETWORK"];
@@ -204,6 +206,11 @@ function IncidentDialog({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminIncidents() {
+  const queryClient = useQueryClient();
+  useOpsRealtimeTypes(["incident.updated"], () => {
+    void queryClient.invalidateQueries({ queryKey: getGetOperationalIncidentsQueryKey() });
+  });
+
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<IncidentRow | null>(null);
@@ -212,7 +219,6 @@ export default function AdminIncidents() {
     statusFilter !== "all" ? { status: statusFilter } : {},
   );
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const deleteMutation = useDeleteOperationalIncidentsId({
     mutation: {
@@ -220,89 +226,88 @@ export default function AdminIncidents() {
         void queryClient.invalidateQueries({ queryKey: getGetOperationalIncidentsQueryKey() });
         toast({ title: "Incident deleted" });
       },
-      onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
+      onError: () => toast({ title: "Failed to delete incident", variant: "destructive" }),
     },
   });
 
   const incidents = ((data as Record<string, unknown>)?.incidents as IncidentRow[]) ?? [];
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
-            Incidents
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Track and manage operational incidents across BROKER, EA, SERVER, PAYMENT, MODEL, and NETWORK categories.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
+    <OpsShell
+      title="Incidents"
+      description="Track and manage operational incidents across BROKER, EA, SERVER, PAYMENT, MODEL, and NETWORK categories."
+      actions={
+        <Button onClick={() => setCreateOpen(true)} className="bg-cyan-900 hover:bg-cyan-800 text-cyan-50">
           <Plus className="w-3.5 h-3.5 mr-1.5" />
           New Incident
         </Button>
-      </div>
-
-      <div className="flex gap-2">
+      }
+    >
+      <div className="flex flex-wrap gap-2 mb-2">
         {["all", "INCIDENT_OPEN", "INVESTIGATING", "RESOLVED"].map((s) => (
           <Button
             key={s}
             size="sm"
             variant={statusFilter === s ? "default" : "outline"}
             onClick={() => setStatusFilter(s)}
+            className={statusFilter === s ? "bg-cyan-900 text-cyan-50 hover:bg-cyan-800" : "border-cyan-900/50 text-cyan-50 hover:bg-cyan-900/20 bg-background/50"}
           >
             {s === "all" ? "All" : s.replace(/_/g, " ")}
           </Button>
         ))}
       </div>
 
-      {isLoading && <div className="text-muted-foreground text-sm">Loading…</div>}
+      {isLoading && <div className="text-cyan-500/50 text-sm py-8 text-center font-mono animate-pulse">[ LOADING INCIDENTS... ]</div>}
 
       {!isLoading && incidents.length === 0 && (
-        <Card>
+        <Card className="border-cyan-900/40 bg-card/50 backdrop-blur">
           <CardContent className="py-12 text-center">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm">No incidents in this category.</p>
+            <CheckCircle2 className="w-8 h-8 text-cyan-500/30 mx-auto mb-3" />
+            <p className="text-cyan-500/50 text-[11px] font-mono uppercase tracking-wider">[ No incidents in this category ]</p>
           </CardContent>
         </Card>
       )}
 
       <div className="space-y-3">
         {incidents.map((inc) => (
-          <Card key={inc.id} className={inc.status === "INCIDENT_OPEN" ? "border-red-500/20" : inc.status === "INVESTIGATING" ? "border-yellow-500/20" : ""}>
+          <Card key={inc.id} className={`border-cyan-900/40 bg-card/50 backdrop-blur ${inc.status === "INCIDENT_OPEN" ? "border-red-900/40" : inc.status === "INVESTIGATING" ? "border-yellow-900/40" : ""}`}>
             <CardContent className="py-4 px-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-2">
-                    <Badge className={`${STATUS_COLORS[inc.status]} border text-xs`}>
+                  <div className="flex items-center gap-2 flex-wrap mb-2 font-mono uppercase tracking-wider">
+                    <Badge className={`${STATUS_COLORS[inc.status]} border text-[10px]`}>
                       {inc.status.replace(/_/g, " ")}
                     </Badge>
-                    <Badge className={`${SEV_COLORS[inc.severity]} border-0 text-xs`}>
+                    <Badge className={`${SEV_COLORS[inc.severity]} border-0 text-[10px]`}>
                       {inc.severity}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">{inc.category}</Badge>
+                    <Badge variant="outline" className="text-[10px] border-cyan-900/50 text-cyan-100/70 bg-background/50">{inc.category}</Badge>
                     {(inc.affectedUsersCount ?? 0) > 0 && (
-                      <span className="text-xs text-muted-foreground">{inc.affectedUsersCount} affected</span>
+                      <span className="text-[10px] text-cyan-500/70">{inc.affectedUsersCount} affected</span>
                     )}
                   </div>
-                  <div className="font-semibold">{inc.title}</div>
+                  <div className="font-semibold text-cyan-50">{inc.title}</div>
                   {inc.description && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{inc.description}</p>
+                    <p className="text-sm text-cyan-100/60 mt-1.5 line-clamp-2">{inc.description}</p>
                   )}
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Opened {timeAgo(inc.createdAt)}
-                    {inc.resolvedAt && ` · Resolved ${timeAgo(inc.resolvedAt)}`}
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-cyan-500/50 mt-3 flex flex-wrap gap-2">
+                    <span>Opened {timeAgo(inc.createdAt)}</span>
+                    {inc.resolvedAt && (
+                      <>
+                        <span className="opacity-50">/</span>
+                        <span>Resolved {timeAgo(inc.resolvedAt)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditTarget(inc)}>
-                    <Edit className="w-3.5 h-3.5" />
+                <div className="flex gap-1.5 shrink-0 w-full sm:w-auto justify-end sm:justify-start mt-2 sm:mt-0">
+                  <Button size="sm" variant="outline" className="h-8 border-cyan-900/50 text-cyan-50 bg-background/50 hover:bg-cyan-900/20" onClick={() => setEditTarget(inc)}>
+                    <Edit className="w-3.5 h-3.5 mr-1.5" /> Edit
                   </Button>
                   <Button
                     size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-red-400 hover:text-red-300"
+                    variant="outline"
+                    className="h-8 w-8 border-red-900/50 text-red-400 bg-background/50 hover:bg-red-950/40 hover:text-red-300"
                     onClick={() => deleteMutation.mutate({ id: inc.id })}
                     disabled={deleteMutation.isPending}
                   >
@@ -319,6 +324,6 @@ export default function AdminIncidents() {
       {editTarget && (
         <IncidentDialog open={!!editTarget} onClose={() => setEditTarget(null)} existing={editTarget} />
       )}
-    </div>
+    </OpsShell>
   );
 }

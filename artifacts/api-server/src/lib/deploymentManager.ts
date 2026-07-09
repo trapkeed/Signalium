@@ -30,6 +30,7 @@ import {
   type TrainerDeploymentSummary,
 } from "./deploymentClient";
 import { markSchedulerHeartbeat } from "./platformHealth";
+import { broadcastOpsEvent } from "../ws/adminOpsGateway";
 
 // ─── In-memory active deployment state (hot path) ────────────────────────────
 
@@ -503,6 +504,7 @@ class DeploymentManager {
         message,
         metadata: metadata ?? null,
       });
+      broadcastOpsEvent("deployment.event", { deploymentId, eventType, message, metadata: metadata ?? null });
     } catch (err) {
       logger.warn({ err, eventType }, "DeploymentManager: failed to log deployment event");
     }

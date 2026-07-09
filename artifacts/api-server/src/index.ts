@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedSymbolRegistry } from "./lib/symbolNormalizer";
 import { attachEaGateway } from "./ws/eaGateway";
+import { attachAdminOpsGateway } from "./ws/adminOpsGateway";
 import { deploymentManager } from "./lib/deploymentManager";
 import { startPlatformHealthMonitor, markSchedulerHeartbeat } from "./lib/platformHealth";
 import { recordBackendDeploymentIfChanged } from "./lib/serviceVersion";
@@ -36,6 +37,7 @@ const server = app.listen(port, (err) => {
 });
 
 attachEaGateway(server);
+attachAdminOpsGateway(server);
 
 // S23a: Platform-level system health monitoring (CPU/RAM/event-loop lag/DB
 // latency/WS connections), independent of QDE deployment health.

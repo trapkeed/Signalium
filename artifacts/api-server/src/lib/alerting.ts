@@ -10,6 +10,7 @@ import { db, platformAlertsTable } from "@workspace/db";
 import { eq, and, gte } from "drizzle-orm";
 import { dispatchAlert } from "./alertDispatch";
 import { logger } from "./logger";
+import { broadcastOpsEvent } from "../ws/adminOpsGateway";
 
 export type PlatformAlertType = typeof platformAlertsTable.$inferInsert["type"];
 
@@ -36,7 +37,10 @@ export async function emitPlatformAlert(opts: {
       })
       .returning();
     // Fire-and-forget: delivery failures must never block alert creation.
-    if (row) dispatchAlert(row).catch((err) => logger.warn({ err }, "Alert dispatch failed"));
+    if (row) {
+      dispatchAlert(row).catch((err) => logger.warn({ err }, "Alert dispatch failed"));
+      broadcastOpsEvent("alert.new", row);
+    }
     return row ?? null;
   } catch (err) {
     logger.warn({ err }, "Failed to emit platform alert");

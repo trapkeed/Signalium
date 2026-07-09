@@ -65,6 +65,8 @@ import AdminReferrals from "@/pages/admin/referrals";
 import AdminAuditLog from "@/pages/admin/audit-log";
 import AdminSecurityOperations from "@/pages/admin/security-operations";
 
+import { OpsConnectionProvider } from "@/hooks/use-ops-realtime";
+
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
 const isProduction = import.meta.env.PROD;
@@ -147,13 +149,24 @@ function HomeRedirect() {
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
+function ProtectedRoute({ component: Component, ops }: { component: React.ComponentType<any>; ops?: boolean }) {
+  // `ops` scopes the admin-ops WebSocket connection to only the 9 ops pages
+  // that need it — mounting it app-wide would make every signed-in session
+  // (including non-staff users) open and endlessly retry a connection the
+  // gateway will always reject with 401.
+  const content = ops ? (
+    <OpsConnectionProvider>
+      <Component />
+    </OpsConnectionProvider>
+  ) : (
+    <Component />
+  );
   return (
     <>
       <Show when="signed-in">
         <AccountGate>
           <AppLayout>
-            <Component />
+            {content}
           </AppLayout>
         </AccountGate>
       </Show>
@@ -223,68 +236,68 @@ function ClerkProviderWithRoutes() {
         <SeoHeadManager />
         <ReferralCaptureManager />
         <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/kb" component={KnowledgeBase} />
-            <Route path="/kb/:slug" component={KbArticle} />
-            <Route path="/status" component={StatusPage} />
+            <Switch>
+              <Route path="/" component={HomeRedirect} />
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/contact" component={Contact} />
+              <Route path="/kb" component={KnowledgeBase} />
+              <Route path="/kb/:slug" component={KbArticle} />
+              <Route path="/status" component={StatusPage} />
 
-            <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
-            <Route path="/ea"><ProtectedRoute component={EaList} /></Route>
-            <Route path="/ea/:id"><ProtectedRoute component={EaDetail} /></Route>
-            <Route path="/runtime"><ProtectedRoute component={Runtime} /></Route>
-            <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
-            <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
-            <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>
-            <Route path="/ea-builds"><ProtectedRoute component={EaBuilds} /></Route>
-            <Route path="/support"><ProtectedRoute component={Support} /></Route>
-            <Route path="/support/:id"><ProtectedRoute component={SupportTicketDetail} /></Route>
-            <Route path="/account"><ProtectedRoute component={Account} /></Route>
-            <Route path="/settings"><Redirect to="/account" /></Route>
+              <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
+              <Route path="/ea"><ProtectedRoute component={EaList} /></Route>
+              <Route path="/ea/:id"><ProtectedRoute component={EaDetail} /></Route>
+              <Route path="/runtime"><ProtectedRoute component={Runtime} /></Route>
+              <Route path="/subscriptions"><ProtectedRoute component={Subscriptions} /></Route>
+              <Route path="/payments"><ProtectedRoute component={Payments} /></Route>
+              <Route path="/api-keys"><ProtectedRoute component={ApiKeys} /></Route>
+              <Route path="/ea-builds"><ProtectedRoute component={EaBuilds} /></Route>
+              <Route path="/support"><ProtectedRoute component={Support} /></Route>
+              <Route path="/support/:id"><ProtectedRoute component={SupportTicketDetail} /></Route>
+              <Route path="/account"><ProtectedRoute component={Account} /></Route>
+              <Route path="/settings"><Redirect to="/account" /></Route>
 
-            <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
-            <Route path="/admin/users"><ProtectedRoute component={AdminUsers} /></Route>
-            <Route path="/admin/plans"><ProtectedRoute component={AdminPlans} /></Route>
-            <Route path="/admin/subscriptions"><ProtectedRoute component={AdminSubscriptions} /></Route>
-            <Route path="/admin/eas"><ProtectedRoute component={AdminEas} /></Route>
-            <Route path="/admin/payments"><ProtectedRoute component={AdminPayments} /></Route>
-            <Route path="/admin/smtp"><ProtectedRoute component={AdminSmtp} /></Route>
-            <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
-            <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
-            <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
-            <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
-            <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
-            <Route path="/admin/inference-gateway"><ProtectedRoute component={AdminInferenceGateway} /></Route>
-            <Route path="/admin/trade-intelligence"><ProtectedRoute component={AdminTradeIntelligence} /></Route>
-            <Route path="/admin/deployments"><ProtectedRoute component={AdminDeployments} /></Route>
-            <Route path="/admin/operations"><ProtectedRoute component={AdminOperations} /></Route>
-            <Route path="/admin/platform-health"><ProtectedRoute component={AdminPlatformHealth} /></Route>
-            <Route path="/admin/ea-monitor"><ProtectedRoute component={AdminEaMonitor} /></Route>
-            <Route path="/admin/incidents"><ProtectedRoute component={AdminIncidents} /></Route>
-            <Route path="/admin/alerts"><ProtectedRoute component={AdminAlerts} /></Route>
-            <Route path="/admin/symbol-health"><ProtectedRoute component={AdminSymbolHealth} /></Route>
-            <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
-            <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
-            <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>
-            <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>
-            <Route path="/admin/announcements"><ProtectedRoute component={AdminAnnouncements} /></Route>
-            <Route path="/admin/maintenance-banner"><ProtectedRoute component={AdminMaintenanceBanner} /></Route>
-            <Route path="/admin/support"><ProtectedRoute component={AdminSupport} /></Route>
-            <Route path="/admin/support/:id"><ProtectedRoute component={AdminSupport} /></Route>
-            <Route path="/admin/contact"><ProtectedRoute component={AdminContact} /></Route>
-            <Route path="/admin/knowledge-base"><ProtectedRoute component={AdminKnowledgeBase} /></Route>
-            <Route path="/admin/status"><ProtectedRoute component={AdminStatusPage} /></Route>
-            <Route path="/admin/referrals"><ProtectedRoute component={AdminReferrals} /></Route>
-            <Route path="/admin/audit-log"><ProtectedRoute component={AdminAuditLog} /></Route>
-            <Route path="/admin/security-operations"><ProtectedRoute component={AdminSecurityOperations} /></Route>
+              <Route path="/admin"><ProtectedRoute component={AdminDashboard} /></Route>
+              <Route path="/admin/users"><ProtectedRoute component={AdminUsers} /></Route>
+              <Route path="/admin/plans"><ProtectedRoute component={AdminPlans} /></Route>
+              <Route path="/admin/subscriptions"><ProtectedRoute component={AdminSubscriptions} /></Route>
+              <Route path="/admin/eas"><ProtectedRoute component={AdminEas} /></Route>
+              <Route path="/admin/payments"><ProtectedRoute component={AdminPayments} /></Route>
+              <Route path="/admin/smtp"><ProtectedRoute component={AdminSmtp} /></Route>
+              <Route path="/admin/api-keys"><ProtectedRoute component={AdminApiKeys} /></Route>
+              <Route path="/admin/ea-builds"><ProtectedRoute component={AdminEaBuilds} /></Route>
+              <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
+              <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
+              <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
+              <Route path="/admin/inference-gateway"><ProtectedRoute component={AdminInferenceGateway} /></Route>
+              <Route path="/admin/trade-intelligence"><ProtectedRoute component={AdminTradeIntelligence} /></Route>
+              <Route path="/admin/deployments"><ProtectedRoute component={AdminDeployments} ops /></Route>
+              <Route path="/admin/operations"><ProtectedRoute component={AdminOperations} ops /></Route>
+              <Route path="/admin/platform-health"><ProtectedRoute component={AdminPlatformHealth} ops /></Route>
+              <Route path="/admin/ea-monitor"><ProtectedRoute component={AdminEaMonitor} ops /></Route>
+              <Route path="/admin/incidents"><ProtectedRoute component={AdminIncidents} ops /></Route>
+              <Route path="/admin/alerts"><ProtectedRoute component={AdminAlerts} ops /></Route>
+              <Route path="/admin/symbol-health"><ProtectedRoute component={AdminSymbolHealth} ops /></Route>
+              <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
+              <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
+              <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>
+              <Route path="/admin/media"><ProtectedRoute component={AdminMedia} /></Route>
+              <Route path="/admin/announcements"><ProtectedRoute component={AdminAnnouncements} /></Route>
+              <Route path="/admin/maintenance-banner"><ProtectedRoute component={AdminMaintenanceBanner} /></Route>
+              <Route path="/admin/support"><ProtectedRoute component={AdminSupport} /></Route>
+              <Route path="/admin/support/:id"><ProtectedRoute component={AdminSupport} /></Route>
+              <Route path="/admin/contact"><ProtectedRoute component={AdminContact} /></Route>
+              <Route path="/admin/knowledge-base"><ProtectedRoute component={AdminKnowledgeBase} /></Route>
+              <Route path="/admin/status"><ProtectedRoute component={AdminStatusPage} /></Route>
+              <Route path="/admin/referrals"><ProtectedRoute component={AdminReferrals} /></Route>
+              <Route path="/admin/audit-log"><ProtectedRoute component={AdminAuditLog} ops /></Route>
+              <Route path="/admin/security-operations"><ProtectedRoute component={AdminSecurityOperations} ops /></Route>
 
-            <Route component={NotFound} />
-          </Switch>
-          <Toaster />
-        </TooltipProvider>
+              <Route component={NotFound} />
+            </Switch>
+            <Toaster />
+          </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

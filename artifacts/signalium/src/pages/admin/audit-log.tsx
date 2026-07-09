@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useListAuditLog } from "@workspace/api-client-react";
+import { useListAuditLog, getListAuditLogQueryKey } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollText } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { OpsShell } from "@/components/ops/ops-shell";
+import { useOpsRealtime } from "@/hooks/use-ops-realtime";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ACTIONS = [
   "user.role_changed",
@@ -32,10 +35,17 @@ const ACTIONS = [
 function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
   if (action.endsWith("deactivated") || action.endsWith("removed")) return "destructive";
   if (action.endsWith("published") || action.endsWith("activated") || action.endsWith("overridden")) return "default";
-  return "secondary";
+  return "outline";
 }
 
 export default function AdminAuditLog() {
+  const queryClient = useQueryClient();
+  useOpsRealtime(() => {
+    // If any event comes in, the easiest safe approach is to just refetch audit logs
+    // since we don't have a specific event for everything yet, but we want the list to be fresh.
+    void queryClient.invalidateQueries({ queryKey: getListAuditLogQueryKey() });
+  });
+
   const [action, setAction] = useState<string>("all");
   const [targetType, setTargetType] = useState("");
   const [actorUserId, setActorUserId] = useState("");
@@ -51,19 +61,13 @@ export default function AdminAuditLog() {
   });
 
   return (
-    <div className="p-6 lg:p-8 flex flex-col gap-6 max-w-6xl">
-      <div>
-        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <ScrollText className="w-5 h-5 text-primary" /> Audit Log
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Platform-wide record of significant admin actions: role changes, subscription/payment overrides, and content publishing.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
+    <OpsShell
+      title="Audit Log"
+      description="Platform-wide record of significant admin actions: role changes, subscription/payment overrides, and content publishing."
+    >
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
         <Select value={action} onValueChange={setAction}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="All actions" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-56 bg-background/50 border-cyan-900/30 text-cyan-50 font-mono text-xs"><SelectValue placeholder="All actions" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All actions</SelectItem>
             {ACTIONS.map((a) => (
@@ -75,75 +79,81 @@ export default function AdminAuditLog() {
           placeholder="Filter by target type..."
           value={targetType}
           onChange={(e) => setTargetType(e.target.value)}
-          className="w-56"
+          className="w-full sm:w-56 bg-background/50 border-cyan-900/30 text-cyan-50 placeholder:text-cyan-500/50 font-mono text-xs"
         />
         <Input
           placeholder="Filter by actor user ID..."
           value={actorUserId}
           onChange={(e) => setActorUserId(e.target.value)}
-          className="w-56"
+          className="w-full sm:w-56 bg-background/50 border-cyan-900/30 text-cyan-50 placeholder:text-cyan-500/50 font-mono text-xs"
         />
         <Input
           type="date"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          className="w-40"
+          className="w-full sm:w-40 bg-background/50 border-cyan-900/30 text-cyan-50 placeholder:text-cyan-500/50 font-mono text-xs"
           aria-label="From date"
         />
         <Input
           type="date"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          className="w-40"
+          className="w-full sm:w-40 bg-background/50 border-cyan-900/30 text-cyan-50 placeholder:text-cyan-500/50 font-mono text-xs"
           aria-label="To date"
         />
       </div>
 
       {entries.length === 0 ? (
-        <div className="border border-border rounded-lg p-12 text-center text-sm text-muted-foreground">
-          No audit log entries match these filters.
-        </div>
+        <Card className="border-cyan-900/40 bg-card/50 backdrop-blur">
+          <CardContent className="py-12 text-center text-cyan-500/50 text-[11px] font-mono uppercase tracking-wider">
+            [ No audit log entries match these filters ]
+          </CardContent>
+        </Card>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/40 text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="text-left px-4 py-2.5 font-semibold">Action</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Actor</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Target</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Detail</th>
-                <th className="text-left px-4 py-2.5 font-semibold">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} className="border-t border-border align-top">
-                  <td className="px-4 py-2.5">
-                    <Badge variant={actionVariant(e.action)} className="font-mono text-xs">{e.action}</Badge>
-                  </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{e.actorUserId}</td>
-                  <td className="px-4 py-2.5">
-                    <div className="text-xs">{e.targetType}</div>
-                    <div className="text-xs font-mono text-muted-foreground">{e.targetId}</div>
-                  </td>
-                  <td className="px-4 py-2.5 max-w-xs">
-                    {e.detail ? (
-                      <pre className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-all">
-                        {JSON.stringify(e.detail)}
-                      </pre>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs whitespace-nowrap">
-                    {new Date(e.createdAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card className="border-cyan-900/40 bg-card/50 backdrop-blur">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs font-mono">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-wider text-cyan-100/50 border-b border-cyan-900/30 bg-background/50">
+                    <th className="px-4 py-2.5 font-semibold">Action</th>
+                    <th className="px-4 py-2.5 font-semibold">Actor</th>
+                    <th className="px-4 py-2.5 font-semibold">Target</th>
+                    <th className="px-4 py-2.5 font-semibold">Detail</th>
+                    <th className="text-right px-4 py-2.5 font-semibold">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[11px]">
+                  {entries.map((e) => (
+                    <tr key={e.id} className="border-b border-cyan-900/10 hover:bg-cyan-950/20 transition-colors align-top text-cyan-100">
+                      <td className="px-4 py-3">
+                        <Badge variant={actionVariant(e.action)} className={`font-mono text-[10px] uppercase tracking-wider ${actionVariant(e.action) === "outline" ? "border-cyan-900/50 text-cyan-500/70 bg-background/50" : ""}`}>{e.action}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-cyan-500/70 truncate max-w-[120px]" title={e.actorUserId}>{e.actorUserId}</td>
+                      <td className="px-4 py-3">
+                        <div className="text-cyan-50 font-bold uppercase tracking-wider text-[10px]">{e.targetType}</div>
+                        <div className="text-[10px] text-cyan-500/50 truncate max-w-[120px] mt-0.5" title={e.targetId}>{e.targetId}</div>
+                      </td>
+                      <td className="px-4 py-3 max-w-xs">
+                        {e.detail ? (
+                          <pre className="text-[10px] text-cyan-100/60 whitespace-pre-wrap break-all bg-cyan-950/20 border border-cyan-900/30 rounded p-1.5">
+                            {JSON.stringify(e.detail, null, 2)}
+                          </pre>
+                        ) : (
+                          <span className="text-cyan-500/50">—</span>
+                        )}
+                      </td>
+                      <td className="text-right px-4 py-3 text-cyan-500/70 whitespace-nowrap">
+                        {new Date(e.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
-    </div>
+    </OpsShell>
   );
 }

@@ -18,6 +18,7 @@ import { performance } from "perf_hooks";
 import { pool } from "@workspace/db";
 import { logger } from "./logger";
 import { getActiveConnections } from "../ws/eaGateway";
+import { broadcastOpsEvent } from "../ws/adminOpsGateway";
 
 let lastCpuUsage = process.cpuUsage();
 let lastCpuSampleAt = Date.now();
@@ -85,7 +86,7 @@ export async function captureSnapshot(): Promise<void> {
       ? Date.now() - lastSchedulerRunAt.getTime() < 15 * 60_000
       : false;
 
-    await db.insert(platformHealthSnapshotsTable).values({
+    const [snapshot] = await db.insert(platformHealthSnapshotsTable).values({
       cpuUsagePct,
       memoryUsageMb: mem.rss / 1_048_576,
       memoryTotalMb: os.totalmem() / 1_048_576,
@@ -97,7 +98,8 @@ export async function captureSnapshot(): Promise<void> {
       activeWebsocketConnections: getActiveConnections().size,
       schedulerLastRunAt: lastSchedulerRunAt,
       workerHealthy: schedulerHealthy,
-    });
+    }).returning();
+    if (snapshot) broadcastOpsEvent("health.snapshot", snapshot);
   } catch (err) {
     logger.warn({ err }, "PlatformHealth: failed to capture snapshot");
   } finally {

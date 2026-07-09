@@ -69,6 +69,7 @@ import { getLatestSnapshot } from "../lib/platformHealth";
 import { emitPlatformAlert } from "../lib/alerting";
 import { getAlertChannelSettings } from "../lib/alertDispatch";
 import { computeSymbolHealth } from "../lib/symbolHealth";
+import { broadcastOpsEvent } from "../ws/adminOpsGateway";
 import pino from "pino";
 
 const logger = pino({ name: "operational-routes" });
@@ -708,6 +709,7 @@ router.post("/incidents", requireAdmin, async (req, res) => {
       })
       .returning();
 
+    if (row) broadcastOpsEvent("incident.updated", row);
     return res.status(201).json({ incident: row });
   } catch (err) {
     req.log.error(err, "Create incident error");
@@ -743,6 +745,7 @@ router.patch("/incidents/:id", requireAdmin, async (req, res) => {
       .returning();
 
     if (!row) return res.status(404).json({ error: "Incident not found" });
+    broadcastOpsEvent("incident.updated", row);
     return res.json({ incident: row });
   } catch (err) {
     req.log.error(err, "Update incident error");

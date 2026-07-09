@@ -16,6 +16,7 @@ import { logger } from "../lib/logger";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 import { ingestPositionSnapshot, emitTradeEvent } from "../lib/tradeLifecycle";
 import { logAudit } from "../lib/auditLog";
+import { broadcastOpsEvent } from "./adminOpsGateway";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -129,6 +130,11 @@ export function attachEaGateway(server: HttpServer) {
     });
 
     logger.info({ eaRegistrationId: auth.eaRegistrationId, connectionId }, "EA WebSocket connected");
+    broadcastOpsEvent("fleet.connection_changed", {
+      eaRegistrationId: auth.eaRegistrationId,
+      connectionId,
+      status: "connected",
+    });
 
     await flushQueuedActions(state);
 
@@ -177,6 +183,11 @@ export function attachEaGateway(server: HttpServer) {
       await db.update(eaConnectionsTable)
         .set({ status: "disconnected", disconnectedAt: new Date() })
         .where(and(eq(eaConnectionsTable.connectionId, connectionId)));
+      broadcastOpsEvent("fleet.connection_changed", {
+        eaRegistrationId: auth.eaRegistrationId,
+        connectionId,
+        status: "disconnected",
+      });
     });
 
     ws.on("error", (err) => {
