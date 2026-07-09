@@ -26,3 +26,6 @@ export * from "./data-providers";
 export * from "./feature-flags";
 export * from "./trading";
 export * from "./inference";
+export * from "./telemetry-intelligence";
+export * from "./deployments";
+export * from "./operational";

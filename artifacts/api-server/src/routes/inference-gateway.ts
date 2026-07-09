@@ -44,6 +44,8 @@ import { requireAdmin } from "../middlewares/requireAdmin";
 import { checkApiAccess, checkAutonomousAccess } from "../lib/entitlementEngine";
 import { callTrainerInference, type InferenceRequest, type InferenceResponse } from "../lib/qdeTrainer";
 import { logAudit } from "../lib/auditLog";
+import { captureQdeDecision, emitTradeEvent, finaliseExitedTrade, finaliseExitedTradeSafe } from "../lib/tradeLifecycle";
+import { deploymentManager } from "../lib/deploymentManager";
 
 const router = Router();
 
@@ -107,10 +109,14 @@ router.post("/inference", async (req, res) => {
 
   const latestTelemetry = await getLatestTelemetry(userId, symbol);
 
+  // S21B: resolve active deployment for version pinning and traceability
+  const activeMeta = deploymentManager.getActiveMeta();
+
   const request: InferenceRequest = {
     type: "inference",
     symbol,
     userId,
+    targetModelVersion: activeMeta?.version ?? null,
     telemetry: latestTelemetry
       ? {
           balance: Number(latestTelemetry.balance),
@@ -131,7 +137,13 @@ router.post("/inference", async (req, res) => {
   };
 
   try {
+    const inferenceStart = Date.now();
     const result = await callTrainerInference(request);
+    const inferenceLatency = result.latency_ms ?? (Date.now() - inferenceStart);
+
+    // S21B: record health metrics for the active deployment
+    deploymentManager.recordLatency(inferenceLatency);
+    if (result.confidence != null) deploymentManager.recordConfidence(result.confidence);
 
     // Create or update opportunity record
     const [opp] = await db
@@ -149,14 +161,50 @@ router.post("/inference", async (req, res) => {
         sizeSignal: result.size_signal ?? null,
         entryUrgency: result.entry_urgency ?? null,
         exitHorizon: result.exit_horizon ?? null,
-        metadata: result as Record<string, unknown>,
+        metadata: result as unknown as Record<string, unknown>,
         lastEvaluatedAt: new Date(),
       })
       .returning();
 
+    // S19 + S21B: capture QDE decision with deployment traceability
+    captureQdeDecision({
+      userId,
+      symbol,
+      opportunityId: opp.id,
+      telemetryId: latestTelemetry?.id ?? null,
+      inferenceType: "inference",
+      request: request as unknown as Record<string, unknown>,
+      response: result as unknown as {
+        direction?: string;
+        confidence?: number;
+        risk_signal?: string;
+        size_signal?: string;
+        entry_urgency?: string;
+        exit_horizon?: string;
+        reasoning: string;
+        warnings?: string[];
+        model_version?: string;
+      },
+      trainerOnline: true,
+      artifactHash: activeMeta?.artifactHash ?? null,
+      manifestHash: activeMeta?.manifestHash ?? null,
+      featureVersion: activeMeta?.featureVersion ?? null,
+    }).catch(() => {});
+
+    emitTradeEvent({
+      userId,
+      symbol,
+      opportunityId: opp.id,
+      eventType: "setup_detected",
+      confidence: result.confidence ?? null,
+      note: `Setup detected — direction: ${result.direction ?? "neutral"}`,
+      metadata: { inferenceType: "inference" },
+    }).catch(() => {});
+
     return res.status(201).json({ inference: result, opportunityId: opp.id });
   } catch (err) {
     req.log.error(err, "Inference gateway error");
+    deploymentManager.recordError();
     return res.status(502).json({ error: "Trainer unavailable or returned an invalid response" });
   }
 });
@@ -191,10 +239,14 @@ router.post("/review-position", async (req, res) => {
 
   if (!body.symbol) return res.status(400).json({ error: "'symbol' is required" });
 
+  // S21B: resolve active deployment for version pinning and traceability
+  const activeMeta = deploymentManager.getActiveMeta();
+
   const request: InferenceRequest = {
     type: "review-position",
     symbol: body.symbol,
     userId,
+    targetModelVersion: activeMeta?.version ?? null,
     positionContext: {
       entryPrice: body.entryPrice,
       currentPrice: body.currentPrice,
@@ -209,7 +261,10 @@ router.post("/review-position", async (req, res) => {
   };
 
   try {
+    const inferenceStart = Date.now();
     const result = await callTrainerInference(request);
+    deploymentManager.recordLatency(result.latency_ms ?? (Date.now() - inferenceStart));
+    if (result.confidence != null) deploymentManager.recordConfidence(result.confidence);
 
     // Update opportunity if provided
     if (body.opportunityId) {
@@ -220,7 +275,7 @@ router.post("/review-position", async (req, res) => {
           reasoning: result.reasoning,
           warnings: result.warnings ?? [],
           lastEvaluatedAt: new Date(),
-          metadata: result as Record<string, unknown>,
+          metadata: result as unknown as Record<string, unknown>,
         })
         .where(
           and(
@@ -230,9 +285,37 @@ router.post("/review-position", async (req, res) => {
         );
     }
 
+    // S19 + S21B: capture position re-evaluation decision with deployment traceability
+    if (body.opportunityId) {
+      captureQdeDecision({
+        userId,
+        symbol: body.symbol,
+        opportunityId: body.opportunityId,
+        telemetryId: null,
+        inferenceType: "review-position",
+        request: request as unknown as Record<string, unknown>,
+        response: result as unknown as {
+          direction?: string;
+          confidence?: number;
+          risk_signal?: string;
+          size_signal?: string;
+          entry_urgency?: string;
+          exit_horizon?: string;
+          reasoning: string;
+          warnings?: string[];
+          model_version?: string;
+        },
+        trainerOnline: true,
+        artifactHash: activeMeta?.artifactHash ?? null,
+        manifestHash: activeMeta?.manifestHash ?? null,
+        featureVersion: activeMeta?.featureVersion ?? null,
+      }).catch(() => {});
+    }
+
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Review-position gateway error");
+    deploymentManager.recordError();
     return res.status(502).json({ error: "Trainer unavailable or returned an invalid response" });
   }
 });
@@ -260,6 +343,7 @@ router.post("/manual-analysis", async (req, res) => {
     type: "manual-analysis",
     symbol,
     userId,
+    targetModelVersion: deploymentManager.getActiveVersion(),
     timeframe: timeframe ?? "H1",
     notes: notes ?? null,
     telemetry: latestTelemetry
@@ -286,6 +370,7 @@ router.post("/manual-analysis", async (req, res) => {
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Manual-analysis gateway error");
+    deploymentManager.recordError();
     return res.status(502).json({ error: "Trainer unavailable or returned an invalid response" });
   }
 });
@@ -323,6 +408,7 @@ router.post("/portfolio-review", async (req, res) => {
   const request: InferenceRequest = {
     type: "portfolio-review",
     userId,
+    targetModelVersion: deploymentManager.getActiveVersion(),
     positions: Array.from(latestBySymbol.values()).map((t) => ({
       symbol: t.symbol ?? "UNKNOWN",
       balance: Number(t.balance),
@@ -340,6 +426,7 @@ router.post("/portfolio-review", async (req, res) => {
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Portfolio-review gateway error");
+    deploymentManager.recordError();
     return res.status(502).json({ error: "Trainer unavailable or returned an invalid response" });
   }
 });
@@ -374,6 +461,7 @@ router.post("/reasoning", async (req, res) => {
     type: "reasoning",
     symbol,
     userId,
+    targetModelVersion: deploymentManager.getActiveVersion(),
     question: question ?? null,
     opportunityContext: opportunityContext
       ? {
@@ -390,6 +478,7 @@ router.post("/reasoning", async (req, res) => {
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Reasoning gateway error");
+    deploymentManager.recordError();
     return res.status(502).json({ error: "Trainer unavailable or returned an invalid response" });
   }
 });
@@ -534,6 +623,21 @@ router.post("/admin/opportunities/:id/transition", requireAdmin, async (req, res
       to: state,
       reason,
     });
+
+    // S19: trigger full trade finalisation pipeline when an opportunity exits
+    if (state === "EXITED") {
+      void finaliseExitedTradeSafe(id);
+    } else {
+      // Emit a lifecycle event for other state changes
+      emitTradeEvent({
+        userId: userId!,
+        symbol: opp.symbol,
+        opportunityId: id,
+        eventType: "state_change",
+        note: `State changed ${opp.state} → ${state}${reason ? `: ${reason}` : ""}`,
+        metadata: { from: opp.state, to: state },
+      }).catch(() => {});
+    }
 
     return res.json(updated);
   } catch (err) {

@@ -2174,6 +2174,618 @@ export interface ProviderSymbolMapping {
   createdAt: string;
 }
 
+export interface QdeDecision {
+  id: number;
+  decisionId: string;
+  modelVersion?: string | null;
+  symbol: string;
+  userId: string;
+  opportunityId?: number | null;
+  telemetryId?: number | null;
+  inferenceType: string;
+  direction?: string | null;
+  confidence?: number | null;
+  riskSignal?: string | null;
+  sizeSignal?: string | null;
+  entryUrgency?: string | null;
+  exitHorizon?: string | null;
+  session?: string | null;
+  volatilityState?: string | null;
+  spreadState?: string | null;
+  trainerOnline: boolean;
+  createdAt: string;
+}
+
+export type DecisionReasoningRawModelOutput = { [key: string]: unknown } | null;
+
+export interface DecisionReasoning {
+  id: number;
+  decisionId: number;
+  reasoning: string;
+  primaryPattern?: string | null;
+  supportingFactors?: string[] | null;
+  contradictingFactors?: string[] | null;
+  warnings?: string[] | null;
+  rawModelOutput?: DecisionReasoningRawModelOutput;
+  createdAt: string;
+}
+
+export interface DecisionContext {
+  id: number;
+  decisionId: number;
+  balance?: number | null;
+  equity?: number | null;
+  margin?: number | null;
+  freeMargin?: number | null;
+  openPositions?: number | null;
+  floatingPnl?: number | null;
+  entryPrice?: number | null;
+  currentPrice?: number | null;
+  spread?: number | null;
+  drawdown?: number | null;
+  tradeAgeSeconds?: number | null;
+  trendStrength?: number | null;
+  volatility?: number | null;
+  marketQuality?: string | null;
+  createdAt: string;
+}
+
+export interface ExecutionTelemetry {
+  id: number;
+  userId: string;
+  symbol: string;
+  opportunityId?: number | null;
+  telemetryId?: number | null;
+  requestedEntry?: number | null;
+  actualEntry?: number | null;
+  slippage?: number | null;
+  spread?: number | null;
+  commission?: number | null;
+  executionDelayMs?: number | null;
+  partialFill?: boolean;
+  requotes?: number;
+  createdAt: string;
+}
+
+export interface ExecutionQualityMetrics {
+  id: number;
+  symbol: string;
+  session: string;
+  volatilityState: string;
+  avgSlippage?: number;
+  avgSpread?: number;
+  avgCommission?: number;
+  avgExecutionDelayMs?: number;
+  partialFillRate?: number;
+  requoteRate?: number;
+  sampleCount: number;
+  updatedAt?: string;
+}
+
+export interface PositionSnapshot {
+  id: number;
+  userId: string;
+  symbol: string;
+  opportunityId?: number | null;
+  telemetryId?: number | null;
+  profit: number;
+  drawdown?: number | null;
+  swap?: number | null;
+  commission?: number | null;
+  equityImpact?: number | null;
+  distanceToStop?: number | null;
+  distanceToTarget?: number | null;
+  marginUsage?: number | null;
+  positionAgeSeconds?: number | null;
+  confidence?: number | null;
+  snapshotAt: string;
+}
+
+export interface PositionMetrics {
+  id: number;
+  userId: string;
+  symbol: string;
+  opportunityId: number;
+  mfe?: number | null;
+  mae?: number | null;
+  mfeR?: number | null;
+  maeR?: number | null;
+  peakProfit?: number | null;
+  maxDrawdown?: number | null;
+  entryConfidence?: number | null;
+  peakConfidence?: number | null;
+  minConfidence?: number | null;
+  confidenceVolatility?: number | null;
+  confidenceSlope?: number | null;
+  confidenceSeries?: number[] | null;
+  snapshotCount: number;
+  scaleInCount?: number;
+  partialCloseCount?: number;
+  exitEfficiency?: number | null;
+  updatedAt: string;
+}
+
+export type TradeEventMetadata = { [key: string]: unknown } | null;
+
+export interface TradeEvent {
+  id: number;
+  userId: string;
+  symbol: string;
+  opportunityId: number;
+  eventType: string;
+  confidence?: number | null;
+  price?: number | null;
+  note?: string | null;
+  metadata?: TradeEventMetadata;
+  occurredAt: string;
+}
+
+export type TradeTimelineOutcome = typeof TradeTimelineOutcome[keyof typeof TradeTimelineOutcome];
+
+
+export const TradeTimelineOutcome = {
+  win: 'win',
+  loss: 'loss',
+  breakeven: 'breakeven',
+} as const;
+
+export interface TradeTimeline {
+  id: number;
+  opportunityId: number;
+  symbol: string;
+  userId?: string;
+  entryAt?: string | null;
+  exitAt?: string | null;
+  finalPnl?: number | null;
+  rMultiple?: number | null;
+  outcome: TradeTimelineOutcome;
+  setupType?: string | null;
+  session?: string | null;
+  modelVersion?: string | null;
+  totalEvents?: number;
+  durationSeconds?: number | null;
+  createdAt: string;
+}
+
+export interface ReasoningValidation {
+  id: number;
+  opportunityId: number;
+  decisionId?: number | null;
+  symbol: string;
+  userId?: string;
+  initialPattern: string | null;
+  wasCorrect?: boolean | null;
+  actualPattern?: string | null;
+  correctnessScore?: number | null;
+  validatorNote?: string | null;
+  validatedAt?: string | null;
+  createdAt: string;
+}
+
+export interface ReasoningAccuracy {
+  id: number;
+  pattern: string;
+  symbol: string;
+  session: string;
+  totalPredictions: number;
+  correctPredictions: number;
+  accuracyRate: number;
+  lastUpdatedAt?: string;
+}
+
+export interface TradeFailure {
+  id: number;
+  opportunityId: number;
+  symbol: string;
+  userId?: string;
+  rootCause?: string | null;
+  warningSigns?: string[] | null;
+  confidenceDecayNotes?: string | null;
+  lateExitIndicators?: string[] | null;
+  positionManagementIssues?: string[] | null;
+  finalLoss: number;
+  maxAdverseExcursion?: number | null;
+  adminNotes?: string | null;
+  investigatedAt?: string | null;
+  createdAt: string;
+}
+
+export interface FailurePattern {
+  id: number;
+  patternType: string;
+  symbol: string;
+  session: string;
+  occurrences: number;
+  avgLoss?: number | null;
+  lastSeenAt?: string | null;
+  createdAt?: string;
+}
+
+export type CounterfactualResultScenario = typeof CounterfactualResultScenario[keyof typeof CounterfactualResultScenario];
+
+
+export const CounterfactualResultScenario = {
+  wider_stop: 'wider_stop',
+  smaller_size: 'smaller_size',
+  earlier_exit: 'earlier_exit',
+  no_scale_in: 'no_scale_in',
+} as const;
+
+export interface CounterfactualResult {
+  id: number;
+  opportunityId: number;
+  symbol: string;
+  scenario: CounterfactualResultScenario;
+  baselinePnl?: number | null;
+  counterfactualPnl?: number | null;
+  improvement?: number | null;
+  analysis?: string | null;
+  generatedAt: string;
+}
+
+export type LearningCandidateMetadata = { [key: string]: unknown } | null;
+
+export interface LearningCandidate {
+  id: number;
+  opportunityId: number;
+  symbol: string;
+  userId?: string;
+  candidateType: string;
+  priority: number;
+  processedByTrainer: boolean;
+  processedAt?: string | null;
+  metadata?: LearningCandidateMetadata;
+  createdAt: string;
+}
+
+export type SelfEvaluationReportReportType = typeof SelfEvaluationReportReportType[keyof typeof SelfEvaluationReportReportType];
+
+
+export const SelfEvaluationReportReportType = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;
+
+export type SelfEvaluationReportRawData = { [key: string]: unknown } | null;
+
+export interface SelfEvaluationReport {
+  id: number;
+  reportType: SelfEvaluationReportReportType;
+  periodStart: string;
+  periodEnd: string;
+  totalTrades: number;
+  wins?: number;
+  losses?: number;
+  winRate?: number | null;
+  avgRMultiple?: number | null;
+  bestRMultiple?: number | null;
+  worstRMultiple?: number | null;
+  sharpeRatio?: number | null;
+  bestSymbol?: string | null;
+  worstSymbol?: string | null;
+  bestSession?: string | null;
+  worstSession?: string | null;
+  reasoningAccuracy?: number | null;
+  insights?: string[];
+  rawData?: SelfEvaluationReportRawData;
+  createdAt: string;
+}
+
+export interface TrainerSyncState {
+  id: string;
+  lastSyncAt?: string | null;
+  lastSyncStatus?: string | null;
+  lastSyncMessage?: string | null;
+  decisionsExported?: number;
+  timelinesExported?: number;
+  executionsExported?: number;
+  candidatesExported?: number;
+  totalSyncs?: number;
+  updatedAt?: string | null;
+}
+
+export type TradeIntelligenceStatsOverall = {
+  winRate?: number | null;
+  avgRMultiple?: number | null;
+  totalPnl?: number | null;
+};
+
+export interface TradeIntelligenceStats {
+  decisions?: number;
+  timelines?: number;
+  failures?: number;
+  learningQueueDepth?: number;
+  validationPending?: number;
+  lastTrainerSync?: string | null;
+  trainerSyncStatus?: string | null;
+  overall?: TradeIntelligenceStatsOverall;
+}
+
+export type QdeDeploymentManifestData = { [key: string]: unknown } | null;
+
+export type QdeDeploymentMetadata = { [key: string]: unknown } | null;
+
+export interface QdeDeployment {
+  id?: number;
+  deploymentId?: string;
+  version?: string;
+  status?: string;
+  artifactHash?: string | null;
+  manifestHash?: string | null;
+  featureVersion?: string | null;
+  manifestData?: QdeDeploymentManifestData;
+  localCachePath?: string | null;
+  trainerUrl?: string | null;
+  integrityVerified?: boolean;
+  warmupLatencyMs?: number | null;
+  failureReason?: string | null;
+  metadata?: QdeDeploymentMetadata;
+  downloadedAt?: string | null;
+  verifiedAt?: string | null;
+  warmedAt?: string | null;
+  activatedAt?: string | null;
+  retiredAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type QdeDeploymentHealthConfidenceDistribution = { [key: string]: unknown } | null;
+
+export interface QdeDeploymentHealth {
+  id?: number;
+  deploymentId?: number;
+  latencyP50Ms?: number | null;
+  latencyP95Ms?: number | null;
+  latencyP99Ms?: number | null;
+  errorRate?: number | null;
+  throughputPerMin?: number | null;
+  memoryUsageMb?: number | null;
+  cpuUsagePct?: number | null;
+  sampleCount?: number;
+  confidenceDistribution?: QdeDeploymentHealthConfidenceDistribution;
+  alerts?: string[] | null;
+  recordedAt?: string;
+}
+
+export type QdeDeploymentEventMetadata = { [key: string]: unknown } | null;
+
+export interface QdeDeploymentEvent {
+  id?: number;
+  deploymentId?: number | null;
+  eventType?: string;
+  message?: string | null;
+  metadata?: QdeDeploymentEventMetadata;
+  occurredAt?: string;
+}
+
+export type EaTelemetrySnapshotSpreadInfo = { [key: string]: unknown } | null;
+
+export type EaTelemetrySnapshotExecutionStats = { [key: string]: unknown } | null;
+
+export interface EaTelemetrySnapshot {
+  id?: number;
+  userId?: string;
+  eaId?: number | null;
+  accountId?: string | null;
+  eaInstanceId?: string | null;
+  equity?: number | null;
+  balance?: number | null;
+  floatingPnL?: number | null;
+  marginLevel?: number | null;
+  freeMargin?: number | null;
+  openPositionsCount?: number | null;
+  activeSymbols?: string[] | null;
+  brokerName?: string | null;
+  brokerServer?: string | null;
+  vpsLatencyMs?: number | null;
+  eaVersion?: string | null;
+  platformVersion?: string | null;
+  mt5BuildVersion?: string | null;
+  connectivityState?: string | null;
+  spreadInfo?: EaTelemetrySnapshotSpreadInfo;
+  currentDrawdownPct?: number | null;
+  peakEquity?: number | null;
+  dailyDrawdownPct?: number | null;
+  weeklyDrawdownPct?: number | null;
+  executionStats?: EaTelemetrySnapshotExecutionStats;
+  createdAt?: string;
+}
+
+export type EaHeartbeatStateMetadata = { [key: string]: unknown } | null;
+
+export interface EaHeartbeatState {
+  id?: number;
+  userId?: string;
+  eaId?: number | null;
+  eaInstanceId?: string;
+  state?: string;
+  derivedState?: string | null;
+  lastSeenAt?: string | null;
+  lastPingAt?: string | null;
+  offlineSince?: string | null;
+  alertSentAt?: string | null;
+  eaVersion?: string | null;
+  platformVersion?: string | null;
+  brokerName?: string | null;
+  accountId?: string | null;
+  metadata?: EaHeartbeatStateMetadata;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export interface EaExecutionQuality {
+  id?: number;
+  userId?: string;
+  eaId?: number | null;
+  eaInstanceId?: string | null;
+  brokerName?: string | null;
+  avgSlippagePoints?: number | null;
+  rejectedOrders?: number;
+  requotes?: number;
+  avgExecutionLatencyMs?: number | null;
+  spreadExpansionPoints?: number | null;
+  qualityScore?: number | null;
+  sampleCount?: number;
+  periodDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BrokerRanking {
+  brokerName?: string;
+  avgQualityScore?: number;
+  totalRejections?: number;
+  totalRequotes?: number;
+  avgSlippagePoints?: number | null;
+  avgLatencyMs?: number | null;
+  samplePeriods?: number;
+}
+
+export interface EaRiskAlert {
+  id?: number;
+  userId?: string;
+  eaId?: number | null;
+  eaInstanceId?: string | null;
+  alertType?: string;
+  severity?: string;
+  currentValue?: number | null;
+  thresholdValue?: number | null;
+  message?: string;
+  acknowledged?: boolean;
+  acknowledgedAt?: string | null;
+  resolvedAt?: string | null;
+  createdAt?: string;
+}
+
+export type OperationalIncidentMetadata = { [key: string]: unknown } | null;
+
+export interface OperationalIncident {
+  id?: number;
+  title?: string;
+  description?: string | null;
+  category?: string;
+  status?: string;
+  severity?: string;
+  affectedUsersCount?: number | null;
+  actorUserId?: string;
+  metadata?: OperationalIncidentMetadata;
+  resolvedAt?: string | null;
+  updatedAt?: string;
+  createdAt?: string;
+}
+
+export type CreateIncidentInputCategory = typeof CreateIncidentInputCategory[keyof typeof CreateIncidentInputCategory];
+
+
+export const CreateIncidentInputCategory = {
+  BROKER: 'BROKER',
+  EA: 'EA',
+  SERVER: 'SERVER',
+  PAYMENT: 'PAYMENT',
+  MODEL: 'MODEL',
+  NETWORK: 'NETWORK',
+} as const;
+
+export type CreateIncidentInputSeverity = typeof CreateIncidentInputSeverity[keyof typeof CreateIncidentInputSeverity];
+
+
+export const CreateIncidentInputSeverity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  critical: 'critical',
+} as const;
+
+export type CreateIncidentInputStatus = typeof CreateIncidentInputStatus[keyof typeof CreateIncidentInputStatus];
+
+
+export const CreateIncidentInputStatus = {
+  INCIDENT_OPEN: 'INCIDENT_OPEN',
+  INVESTIGATING: 'INVESTIGATING',
+  RESOLVED: 'RESOLVED',
+} as const;
+
+export interface CreateIncidentInput {
+  title: string;
+  description?: string;
+  category: CreateIncidentInputCategory;
+  severity: CreateIncidentInputSeverity;
+  status?: CreateIncidentInputStatus;
+  affectedUsersCount?: number;
+}
+
+export interface UpdateIncidentInput {
+  title?: string;
+  description?: string;
+  category?: string;
+  severity?: string;
+  status?: string;
+  affectedUsersCount?: number;
+}
+
+export type PlatformAlertMetadata = { [key: string]: unknown } | null;
+
+export interface PlatformAlert {
+  id?: number;
+  type?: string;
+  severity?: string;
+  message?: string;
+  userId?: string | null;
+  eaId?: number | null;
+  eaInstanceId?: string | null;
+  acknowledged?: boolean;
+  acknowledgedAt?: string | null;
+  acknowledgedBy?: string | null;
+  metadata?: PlatformAlertMetadata;
+  createdAt?: string;
+}
+
+export type OperationalDashboardEaInstances = {
+  online?: number;
+  offline?: number;
+  degraded?: number;
+  total?: number;
+};
+
+export interface OperationalDashboard {
+  eaInstances?: OperationalDashboardEaInstances;
+  unacknowledgedAlerts?: number;
+  openIncidents?: number;
+  criticalRiskAlerts?: number;
+  avgVpsLatencyMs?: number | null;
+  timestamp?: string;
+}
+
+export type UserSupportViewEaInstancesItem = {
+  eaInstanceId?: string;
+  state?: string;
+  lastSeenAt?: string | null;
+  brokerName?: string | null;
+  eaVersion?: string | null;
+  platformVersion?: string | null;
+};
+
+export type UserSupportViewLatestAccount = {
+  equity?: number | null;
+  balance?: number | null;
+  floatingPnL?: number | null;
+  marginLevel?: number | null;
+  openPositionsCount?: number | null;
+  brokerName?: string | null;
+  currentDrawdownPct?: number | null;
+  connectivityState?: string | null;
+  updatedAt?: string;
+} | null;
+
+export interface UserSupportView {
+  userId?: string;
+  eaInstances?: UserSupportViewEaInstancesItem[];
+  latestAccount?: UserSupportViewLatestAccount;
+  activeRiskAlerts?: EaRiskAlert[];
+  recentPlatformAlerts?: PlatformAlert[];
+}
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -2590,5 +3202,342 @@ targetType?: string;
 targetId?: string;
 from?: string;
 to?: string;
+};
+
+export type GetQdeAdminDecisionsParams = {
+symbol?: string;
+userId?: string;
+limit?: number;
+offset?: number;
+};
+
+export type GetQdeAdminDecisions200 = {
+  rows?: QdeDecision[];
+  total?: number;
+};
+
+export type GetQdeAdminDecisionsId200 = {
+  decision?: QdeDecision;
+  reasoning?: DecisionReasoning;
+  context?: DecisionContext;
+};
+
+export type GetQdeAdminPositionSnapshotsParams = {
+opportunityId?: number;
+limit?: number;
+};
+
+export type GetQdeAdminTradeEventsParams = {
+opportunityId?: number;
+limit?: number;
+};
+
+export type GetQdeAdminTradeTimelineParams = {
+symbol?: string;
+outcome?: GetQdeAdminTradeTimelineOutcome;
+limit?: number;
+offset?: number;
+};
+
+export type GetQdeAdminTradeTimelineOutcome = typeof GetQdeAdminTradeTimelineOutcome[keyof typeof GetQdeAdminTradeTimelineOutcome];
+
+
+export const GetQdeAdminTradeTimelineOutcome = {
+  win: 'win',
+  loss: 'loss',
+  breakeven: 'breakeven',
+} as const;
+
+export type GetQdeAdminTradeTimeline200 = {
+  rows?: TradeTimeline[];
+  total?: number;
+};
+
+export type GetQdeAdminTradeTimelineOpportunityId200 = { [key: string]: unknown };
+
+export type PostQdeAdminTradeTimelineOpportunityIdFinalize200 = { [key: string]: unknown };
+
+export type GetQdeAdminReasoningValidationParams = {
+unvalidated?: boolean;
+limit?: number;
+};
+
+export type PatchQdeAdminReasoningValidationIdBody = {
+  wasCorrect?: boolean;
+  actualPattern?: string;
+  correctnessScore?: number;
+  validatorNote?: string;
+};
+
+export type GetQdeAdminTradeFailuresParams = {
+symbol?: string;
+limit?: number;
+};
+
+export type PatchQdeAdminTradeFailuresIdBody = {
+  rootCause?: string;
+  adminNotes?: string;
+  positionManagementIssues?: string[];
+};
+
+export type GetQdeAdminCounterfactualsParams = {
+opportunityId?: number;
+limit?: number;
+};
+
+export type GetQdeAdminLearningQueueParams = {
+processed?: boolean;
+limit?: number;
+};
+
+export type GetQdeAdminLearningQueue200 = {
+  rows?: LearningCandidate[];
+  unprocessed?: number;
+};
+
+export type GetQdeAdminExecutionTelemetryParams = {
+symbol?: string;
+limit?: number;
+};
+
+export type PostQdeTrainerSync200Counts = { [key: string]: unknown };
+
+export type PostQdeTrainerSync200 = {
+  ok?: boolean;
+  status?: string;
+  message?: string;
+  counts?: PostQdeTrainerSync200Counts;
+};
+
+export type GetQdeSelfEvaluationParams = {
+reportType?: GetQdeSelfEvaluationReportType;
+limit?: number;
+};
+
+export type GetQdeSelfEvaluationReportType = typeof GetQdeSelfEvaluationReportType[keyof typeof GetQdeSelfEvaluationReportType];
+
+
+export const GetQdeSelfEvaluationReportType = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;
+
+export type PostQdeSelfEvaluationGenerateBodyReportType = typeof PostQdeSelfEvaluationGenerateBodyReportType[keyof typeof PostQdeSelfEvaluationGenerateBodyReportType];
+
+
+export const PostQdeSelfEvaluationGenerateBodyReportType = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;
+
+export type PostQdeSelfEvaluationGenerateBody = {
+  reportType: PostQdeSelfEvaluationGenerateBodyReportType;
+  periodEnd?: string;
+};
+
+export type GetQdeAnalyticsSessions200Item = { [key: string]: unknown };
+
+export type GetQdeAnalyticsSymbols200Item = { [key: string]: unknown };
+
+export type GetQdeAnalyticsConfidenceReliability200Item = { [key: string]: unknown };
+
+export type GetQdeAnalyticsModelQuality200Item = { [key: string]: unknown };
+
+export type GetQdeAdminDeploymentsParams = {
+limit?: number;
+status?: string;
+};
+
+export type GetQdeAdminDeployments200 = {
+  deployments?: QdeDeployment[];
+  total?: number;
+};
+
+export type GetQdeAdminDeploymentsActive200 = {
+  deployment?: QdeDeployment | null;
+  inMemoryVersion?: string | null;
+  synchronized?: boolean;
+};
+
+export type PostQdeAdminDeploymentsPoll200 = {
+  changed?: boolean;
+  message?: string;
+  previousVersion?: string | null;
+  newVersion?: string | null;
+};
+
+export type GetQdeAdminDeploymentsHealthCurrentParams = {
+limit?: number;
+};
+
+export type GetQdeAdminDeploymentsHealthCurrent200 = {
+  deploymentDbId?: number | null;
+  version?: string | null;
+  health?: QdeDeploymentHealth[];
+};
+
+export type GetQdeAdminDeploymentsId200 = {
+  deployment?: QdeDeployment;
+};
+
+export type PostQdeAdminDeploymentsIdActivate200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type PostQdeAdminDeploymentsIdRollback200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type GetQdeAdminDeploymentsIdHealthParams = {
+limit?: number;
+};
+
+export type GetQdeAdminDeploymentsIdHealth200 = {
+  health?: QdeDeploymentHealth[];
+  total?: number;
+};
+
+export type GetQdeAdminDeploymentsIdEventsParams = {
+limit?: number;
+};
+
+export type GetQdeAdminDeploymentsIdEvents200 = {
+  events?: QdeDeploymentEvent[];
+};
+
+export type PostOperationalTelemetry201 = {
+  id?: number;
+};
+
+export type GetOperationalTelemetryParams = {
+userId?: string;
+eaInstanceId?: string;
+from?: string;
+to?: string;
+limit?: number;
+};
+
+export type GetOperationalTelemetry200 = {
+  snapshots?: EaTelemetrySnapshot[];
+  total?: number;
+};
+
+export type GetOperationalTelemetryReplayParams = {
+userId?: string;
+eaInstanceId?: string;
+from?: string;
+to?: string;
+};
+
+export type GetOperationalTelemetryReplay200PointsItem = { [key: string]: unknown };
+
+export type GetOperationalTelemetryReplay200 = {
+  points?: GetOperationalTelemetryReplay200PointsItem[];
+};
+
+export type PostOperationalHeartbeat200 = {
+  ok?: boolean;
+  state?: string;
+  ts?: string;
+};
+
+export type GetOperationalHeartbeatStatusParams = {
+state?: string;
+userId?: string;
+};
+
+export type GetOperationalHeartbeatStatus200Summary = {
+  online?: number;
+  degraded?: number;
+  offline?: number;
+  unauthorized?: number;
+  outdated?: number;
+};
+
+export type GetOperationalHeartbeatStatus200 = {
+  instances?: EaHeartbeatState[];
+  summary?: GetOperationalHeartbeatStatus200Summary;
+};
+
+export type GetOperationalHeartbeatOffline200 = {
+  offline?: EaHeartbeatState[];
+  count?: number;
+};
+
+export type PostOperationalExecutionQuality200 = {
+  ok?: boolean;
+};
+
+export type GetOperationalExecutionQualityParams = {
+userId?: string;
+brokerName?: string;
+from?: string;
+to?: string;
+};
+
+export type GetOperationalExecutionQuality200 = {
+  quality?: EaExecutionQuality[];
+  brokerRankings?: BrokerRanking[];
+};
+
+export type GetOperationalRiskAlertsParams = {
+userId?: string;
+alertType?: string;
+severity?: string;
+unacknowledged?: string;
+};
+
+export type GetOperationalRiskAlerts200 = {
+  alerts?: EaRiskAlert[];
+  total?: number;
+};
+
+export type PostOperationalRiskAlertsIdAcknowledge200 = {
+  ok?: boolean;
+};
+
+export type GetOperationalIncidentsParams = {
+status?: string;
+category?: string;
+severity?: string;
+};
+
+export type GetOperationalIncidents200 = {
+  incidents?: OperationalIncident[];
+  total?: number;
+};
+
+export type PostOperationalIncidents201 = {
+  incident?: OperationalIncident;
+};
+
+export type PatchOperationalIncidentsId200 = {
+  incident?: OperationalIncident;
+};
+
+export type DeleteOperationalIncidentsId200 = {
+  ok?: boolean;
+};
+
+export type GetOperationalAlertsParams = {
+type?: string;
+severity?: string;
+userId?: string;
+unacknowledged?: string;
+limit?: number;
+};
+
+export type GetOperationalAlerts200 = {
+  alerts?: PlatformAlert[];
+  total?: number;
+  unacknowledgedCount?: number;
+};
+
+export type PostOperationalAlertsIdAcknowledge200 = {
+  ok?: boolean;
 };
 

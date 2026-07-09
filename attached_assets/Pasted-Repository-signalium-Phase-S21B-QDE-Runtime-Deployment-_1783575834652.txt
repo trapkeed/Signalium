@@ -1,0 +1,211 @@
+Repository:
+signalium
+
+Phase:
+S21B — QDE Runtime Deployment Client and Hot Swap Infrastructure
+
+Objective:
+
+Transform Signalium into the consumer of QDE deployments produced by signalium-trainer.
+
+Signalium owns:
+
+* execution
+* broker communication
+* EA communication
+* telemetry collection
+* model consumption
+
+Signalium never trains models.
+
+---
+
+1. DEPLOYMENT CLIENT
+
+---
+
+Implement deployment polling against signalium-trainer.
+
+Endpoints:
+
+GET /deployment/active
+GET /deployment/manifest/{id}
+GET /deployment/download/{id}
+
+Detect new ACTIVE versions automatically.
+
+---
+
+2. ARTIFACT DOWNLOADER
+
+---
+
+Download:
+
+weights
+manifests
+calibration artifacts
+metadata
+
+Store local deployment cache.
+
+---
+
+3. INTEGRITY VERIFICATION
+
+---
+
+Verify:
+
+SHA256 hashes
+artifact signatures
+manifest signatures
+
+Reject invalid deployments.
+
+---
+
+4. RUNTIME MODEL LOADER
+
+---
+
+Load:
+
+TorchScript models
+ONNX models
+configuration artifacts
+calibration artifacts
+
+Support multiple export formats.
+
+---
+
+5. MODEL WARMING
+
+---
+
+Perform:
+
+test inference
+warm inference
+cache initialization
+
+before activation.
+
+Avoid first-inference latency spikes.
+
+---
+
+6. HOT SWAP ENGINE
+
+---
+
+Support:
+
+load model
+validate model
+warm model
+switch active pointer
+
+No process restart allowed.
+
+No downtime allowed.
+
+---
+
+7. ROLLBACK EXECUTION
+
+---
+
+If activation fails:
+
+restore previous deployment immediately.
+
+Rollback must be automatic when health checks fail.
+
+---
+
+8. VERSION TRACKING
+
+---
+
+Persist with every decision:
+
+model_version
+artifact_hash
+manifest_hash
+feature_version
+
+Provide complete traceability.
+
+---
+
+9. MODEL HEALTH MONITORING
+
+---
+
+Monitor:
+
+latency
+throughput
+memory usage
+CPU usage
+GPU usage
+error rate
+confidence distribution
+
+Generate alerts for abnormal behavior.
+
+---
+
+10. MULTI-INSTANCE SYNCHRONIZATION
+
+---
+
+If multiple Signalium nodes exist:
+
+all nodes must use identical ACTIVE versions.
+
+Prevent split-brain deployments.
+
+---
+
+11. ADMIN DEPLOYMENT DASHBOARD
+
+---
+
+Display:
+
+active model
+deployment history
+rollback history
+artifact information
+runtime health metrics
+
+Admin only.
+
+---
+
+12. ARCHITECTURAL RULES
+
+---
+
+Signalium consumes intelligence.
+
+Signalium does not train intelligence.
+
+Signalium executes the decisions of the QDE.
+
+The QDE remains the sole decision maker.
+
+No rule engine may override the model.
+
+No ensemble may return.
+
+Only one ACTIVE model may exist.
+
+Implement production-grade code only.
+
+Avoid placeholders.
+
+Maintain institutional reliability standards.

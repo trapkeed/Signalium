@@ -46,6 +46,12 @@ import AdminStatusPage from "@/pages/admin/status";
 import AdminBrokers from "@/pages/admin/brokers";
 import AdminDataProviders from "@/pages/admin/data-providers";
 import AdminInferenceGateway from "@/pages/admin/inference-gateway";
+import AdminTradeIntelligence from "@/pages/admin/trade-intelligence";
+import AdminDeployments from "@/pages/admin/deployments";
+import AdminOperations from "@/pages/admin/operations";
+import AdminEaMonitor from "@/pages/admin/ea-monitor";
+import AdminIncidents from "@/pages/admin/incidents";
+import AdminAlerts from "@/pages/admin/alerts";
 import AdminFeatureFlags from "@/pages/admin/feature-flags";
 
 import { AppLayout } from "@/components/layout";
@@ -249,6 +255,12 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
             <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
             <Route path="/admin/inference-gateway"><ProtectedRoute component={AdminInferenceGateway} /></Route>
+            <Route path="/admin/trade-intelligence"><ProtectedRoute component={AdminTradeIntelligence} /></Route>
+            <Route path="/admin/deployments"><ProtectedRoute component={AdminDeployments} /></Route>
+            <Route path="/admin/operations"><ProtectedRoute component={AdminOperations} /></Route>
+            <Route path="/admin/ea-monitor"><ProtectedRoute component={AdminEaMonitor} /></Route>
+            <Route path="/admin/incidents"><ProtectedRoute component={AdminIncidents} /></Route>
+            <Route path="/admin/alerts"><ProtectedRoute component={AdminAlerts} /></Route>
             <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
             <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>

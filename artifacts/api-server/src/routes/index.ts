@@ -33,6 +33,9 @@ import invoicesRouter from "./invoices";
 import paymentWebhooksRouter from "./payment-webhooks";
 import tradingSettingsRouter from "./trading-settings";
 import inferenceGatewayRouter from "./inference-gateway";
+import tradeIntelligenceRouter from "./trade-intelligence";
+import deploymentsRouter from "./deployments";
+import operationalRouter from "./operational";
 import providerManagementRouter from "./provider-management";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
@@ -78,6 +81,12 @@ router.use("/feature-flags", featureFlagsRouter);
 router.use("/trading-settings", tradingSettingsRouter);
 // S18: inference gateway routes merge into /qde namespace alongside existing qdeRouter
 router.use("/qde", inferenceGatewayRouter);
+// S19: trade telemetry & learning-loop intelligence routes also under /qde
+router.use("/qde", tradeIntelligenceRouter);
+// S21B: deployment client and hot-swap management routes under /qde
+router.use("/qde", deploymentsRouter);
+// S22A: operational infrastructure — telemetry, heartbeat, incidents, alerts
+router.use("/operational", operationalRouter);
 // S18: extended provider management (credentials, capabilities, status, mappings)
 // Mounted at /data-providers so it shares the same base path as dataProvidersRouter
 router.use("/data-providers", providerManagementRouter);

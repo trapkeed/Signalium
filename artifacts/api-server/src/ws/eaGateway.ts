@@ -1,12 +1,20 @@
 import type { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import crypto from "crypto";
-import { db, eaConnectionsTable, positionTelemetryTable, trainerActionsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import {
+  db,
+  eaConnectionsTable,
+  positionTelemetryTable,
+  trainerActionsTable,
+  executionTelemetryTable,
+  executionQualityMetricsTable,
+} from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
 import { resolveApiKeyAuth } from "../middlewares/requireApiKeyAuth";
 import { decideAction, type TelemetrySnapshot, type TrainerActionType } from "../lib/qdeTrainer";
 import { logger } from "../lib/logger";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
+import { ingestPositionSnapshot, emitTradeEvent } from "../lib/tradeLifecycle";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -205,10 +213,7 @@ function safeSend(ws: WebSocket, payload: unknown) {
 }
 
 async function handleTelemetry(state: ConnectionState, data: unknown) {
-  // Re-check API access on every inbound message, not just at connect time —
-  // a subscription can transition into grace/expired/suspended while a
-  // socket is already open, and EA polling must stop immediately when that
-  // happens rather than waiting for the next reconnect.
+  // Re-check API access on every inbound message, not just at connect time.
   const apiAccess = await checkApiAccess(state.userId);
   if (!apiAccess.allowed) {
     safeSend(state.ws, { type: "error", code: apiAccess.code, message: apiAccess.message });
@@ -248,15 +253,39 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
     tradeAgeSeconds: telemetry.tradeAgeSeconds ?? null,
   }).returning();
 
+  // S19: position snapshot on every polling cycle for open positions
+  if (telemetry.openPositions > 0 && telemetry.symbol) {
+    ingestPositionSnapshot({
+      userId: state.userId,
+      symbol: telemetry.symbol,
+      opportunityId: null,
+      telemetryId: row.id,
+      profit: telemetry.floatingPnl,
+      drawdown: telemetry.drawdown ?? null,
+      swap: telemetry.swap ?? null,
+      commission: telemetry.commission ?? null,
+      equity: telemetry.equity,
+      balance: telemetry.balance,
+      margin: telemetry.margin,
+      entryPrice: telemetry.entryPrice ?? null,
+      currentPrice: telemetry.currentPrice ?? null,
+      tradeAgeSeconds: telemetry.tradeAgeSeconds ?? null,
+    }).catch((err: unknown) => logger.warn({ err }, "position snapshot ingest failed (non-fatal)"));
+  }
+
+  // S19: capture execution telemetry if the EA included an `execution` block
+  const execData = extractExecutionPayload(data);
+  if (execData && telemetry.symbol) {
+    captureExecutionTelemetry(state.userId, telemetry.symbol, row.id, execData)
+      .catch((err: unknown) => logger.warn({ err }, "execution telemetry capture failed (non-fatal)"));
+  }
+
   await db.update(eaConnectionsTable)
     .set({ lastMessageAt: new Date(), messageCount: (await getMessageCount(state.connectionId)) + 1 })
     .where(eq(eaConnectionsTable.connectionId, state.connectionId));
 
   const autonomousAccess = await checkAutonomousAccess(state.userId);
   if (!autonomousAccess.allowed) {
-    // Telemetry is still recorded above — only the autonomous decision step
-    // is gated, since manual/telemetry visibility can remain available (e.g.
-    // during grace period) even when autonomous trading is denied.
     safeSend(state.ws, { type: "error", code: autonomousAccess.code, message: autonomousAccess.message });
     return;
   }
@@ -280,6 +309,10 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
     reasoning: decision.reasoning,
     status: "queued",
   }).returning();
+
+  // Note: trade events require a known opportunityId (FK NOT NULL). The EA gateway
+  // doesn't manage opportunities — those are created by inference-gateway. Events
+  // for EA autonomous decisions are captured there via captureQdeDecision.
 
   await deliverAction(actionRow.id);
 }
@@ -337,6 +370,104 @@ async function flushQueuedActions(state: ConnectionState) {
   for (const action of queued) {
     await deliverAction(action.id);
   }
+}
+
+interface ExecutionPayload {
+  requestedEntry?: number;
+  actualEntry?: number;
+  slippage?: number;
+  spread?: number;
+  commission?: number;
+  executionDelayMs?: number;
+  partialFill?: boolean;
+  requotes?: number;
+}
+
+function extractExecutionPayload(data: unknown): ExecutionPayload | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  if (!d.execution || typeof d.execution !== "object") return null;
+  const e = d.execution as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  return {
+    requestedEntry: num(e.requestedEntry),
+    actualEntry: num(e.actualEntry),
+    slippage: num(e.slippage),
+    spread: num(e.spread),
+    commission: num(e.commission),
+    executionDelayMs: num(e.executionDelayMs),
+    partialFill: typeof e.partialFill === "boolean" ? e.partialFill : false,
+    requotes: typeof e.requotes === "number" ? e.requotes : 0,
+  };
+}
+
+async function captureExecutionTelemetry(
+  userId: string,
+  symbol: string,
+  telemetryId: number,
+  exec: ExecutionPayload,
+) {
+  await db.insert(executionTelemetryTable).values({
+    userId,
+    symbol,
+    telemetryId,
+    requestedEntry: exec.requestedEntry ?? null,
+    actualEntry: exec.actualEntry ?? null,
+    slippage: exec.slippage ?? null,
+    spread: exec.spread ?? null,
+    commission: exec.commission ?? null,
+    executionDelayMs: exec.executionDelayMs ?? null,
+    partialFill: exec.partialFill ?? false,
+    requotes: exec.requotes ?? 0,
+  });
+
+  // Upsert aggregated execution quality metrics for this symbol/session/volatility segment
+  const session = detectSessionFromHour(new Date().getUTCHours());
+  await db.insert(executionQualityMetricsTable).values({
+    symbol,
+    session,
+    volatilityState: "UNKNOWN",
+    // Initial insert: only use non-null values; null fields start at 0 to indicate no data yet
+    avgSlippage: exec.slippage ?? 0,
+    avgSpread: exec.spread ?? 0,
+    avgCommission: exec.commission ?? 0,
+    avgExecutionDelayMs: exec.executionDelayMs ?? 0,
+    partialFillRate: exec.partialFill ? 1 : 0,
+    requoteRate: exec.requotes ?? 0,
+    sampleCount: 1,
+  }).onConflictDoUpdate({
+    target: [executionQualityMetricsTable.symbol, executionQualityMetricsTable.session, executionQualityMetricsTable.volatilityState],
+    set: {
+      // Null-aware running average: only fold in the new sample when the value is present.
+      // CASE WHEN new_val IS NULL THEN keep existing ELSE running_avg formula END
+      avgSlippage: exec.slippage != null
+        ? sql`(${executionQualityMetricsTable.avgSlippage} * ${executionQualityMetricsTable.sampleCount} + ${exec.slippage}) / (${executionQualityMetricsTable.sampleCount} + 1)`
+        : sql`${executionQualityMetricsTable.avgSlippage}`,
+      avgSpread: exec.spread != null
+        ? sql`(${executionQualityMetricsTable.avgSpread} * ${executionQualityMetricsTable.sampleCount} + ${exec.spread}) / (${executionQualityMetricsTable.sampleCount} + 1)`
+        : sql`${executionQualityMetricsTable.avgSpread}`,
+      avgCommission: exec.commission != null
+        ? sql`(${executionQualityMetricsTable.avgCommission} * ${executionQualityMetricsTable.sampleCount} + ${exec.commission}) / (${executionQualityMetricsTable.sampleCount} + 1)`
+        : sql`${executionQualityMetricsTable.avgCommission}`,
+      avgExecutionDelayMs: exec.executionDelayMs != null
+        ? sql`(${executionQualityMetricsTable.avgExecutionDelayMs} * ${executionQualityMetricsTable.sampleCount} + ${exec.executionDelayMs}) / (${executionQualityMetricsTable.sampleCount} + 1)`
+        : sql`${executionQualityMetricsTable.avgExecutionDelayMs}`,
+      partialFillRate: sql`(${executionQualityMetricsTable.partialFillRate} * ${executionQualityMetricsTable.sampleCount} + ${exec.partialFill ? 1 : 0}) / (${executionQualityMetricsTable.sampleCount} + 1)`,
+      requoteRate: exec.requotes != null
+        ? sql`(${executionQualityMetricsTable.requoteRate} * ${executionQualityMetricsTable.sampleCount} + ${exec.requotes}) / (${executionQualityMetricsTable.sampleCount} + 1)`
+        : sql`${executionQualityMetricsTable.requoteRate}`,
+      sampleCount: sql`${executionQualityMetricsTable.sampleCount} + 1`,
+      updatedAt: new Date(),
+    },
+  });
+}
+
+function detectSessionFromHour(utcHour: number): string {
+  if (utcHour >= 22 || utcHour < 8) return "ASIAN";
+  if (utcHour >= 8 && utcHour < 12) return "LONDON";
+  if (utcHour >= 12 && utcHour < 16) return "LONDON_NEW_YORK_OVERLAP";
+  if (utcHour >= 16 && utcHour < 21) return "NEW_YORK";
+  return "OFF_SESSION";
 }
 
 function parseTelemetryPayload(data: unknown): (TelemetrySnapshot & { symbol?: string }) | null {

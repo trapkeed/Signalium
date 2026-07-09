@@ -4441,6 +4441,924 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogEntry"
 
+  # ── S19 Trade Intelligence ────────────────────────────────────────────────
+  /qde/admin/decisions:
+    get:
+      summary: List QDE decisions
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+        - { name: userId, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: Paginated decisions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows: { type: array, items: { $ref: "#/components/schemas/QdeDecision" } }
+                  total: { type: integer }
+
+  /qde/admin/decisions/{id}:
+    get:
+      summary: Get a decision with reasoning and context
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Decision detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  decision: { $ref: "#/components/schemas/QdeDecision" }
+                  reasoning: { $ref: "#/components/schemas/DecisionReasoning" }
+                  context: { $ref: "#/components/schemas/DecisionContext" }
+
+  /qde/admin/position-snapshots:
+    get:
+      summary: List position snapshots
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        "200":
+          description: Position snapshots
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PositionSnapshot" } }
+
+  /qde/admin/position-metrics/{opportunityId}:
+    get:
+      summary: Get aggregated position metrics for an opportunity
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Position metrics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PositionMetrics" }
+
+  /qde/admin/trade-events:
+    get:
+      summary: List trade events
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        "200":
+          description: Trade events
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/TradeEvent" } }
+
+  /qde/admin/trade-timeline:
+    get:
+      summary: List trade timelines
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+        - { name: outcome, in: query, schema: { type: string, enum: [win, loss, breakeven] } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: Paginated trade timelines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows: { type: array, items: { $ref: "#/components/schemas/TradeTimeline" } }
+                  total: { type: integer }
+
+  /qde/admin/trade-timeline/{opportunityId}:
+    get:
+      summary: Get full trade history for an opportunity
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Complete trade record
+          content:
+            application/json:
+              schema: { type: object }
+
+  /qde/admin/trade-timeline/{opportunityId}/finalize:
+    post:
+      summary: Manually trigger trade finalisation pipeline
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Finalisation result
+          content:
+            application/json:
+              schema: { type: object }
+
+  /qde/admin/reasoning-validation:
+    get:
+      summary: List reasoning validations
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: unvalidated, in: query, schema: { type: boolean } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: Reasoning validations
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ReasoningValidation" } }
+
+  /qde/admin/reasoning-validation/{id}:
+    patch:
+      summary: Update reasoning validation correctness
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wasCorrect: { type: boolean }
+                actualPattern: { type: string }
+                correctnessScore: { type: number }
+                validatorNote: { type: string }
+      responses:
+        "200":
+          description: Updated validation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReasoningValidation" }
+
+  /qde/admin/reasoning-accuracy:
+    get:
+      summary: Get reasoning accuracy by pattern
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Reasoning accuracy stats
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ReasoningAccuracy" } }
+
+  /qde/admin/trade-failures:
+    get:
+      summary: List trade failures
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: Trade failures
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/TradeFailure" } }
+
+  /qde/admin/trade-failures/{id}:
+    patch:
+      summary: Update trade failure investigation notes
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rootCause: { type: string }
+                adminNotes: { type: string }
+                positionManagementIssues: { type: array, items: { type: string } }
+      responses:
+        "200":
+          description: Updated failure record
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TradeFailure" }
+
+  /qde/admin/failure-patterns:
+    get:
+      summary: List recurring failure patterns
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Failure patterns
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/FailurePattern" } }
+
+  /qde/admin/counterfactuals:
+    get:
+      summary: List counterfactual results
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: opportunityId, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        "200":
+          description: Counterfactual results
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CounterfactualResult" } }
+
+  /qde/admin/learning-queue:
+    get:
+      summary: List learning candidates
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: processed, in: query, schema: { type: boolean } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        "200":
+          description: Learning queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows: { type: array, items: { $ref: "#/components/schemas/LearningCandidate" } }
+                  unprocessed: { type: integer }
+
+  /qde/admin/learning-queue/{id}/mark-processed:
+    post:
+      summary: Mark a learning candidate as processed by trainer
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Updated candidate
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningCandidate" }
+
+  /qde/admin/execution-quality:
+    get:
+      summary: List execution quality metrics by segment
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Execution quality metrics
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ExecutionQualityMetrics" } }
+
+  /qde/admin/execution-telemetry:
+    get:
+      summary: List raw execution telemetry
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        "200":
+          description: Execution telemetry records
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ExecutionTelemetry" } }
+
+  /qde/trainer-sync/status:
+    get:
+      summary: Get trainer sync status
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Sync state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TrainerSyncState" }
+
+  /qde/trainer-sync:
+    post:
+      summary: Trigger a trainer sync batch
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  status: { type: string }
+                  message: { type: string }
+                  counts: { type: object }
+
+  /qde/self-evaluation:
+    get:
+      summary: List self-evaluation reports
+      tags: [Trade Intelligence]
+      parameters:
+        - { name: reportType, in: query, schema: { type: string, enum: [daily, weekly, monthly] } }
+        - { name: limit, in: query, schema: { type: integer, default: 50 } }
+      responses:
+        "200":
+          description: Self-evaluation reports
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SelfEvaluationReport" } }
+
+  /qde/self-evaluation/generate:
+    post:
+      summary: Generate a self-evaluation report
+      tags: [Trade Intelligence]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reportType]
+              properties:
+                reportType: { type: string, enum: [daily, weekly, monthly] }
+                periodEnd: { type: string, format: date-time }
+      responses:
+        "201":
+          description: Generated report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SelfEvaluationReport" }
+
+  /qde/analytics/sessions:
+    get:
+      summary: Session-level performance analytics
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Session analytics
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /qde/analytics/symbols:
+    get:
+      summary: Symbol-level performance analytics
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Symbol analytics
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /qde/analytics/confidence-reliability:
+    get:
+      summary: Confidence score vs win-rate reliability
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Confidence buckets with win rates
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /qde/analytics/reasoning-accuracy:
+    get:
+      summary: Reasoning accuracy by pattern
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Accuracy by pattern
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ReasoningAccuracy" } }
+
+  /qde/analytics/model-quality:
+    get:
+      summary: Weekly model quality trend (win rate, Sharpe, avg R)
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Weekly model quality
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /qde/analytics/execution-quality:
+    get:
+      summary: Execution quality analytics by segment
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Execution quality
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ExecutionQualityMetrics" } }
+
+  /qde/admin/deployments:
+    get:
+      summary: List all QDE deployments
+      tags: [Deployments]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deployment list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployments: { type: array, items: { $ref: "#/components/schemas/QdeDeployment" } }
+                  total: { type: integer }
+
+  /qde/admin/deployments/active:
+    get:
+      summary: Get the currently active QDE deployment
+      tags: [Deployments]
+      responses:
+        "200":
+          description: Active deployment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployment: { $ref: "#/components/schemas/QdeDeployment", nullable: true }
+                  inMemoryVersion: { type: string, nullable: true }
+                  synchronized: { type: boolean }
+
+  /qde/admin/deployments/poll:
+    post:
+      summary: Trigger a manual poll of signalium-trainer for new deployments
+      tags: [Deployments]
+      responses:
+        "200":
+          description: Poll result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changed: { type: boolean }
+                  message: { type: string }
+                  previousVersion: { type: string, nullable: true }
+                  newVersion: { type: string, nullable: true }
+
+  /qde/admin/deployments/health/current:
+    get:
+      summary: Get health metrics for the currently active deployment
+      tags: [Deployments]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Health metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deploymentDbId: { type: integer, nullable: true }
+                  version: { type: string, nullable: true }
+                  health: { type: array, items: { $ref: "#/components/schemas/QdeDeploymentHealth" } }
+
+  /qde/admin/deployments/{id}:
+    get:
+      summary: Get a single deployment by DB id
+      tags: [Deployments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deployment detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployment: { $ref: "#/components/schemas/QdeDeployment" }
+
+  /qde/admin/deployments/{id}/activate:
+    post:
+      summary: Manually activate a specific deployment
+      tags: [Deployments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Activation initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  message: { type: string }
+
+  /qde/admin/deployments/{id}/rollback:
+    post:
+      summary: Roll back to a specific deployment
+      tags: [Deployments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Rollback result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  message: { type: string }
+
+  /qde/admin/deployments/{id}/health:
+    get:
+      summary: Get health metric history for a specific deployment
+      tags: [Deployments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: Health metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  health: { type: array, items: { $ref: "#/components/schemas/QdeDeploymentHealth" } }
+                  total: { type: integer }
+
+  /qde/admin/deployments/{id}/events:
+    get:
+      summary: Get lifecycle events for a specific deployment
+      tags: [Deployments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100 }
+      responses:
+        "200":
+          description: Lifecycle events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events: { type: array, items: { $ref: "#/components/schemas/QdeDeploymentEvent" } }
+
+  /operational/telemetry:
+    post:
+      summary: EA ingest — submit a full telemetry snapshot
+      tags: [Operational]
+      responses:
+        "201":
+          description: Snapshot stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+    get:
+      summary: Admin — list telemetry snapshots
+      tags: [Operational]
+      parameters:
+        - { in: query, name: userId, schema: { type: string } }
+        - { in: query, name: eaInstanceId, schema: { type: string } }
+        - { in: query, name: from, schema: { type: string } }
+        - { in: query, name: to, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: Snapshot list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshots: { type: array, items: { $ref: "#/components/schemas/EaTelemetrySnapshot" } }
+                  total: { type: integer }
+
+  /operational/telemetry/replay:
+    get:
+      summary: Admin — account behaviour replay (time-ordered points)
+      tags: [Operational]
+      parameters:
+        - { in: query, name: userId, schema: { type: string } }
+        - { in: query, name: eaInstanceId, schema: { type: string } }
+        - { in: query, name: from, schema: { type: string } }
+        - { in: query, name: to, schema: { type: string } }
+      responses:
+        "200":
+          description: Replay points
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  points: { type: array, items: { type: object } }
+
+  /operational/heartbeat:
+    post:
+      summary: EA ping — update heartbeat state
+      tags: [Operational]
+      responses:
+        "200":
+          description: Ping accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  state: { type: string }
+                  ts: { type: string }
+
+  /operational/heartbeat/status:
+    get:
+      summary: Admin — all EA heartbeat states with summary
+      tags: [Operational]
+      parameters:
+        - { in: query, name: state, schema: { type: string } }
+        - { in: query, name: userId, schema: { type: string } }
+      responses:
+        "200":
+          description: Heartbeat status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances: { type: array, items: { $ref: "#/components/schemas/EaHeartbeatState" } }
+                  summary:
+                    type: object
+                    properties:
+                      online: { type: integer }
+                      degraded: { type: integer }
+                      offline: { type: integer }
+                      unauthorized: { type: integer }
+                      outdated: { type: integer }
+
+  /operational/heartbeat/offline:
+    get:
+      summary: Admin — currently offline EA instances
+      tags: [Operational]
+      responses:
+        "200":
+          description: Offline instances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offline: { type: array, items: { $ref: "#/components/schemas/EaHeartbeatState" } }
+                  count: { type: integer }
+
+  /operational/execution-quality:
+    post:
+      summary: EA ingest — submit execution quality metrics
+      tags: [Operational]
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+    get:
+      summary: Admin — execution quality list and broker rankings
+      tags: [Operational]
+      parameters:
+        - { in: query, name: userId, schema: { type: string } }
+        - { in: query, name: brokerName, schema: { type: string } }
+        - { in: query, name: from, schema: { type: string } }
+        - { in: query, name: to, schema: { type: string } }
+      responses:
+        "200":
+          description: Quality data and broker rankings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quality: { type: array, items: { $ref: "#/components/schemas/EaExecutionQuality" } }
+                  brokerRankings: { type: array, items: { $ref: "#/components/schemas/BrokerRanking" } }
+
+  /operational/risk/alerts:
+    get:
+      summary: Admin — list risk alerts
+      tags: [Operational]
+      parameters:
+        - { in: query, name: userId, schema: { type: string } }
+        - { in: query, name: alertType, schema: { type: string } }
+        - { in: query, name: severity, schema: { type: string } }
+        - { in: query, name: unacknowledged, schema: { type: string } }
+      responses:
+        "200":
+          description: Risk alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts: { type: array, items: { $ref: "#/components/schemas/EaRiskAlert" } }
+                  total: { type: integer }
+
+  /operational/risk/alerts/{id}/acknowledge:
+    post:
+      summary: Admin — acknowledge a risk alert
+      tags: [Operational]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /operational/incidents:
+    get:
+      summary: Admin — list operational incidents
+      tags: [Operational]
+      parameters:
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: category, schema: { type: string } }
+        - { in: query, name: severity, schema: { type: string } }
+      responses:
+        "200":
+          description: Incidents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incidents: { type: array, items: { $ref: "#/components/schemas/OperationalIncident" } }
+                  total: { type: integer }
+    post:
+      summary: Admin — create an incident
+      tags: [Operational]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateIncidentInput" }
+      responses:
+        "201":
+          description: Incident created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incident: { $ref: "#/components/schemas/OperationalIncident" }
+
+  /operational/incidents/{id}:
+    patch:
+      summary: Admin — update an incident
+      tags: [Operational]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateIncidentInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incident: { $ref: "#/components/schemas/OperationalIncident" }
+    delete:
+      summary: Admin — delete an incident
+      tags: [Operational]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /operational/alerts:
+    get:
+      summary: Admin — list platform alerts
+      tags: [Operational]
+      parameters:
+        - { in: query, name: type, schema: { type: string } }
+        - { in: query, name: severity, schema: { type: string } }
+        - { in: query, name: userId, schema: { type: string } }
+        - { in: query, name: unacknowledged, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer, default: 100 } }
+      responses:
+        "200":
+          description: Alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts: { type: array, items: { $ref: "#/components/schemas/PlatformAlert" } }
+                  total: { type: integer }
+                  unacknowledgedCount: { type: integer }
+
+  /operational/alerts/{id}/acknowledge:
+    post:
+      summary: Admin — acknowledge a platform alert
+      tags: [Operational]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+
+  /operational/dashboard:
+    get:
+      summary: Admin — operations overview stats
+      tags: [Operational]
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationalDashboard" }
+
+  /operational/support/user/{userId}:
+    get:
+      summary: Staff — safe user support view (no credentials)
+      tags: [Operational]
+      parameters:
+        - { in: path, name: userId, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: User support view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserSupportView" }
+
+  /qde/admin/trade-intelligence-stats:
+    get:
+      summary: Overview stats for the Trade Intelligence dashboard
+      tags: [Trade Intelligence]
+      responses:
+        "200":
+          description: Overview stats
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TradeIntelligenceStats" }
+
 components:
   schemas:
     HealthStatus:
@@ -7061,3 +7979,581 @@ components:
           type: boolean
         createdAt:
           type: string
+
+    # ── S19 Trade Intelligence Schemas ─────────────────────────────────────────
+
+    QdeDecision:
+      type: object
+      required: [id, decisionId, symbol, userId, inferenceType, trainerOnline, createdAt]
+      properties:
+        id: { type: integer }
+        decisionId: { type: string }
+        modelVersion: { type: string, nullable: true }
+        symbol: { type: string }
+        userId: { type: string }
+        opportunityId: { type: integer, nullable: true }
+        telemetryId: { type: integer, nullable: true }
+        inferenceType: { type: string }
+        direction: { type: string, nullable: true }
+        confidence: { type: number, nullable: true }
+        riskSignal: { type: string, nullable: true }
+        sizeSignal: { type: string, nullable: true }
+        entryUrgency: { type: string, nullable: true }
+        exitHorizon: { type: string, nullable: true }
+        session: { type: string, nullable: true }
+        volatilityState: { type: string, nullable: true }
+        spreadState: { type: string, nullable: true }
+        trainerOnline: { type: boolean }
+        createdAt: { type: string }
+
+    DecisionReasoning:
+      type: object
+      required: [id, decisionId, reasoning, createdAt]
+      properties:
+        id: { type: integer }
+        decisionId: { type: integer }
+        reasoning: { type: string }
+        primaryPattern: { type: string, nullable: true }
+        supportingFactors: { type: array, items: { type: string }, nullable: true }
+        contradictingFactors: { type: array, items: { type: string }, nullable: true }
+        warnings: { type: array, items: { type: string }, nullable: true }
+        rawModelOutput: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    DecisionContext:
+      type: object
+      required: [id, decisionId, createdAt]
+      properties:
+        id: { type: integer }
+        decisionId: { type: integer }
+        balance: { type: number, nullable: true }
+        equity: { type: number, nullable: true }
+        margin: { type: number, nullable: true }
+        freeMargin: { type: number, nullable: true }
+        openPositions: { type: integer, nullable: true }
+        floatingPnl: { type: number, nullable: true }
+        entryPrice: { type: number, nullable: true }
+        currentPrice: { type: number, nullable: true }
+        spread: { type: number, nullable: true }
+        drawdown: { type: number, nullable: true }
+        tradeAgeSeconds: { type: integer, nullable: true }
+        trendStrength: { type: number, nullable: true }
+        volatility: { type: number, nullable: true }
+        marketQuality: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    ExecutionTelemetry:
+      type: object
+      required: [id, userId, symbol, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        symbol: { type: string }
+        opportunityId: { type: integer, nullable: true }
+        telemetryId: { type: integer, nullable: true }
+        requestedEntry: { type: number, nullable: true }
+        actualEntry: { type: number, nullable: true }
+        slippage: { type: number, nullable: true }
+        spread: { type: number, nullable: true }
+        commission: { type: number, nullable: true }
+        executionDelayMs: { type: integer, nullable: true }
+        partialFill: { type: boolean }
+        requotes: { type: integer }
+        createdAt: { type: string }
+
+    ExecutionQualityMetrics:
+      type: object
+      required: [id, symbol, session, volatilityState, sampleCount]
+      properties:
+        id: { type: integer }
+        symbol: { type: string }
+        session: { type: string }
+        volatilityState: { type: string }
+        avgSlippage: { type: number }
+        avgSpread: { type: number }
+        avgCommission: { type: number }
+        avgExecutionDelayMs: { type: number }
+        partialFillRate: { type: number }
+        requoteRate: { type: number }
+        sampleCount: { type: integer }
+        updatedAt: { type: string }
+
+    PositionSnapshot:
+      type: object
+      required: [id, userId, symbol, profit, snapshotAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        symbol: { type: string }
+        opportunityId: { type: integer, nullable: true }
+        telemetryId: { type: integer, nullable: true }
+        profit: { type: number }
+        drawdown: { type: number, nullable: true }
+        swap: { type: number, nullable: true }
+        commission: { type: number, nullable: true }
+        equityImpact: { type: number, nullable: true }
+        distanceToStop: { type: number, nullable: true }
+        distanceToTarget: { type: number, nullable: true }
+        marginUsage: { type: number, nullable: true }
+        positionAgeSeconds: { type: integer, nullable: true }
+        confidence: { type: number, nullable: true }
+        snapshotAt: { type: string }
+
+    PositionMetrics:
+      type: object
+      required: [id, userId, symbol, opportunityId, snapshotCount, updatedAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        symbol: { type: string }
+        opportunityId: { type: integer }
+        mfe: { type: number, nullable: true }
+        mae: { type: number, nullable: true }
+        mfeR: { type: number, nullable: true }
+        maeR: { type: number, nullable: true }
+        peakProfit: { type: number, nullable: true }
+        maxDrawdown: { type: number, nullable: true }
+        entryConfidence: { type: number, nullable: true }
+        peakConfidence: { type: number, nullable: true }
+        minConfidence: { type: number, nullable: true }
+        confidenceVolatility: { type: number, nullable: true }
+        confidenceSlope: { type: number, nullable: true }
+        confidenceSeries: { type: array, items: { type: number }, nullable: true }
+        snapshotCount: { type: integer }
+        scaleInCount: { type: integer }
+        partialCloseCount: { type: integer }
+        exitEfficiency: { type: number, nullable: true }
+        updatedAt: { type: string }
+
+    TradeEvent:
+      type: object
+      required: [id, userId, symbol, opportunityId, eventType, occurredAt]
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        symbol: { type: string }
+        opportunityId: { type: integer }
+        eventType: { type: string }
+        confidence: { type: number, nullable: true }
+        price: { type: number, nullable: true }
+        note: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        occurredAt: { type: string }
+
+    TradeTimeline:
+      type: object
+      required: [id, opportunityId, symbol, outcome, createdAt]
+      properties:
+        id: { type: integer }
+        opportunityId: { type: integer }
+        symbol: { type: string }
+        userId: { type: string }
+        entryAt: { type: string, nullable: true }
+        exitAt: { type: string, nullable: true }
+        finalPnl: { type: number, nullable: true }
+        rMultiple: { type: number, nullable: true }
+        outcome: { type: string, enum: [win, loss, breakeven] }
+        setupType: { type: string, nullable: true }
+        session: { type: string, nullable: true }
+        modelVersion: { type: string, nullable: true }
+        totalEvents: { type: integer }
+        durationSeconds: { type: integer, nullable: true }
+        createdAt: { type: string }
+
+    ReasoningValidation:
+      type: object
+      required: [id, opportunityId, symbol, initialPattern, createdAt]
+      properties:
+        id: { type: integer }
+        opportunityId: { type: integer }
+        decisionId: { type: integer, nullable: true }
+        symbol: { type: string }
+        userId: { type: string }
+        initialPattern: { type: string, nullable: true }
+        wasCorrect: { type: boolean, nullable: true }
+        actualPattern: { type: string, nullable: true }
+        correctnessScore: { type: number, nullable: true }
+        validatorNote: { type: string, nullable: true }
+        validatedAt: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    ReasoningAccuracy:
+      type: object
+      required: [id, pattern, symbol, session, totalPredictions, correctPredictions, accuracyRate]
+      properties:
+        id: { type: integer }
+        pattern: { type: string }
+        symbol: { type: string }
+        session: { type: string }
+        totalPredictions: { type: integer }
+        correctPredictions: { type: integer }
+        accuracyRate: { type: number }
+        lastUpdatedAt: { type: string }
+
+    TradeFailure:
+      type: object
+      required: [id, opportunityId, symbol, finalLoss, createdAt]
+      properties:
+        id: { type: integer }
+        opportunityId: { type: integer }
+        symbol: { type: string }
+        userId: { type: string }
+        rootCause: { type: string, nullable: true }
+        warningSigns: { type: array, items: { type: string }, nullable: true }
+        confidenceDecayNotes: { type: string, nullable: true }
+        lateExitIndicators: { type: array, items: { type: string }, nullable: true }
+        positionManagementIssues: { type: array, items: { type: string }, nullable: true }
+        finalLoss: { type: number }
+        maxAdverseExcursion: { type: number, nullable: true }
+        adminNotes: { type: string, nullable: true }
+        investigatedAt: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    FailurePattern:
+      type: object
+      required: [id, patternType, symbol, session, occurrences]
+      properties:
+        id: { type: integer }
+        patternType: { type: string }
+        symbol: { type: string }
+        session: { type: string }
+        occurrences: { type: integer }
+        avgLoss: { type: number, nullable: true }
+        lastSeenAt: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    CounterfactualResult:
+      type: object
+      required: [id, opportunityId, symbol, scenario, generatedAt]
+      properties:
+        id: { type: integer }
+        opportunityId: { type: integer }
+        symbol: { type: string }
+        scenario: { type: string, enum: [wider_stop, smaller_size, earlier_exit, no_scale_in] }
+        baselinePnl: { type: number, nullable: true }
+        counterfactualPnl: { type: number, nullable: true }
+        improvement: { type: number, nullable: true }
+        analysis: { type: string, nullable: true }
+        generatedAt: { type: string }
+
+    LearningCandidate:
+      type: object
+      required: [id, opportunityId, symbol, candidateType, priority, processedByTrainer, createdAt]
+      properties:
+        id: { type: integer }
+        opportunityId: { type: integer }
+        symbol: { type: string }
+        userId: { type: string }
+        candidateType: { type: string }
+        priority: { type: integer }
+        processedByTrainer: { type: boolean }
+        processedAt: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    SelfEvaluationReport:
+      type: object
+      required: [id, reportType, periodStart, periodEnd, totalTrades, createdAt]
+      properties:
+        id: { type: integer }
+        reportType: { type: string, enum: [daily, weekly, monthly] }
+        periodStart: { type: string }
+        periodEnd: { type: string }
+        totalTrades: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        winRate: { type: number, nullable: true }
+        avgRMultiple: { type: number, nullable: true }
+        bestRMultiple: { type: number, nullable: true }
+        worstRMultiple: { type: number, nullable: true }
+        sharpeRatio: { type: number, nullable: true }
+        bestSymbol: { type: string, nullable: true }
+        worstSymbol: { type: string, nullable: true }
+        bestSession: { type: string, nullable: true }
+        worstSession: { type: string, nullable: true }
+        reasoningAccuracy: { type: number, nullable: true }
+        insights: { type: array, items: { type: string } }
+        rawData: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    TrainerSyncState:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string }
+        lastSyncAt: { type: string, nullable: true }
+        lastSyncStatus: { type: string, nullable: true }
+        lastSyncMessage: { type: string, nullable: true }
+        decisionsExported: { type: integer }
+        timelinesExported: { type: integer }
+        executionsExported: { type: integer }
+        candidatesExported: { type: integer }
+        totalSyncs: { type: integer }
+        updatedAt: { type: string, nullable: true }
+
+    TradeIntelligenceStats:
+      type: object
+      properties:
+        decisions: { type: integer }
+        timelines: { type: integer }
+        failures: { type: integer }
+        learningQueueDepth: { type: integer }
+        validationPending: { type: integer }
+        lastTrainerSync: { type: string, nullable: true }
+        trainerSyncStatus: { type: string, nullable: true }
+        overall:
+          type: object
+          properties:
+            winRate: { type: number, nullable: true }
+            avgRMultiple: { type: number, nullable: true }
+            totalPnl: { type: number, nullable: true }
+
+    QdeDeployment:
+      type: object
+      properties:
+        id: { type: integer }
+        deploymentId: { type: string }
+        version: { type: string }
+        status: { type: string }
+        artifactHash: { type: string, nullable: true }
+        manifestHash: { type: string, nullable: true }
+        featureVersion: { type: string, nullable: true }
+        manifestData: { type: object, nullable: true }
+        localCachePath: { type: string, nullable: true }
+        trainerUrl: { type: string, nullable: true }
+        integrityVerified: { type: boolean }
+        warmupLatencyMs: { type: number, nullable: true }
+        failureReason: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        downloadedAt: { type: string, nullable: true }
+        verifiedAt: { type: string, nullable: true }
+        warmedAt: { type: string, nullable: true }
+        activatedAt: { type: string, nullable: true }
+        retiredAt: { type: string, nullable: true }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    QdeDeploymentHealth:
+      type: object
+      properties:
+        id: { type: integer }
+        deploymentId: { type: integer }
+        latencyP50Ms: { type: number, nullable: true }
+        latencyP95Ms: { type: number, nullable: true }
+        latencyP99Ms: { type: number, nullable: true }
+        errorRate: { type: number, nullable: true }
+        throughputPerMin: { type: number, nullable: true }
+        memoryUsageMb: { type: number, nullable: true }
+        cpuUsagePct: { type: number, nullable: true }
+        sampleCount: { type: integer }
+        confidenceDistribution: { type: object, nullable: true }
+        alerts: { type: array, items: { type: string }, nullable: true }
+        recordedAt: { type: string }
+
+    QdeDeploymentEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        deploymentId: { type: integer, nullable: true }
+        eventType: { type: string }
+        message: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        occurredAt: { type: string }
+
+    EaTelemetrySnapshot:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        eaId: { type: integer, nullable: true }
+        accountId: { type: string, nullable: true }
+        eaInstanceId: { type: string, nullable: true }
+        equity: { type: number, nullable: true }
+        balance: { type: number, nullable: true }
+        floatingPnL: { type: number, nullable: true }
+        marginLevel: { type: number, nullable: true }
+        freeMargin: { type: number, nullable: true }
+        openPositionsCount: { type: integer, nullable: true }
+        activeSymbols: { type: array, items: { type: string }, nullable: true }
+        brokerName: { type: string, nullable: true }
+        brokerServer: { type: string, nullable: true }
+        vpsLatencyMs: { type: integer, nullable: true }
+        eaVersion: { type: string, nullable: true }
+        platformVersion: { type: string, nullable: true }
+        mt5BuildVersion: { type: string, nullable: true }
+        connectivityState: { type: string, nullable: true }
+        spreadInfo: { type: object, nullable: true }
+        currentDrawdownPct: { type: number, nullable: true }
+        peakEquity: { type: number, nullable: true }
+        dailyDrawdownPct: { type: number, nullable: true }
+        weeklyDrawdownPct: { type: number, nullable: true }
+        executionStats: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    EaHeartbeatState:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        eaId: { type: integer, nullable: true }
+        eaInstanceId: { type: string }
+        state: { type: string }
+        derivedState: { type: string, nullable: true }
+        lastSeenAt: { type: string, nullable: true }
+        lastPingAt: { type: string, nullable: true }
+        offlineSince: { type: string, nullable: true }
+        alertSentAt: { type: string, nullable: true }
+        eaVersion: { type: string, nullable: true }
+        platformVersion: { type: string, nullable: true }
+        brokerName: { type: string, nullable: true }
+        accountId: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        updatedAt: { type: string }
+        createdAt: { type: string }
+
+    EaExecutionQuality:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        eaId: { type: integer, nullable: true }
+        eaInstanceId: { type: string, nullable: true }
+        brokerName: { type: string, nullable: true }
+        avgSlippagePoints: { type: number, nullable: true }
+        rejectedOrders: { type: integer }
+        requotes: { type: integer }
+        avgExecutionLatencyMs: { type: number, nullable: true }
+        spreadExpansionPoints: { type: number, nullable: true }
+        qualityScore: { type: integer, nullable: true }
+        sampleCount: { type: integer }
+        periodDate: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    BrokerRanking:
+      type: object
+      properties:
+        brokerName: { type: string }
+        avgQualityScore: { type: integer }
+        totalRejections: { type: integer }
+        totalRequotes: { type: integer }
+        avgSlippagePoints: { type: number, nullable: true }
+        avgLatencyMs: { type: number, nullable: true }
+        samplePeriods: { type: integer }
+
+    EaRiskAlert:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        eaId: { type: integer, nullable: true }
+        eaInstanceId: { type: string, nullable: true }
+        alertType: { type: string }
+        severity: { type: string }
+        currentValue: { type: number, nullable: true }
+        thresholdValue: { type: number, nullable: true }
+        message: { type: string }
+        acknowledged: { type: boolean }
+        acknowledgedAt: { type: string, nullable: true }
+        resolvedAt: { type: string, nullable: true }
+        createdAt: { type: string }
+
+    OperationalIncident:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        category: { type: string }
+        status: { type: string }
+        severity: { type: string }
+        affectedUsersCount: { type: integer, nullable: true }
+        actorUserId: { type: string }
+        metadata: { type: object, nullable: true }
+        resolvedAt: { type: string, nullable: true }
+        updatedAt: { type: string }
+        createdAt: { type: string }
+
+    CreateIncidentInput:
+      type: object
+      required: [title, category, severity]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        category: { type: string, enum: [BROKER, EA, SERVER, PAYMENT, MODEL, NETWORK] }
+        severity: { type: string, enum: [low, medium, high, critical] }
+        status: { type: string, enum: [INCIDENT_OPEN, INVESTIGATING, RESOLVED] }
+        affectedUsersCount: { type: integer }
+
+    UpdateIncidentInput:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        severity: { type: string }
+        status: { type: string }
+        affectedUsersCount: { type: integer }
+
+    PlatformAlert:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        severity: { type: string }
+        message: { type: string }
+        userId: { type: string, nullable: true }
+        eaId: { type: integer, nullable: true }
+        eaInstanceId: { type: string, nullable: true }
+        acknowledged: { type: boolean }
+        acknowledgedAt: { type: string, nullable: true }
+        acknowledgedBy: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        createdAt: { type: string }
+
+    OperationalDashboard:
+      type: object
+      properties:
+        eaInstances:
+          type: object
+          properties:
+            online: { type: integer }
+            offline: { type: integer }
+            degraded: { type: integer }
+            total: { type: integer }
+        unacknowledgedAlerts: { type: integer }
+        openIncidents: { type: integer }
+        criticalRiskAlerts: { type: integer }
+        avgVpsLatencyMs: { type: number, nullable: true }
+        timestamp: { type: string }
+
+    UserSupportView:
+      type: object
+      properties:
+        userId: { type: string }
+        eaInstances:
+          type: array
+          items:
+            type: object
+            properties:
+              eaInstanceId: { type: string }
+              state: { type: string }
+              lastSeenAt: { type: string, nullable: true }
+              brokerName: { type: string, nullable: true }
+              eaVersion: { type: string, nullable: true }
+              platformVersion: { type: string, nullable: true }
+        latestAccount:
+          type: object
+          nullable: true
+          properties:
+            equity: { type: number, nullable: true }
+            balance: { type: number, nullable: true }
+            floatingPnL: { type: number, nullable: true }
+            marginLevel: { type: number, nullable: true }
+            openPositionsCount: { type: integer, nullable: true }
+            brokerName: { type: string, nullable: true }
+            currentDrawdownPct: { type: number, nullable: true }
+            connectivityState: { type: string, nullable: true }
+            updatedAt: { type: string }
+        activeRiskAlerts: { type: array, items: { $ref: "#/components/schemas/EaRiskAlert" } }
+        recentPlatformAlerts: { type: array, items: { $ref: "#/components/schemas/PlatformAlert" } }

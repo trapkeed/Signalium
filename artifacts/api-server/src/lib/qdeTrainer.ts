@@ -42,6 +42,8 @@ export type InferenceRequest =
       symbol: string;
       userId: string;
       telemetry: TelemetrySnapshot | null;
+      /** S21B: instruct the trainer to use a specific deployed model version. */
+      targetModelVersion?: string | null;
     }
   | {
       type: "review-position";
@@ -58,6 +60,7 @@ export type InferenceRequest =
         swap?: number;
         commission?: number;
       };
+      targetModelVersion?: string | null;
     }
   | {
       type: "manual-analysis";
@@ -66,6 +69,7 @@ export type InferenceRequest =
       timeframe: string;
       notes: string | null;
       telemetry: TelemetrySnapshot | null;
+      targetModelVersion?: string | null;
     }
   | {
       type: "portfolio-review";
@@ -80,6 +84,7 @@ export type InferenceRequest =
         entryPrice?: number | null;
         currentPrice?: number | null;
       }>;
+      targetModelVersion?: string | null;
     }
   | {
       type: "reasoning";
@@ -92,6 +97,7 @@ export type InferenceRequest =
         confidence?: number;
         reasoning?: string;
       } | null;
+      targetModelVersion?: string | null;
     };
 
 /** Structured response the trainer returns for any inference request type. */

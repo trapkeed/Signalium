@@ -4790,3 +4790,1449 @@ export const ListAuditLogResponseItem = zod.object({
 export const ListAuditLogResponse = zod.array(ListAuditLogResponseItem)
 
 
+/**
+ * @summary List QDE decisions
+ */
+export const getQdeAdminDecisionsQueryLimitDefault = 100;
+export const getQdeAdminDecisionsQueryOffsetDefault = 0;
+
+export const GetQdeAdminDecisionsQueryParams = zod.object({
+  "symbol": zod.coerce.string().optional(),
+  "userId": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminDecisionsQueryLimitDefault),
+  "offset": zod.coerce.number().default(getQdeAdminDecisionsQueryOffsetDefault)
+})
+
+export const GetQdeAdminDecisionsResponse = zod.object({
+  "rows": zod.array(zod.object({
+  "id": zod.number(),
+  "decisionId": zod.string(),
+  "modelVersion": zod.string().nullish(),
+  "symbol": zod.string(),
+  "userId": zod.string(),
+  "opportunityId": zod.number().nullish(),
+  "telemetryId": zod.number().nullish(),
+  "inferenceType": zod.string(),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "volatilityState": zod.string().nullish(),
+  "spreadState": zod.string().nullish(),
+  "trainerOnline": zod.boolean(),
+  "createdAt": zod.string()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get a decision with reasoning and context
+ */
+export const GetQdeAdminDecisionsIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQdeAdminDecisionsIdResponse = zod.object({
+  "decision": zod.object({
+  "id": zod.number(),
+  "decisionId": zod.string(),
+  "modelVersion": zod.string().nullish(),
+  "symbol": zod.string(),
+  "userId": zod.string(),
+  "opportunityId": zod.number().nullish(),
+  "telemetryId": zod.number().nullish(),
+  "inferenceType": zod.string(),
+  "direction": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "riskSignal": zod.string().nullish(),
+  "sizeSignal": zod.string().nullish(),
+  "entryUrgency": zod.string().nullish(),
+  "exitHorizon": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "volatilityState": zod.string().nullish(),
+  "spreadState": zod.string().nullish(),
+  "trainerOnline": zod.boolean(),
+  "createdAt": zod.string()
+}).optional(),
+  "reasoning": zod.object({
+  "id": zod.number(),
+  "decisionId": zod.number(),
+  "reasoning": zod.string(),
+  "primaryPattern": zod.string().nullish(),
+  "supportingFactors": zod.array(zod.string()).nullish(),
+  "contradictingFactors": zod.array(zod.string()).nullish(),
+  "warnings": zod.array(zod.string()).nullish(),
+  "rawModelOutput": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string()
+}).optional(),
+  "context": zod.object({
+  "id": zod.number(),
+  "decisionId": zod.number(),
+  "balance": zod.number().nullish(),
+  "equity": zod.number().nullish(),
+  "margin": zod.number().nullish(),
+  "freeMargin": zod.number().nullish(),
+  "openPositions": zod.number().nullish(),
+  "floatingPnl": zod.number().nullish(),
+  "entryPrice": zod.number().nullish(),
+  "currentPrice": zod.number().nullish(),
+  "spread": zod.number().nullish(),
+  "drawdown": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "trendStrength": zod.number().nullish(),
+  "volatility": zod.number().nullish(),
+  "marketQuality": zod.string().nullish(),
+  "createdAt": zod.string()
+}).optional()
+})
+
+
+/**
+ * @summary List position snapshots
+ */
+export const getQdeAdminPositionSnapshotsQueryLimitDefault = 200;
+
+export const GetQdeAdminPositionSnapshotsQueryParams = zod.object({
+  "opportunityId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminPositionSnapshotsQueryLimitDefault)
+})
+
+export const GetQdeAdminPositionSnapshotsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "opportunityId": zod.number().nullish(),
+  "telemetryId": zod.number().nullish(),
+  "profit": zod.number(),
+  "drawdown": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "equityImpact": zod.number().nullish(),
+  "distanceToStop": zod.number().nullish(),
+  "distanceToTarget": zod.number().nullish(),
+  "marginUsage": zod.number().nullish(),
+  "positionAgeSeconds": zod.number().nullish(),
+  "confidence": zod.number().nullish(),
+  "snapshotAt": zod.string()
+})
+export const GetQdeAdminPositionSnapshotsResponse = zod.array(GetQdeAdminPositionSnapshotsResponseItem)
+
+
+/**
+ * @summary Get aggregated position metrics for an opportunity
+ */
+export const GetQdeAdminPositionMetricsOpportunityIdParams = zod.object({
+  "opportunityId": zod.coerce.number()
+})
+
+export const GetQdeAdminPositionMetricsOpportunityIdResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "opportunityId": zod.number(),
+  "mfe": zod.number().nullish(),
+  "mae": zod.number().nullish(),
+  "mfeR": zod.number().nullish(),
+  "maeR": zod.number().nullish(),
+  "peakProfit": zod.number().nullish(),
+  "maxDrawdown": zod.number().nullish(),
+  "entryConfidence": zod.number().nullish(),
+  "peakConfidence": zod.number().nullish(),
+  "minConfidence": zod.number().nullish(),
+  "confidenceVolatility": zod.number().nullish(),
+  "confidenceSlope": zod.number().nullish(),
+  "confidenceSeries": zod.array(zod.number()).nullish(),
+  "snapshotCount": zod.number(),
+  "scaleInCount": zod.number().optional(),
+  "partialCloseCount": zod.number().optional(),
+  "exitEfficiency": zod.number().nullish(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List trade events
+ */
+export const getQdeAdminTradeEventsQueryLimitDefault = 200;
+
+export const GetQdeAdminTradeEventsQueryParams = zod.object({
+  "opportunityId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminTradeEventsQueryLimitDefault)
+})
+
+export const GetQdeAdminTradeEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "opportunityId": zod.number(),
+  "eventType": zod.string(),
+  "confidence": zod.number().nullish(),
+  "price": zod.number().nullish(),
+  "note": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "occurredAt": zod.string()
+})
+export const GetQdeAdminTradeEventsResponse = zod.array(GetQdeAdminTradeEventsResponseItem)
+
+
+/**
+ * @summary List trade timelines
+ */
+export const getQdeAdminTradeTimelineQueryLimitDefault = 100;
+export const getQdeAdminTradeTimelineQueryOffsetDefault = 0;
+
+export const GetQdeAdminTradeTimelineQueryParams = zod.object({
+  "symbol": zod.coerce.string().optional(),
+  "outcome": zod.enum(['win', 'loss', 'breakeven']).optional(),
+  "limit": zod.coerce.number().default(getQdeAdminTradeTimelineQueryLimitDefault),
+  "offset": zod.coerce.number().default(getQdeAdminTradeTimelineQueryOffsetDefault)
+})
+
+export const GetQdeAdminTradeTimelineResponse = zod.object({
+  "rows": zod.array(zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "entryAt": zod.string().nullish(),
+  "exitAt": zod.string().nullish(),
+  "finalPnl": zod.number().nullish(),
+  "rMultiple": zod.number().nullish(),
+  "outcome": zod.enum(['win', 'loss', 'breakeven']),
+  "setupType": zod.string().nullish(),
+  "session": zod.string().nullish(),
+  "modelVersion": zod.string().nullish(),
+  "totalEvents": zod.number().optional(),
+  "durationSeconds": zod.number().nullish(),
+  "createdAt": zod.string()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get full trade history for an opportunity
+ */
+export const GetQdeAdminTradeTimelineOpportunityIdParams = zod.object({
+  "opportunityId": zod.coerce.number()
+})
+
+export const GetQdeAdminTradeTimelineOpportunityIdResponse = zod.object({
+
+})
+
+
+/**
+ * @summary Manually trigger trade finalisation pipeline
+ */
+export const PostQdeAdminTradeTimelineOpportunityIdFinalizeParams = zod.object({
+  "opportunityId": zod.coerce.number()
+})
+
+export const PostQdeAdminTradeTimelineOpportunityIdFinalizeResponse = zod.object({
+
+})
+
+
+/**
+ * @summary List reasoning validations
+ */
+export const getQdeAdminReasoningValidationQueryLimitDefault = 100;
+
+export const GetQdeAdminReasoningValidationQueryParams = zod.object({
+  "unvalidated": zod.coerce.boolean().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminReasoningValidationQueryLimitDefault)
+})
+
+export const GetQdeAdminReasoningValidationResponseItem = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "decisionId": zod.number().nullish(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "initialPattern": zod.string().nullable(),
+  "wasCorrect": zod.boolean().nullish(),
+  "actualPattern": zod.string().nullish(),
+  "correctnessScore": zod.number().nullish(),
+  "validatorNote": zod.string().nullish(),
+  "validatedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetQdeAdminReasoningValidationResponse = zod.array(GetQdeAdminReasoningValidationResponseItem)
+
+
+/**
+ * @summary Update reasoning validation correctness
+ */
+export const PatchQdeAdminReasoningValidationIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchQdeAdminReasoningValidationIdBody = zod.object({
+  "wasCorrect": zod.boolean().optional(),
+  "actualPattern": zod.string().optional(),
+  "correctnessScore": zod.number().optional(),
+  "validatorNote": zod.string().optional()
+})
+
+export const PatchQdeAdminReasoningValidationIdResponse = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "decisionId": zod.number().nullish(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "initialPattern": zod.string().nullable(),
+  "wasCorrect": zod.boolean().nullish(),
+  "actualPattern": zod.string().nullish(),
+  "correctnessScore": zod.number().nullish(),
+  "validatorNote": zod.string().nullish(),
+  "validatedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get reasoning accuracy by pattern
+ */
+export const GetQdeAdminReasoningAccuracyResponseItem = zod.object({
+  "id": zod.number(),
+  "pattern": zod.string(),
+  "symbol": zod.string(),
+  "session": zod.string(),
+  "totalPredictions": zod.number(),
+  "correctPredictions": zod.number(),
+  "accuracyRate": zod.number(),
+  "lastUpdatedAt": zod.string().optional()
+})
+export const GetQdeAdminReasoningAccuracyResponse = zod.array(GetQdeAdminReasoningAccuracyResponseItem)
+
+
+/**
+ * @summary List trade failures
+ */
+export const getQdeAdminTradeFailuresQueryLimitDefault = 100;
+
+export const GetQdeAdminTradeFailuresQueryParams = zod.object({
+  "symbol": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminTradeFailuresQueryLimitDefault)
+})
+
+export const GetQdeAdminTradeFailuresResponseItem = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "rootCause": zod.string().nullish(),
+  "warningSigns": zod.array(zod.string()).nullish(),
+  "confidenceDecayNotes": zod.string().nullish(),
+  "lateExitIndicators": zod.array(zod.string()).nullish(),
+  "positionManagementIssues": zod.array(zod.string()).nullish(),
+  "finalLoss": zod.number(),
+  "maxAdverseExcursion": zod.number().nullish(),
+  "adminNotes": zod.string().nullish(),
+  "investigatedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetQdeAdminTradeFailuresResponse = zod.array(GetQdeAdminTradeFailuresResponseItem)
+
+
+/**
+ * @summary Update trade failure investigation notes
+ */
+export const PatchQdeAdminTradeFailuresIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchQdeAdminTradeFailuresIdBody = zod.object({
+  "rootCause": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "positionManagementIssues": zod.array(zod.string()).optional()
+})
+
+export const PatchQdeAdminTradeFailuresIdResponse = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "rootCause": zod.string().nullish(),
+  "warningSigns": zod.array(zod.string()).nullish(),
+  "confidenceDecayNotes": zod.string().nullish(),
+  "lateExitIndicators": zod.array(zod.string()).nullish(),
+  "positionManagementIssues": zod.array(zod.string()).nullish(),
+  "finalLoss": zod.number(),
+  "maxAdverseExcursion": zod.number().nullish(),
+  "adminNotes": zod.string().nullish(),
+  "investigatedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List recurring failure patterns
+ */
+export const GetQdeAdminFailurePatternsResponseItem = zod.object({
+  "id": zod.number(),
+  "patternType": zod.string(),
+  "symbol": zod.string(),
+  "session": zod.string(),
+  "occurrences": zod.number(),
+  "avgLoss": zod.number().nullish(),
+  "lastSeenAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+export const GetQdeAdminFailurePatternsResponse = zod.array(GetQdeAdminFailurePatternsResponseItem)
+
+
+/**
+ * @summary List counterfactual results
+ */
+export const getQdeAdminCounterfactualsQueryLimitDefault = 200;
+
+export const GetQdeAdminCounterfactualsQueryParams = zod.object({
+  "opportunityId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminCounterfactualsQueryLimitDefault)
+})
+
+export const GetQdeAdminCounterfactualsResponseItem = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "scenario": zod.enum(['wider_stop', 'smaller_size', 'earlier_exit', 'no_scale_in']),
+  "baselinePnl": zod.number().nullish(),
+  "counterfactualPnl": zod.number().nullish(),
+  "improvement": zod.number().nullish(),
+  "analysis": zod.string().nullish(),
+  "generatedAt": zod.string()
+})
+export const GetQdeAdminCounterfactualsResponse = zod.array(GetQdeAdminCounterfactualsResponseItem)
+
+
+/**
+ * @summary List learning candidates
+ */
+export const getQdeAdminLearningQueueQueryLimitDefault = 200;
+
+export const GetQdeAdminLearningQueueQueryParams = zod.object({
+  "processed": zod.coerce.boolean().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminLearningQueueQueryLimitDefault)
+})
+
+export const GetQdeAdminLearningQueueResponse = zod.object({
+  "rows": zod.array(zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "candidateType": zod.string(),
+  "priority": zod.number(),
+  "processedByTrainer": zod.boolean(),
+  "processedAt": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string()
+})).optional(),
+  "unprocessed": zod.number().optional()
+})
+
+
+/**
+ * @summary Mark a learning candidate as processed by trainer
+ */
+export const PostQdeAdminLearningQueueIdMarkProcessedParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostQdeAdminLearningQueueIdMarkProcessedResponse = zod.object({
+  "id": zod.number(),
+  "opportunityId": zod.number(),
+  "symbol": zod.string(),
+  "userId": zod.string().optional(),
+  "candidateType": zod.string(),
+  "priority": zod.number(),
+  "processedByTrainer": zod.boolean(),
+  "processedAt": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List execution quality metrics by segment
+ */
+export const GetQdeAdminExecutionQualityResponseItem = zod.object({
+  "id": zod.number(),
+  "symbol": zod.string(),
+  "session": zod.string(),
+  "volatilityState": zod.string(),
+  "avgSlippage": zod.number().optional(),
+  "avgSpread": zod.number().optional(),
+  "avgCommission": zod.number().optional(),
+  "avgExecutionDelayMs": zod.number().optional(),
+  "partialFillRate": zod.number().optional(),
+  "requoteRate": zod.number().optional(),
+  "sampleCount": zod.number(),
+  "updatedAt": zod.string().optional()
+})
+export const GetQdeAdminExecutionQualityResponse = zod.array(GetQdeAdminExecutionQualityResponseItem)
+
+
+/**
+ * @summary List raw execution telemetry
+ */
+export const getQdeAdminExecutionTelemetryQueryLimitDefault = 200;
+
+export const GetQdeAdminExecutionTelemetryQueryParams = zod.object({
+  "symbol": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getQdeAdminExecutionTelemetryQueryLimitDefault)
+})
+
+export const GetQdeAdminExecutionTelemetryResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "symbol": zod.string(),
+  "opportunityId": zod.number().nullish(),
+  "telemetryId": zod.number().nullish(),
+  "requestedEntry": zod.number().nullish(),
+  "actualEntry": zod.number().nullish(),
+  "slippage": zod.number().nullish(),
+  "spread": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "executionDelayMs": zod.number().nullish(),
+  "partialFill": zod.boolean().optional(),
+  "requotes": zod.number().optional(),
+  "createdAt": zod.string()
+})
+export const GetQdeAdminExecutionTelemetryResponse = zod.array(GetQdeAdminExecutionTelemetryResponseItem)
+
+
+/**
+ * @summary Get trainer sync status
+ */
+export const GetQdeTrainerSyncStatusResponse = zod.object({
+  "id": zod.string(),
+  "lastSyncAt": zod.string().nullish(),
+  "lastSyncStatus": zod.string().nullish(),
+  "lastSyncMessage": zod.string().nullish(),
+  "decisionsExported": zod.number().optional(),
+  "timelinesExported": zod.number().optional(),
+  "executionsExported": zod.number().optional(),
+  "candidatesExported": zod.number().optional(),
+  "totalSyncs": zod.number().optional(),
+  "updatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Trigger a trainer sync batch
+ */
+export const PostQdeTrainerSyncResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "status": zod.string().optional(),
+  "message": zod.string().optional(),
+  "counts": zod.object({
+
+}).optional()
+})
+
+
+/**
+ * @summary List self-evaluation reports
+ */
+export const getQdeSelfEvaluationQueryLimitDefault = 50;
+
+export const GetQdeSelfEvaluationQueryParams = zod.object({
+  "reportType": zod.enum(['daily', 'weekly', 'monthly']).optional(),
+  "limit": zod.coerce.number().default(getQdeSelfEvaluationQueryLimitDefault)
+})
+
+export const GetQdeSelfEvaluationResponseItem = zod.object({
+  "id": zod.number(),
+  "reportType": zod.enum(['daily', 'weekly', 'monthly']),
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "totalTrades": zod.number(),
+  "wins": zod.number().optional(),
+  "losses": zod.number().optional(),
+  "winRate": zod.number().nullish(),
+  "avgRMultiple": zod.number().nullish(),
+  "bestRMultiple": zod.number().nullish(),
+  "worstRMultiple": zod.number().nullish(),
+  "sharpeRatio": zod.number().nullish(),
+  "bestSymbol": zod.string().nullish(),
+  "worstSymbol": zod.string().nullish(),
+  "bestSession": zod.string().nullish(),
+  "worstSession": zod.string().nullish(),
+  "reasoningAccuracy": zod.number().nullish(),
+  "insights": zod.array(zod.string()).optional(),
+  "rawData": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string()
+})
+export const GetQdeSelfEvaluationResponse = zod.array(GetQdeSelfEvaluationResponseItem)
+
+
+/**
+ * @summary Generate a self-evaluation report
+ */
+export const PostQdeSelfEvaluationGenerateBody = zod.object({
+  "reportType": zod.enum(['daily', 'weekly', 'monthly']),
+  "periodEnd": zod.coerce.date().optional()
+})
+
+export const PostQdeSelfEvaluationGenerateResponse = zod.object({
+  "id": zod.number(),
+  "reportType": zod.enum(['daily', 'weekly', 'monthly']),
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "totalTrades": zod.number(),
+  "wins": zod.number().optional(),
+  "losses": zod.number().optional(),
+  "winRate": zod.number().nullish(),
+  "avgRMultiple": zod.number().nullish(),
+  "bestRMultiple": zod.number().nullish(),
+  "worstRMultiple": zod.number().nullish(),
+  "sharpeRatio": zod.number().nullish(),
+  "bestSymbol": zod.string().nullish(),
+  "worstSymbol": zod.string().nullish(),
+  "bestSession": zod.string().nullish(),
+  "worstSession": zod.string().nullish(),
+  "reasoningAccuracy": zod.number().nullish(),
+  "insights": zod.array(zod.string()).optional(),
+  "rawData": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Session-level performance analytics
+ */
+export const GetQdeAnalyticsSessionsResponseItem = zod.object({
+
+})
+export const GetQdeAnalyticsSessionsResponse = zod.array(GetQdeAnalyticsSessionsResponseItem)
+
+
+/**
+ * @summary Symbol-level performance analytics
+ */
+export const GetQdeAnalyticsSymbolsResponseItem = zod.object({
+
+})
+export const GetQdeAnalyticsSymbolsResponse = zod.array(GetQdeAnalyticsSymbolsResponseItem)
+
+
+/**
+ * @summary Confidence score vs win-rate reliability
+ */
+export const GetQdeAnalyticsConfidenceReliabilityResponseItem = zod.object({
+
+})
+export const GetQdeAnalyticsConfidenceReliabilityResponse = zod.array(GetQdeAnalyticsConfidenceReliabilityResponseItem)
+
+
+/**
+ * @summary Reasoning accuracy by pattern
+ */
+export const GetQdeAnalyticsReasoningAccuracyResponseItem = zod.object({
+  "id": zod.number(),
+  "pattern": zod.string(),
+  "symbol": zod.string(),
+  "session": zod.string(),
+  "totalPredictions": zod.number(),
+  "correctPredictions": zod.number(),
+  "accuracyRate": zod.number(),
+  "lastUpdatedAt": zod.string().optional()
+})
+export const GetQdeAnalyticsReasoningAccuracyResponse = zod.array(GetQdeAnalyticsReasoningAccuracyResponseItem)
+
+
+/**
+ * @summary Weekly model quality trend (win rate, Sharpe, avg R)
+ */
+export const GetQdeAnalyticsModelQualityResponseItem = zod.object({
+
+})
+export const GetQdeAnalyticsModelQualityResponse = zod.array(GetQdeAnalyticsModelQualityResponseItem)
+
+
+/**
+ * @summary Execution quality analytics by segment
+ */
+export const GetQdeAnalyticsExecutionQualityResponseItem = zod.object({
+  "id": zod.number(),
+  "symbol": zod.string(),
+  "session": zod.string(),
+  "volatilityState": zod.string(),
+  "avgSlippage": zod.number().optional(),
+  "avgSpread": zod.number().optional(),
+  "avgCommission": zod.number().optional(),
+  "avgExecutionDelayMs": zod.number().optional(),
+  "partialFillRate": zod.number().optional(),
+  "requoteRate": zod.number().optional(),
+  "sampleCount": zod.number(),
+  "updatedAt": zod.string().optional()
+})
+export const GetQdeAnalyticsExecutionQualityResponse = zod.array(GetQdeAnalyticsExecutionQualityResponseItem)
+
+
+/**
+ * @summary List all QDE deployments
+ */
+export const getQdeAdminDeploymentsQueryLimitDefault = 50;
+
+export const GetQdeAdminDeploymentsQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getQdeAdminDeploymentsQueryLimitDefault),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetQdeAdminDeploymentsResponse = zod.object({
+  "deployments": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.string().optional(),
+  "version": zod.string().optional(),
+  "status": zod.string().optional(),
+  "artifactHash": zod.string().nullish(),
+  "manifestHash": zod.string().nullish(),
+  "featureVersion": zod.string().nullish(),
+  "manifestData": zod.object({
+
+}).nullish(),
+  "localCachePath": zod.string().nullish(),
+  "trainerUrl": zod.string().nullish(),
+  "integrityVerified": zod.boolean().optional(),
+  "warmupLatencyMs": zod.number().nullish(),
+  "failureReason": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "downloadedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "warmedAt": zod.string().nullish(),
+  "activatedAt": zod.string().nullish(),
+  "retiredAt": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get the currently active QDE deployment
+ */
+export const GetQdeAdminDeploymentsActiveResponse = zod.object({
+  "deployment": zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.string().optional(),
+  "version": zod.string().optional(),
+  "status": zod.string().optional(),
+  "artifactHash": zod.string().nullish(),
+  "manifestHash": zod.string().nullish(),
+  "featureVersion": zod.string().nullish(),
+  "manifestData": zod.object({
+
+}).nullish(),
+  "localCachePath": zod.string().nullish(),
+  "trainerUrl": zod.string().nullish(),
+  "integrityVerified": zod.boolean().optional(),
+  "warmupLatencyMs": zod.number().nullish(),
+  "failureReason": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "downloadedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "warmedAt": zod.string().nullish(),
+  "activatedAt": zod.string().nullish(),
+  "retiredAt": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+}).nullish(),
+  "inMemoryVersion": zod.string().nullish(),
+  "synchronized": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Trigger a manual poll of signalium-trainer for new deployments
+ */
+export const PostQdeAdminDeploymentsPollResponse = zod.object({
+  "changed": zod.boolean().optional(),
+  "message": zod.string().optional(),
+  "previousVersion": zod.string().nullish(),
+  "newVersion": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get health metrics for the currently active deployment
+ */
+export const getQdeAdminDeploymentsHealthCurrentQueryLimitDefault = 20;
+
+export const GetQdeAdminDeploymentsHealthCurrentQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getQdeAdminDeploymentsHealthCurrentQueryLimitDefault)
+})
+
+export const GetQdeAdminDeploymentsHealthCurrentResponse = zod.object({
+  "deploymentDbId": zod.number().nullish(),
+  "version": zod.string().nullish(),
+  "health": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.number().optional(),
+  "latencyP50Ms": zod.number().nullish(),
+  "latencyP95Ms": zod.number().nullish(),
+  "latencyP99Ms": zod.number().nullish(),
+  "errorRate": zod.number().nullish(),
+  "throughputPerMin": zod.number().nullish(),
+  "memoryUsageMb": zod.number().nullish(),
+  "cpuUsagePct": zod.number().nullish(),
+  "sampleCount": zod.number().optional(),
+  "confidenceDistribution": zod.object({
+
+}).nullish(),
+  "alerts": zod.array(zod.string()).nullish(),
+  "recordedAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Get a single deployment by DB id
+ */
+export const GetQdeAdminDeploymentsIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetQdeAdminDeploymentsIdResponse = zod.object({
+  "deployment": zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.string().optional(),
+  "version": zod.string().optional(),
+  "status": zod.string().optional(),
+  "artifactHash": zod.string().nullish(),
+  "manifestHash": zod.string().nullish(),
+  "featureVersion": zod.string().nullish(),
+  "manifestData": zod.object({
+
+}).nullish(),
+  "localCachePath": zod.string().nullish(),
+  "trainerUrl": zod.string().nullish(),
+  "integrityVerified": zod.boolean().optional(),
+  "warmupLatencyMs": zod.number().nullish(),
+  "failureReason": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "downloadedAt": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "warmedAt": zod.string().nullish(),
+  "activatedAt": zod.string().nullish(),
+  "retiredAt": zod.string().nullish(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Manually activate a specific deployment
+ */
+export const PostQdeAdminDeploymentsIdActivateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostQdeAdminDeploymentsIdActivateResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Roll back to a specific deployment
+ */
+export const PostQdeAdminDeploymentsIdRollbackParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostQdeAdminDeploymentsIdRollbackResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Get health metric history for a specific deployment
+ */
+export const GetQdeAdminDeploymentsIdHealthParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getQdeAdminDeploymentsIdHealthQueryLimitDefault = 50;
+
+export const GetQdeAdminDeploymentsIdHealthQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getQdeAdminDeploymentsIdHealthQueryLimitDefault)
+})
+
+export const GetQdeAdminDeploymentsIdHealthResponse = zod.object({
+  "health": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.number().optional(),
+  "latencyP50Ms": zod.number().nullish(),
+  "latencyP95Ms": zod.number().nullish(),
+  "latencyP99Ms": zod.number().nullish(),
+  "errorRate": zod.number().nullish(),
+  "throughputPerMin": zod.number().nullish(),
+  "memoryUsageMb": zod.number().nullish(),
+  "cpuUsagePct": zod.number().nullish(),
+  "sampleCount": zod.number().optional(),
+  "confidenceDistribution": zod.object({
+
+}).nullish(),
+  "alerts": zod.array(zod.string()).nullish(),
+  "recordedAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Get lifecycle events for a specific deployment
+ */
+export const GetQdeAdminDeploymentsIdEventsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getQdeAdminDeploymentsIdEventsQueryLimitDefault = 100;
+
+export const GetQdeAdminDeploymentsIdEventsQueryParams = zod.object({
+  "limit": zod.coerce.number().default(getQdeAdminDeploymentsIdEventsQueryLimitDefault)
+})
+
+export const GetQdeAdminDeploymentsIdEventsResponse = zod.object({
+  "events": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "deploymentId": zod.number().nullish(),
+  "eventType": zod.string().optional(),
+  "message": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "occurredAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary EA ingest — submit a full telemetry snapshot
+ */
+export const PostOperationalTelemetryResponse = zod.object({
+  "id": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — list telemetry snapshots
+ */
+export const getOperationalTelemetryQueryLimitDefault = 100;
+
+export const GetOperationalTelemetryQueryParams = zod.object({
+  "userId": zod.coerce.string().optional(),
+  "eaInstanceId": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getOperationalTelemetryQueryLimitDefault)
+})
+
+export const GetOperationalTelemetryResponse = zod.object({
+  "snapshots": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "accountId": zod.string().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "equity": zod.number().nullish(),
+  "balance": zod.number().nullish(),
+  "floatingPnL": zod.number().nullish(),
+  "marginLevel": zod.number().nullish(),
+  "freeMargin": zod.number().nullish(),
+  "openPositionsCount": zod.number().nullish(),
+  "activeSymbols": zod.array(zod.string()).nullish(),
+  "brokerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "vpsLatencyMs": zod.number().nullish(),
+  "eaVersion": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "mt5BuildVersion": zod.string().nullish(),
+  "connectivityState": zod.string().nullish(),
+  "spreadInfo": zod.object({
+
+}).nullish(),
+  "currentDrawdownPct": zod.number().nullish(),
+  "peakEquity": zod.number().nullish(),
+  "dailyDrawdownPct": zod.number().nullish(),
+  "weeklyDrawdownPct": zod.number().nullish(),
+  "executionStats": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — account behaviour replay (time-ordered points)
+ */
+export const GetOperationalTelemetryReplayQueryParams = zod.object({
+  "userId": zod.coerce.string().optional(),
+  "eaInstanceId": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional()
+})
+
+export const GetOperationalTelemetryReplayResponse = zod.object({
+  "points": zod.array(zod.object({
+
+})).optional()
+})
+
+
+/**
+ * @summary EA ping — update heartbeat state
+ */
+export const PostOperationalHeartbeatResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "state": zod.string().optional(),
+  "ts": zod.string().optional()
+})
+
+
+/**
+ * @summary Admin — all EA heartbeat states with summary
+ */
+export const GetOperationalHeartbeatStatusQueryParams = zod.object({
+  "state": zod.coerce.string().optional(),
+  "userId": zod.coerce.string().optional()
+})
+
+export const GetOperationalHeartbeatStatusResponse = zod.object({
+  "instances": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().optional(),
+  "state": zod.string().optional(),
+  "derivedState": zod.string().nullish(),
+  "lastSeenAt": zod.string().nullish(),
+  "lastPingAt": zod.string().nullish(),
+  "offlineSince": zod.string().nullish(),
+  "alertSentAt": zod.string().nullish(),
+  "eaVersion": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "accountId": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "updatedAt": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "summary": zod.object({
+  "online": zod.number().optional(),
+  "degraded": zod.number().optional(),
+  "offline": zod.number().optional(),
+  "unauthorized": zod.number().optional(),
+  "outdated": zod.number().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Admin — currently offline EA instances
+ */
+export const GetOperationalHeartbeatOfflineResponse = zod.object({
+  "offline": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().optional(),
+  "state": zod.string().optional(),
+  "derivedState": zod.string().nullish(),
+  "lastSeenAt": zod.string().nullish(),
+  "lastPingAt": zod.string().nullish(),
+  "offlineSince": zod.string().nullish(),
+  "alertSentAt": zod.string().nullish(),
+  "eaVersion": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "accountId": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "updatedAt": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "count": zod.number().optional()
+})
+
+
+/**
+ * @summary EA ingest — submit execution quality metrics
+ */
+export const PostOperationalExecutionQualityResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Admin — execution quality list and broker rankings
+ */
+export const GetOperationalExecutionQualityQueryParams = zod.object({
+  "userId": zod.coerce.string().optional(),
+  "brokerName": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional()
+})
+
+export const GetOperationalExecutionQualityResponse = zod.object({
+  "quality": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "avgSlippagePoints": zod.number().nullish(),
+  "rejectedOrders": zod.number().optional(),
+  "requotes": zod.number().optional(),
+  "avgExecutionLatencyMs": zod.number().nullish(),
+  "spreadExpansionPoints": zod.number().nullish(),
+  "qualityScore": zod.number().nullish(),
+  "sampleCount": zod.number().optional(),
+  "periodDate": zod.string().optional(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string().optional()
+})).optional(),
+  "brokerRankings": zod.array(zod.object({
+  "brokerName": zod.string().optional(),
+  "avgQualityScore": zod.number().optional(),
+  "totalRejections": zod.number().optional(),
+  "totalRequotes": zod.number().optional(),
+  "avgSlippagePoints": zod.number().nullish(),
+  "avgLatencyMs": zod.number().nullish(),
+  "samplePeriods": zod.number().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Admin — list risk alerts
+ */
+export const GetOperationalRiskAlertsQueryParams = zod.object({
+  "userId": zod.coerce.string().optional(),
+  "alertType": zod.coerce.string().optional(),
+  "severity": zod.coerce.string().optional(),
+  "unacknowledged": zod.coerce.string().optional()
+})
+
+export const GetOperationalRiskAlertsResponse = zod.object({
+  "alerts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "alertType": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "currentValue": zod.number().nullish(),
+  "thresholdValue": zod.number().nullish(),
+  "message": zod.string().optional(),
+  "acknowledged": zod.boolean().optional(),
+  "acknowledgedAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — acknowledge a risk alert
+ */
+export const PostOperationalRiskAlertsIdAcknowledgeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostOperationalRiskAlertsIdAcknowledgeResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Admin — list operational incidents
+ */
+export const GetOperationalIncidentsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "severity": zod.coerce.string().optional()
+})
+
+export const GetOperationalIncidentsResponse = zod.object({
+  "incidents": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "category": zod.string().optional(),
+  "status": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "affectedUsersCount": zod.number().nullish(),
+  "actorUserId": zod.string().optional(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "updatedAt": zod.string().optional(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — create an incident
+ */
+export const PostOperationalIncidentsBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.enum(['BROKER', 'EA', 'SERVER', 'PAYMENT', 'MODEL', 'NETWORK']),
+  "severity": zod.enum(['low', 'medium', 'high', 'critical']),
+  "status": zod.enum(['INCIDENT_OPEN', 'INVESTIGATING', 'RESOLVED']).optional(),
+  "affectedUsersCount": zod.number().optional()
+})
+
+export const PostOperationalIncidentsResponse = zod.object({
+  "incident": zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "category": zod.string().optional(),
+  "status": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "affectedUsersCount": zod.number().nullish(),
+  "actorUserId": zod.string().optional(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "updatedAt": zod.string().optional(),
+  "createdAt": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Admin — update an incident
+ */
+export const PatchOperationalIncidentsIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PatchOperationalIncidentsIdBody = zod.object({
+  "title": zod.string().optional(),
+  "description": zod.string().optional(),
+  "category": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "status": zod.string().optional(),
+  "affectedUsersCount": zod.number().optional()
+})
+
+export const PatchOperationalIncidentsIdResponse = zod.object({
+  "incident": zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "category": zod.string().optional(),
+  "status": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "affectedUsersCount": zod.number().nullish(),
+  "actorUserId": zod.string().optional(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "updatedAt": zod.string().optional(),
+  "createdAt": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Admin — delete an incident
+ */
+export const DeleteOperationalIncidentsIdParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteOperationalIncidentsIdResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Admin — list platform alerts
+ */
+export const getOperationalAlertsQueryLimitDefault = 100;
+
+export const GetOperationalAlertsQueryParams = zod.object({
+  "type": zod.coerce.string().optional(),
+  "severity": zod.coerce.string().optional(),
+  "userId": zod.coerce.string().optional(),
+  "unacknowledged": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().default(getOperationalAlertsQueryLimitDefault)
+})
+
+export const GetOperationalAlertsResponse = zod.object({
+  "alerts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "type": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "message": zod.string().optional(),
+  "userId": zod.string().nullish(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "acknowledged": zod.boolean().optional(),
+  "acknowledgedAt": zod.string().nullish(),
+  "acknowledgedBy": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "total": zod.number().optional(),
+  "unacknowledgedCount": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — acknowledge a platform alert
+ */
+export const PostOperationalAlertsIdAcknowledgeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostOperationalAlertsIdAcknowledgeResponse = zod.object({
+  "ok": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Admin — operations overview stats
+ */
+export const GetOperationalDashboardResponse = zod.object({
+  "eaInstances": zod.object({
+  "online": zod.number().optional(),
+  "offline": zod.number().optional(),
+  "degraded": zod.number().optional(),
+  "total": zod.number().optional()
+}).optional(),
+  "unacknowledgedAlerts": zod.number().optional(),
+  "openIncidents": zod.number().optional(),
+  "criticalRiskAlerts": zod.number().optional(),
+  "avgVpsLatencyMs": zod.number().nullish(),
+  "timestamp": zod.string().optional()
+})
+
+
+/**
+ * @summary Staff — safe user support view (no credentials)
+ */
+export const GetOperationalSupportUserUserIdParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetOperationalSupportUserUserIdResponse = zod.object({
+  "userId": zod.string().optional(),
+  "eaInstances": zod.array(zod.object({
+  "eaInstanceId": zod.string().optional(),
+  "state": zod.string().optional(),
+  "lastSeenAt": zod.string().nullish(),
+  "brokerName": zod.string().nullish(),
+  "eaVersion": zod.string().nullish(),
+  "platformVersion": zod.string().nullish()
+})).optional(),
+  "latestAccount": zod.object({
+  "equity": zod.number().nullish(),
+  "balance": zod.number().nullish(),
+  "floatingPnL": zod.number().nullish(),
+  "marginLevel": zod.number().nullish(),
+  "openPositionsCount": zod.number().nullish(),
+  "brokerName": zod.string().nullish(),
+  "currentDrawdownPct": zod.number().nullish(),
+  "connectivityState": zod.string().nullish(),
+  "updatedAt": zod.string().optional()
+}).nullish(),
+  "activeRiskAlerts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.string().optional(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "alertType": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "currentValue": zod.number().nullish(),
+  "thresholdValue": zod.number().nullish(),
+  "message": zod.string().optional(),
+  "acknowledged": zod.boolean().optional(),
+  "acknowledgedAt": zod.string().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})).optional(),
+  "recentPlatformAlerts": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "type": zod.string().optional(),
+  "severity": zod.string().optional(),
+  "message": zod.string().optional(),
+  "userId": zod.string().nullish(),
+  "eaId": zod.number().nullish(),
+  "eaInstanceId": zod.string().nullish(),
+  "acknowledged": zod.boolean().optional(),
+  "acknowledgedAt": zod.string().nullish(),
+  "acknowledgedBy": zod.string().nullish(),
+  "metadata": zod.object({
+
+}).nullish(),
+  "createdAt": zod.string().optional()
+})).optional()
+})
+
+
+/**
+ * @summary Overview stats for the Trade Intelligence dashboard
+ */
+export const GetQdeAdminTradeIntelligenceStatsResponse = zod.object({
+  "decisions": zod.number().optional(),
+  "timelines": zod.number().optional(),
+  "failures": zod.number().optional(),
+  "learningQueueDepth": zod.number().optional(),
+  "validationPending": zod.number().optional(),
+  "lastTrainerSync": zod.string().nullish(),
+  "trainerSyncStatus": zod.string().nullish(),
+  "overall": zod.object({
+  "winRate": zod.number().nullish(),
+  "avgRMultiple": zod.number().nullish(),
+  "totalPnl": zod.number().nullish()
+}).optional()
+})
+
+

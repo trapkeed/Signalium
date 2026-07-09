@@ -1,0 +1,189 @@
+PHASE S22A — SIGNALIUM PLATFORM OPERATIONAL INFRASTRUCTURE
+
+Repository:
+signalium
+
+OBJECTIVE
+
+Transform Signalium into an enterprise-grade operational platform capable of monitoring thousands of autonomous trading clients in real time.
+
+IMPLEMENT THE FOLLOWING:
+
+1. EA TELEMETRY SYSTEM
+
+Create:
+
+/modules/telemetry
+/modules/telemetry/models
+/modules/telemetry/services
+/modules/telemetry/controllers
+
+Each EA must report every 30-60 seconds:
+
+* account equity
+* balance
+* floating profit/loss
+* margin level
+* free margin
+* open positions count
+* active symbols
+* broker name
+* broker server
+* VPS latency
+* EA version
+* Signalium platform version
+* MT5 build version
+* terminal connectivity state
+* spread information
+* current drawdown
+* execution statistics
+
+Store all telemetry historically.
+
+Admins must be able to replay account behaviour historically.
+
+---
+
+2. EA HEARTBEAT SYSTEM
+
+Each EA sends heartbeat pings.
+
+States:
+
+ONLINE
+DEGRADED
+OFFLINE
+UNAUTHORIZED
+OUTDATED
+
+Offline threshold:
+
+120 seconds.
+
+Generate alerts automatically.
+
+---
+
+3. EXECUTION QUALITY MONITORING
+
+Track:
+
+* average slippage
+* rejected orders
+* requotes
+* execution latency
+* spread expansion
+* broker execution quality score
+
+Build broker quality rankings.
+
+---
+
+4. USER RISK MONITORING
+
+Monitor:
+
+* daily drawdown
+* weekly drawdown
+* margin stress
+* exposure concentration
+* abnormal trade frequency
+
+Generate warnings.
+
+Autonomous mode must notify users when abnormal risk behaviour occurs.
+
+---
+
+5. INCIDENT MANAGEMENT SYSTEM
+
+Create:
+
+INCIDENT_OPEN
+INVESTIGATING
+RESOLVED
+
+Categories:
+
+BROKER
+EA
+SERVER
+PAYMENT
+MODEL
+NETWORK
+
+---
+
+6. ADMIN OPERATIONS DASHBOARD
+
+Display:
+
+* active autonomous accounts
+* active manual users
+* active EAs
+* active brokers
+* total exposure
+* live autonomous positions
+* average latency
+* QDE health
+* subscription health
+* infrastructure health
+
+---
+
+7. SUPPORT TOOLING
+
+Allow support staff to view:
+
+* user EA status
+* user broker status
+* recent logs
+* recent API calls
+* subscription state
+* current autonomous activity
+
+Without exposing sensitive credentials.
+
+---
+
+8. ALERTING
+
+Generate alerts for:
+
+* EA offline
+* high drawdown
+* execution failures
+* broker disconnects
+* stale market feeds
+* server overload
+* expired subscriptions
+
+---
+
+9. AUDIT LOGGING
+
+Every action must generate immutable audit logs.
+
+Store:
+
+actor
+timestamp
+ip
+action
+resource
+before
+after
+
+---
+
+10. PERFORMANCE TARGETS
+
+Support:
+
+* 10,000 concurrent EAs
+* 100,000 telemetry events/minute
+* horizontal scaling
+* websocket updates
+* mobile dashboards
+
+Signalium becomes an operational command center rather than simply a trading website.

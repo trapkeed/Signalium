@@ -28,6 +28,10 @@ import {
   Building2,
   Flag,
   Brain,
+  Layers,
+  Server,
+  Bell,
+  Wifi,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -71,6 +75,17 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
       { href: "/admin/qde", label: "QDE Loop", icon: Radio },
       { href: "/admin/inference-gateway", label: "Inference Gateway", icon: Brain },
+      { href: "/admin/trade-intelligence", label: "Trade Intelligence", icon: Brain },
+      { href: "/admin/deployments", label: "Deployments", icon: Layers },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { href: "/admin/operations", label: "Ops Dashboard", icon: Server },
+      { href: "/admin/ea-monitor", label: "EA Monitor", icon: Wifi },
+      { href: "/admin/incidents", label: "Incidents", icon: AlertTriangle },
+      { href: "/admin/alerts", label: "Alerts", icon: Bell },
     ],
   },
   {

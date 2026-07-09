@@ -35,10 +35,12 @@ import type {
   Broker,
   ContactMessage,
   ContactMessageInput,
+  CounterfactualResult,
   CreateApiKeyBody,
   CreateBrokerBody,
   CreateDataProviderBody,
   CreateFeatureFlagBody,
+  CreateIncidentInput,
   CreateMarketMemoryEntryBody,
   CreateProviderCredentialBody,
   CreateProviderSymbolMappingBody,
@@ -46,6 +48,7 @@ import type {
   CreateSymbolBody,
   CreateSymbolCategoryBody,
   DataProvider,
+  DeleteOperationalIncidentsId200,
   DeleteProviderCapability200,
   DeleteProviderCredential200,
   DeleteProviderSymbolMapping200,
@@ -60,8 +63,55 @@ import type {
   EntitlementError,
   EntitlementSummary,
   ErrorEnvelope,
+  ExecutionQualityMetrics,
+  ExecutionTelemetry,
   ExtendSubscriptionBody,
+  FailurePattern,
   FeatureFlag,
+  GetOperationalAlerts200,
+  GetOperationalAlertsParams,
+  GetOperationalExecutionQuality200,
+  GetOperationalExecutionQualityParams,
+  GetOperationalHeartbeatOffline200,
+  GetOperationalHeartbeatStatus200,
+  GetOperationalHeartbeatStatusParams,
+  GetOperationalIncidents200,
+  GetOperationalIncidentsParams,
+  GetOperationalRiskAlerts200,
+  GetOperationalRiskAlertsParams,
+  GetOperationalTelemetry200,
+  GetOperationalTelemetryParams,
+  GetOperationalTelemetryReplay200,
+  GetOperationalTelemetryReplayParams,
+  GetQdeAdminCounterfactualsParams,
+  GetQdeAdminDecisions200,
+  GetQdeAdminDecisionsId200,
+  GetQdeAdminDecisionsParams,
+  GetQdeAdminDeployments200,
+  GetQdeAdminDeploymentsActive200,
+  GetQdeAdminDeploymentsHealthCurrent200,
+  GetQdeAdminDeploymentsHealthCurrentParams,
+  GetQdeAdminDeploymentsId200,
+  GetQdeAdminDeploymentsIdEvents200,
+  GetQdeAdminDeploymentsIdEventsParams,
+  GetQdeAdminDeploymentsIdHealth200,
+  GetQdeAdminDeploymentsIdHealthParams,
+  GetQdeAdminDeploymentsParams,
+  GetQdeAdminExecutionTelemetryParams,
+  GetQdeAdminLearningQueue200,
+  GetQdeAdminLearningQueueParams,
+  GetQdeAdminPositionSnapshotsParams,
+  GetQdeAdminReasoningValidationParams,
+  GetQdeAdminTradeEventsParams,
+  GetQdeAdminTradeFailuresParams,
+  GetQdeAdminTradeTimeline200,
+  GetQdeAdminTradeTimelineOpportunityId200,
+  GetQdeAdminTradeTimelineParams,
+  GetQdeAnalyticsConfidenceReliability200Item,
+  GetQdeAnalyticsModelQuality200Item,
+  GetQdeAnalyticsSessions200Item,
+  GetQdeAnalyticsSymbols200Item,
+  GetQdeSelfEvaluationParams,
   GetSymbolNormalizationLogParams,
   GetUnreadNotificationCount200,
   GrantCreditBody,
@@ -79,6 +129,7 @@ import type {
   KbCategory,
   KbCategoryInput,
   KbCategoryWithCount,
+  LearningCandidate,
   ListAllSupportTicketsParams,
   ListAuditLogParams,
   ListFeatureFlagStates200,
@@ -95,7 +146,11 @@ import type {
   NormalizeSymbol422,
   NormalizeSymbolBody,
   Notification,
+  OperationalDashboard,
   Opportunity,
+  PatchOperationalIncidentsId200,
+  PatchQdeAdminReasoningValidationIdBody,
+  PatchQdeAdminTradeFailuresIdBody,
   Payment,
   PaymentConfirmationsInput,
   PaymentIntentInput,
@@ -109,13 +164,29 @@ import type {
   PlanInput,
   PlanUpdate,
   PlatformStatus,
+  PositionMetrics,
+  PositionSnapshot,
   PositionTelemetry,
   PositionTelemetryInput,
+  PostOperationalAlertsIdAcknowledge200,
+  PostOperationalExecutionQuality200,
+  PostOperationalHeartbeat200,
+  PostOperationalIncidents201,
+  PostOperationalRiskAlertsIdAcknowledge200,
+  PostOperationalTelemetry201,
+  PostQdeAdminDeploymentsIdActivate200,
+  PostQdeAdminDeploymentsIdRollback200,
+  PostQdeAdminDeploymentsPoll200,
+  PostQdeAdminTradeTimelineOpportunityIdFinalize200,
+  PostQdeSelfEvaluationGenerateBody,
+  PostQdeTrainerSync200,
   ProviderCapability,
   ProviderCredential,
   ProviderStatus,
   ProviderSymbolMapping,
   QdeStatsOverview,
+  ReasoningAccuracy,
+  ReasoningValidation,
   RedeliverAction200,
   ReferralActivity,
   ReferralLeaderboardEntry,
@@ -134,6 +205,7 @@ import type {
   RuntimeStatus,
   RuntimeSummary,
   SecurityReport,
+  SelfEvaluationReport,
   SeoPage,
   SeoPageInput,
   SeoPageUpdate,
@@ -175,7 +247,11 @@ import type {
   TelemetryInput,
   TestSmtp200,
   TestSmtpBody,
+  TradeEvent,
+  TradeFailure,
+  TradeIntelligenceStats,
   TrainerAction,
+  TrainerSyncState,
   TransitionOpportunityBody,
   UnlockAccount200,
   UnlockAccountBody,
@@ -183,6 +259,7 @@ import type {
   UpdateContactMessageBody,
   UpdateDataProviderBody,
   UpdateFeatureFlagBody,
+  UpdateIncidentInput,
   UpdateInferenceControlsBody,
   UpdateMeBody,
   UpdatePlatformStatusBody,
@@ -194,6 +271,7 @@ import type {
   UploadUrlResponse,
   UpsertProviderCapabilityBody,
   User,
+  UserSupportView,
   UserSymbol,
   UserTradingSettings,
   UserUpdate,
@@ -16543,6 +16621,4453 @@ export function useListAuditLog<TData = Awaited<ReturnType<typeof listAuditLog>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAuditLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDecisionsUrl = (params?: GetQdeAdminDecisionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/decisions?${stringifiedParams}` : `/api/qde/admin/decisions`
+}
+
+/**
+ * @summary List QDE decisions
+ */
+export const getQdeAdminDecisions = async (params?: GetQdeAdminDecisionsParams, options?: RequestInit): Promise<GetQdeAdminDecisions200> => {
+
+  return customFetch<GetQdeAdminDecisions200>(getGetQdeAdminDecisionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDecisionsQueryKey = (params?: GetQdeAdminDecisionsParams,) => {
+    return [
+    `/api/qde/admin/decisions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDecisionsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDecisions>>, TError = ErrorType<unknown>>(params?: GetQdeAdminDecisionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDecisionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDecisions>>> = ({ signal }) => getQdeAdminDecisions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDecisionsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDecisions>>>
+export type GetQdeAdminDecisionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List QDE decisions
+ */
+
+export function useGetQdeAdminDecisions<TData = Awaited<ReturnType<typeof getQdeAdminDecisions>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminDecisionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDecisionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDecisionsIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/decisions/${id}`
+}
+
+/**
+ * @summary Get a decision with reasoning and context
+ */
+export const getQdeAdminDecisionsId = async (id: number, options?: RequestInit): Promise<GetQdeAdminDecisionsId200> => {
+
+  return customFetch<GetQdeAdminDecisionsId200>(getGetQdeAdminDecisionsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDecisionsIdQueryKey = (id: number,) => {
+    return [
+    `/api/qde/admin/decisions/${id}`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDecisionsIdQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDecisionsId>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisionsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDecisionsIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDecisionsId>>> = ({ signal }) => getQdeAdminDecisionsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisionsId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDecisionsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDecisionsId>>>
+export type GetQdeAdminDecisionsIdQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a decision with reasoning and context
+ */
+
+export function useGetQdeAdminDecisionsId<TData = Awaited<ReturnType<typeof getQdeAdminDecisionsId>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDecisionsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDecisionsIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminPositionSnapshotsUrl = (params?: GetQdeAdminPositionSnapshotsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/position-snapshots?${stringifiedParams}` : `/api/qde/admin/position-snapshots`
+}
+
+/**
+ * @summary List position snapshots
+ */
+export const getQdeAdminPositionSnapshots = async (params?: GetQdeAdminPositionSnapshotsParams, options?: RequestInit): Promise<PositionSnapshot[]> => {
+
+  return customFetch<PositionSnapshot[]>(getGetQdeAdminPositionSnapshotsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminPositionSnapshotsQueryKey = (params?: GetQdeAdminPositionSnapshotsParams,) => {
+    return [
+    `/api/qde/admin/position-snapshots`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminPositionSnapshotsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>, TError = ErrorType<unknown>>(params?: GetQdeAdminPositionSnapshotsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminPositionSnapshotsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>> = ({ signal }) => getQdeAdminPositionSnapshots(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminPositionSnapshotsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>>
+export type GetQdeAdminPositionSnapshotsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List position snapshots
+ */
+
+export function useGetQdeAdminPositionSnapshots<TData = Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminPositionSnapshotsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionSnapshots>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminPositionSnapshotsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminPositionMetricsOpportunityIdUrl = (opportunityId: number,) => {
+
+
+
+
+  return `/api/qde/admin/position-metrics/${opportunityId}`
+}
+
+/**
+ * @summary Get aggregated position metrics for an opportunity
+ */
+export const getQdeAdminPositionMetricsOpportunityId = async (opportunityId: number, options?: RequestInit): Promise<PositionMetrics> => {
+
+  return customFetch<PositionMetrics>(getGetQdeAdminPositionMetricsOpportunityIdUrl(opportunityId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminPositionMetricsOpportunityIdQueryKey = (opportunityId: number,) => {
+    return [
+    `/api/qde/admin/position-metrics/${opportunityId}`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminPositionMetricsOpportunityIdQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>, TError = ErrorType<unknown>>(opportunityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminPositionMetricsOpportunityIdQueryKey(opportunityId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>> = ({ signal }) => getQdeAdminPositionMetricsOpportunityId(opportunityId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: opportunityId !== null && opportunityId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminPositionMetricsOpportunityIdQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>>
+export type GetQdeAdminPositionMetricsOpportunityIdQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get aggregated position metrics for an opportunity
+ */
+
+export function useGetQdeAdminPositionMetricsOpportunityId<TData = Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>, TError = ErrorType<unknown>>(
+ opportunityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminPositionMetricsOpportunityId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminPositionMetricsOpportunityIdQueryOptions(opportunityId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminTradeEventsUrl = (params?: GetQdeAdminTradeEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/trade-events?${stringifiedParams}` : `/api/qde/admin/trade-events`
+}
+
+/**
+ * @summary List trade events
+ */
+export const getQdeAdminTradeEvents = async (params?: GetQdeAdminTradeEventsParams, options?: RequestInit): Promise<TradeEvent[]> => {
+
+  return customFetch<TradeEvent[]>(getGetQdeAdminTradeEventsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminTradeEventsQueryKey = (params?: GetQdeAdminTradeEventsParams,) => {
+    return [
+    `/api/qde/admin/trade-events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminTradeEventsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminTradeEvents>>, TError = ErrorType<unknown>>(params?: GetQdeAdminTradeEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminTradeEventsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminTradeEvents>>> = ({ signal }) => getQdeAdminTradeEvents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminTradeEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminTradeEvents>>>
+export type GetQdeAdminTradeEventsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List trade events
+ */
+
+export function useGetQdeAdminTradeEvents<TData = Awaited<ReturnType<typeof getQdeAdminTradeEvents>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminTradeEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminTradeEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminTradeTimelineUrl = (params?: GetQdeAdminTradeTimelineParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/trade-timeline?${stringifiedParams}` : `/api/qde/admin/trade-timeline`
+}
+
+/**
+ * @summary List trade timelines
+ */
+export const getQdeAdminTradeTimeline = async (params?: GetQdeAdminTradeTimelineParams, options?: RequestInit): Promise<GetQdeAdminTradeTimeline200> => {
+
+  return customFetch<GetQdeAdminTradeTimeline200>(getGetQdeAdminTradeTimelineUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminTradeTimelineQueryKey = (params?: GetQdeAdminTradeTimelineParams,) => {
+    return [
+    `/api/qde/admin/trade-timeline`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminTradeTimelineQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>, TError = ErrorType<unknown>>(params?: GetQdeAdminTradeTimelineParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminTradeTimelineQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>> = ({ signal }) => getQdeAdminTradeTimeline(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminTradeTimelineQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>>
+export type GetQdeAdminTradeTimelineQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List trade timelines
+ */
+
+export function useGetQdeAdminTradeTimeline<TData = Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminTradeTimelineParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminTradeTimelineQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminTradeTimelineOpportunityIdUrl = (opportunityId: number,) => {
+
+
+
+
+  return `/api/qde/admin/trade-timeline/${opportunityId}`
+}
+
+/**
+ * @summary Get full trade history for an opportunity
+ */
+export const getQdeAdminTradeTimelineOpportunityId = async (opportunityId: number, options?: RequestInit): Promise<GetQdeAdminTradeTimelineOpportunityId200> => {
+
+  return customFetch<GetQdeAdminTradeTimelineOpportunityId200>(getGetQdeAdminTradeTimelineOpportunityIdUrl(opportunityId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminTradeTimelineOpportunityIdQueryKey = (opportunityId: number,) => {
+    return [
+    `/api/qde/admin/trade-timeline/${opportunityId}`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminTradeTimelineOpportunityIdQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>, TError = ErrorType<unknown>>(opportunityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminTradeTimelineOpportunityIdQueryKey(opportunityId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>> = ({ signal }) => getQdeAdminTradeTimelineOpportunityId(opportunityId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: opportunityId !== null && opportunityId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminTradeTimelineOpportunityIdQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>>
+export type GetQdeAdminTradeTimelineOpportunityIdQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get full trade history for an opportunity
+ */
+
+export function useGetQdeAdminTradeTimelineOpportunityId<TData = Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>, TError = ErrorType<unknown>>(
+ opportunityId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeTimelineOpportunityId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminTradeTimelineOpportunityIdQueryOptions(opportunityId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeAdminTradeTimelineOpportunityIdFinalizeUrl = (opportunityId: number,) => {
+
+
+
+
+  return `/api/qde/admin/trade-timeline/${opportunityId}/finalize`
+}
+
+/**
+ * @summary Manually trigger trade finalisation pipeline
+ */
+export const postQdeAdminTradeTimelineOpportunityIdFinalize = async (opportunityId: number, options?: RequestInit): Promise<PostQdeAdminTradeTimelineOpportunityIdFinalize200> => {
+
+  return customFetch<PostQdeAdminTradeTimelineOpportunityIdFinalize200>(getPostQdeAdminTradeTimelineOpportunityIdFinalizeUrl(opportunityId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeAdminTradeTimelineOpportunityIdFinalizeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>, TError,{opportunityId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>, TError,{opportunityId: number}, TContext> => {
+
+const mutationKey = ['postQdeAdminTradeTimelineOpportunityIdFinalize'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>, {opportunityId: number}> = (props) => {
+          const {opportunityId} = props ?? {};
+
+          return  postQdeAdminTradeTimelineOpportunityIdFinalize(opportunityId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeAdminTradeTimelineOpportunityIdFinalizeMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>>
+
+    export type PostQdeAdminTradeTimelineOpportunityIdFinalizeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually trigger trade finalisation pipeline
+ */
+export const usePostQdeAdminTradeTimelineOpportunityIdFinalize = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>, TError,{opportunityId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeAdminTradeTimelineOpportunityIdFinalize>>,
+        TError,
+        {opportunityId: number},
+        TContext
+      > => {
+      return useMutation(getPostQdeAdminTradeTimelineOpportunityIdFinalizeMutationOptions(options));
+    }
+
+export const getGetQdeAdminReasoningValidationUrl = (params?: GetQdeAdminReasoningValidationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/reasoning-validation?${stringifiedParams}` : `/api/qde/admin/reasoning-validation`
+}
+
+/**
+ * @summary List reasoning validations
+ */
+export const getQdeAdminReasoningValidation = async (params?: GetQdeAdminReasoningValidationParams, options?: RequestInit): Promise<ReasoningValidation[]> => {
+
+  return customFetch<ReasoningValidation[]>(getGetQdeAdminReasoningValidationUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminReasoningValidationQueryKey = (params?: GetQdeAdminReasoningValidationParams,) => {
+    return [
+    `/api/qde/admin/reasoning-validation`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminReasoningValidationQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>, TError = ErrorType<unknown>>(params?: GetQdeAdminReasoningValidationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminReasoningValidationQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>> = ({ signal }) => getQdeAdminReasoningValidation(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminReasoningValidationQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>>
+export type GetQdeAdminReasoningValidationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List reasoning validations
+ */
+
+export function useGetQdeAdminReasoningValidation<TData = Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminReasoningValidationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningValidation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminReasoningValidationQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPatchQdeAdminReasoningValidationIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/reasoning-validation/${id}`
+}
+
+/**
+ * @summary Update reasoning validation correctness
+ */
+export const patchQdeAdminReasoningValidationId = async (id: number,
+    patchQdeAdminReasoningValidationIdBody?: PatchQdeAdminReasoningValidationIdBody, options?: RequestInit): Promise<ReasoningValidation> => {
+
+  return customFetch<ReasoningValidation>(getPatchQdeAdminReasoningValidationIdUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchQdeAdminReasoningValidationIdBody)
+  }
+);}
+
+
+
+
+
+export const getPatchQdeAdminReasoningValidationIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>, TError,{id: number;data?: BodyType<PatchQdeAdminReasoningValidationIdBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>, TError,{id: number;data?: BodyType<PatchQdeAdminReasoningValidationIdBody>}, TContext> => {
+
+const mutationKey = ['patchQdeAdminReasoningValidationId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>, {id: number;data?: BodyType<PatchQdeAdminReasoningValidationIdBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  patchQdeAdminReasoningValidationId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchQdeAdminReasoningValidationIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>>
+    export type PatchQdeAdminReasoningValidationIdMutationBody = BodyType<PatchQdeAdminReasoningValidationIdBody> | undefined
+    export type PatchQdeAdminReasoningValidationIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update reasoning validation correctness
+ */
+export const usePatchQdeAdminReasoningValidationId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>, TError,{id: number;data?: BodyType<PatchQdeAdminReasoningValidationIdBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchQdeAdminReasoningValidationId>>,
+        TError,
+        {id: number;data?: BodyType<PatchQdeAdminReasoningValidationIdBody>},
+        TContext
+      > => {
+      return useMutation(getPatchQdeAdminReasoningValidationIdMutationOptions(options));
+    }
+
+export const getGetQdeAdminReasoningAccuracyUrl = () => {
+
+
+
+
+  return `/api/qde/admin/reasoning-accuracy`
+}
+
+/**
+ * @summary Get reasoning accuracy by pattern
+ */
+export const getQdeAdminReasoningAccuracy = async ( options?: RequestInit): Promise<ReasoningAccuracy[]> => {
+
+  return customFetch<ReasoningAccuracy[]>(getGetQdeAdminReasoningAccuracyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminReasoningAccuracyQueryKey = () => {
+    return [
+    `/api/qde/admin/reasoning-accuracy`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminReasoningAccuracyQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminReasoningAccuracyQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>> = ({ signal }) => getQdeAdminReasoningAccuracy({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminReasoningAccuracyQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>>
+export type GetQdeAdminReasoningAccuracyQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get reasoning accuracy by pattern
+ */
+
+export function useGetQdeAdminReasoningAccuracy<TData = Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminReasoningAccuracy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminReasoningAccuracyQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminTradeFailuresUrl = (params?: GetQdeAdminTradeFailuresParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/trade-failures?${stringifiedParams}` : `/api/qde/admin/trade-failures`
+}
+
+/**
+ * @summary List trade failures
+ */
+export const getQdeAdminTradeFailures = async (params?: GetQdeAdminTradeFailuresParams, options?: RequestInit): Promise<TradeFailure[]> => {
+
+  return customFetch<TradeFailure[]>(getGetQdeAdminTradeFailuresUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminTradeFailuresQueryKey = (params?: GetQdeAdminTradeFailuresParams,) => {
+    return [
+    `/api/qde/admin/trade-failures`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminTradeFailuresQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminTradeFailures>>, TError = ErrorType<unknown>>(params?: GetQdeAdminTradeFailuresParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeFailures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminTradeFailuresQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminTradeFailures>>> = ({ signal }) => getQdeAdminTradeFailures(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeFailures>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminTradeFailuresQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminTradeFailures>>>
+export type GetQdeAdminTradeFailuresQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List trade failures
+ */
+
+export function useGetQdeAdminTradeFailures<TData = Awaited<ReturnType<typeof getQdeAdminTradeFailures>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminTradeFailuresParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeFailures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminTradeFailuresQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPatchQdeAdminTradeFailuresIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/trade-failures/${id}`
+}
+
+/**
+ * @summary Update trade failure investigation notes
+ */
+export const patchQdeAdminTradeFailuresId = async (id: number,
+    patchQdeAdminTradeFailuresIdBody?: PatchQdeAdminTradeFailuresIdBody, options?: RequestInit): Promise<TradeFailure> => {
+
+  return customFetch<TradeFailure>(getPatchQdeAdminTradeFailuresIdUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchQdeAdminTradeFailuresIdBody)
+  }
+);}
+
+
+
+
+
+export const getPatchQdeAdminTradeFailuresIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>, TError,{id: number;data?: BodyType<PatchQdeAdminTradeFailuresIdBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>, TError,{id: number;data?: BodyType<PatchQdeAdminTradeFailuresIdBody>}, TContext> => {
+
+const mutationKey = ['patchQdeAdminTradeFailuresId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>, {id: number;data?: BodyType<PatchQdeAdminTradeFailuresIdBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  patchQdeAdminTradeFailuresId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchQdeAdminTradeFailuresIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>>
+    export type PatchQdeAdminTradeFailuresIdMutationBody = BodyType<PatchQdeAdminTradeFailuresIdBody> | undefined
+    export type PatchQdeAdminTradeFailuresIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update trade failure investigation notes
+ */
+export const usePatchQdeAdminTradeFailuresId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>, TError,{id: number;data?: BodyType<PatchQdeAdminTradeFailuresIdBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchQdeAdminTradeFailuresId>>,
+        TError,
+        {id: number;data?: BodyType<PatchQdeAdminTradeFailuresIdBody>},
+        TContext
+      > => {
+      return useMutation(getPatchQdeAdminTradeFailuresIdMutationOptions(options));
+    }
+
+export const getGetQdeAdminFailurePatternsUrl = () => {
+
+
+
+
+  return `/api/qde/admin/failure-patterns`
+}
+
+/**
+ * @summary List recurring failure patterns
+ */
+export const getQdeAdminFailurePatterns = async ( options?: RequestInit): Promise<FailurePattern[]> => {
+
+  return customFetch<FailurePattern[]>(getGetQdeAdminFailurePatternsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminFailurePatternsQueryKey = () => {
+    return [
+    `/api/qde/admin/failure-patterns`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminFailurePatternsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminFailurePatternsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>> = ({ signal }) => getQdeAdminFailurePatterns({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminFailurePatternsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>>
+export type GetQdeAdminFailurePatternsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List recurring failure patterns
+ */
+
+export function useGetQdeAdminFailurePatterns<TData = Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminFailurePatterns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminFailurePatternsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminCounterfactualsUrl = (params?: GetQdeAdminCounterfactualsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/counterfactuals?${stringifiedParams}` : `/api/qde/admin/counterfactuals`
+}
+
+/**
+ * @summary List counterfactual results
+ */
+export const getQdeAdminCounterfactuals = async (params?: GetQdeAdminCounterfactualsParams, options?: RequestInit): Promise<CounterfactualResult[]> => {
+
+  return customFetch<CounterfactualResult[]>(getGetQdeAdminCounterfactualsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminCounterfactualsQueryKey = (params?: GetQdeAdminCounterfactualsParams,) => {
+    return [
+    `/api/qde/admin/counterfactuals`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminCounterfactualsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>, TError = ErrorType<unknown>>(params?: GetQdeAdminCounterfactualsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminCounterfactualsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>> = ({ signal }) => getQdeAdminCounterfactuals(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminCounterfactualsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>>
+export type GetQdeAdminCounterfactualsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List counterfactual results
+ */
+
+export function useGetQdeAdminCounterfactuals<TData = Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminCounterfactualsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminCounterfactuals>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminCounterfactualsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminLearningQueueUrl = (params?: GetQdeAdminLearningQueueParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/learning-queue?${stringifiedParams}` : `/api/qde/admin/learning-queue`
+}
+
+/**
+ * @summary List learning candidates
+ */
+export const getQdeAdminLearningQueue = async (params?: GetQdeAdminLearningQueueParams, options?: RequestInit): Promise<GetQdeAdminLearningQueue200> => {
+
+  return customFetch<GetQdeAdminLearningQueue200>(getGetQdeAdminLearningQueueUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminLearningQueueQueryKey = (params?: GetQdeAdminLearningQueueParams,) => {
+    return [
+    `/api/qde/admin/learning-queue`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminLearningQueueQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminLearningQueue>>, TError = ErrorType<unknown>>(params?: GetQdeAdminLearningQueueParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminLearningQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminLearningQueueQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminLearningQueue>>> = ({ signal }) => getQdeAdminLearningQueue(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminLearningQueue>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminLearningQueueQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminLearningQueue>>>
+export type GetQdeAdminLearningQueueQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List learning candidates
+ */
+
+export function useGetQdeAdminLearningQueue<TData = Awaited<ReturnType<typeof getQdeAdminLearningQueue>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminLearningQueueParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminLearningQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminLearningQueueQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeAdminLearningQueueIdMarkProcessedUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/learning-queue/${id}/mark-processed`
+}
+
+/**
+ * @summary Mark a learning candidate as processed by trainer
+ */
+export const postQdeAdminLearningQueueIdMarkProcessed = async (id: number, options?: RequestInit): Promise<LearningCandidate> => {
+
+  return customFetch<LearningCandidate>(getPostQdeAdminLearningQueueIdMarkProcessedUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeAdminLearningQueueIdMarkProcessedMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postQdeAdminLearningQueueIdMarkProcessed'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postQdeAdminLearningQueueIdMarkProcessed(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeAdminLearningQueueIdMarkProcessedMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>>
+
+    export type PostQdeAdminLearningQueueIdMarkProcessedMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a learning candidate as processed by trainer
+ */
+export const usePostQdeAdminLearningQueueIdMarkProcessed = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeAdminLearningQueueIdMarkProcessed>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostQdeAdminLearningQueueIdMarkProcessedMutationOptions(options));
+    }
+
+export const getGetQdeAdminExecutionQualityUrl = () => {
+
+
+
+
+  return `/api/qde/admin/execution-quality`
+}
+
+/**
+ * @summary List execution quality metrics by segment
+ */
+export const getQdeAdminExecutionQuality = async ( options?: RequestInit): Promise<ExecutionQualityMetrics[]> => {
+
+  return customFetch<ExecutionQualityMetrics[]>(getGetQdeAdminExecutionQualityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminExecutionQualityQueryKey = () => {
+    return [
+    `/api/qde/admin/execution-quality`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminExecutionQualityQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminExecutionQualityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>> = ({ signal }) => getQdeAdminExecutionQuality({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminExecutionQualityQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>>
+export type GetQdeAdminExecutionQualityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List execution quality metrics by segment
+ */
+
+export function useGetQdeAdminExecutionQuality<TData = Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminExecutionQualityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminExecutionTelemetryUrl = (params?: GetQdeAdminExecutionTelemetryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/execution-telemetry?${stringifiedParams}` : `/api/qde/admin/execution-telemetry`
+}
+
+/**
+ * @summary List raw execution telemetry
+ */
+export const getQdeAdminExecutionTelemetry = async (params?: GetQdeAdminExecutionTelemetryParams, options?: RequestInit): Promise<ExecutionTelemetry[]> => {
+
+  return customFetch<ExecutionTelemetry[]>(getGetQdeAdminExecutionTelemetryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminExecutionTelemetryQueryKey = (params?: GetQdeAdminExecutionTelemetryParams,) => {
+    return [
+    `/api/qde/admin/execution-telemetry`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminExecutionTelemetryQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>, TError = ErrorType<unknown>>(params?: GetQdeAdminExecutionTelemetryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminExecutionTelemetryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>> = ({ signal }) => getQdeAdminExecutionTelemetry(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminExecutionTelemetryQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>>
+export type GetQdeAdminExecutionTelemetryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List raw execution telemetry
+ */
+
+export function useGetQdeAdminExecutionTelemetry<TData = Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminExecutionTelemetryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminExecutionTelemetry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminExecutionTelemetryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeTrainerSyncStatusUrl = () => {
+
+
+
+
+  return `/api/qde/trainer-sync/status`
+}
+
+/**
+ * @summary Get trainer sync status
+ */
+export const getQdeTrainerSyncStatus = async ( options?: RequestInit): Promise<TrainerSyncState> => {
+
+  return customFetch<TrainerSyncState>(getGetQdeTrainerSyncStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeTrainerSyncStatusQueryKey = () => {
+    return [
+    `/api/qde/trainer-sync/status`
+    ] as const;
+    }
+
+
+export const getGetQdeTrainerSyncStatusQueryOptions = <TData = Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeTrainerSyncStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>> = ({ signal }) => getQdeTrainerSyncStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeTrainerSyncStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>>
+export type GetQdeTrainerSyncStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get trainer sync status
+ */
+
+export function useGetQdeTrainerSyncStatus<TData = Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeTrainerSyncStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeTrainerSyncStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeTrainerSyncUrl = () => {
+
+
+
+
+  return `/api/qde/trainer-sync`
+}
+
+/**
+ * @summary Trigger a trainer sync batch
+ */
+export const postQdeTrainerSync = async ( options?: RequestInit): Promise<PostQdeTrainerSync200> => {
+
+  return customFetch<PostQdeTrainerSync200>(getPostQdeTrainerSyncUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeTrainerSyncMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeTrainerSync>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeTrainerSync>>, TError,void, TContext> => {
+
+const mutationKey = ['postQdeTrainerSync'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeTrainerSync>>, void> = () => {
+
+
+          return  postQdeTrainerSync(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeTrainerSyncMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeTrainerSync>>>
+
+    export type PostQdeTrainerSyncMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Trigger a trainer sync batch
+ */
+export const usePostQdeTrainerSync = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeTrainerSync>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeTrainerSync>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostQdeTrainerSyncMutationOptions(options));
+    }
+
+export const getGetQdeSelfEvaluationUrl = (params?: GetQdeSelfEvaluationParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/self-evaluation?${stringifiedParams}` : `/api/qde/self-evaluation`
+}
+
+/**
+ * @summary List self-evaluation reports
+ */
+export const getQdeSelfEvaluation = async (params?: GetQdeSelfEvaluationParams, options?: RequestInit): Promise<SelfEvaluationReport[]> => {
+
+  return customFetch<SelfEvaluationReport[]>(getGetQdeSelfEvaluationUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeSelfEvaluationQueryKey = (params?: GetQdeSelfEvaluationParams,) => {
+    return [
+    `/api/qde/self-evaluation`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeSelfEvaluationQueryOptions = <TData = Awaited<ReturnType<typeof getQdeSelfEvaluation>>, TError = ErrorType<unknown>>(params?: GetQdeSelfEvaluationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeSelfEvaluation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeSelfEvaluationQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeSelfEvaluation>>> = ({ signal }) => getQdeSelfEvaluation(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeSelfEvaluation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeSelfEvaluationQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeSelfEvaluation>>>
+export type GetQdeSelfEvaluationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List self-evaluation reports
+ */
+
+export function useGetQdeSelfEvaluation<TData = Awaited<ReturnType<typeof getQdeSelfEvaluation>>, TError = ErrorType<unknown>>(
+ params?: GetQdeSelfEvaluationParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeSelfEvaluation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeSelfEvaluationQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeSelfEvaluationGenerateUrl = () => {
+
+
+
+
+  return `/api/qde/self-evaluation/generate`
+}
+
+/**
+ * @summary Generate a self-evaluation report
+ */
+export const postQdeSelfEvaluationGenerate = async (postQdeSelfEvaluationGenerateBody?: PostQdeSelfEvaluationGenerateBody, options?: RequestInit): Promise<SelfEvaluationReport> => {
+
+  return customFetch<SelfEvaluationReport>(getPostQdeSelfEvaluationGenerateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postQdeSelfEvaluationGenerateBody)
+  }
+);}
+
+
+
+
+
+export const getPostQdeSelfEvaluationGenerateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>, TError,{data?: BodyType<PostQdeSelfEvaluationGenerateBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>, TError,{data?: BodyType<PostQdeSelfEvaluationGenerateBody>}, TContext> => {
+
+const mutationKey = ['postQdeSelfEvaluationGenerate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>, {data?: BodyType<PostQdeSelfEvaluationGenerateBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postQdeSelfEvaluationGenerate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeSelfEvaluationGenerateMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>>
+    export type PostQdeSelfEvaluationGenerateMutationBody = BodyType<PostQdeSelfEvaluationGenerateBody> | undefined
+    export type PostQdeSelfEvaluationGenerateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate a self-evaluation report
+ */
+export const usePostQdeSelfEvaluationGenerate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>, TError,{data?: BodyType<PostQdeSelfEvaluationGenerateBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeSelfEvaluationGenerate>>,
+        TError,
+        {data?: BodyType<PostQdeSelfEvaluationGenerateBody>},
+        TContext
+      > => {
+      return useMutation(getPostQdeSelfEvaluationGenerateMutationOptions(options));
+    }
+
+export const getGetQdeAnalyticsSessionsUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/sessions`
+}
+
+/**
+ * @summary Session-level performance analytics
+ */
+export const getQdeAnalyticsSessions = async ( options?: RequestInit): Promise<GetQdeAnalyticsSessions200Item[]> => {
+
+  return customFetch<GetQdeAnalyticsSessions200Item[]>(getGetQdeAnalyticsSessionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsSessionsQueryKey = () => {
+    return [
+    `/api/qde/analytics/sessions`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsSessionsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsSessions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsSessionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsSessions>>> = ({ signal }) => getQdeAnalyticsSessions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSessions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsSessions>>>
+export type GetQdeAnalyticsSessionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Session-level performance analytics
+ */
+
+export function useGetQdeAnalyticsSessions<TData = Awaited<ReturnType<typeof getQdeAnalyticsSessions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsSessionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAnalyticsSymbolsUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/symbols`
+}
+
+/**
+ * @summary Symbol-level performance analytics
+ */
+export const getQdeAnalyticsSymbols = async ( options?: RequestInit): Promise<GetQdeAnalyticsSymbols200Item[]> => {
+
+  return customFetch<GetQdeAnalyticsSymbols200Item[]>(getGetQdeAnalyticsSymbolsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsSymbolsQueryKey = () => {
+    return [
+    `/api/qde/analytics/symbols`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsSymbolsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsSymbolsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>> = ({ signal }) => getQdeAnalyticsSymbols({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsSymbolsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>>
+export type GetQdeAnalyticsSymbolsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Symbol-level performance analytics
+ */
+
+export function useGetQdeAnalyticsSymbols<TData = Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsSymbols>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsSymbolsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAnalyticsConfidenceReliabilityUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/confidence-reliability`
+}
+
+/**
+ * @summary Confidence score vs win-rate reliability
+ */
+export const getQdeAnalyticsConfidenceReliability = async ( options?: RequestInit): Promise<GetQdeAnalyticsConfidenceReliability200Item[]> => {
+
+  return customFetch<GetQdeAnalyticsConfidenceReliability200Item[]>(getGetQdeAnalyticsConfidenceReliabilityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsConfidenceReliabilityQueryKey = () => {
+    return [
+    `/api/qde/analytics/confidence-reliability`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsConfidenceReliabilityQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsConfidenceReliabilityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>> = ({ signal }) => getQdeAnalyticsConfidenceReliability({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsConfidenceReliabilityQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>>
+export type GetQdeAnalyticsConfidenceReliabilityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Confidence score vs win-rate reliability
+ */
+
+export function useGetQdeAnalyticsConfidenceReliability<TData = Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsConfidenceReliability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsConfidenceReliabilityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAnalyticsReasoningAccuracyUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/reasoning-accuracy`
+}
+
+/**
+ * @summary Reasoning accuracy by pattern
+ */
+export const getQdeAnalyticsReasoningAccuracy = async ( options?: RequestInit): Promise<ReasoningAccuracy[]> => {
+
+  return customFetch<ReasoningAccuracy[]>(getGetQdeAnalyticsReasoningAccuracyUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsReasoningAccuracyQueryKey = () => {
+    return [
+    `/api/qde/analytics/reasoning-accuracy`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsReasoningAccuracyQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsReasoningAccuracyQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>> = ({ signal }) => getQdeAnalyticsReasoningAccuracy({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsReasoningAccuracyQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>>
+export type GetQdeAnalyticsReasoningAccuracyQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Reasoning accuracy by pattern
+ */
+
+export function useGetQdeAnalyticsReasoningAccuracy<TData = Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsReasoningAccuracy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsReasoningAccuracyQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAnalyticsModelQualityUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/model-quality`
+}
+
+/**
+ * @summary Weekly model quality trend (win rate, Sharpe, avg R)
+ */
+export const getQdeAnalyticsModelQuality = async ( options?: RequestInit): Promise<GetQdeAnalyticsModelQuality200Item[]> => {
+
+  return customFetch<GetQdeAnalyticsModelQuality200Item[]>(getGetQdeAnalyticsModelQualityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsModelQualityQueryKey = () => {
+    return [
+    `/api/qde/analytics/model-quality`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsModelQualityQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsModelQualityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>> = ({ signal }) => getQdeAnalyticsModelQuality({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsModelQualityQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>>
+export type GetQdeAnalyticsModelQualityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Weekly model quality trend (win rate, Sharpe, avg R)
+ */
+
+export function useGetQdeAnalyticsModelQuality<TData = Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsModelQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsModelQualityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAnalyticsExecutionQualityUrl = () => {
+
+
+
+
+  return `/api/qde/analytics/execution-quality`
+}
+
+/**
+ * @summary Execution quality analytics by segment
+ */
+export const getQdeAnalyticsExecutionQuality = async ( options?: RequestInit): Promise<ExecutionQualityMetrics[]> => {
+
+  return customFetch<ExecutionQualityMetrics[]>(getGetQdeAnalyticsExecutionQualityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAnalyticsExecutionQualityQueryKey = () => {
+    return [
+    `/api/qde/analytics/execution-quality`
+    ] as const;
+    }
+
+
+export const getGetQdeAnalyticsExecutionQualityQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAnalyticsExecutionQualityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>> = ({ signal }) => getQdeAnalyticsExecutionQuality({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAnalyticsExecutionQualityQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>>
+export type GetQdeAnalyticsExecutionQualityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Execution quality analytics by segment
+ */
+
+export function useGetQdeAnalyticsExecutionQuality<TData = Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAnalyticsExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAnalyticsExecutionQualityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDeploymentsUrl = (params?: GetQdeAdminDeploymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/deployments?${stringifiedParams}` : `/api/qde/admin/deployments`
+}
+
+/**
+ * @summary List all QDE deployments
+ */
+export const getQdeAdminDeployments = async (params?: GetQdeAdminDeploymentsParams, options?: RequestInit): Promise<GetQdeAdminDeployments200> => {
+
+  return customFetch<GetQdeAdminDeployments200>(getGetQdeAdminDeploymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsQueryKey = (params?: GetQdeAdminDeploymentsParams,) => {
+    return [
+    `/api/qde/admin/deployments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeployments>>, TError = ErrorType<unknown>>(params?: GetQdeAdminDeploymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeployments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeployments>>> = ({ signal }) => getQdeAdminDeployments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeployments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeployments>>>
+export type GetQdeAdminDeploymentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all QDE deployments
+ */
+
+export function useGetQdeAdminDeployments<TData = Awaited<ReturnType<typeof getQdeAdminDeployments>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminDeploymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeployments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDeploymentsActiveUrl = () => {
+
+
+
+
+  return `/api/qde/admin/deployments/active`
+}
+
+/**
+ * @summary Get the currently active QDE deployment
+ */
+export const getQdeAdminDeploymentsActive = async ( options?: RequestInit): Promise<GetQdeAdminDeploymentsActive200> => {
+
+  return customFetch<GetQdeAdminDeploymentsActive200>(getGetQdeAdminDeploymentsActiveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsActiveQueryKey = () => {
+    return [
+    `/api/qde/admin/deployments/active`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsActiveQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsActiveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>> = ({ signal }) => getQdeAdminDeploymentsActive({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsActiveQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>>
+export type GetQdeAdminDeploymentsActiveQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the currently active QDE deployment
+ */
+
+export function useGetQdeAdminDeploymentsActive<TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsActive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsActiveQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeAdminDeploymentsPollUrl = () => {
+
+
+
+
+  return `/api/qde/admin/deployments/poll`
+}
+
+/**
+ * @summary Trigger a manual poll of signalium-trainer for new deployments
+ */
+export const postQdeAdminDeploymentsPoll = async ( options?: RequestInit): Promise<PostQdeAdminDeploymentsPoll200> => {
+
+  return customFetch<PostQdeAdminDeploymentsPoll200>(getPostQdeAdminDeploymentsPollUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeAdminDeploymentsPollMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>, TError,void, TContext> => {
+
+const mutationKey = ['postQdeAdminDeploymentsPoll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>, void> = () => {
+
+
+          return  postQdeAdminDeploymentsPoll(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeAdminDeploymentsPollMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>>
+
+    export type PostQdeAdminDeploymentsPollMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Trigger a manual poll of signalium-trainer for new deployments
+ */
+export const usePostQdeAdminDeploymentsPoll = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeAdminDeploymentsPoll>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostQdeAdminDeploymentsPollMutationOptions(options));
+    }
+
+export const getGetQdeAdminDeploymentsHealthCurrentUrl = (params?: GetQdeAdminDeploymentsHealthCurrentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/deployments/health/current?${stringifiedParams}` : `/api/qde/admin/deployments/health/current`
+}
+
+/**
+ * @summary Get health metrics for the currently active deployment
+ */
+export const getQdeAdminDeploymentsHealthCurrent = async (params?: GetQdeAdminDeploymentsHealthCurrentParams, options?: RequestInit): Promise<GetQdeAdminDeploymentsHealthCurrent200> => {
+
+  return customFetch<GetQdeAdminDeploymentsHealthCurrent200>(getGetQdeAdminDeploymentsHealthCurrentUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsHealthCurrentQueryKey = (params?: GetQdeAdminDeploymentsHealthCurrentParams,) => {
+    return [
+    `/api/qde/admin/deployments/health/current`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsHealthCurrentQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>, TError = ErrorType<unknown>>(params?: GetQdeAdminDeploymentsHealthCurrentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsHealthCurrentQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>> = ({ signal }) => getQdeAdminDeploymentsHealthCurrent(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsHealthCurrentQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>>
+export type GetQdeAdminDeploymentsHealthCurrentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get health metrics for the currently active deployment
+ */
+
+export function useGetQdeAdminDeploymentsHealthCurrent<TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>, TError = ErrorType<unknown>>(
+ params?: GetQdeAdminDeploymentsHealthCurrentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsHealthCurrent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsHealthCurrentQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDeploymentsIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/deployments/${id}`
+}
+
+/**
+ * @summary Get a single deployment by DB id
+ */
+export const getQdeAdminDeploymentsId = async (id: number, options?: RequestInit): Promise<GetQdeAdminDeploymentsId200> => {
+
+  return customFetch<GetQdeAdminDeploymentsId200>(getGetQdeAdminDeploymentsIdUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsIdQueryKey = (id: number,) => {
+    return [
+    `/api/qde/admin/deployments/${id}`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsIdQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsIdQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>> = ({ signal }) => getQdeAdminDeploymentsId(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsIdQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>>
+export type GetQdeAdminDeploymentsIdQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a single deployment by DB id
+ */
+
+export function useGetQdeAdminDeploymentsId<TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsIdQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostQdeAdminDeploymentsIdActivateUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/deployments/${id}/activate`
+}
+
+/**
+ * @summary Manually activate a specific deployment
+ */
+export const postQdeAdminDeploymentsIdActivate = async (id: number, options?: RequestInit): Promise<PostQdeAdminDeploymentsIdActivate200> => {
+
+  return customFetch<PostQdeAdminDeploymentsIdActivate200>(getPostQdeAdminDeploymentsIdActivateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeAdminDeploymentsIdActivateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postQdeAdminDeploymentsIdActivate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postQdeAdminDeploymentsIdActivate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeAdminDeploymentsIdActivateMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>>
+
+    export type PostQdeAdminDeploymentsIdActivateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually activate a specific deployment
+ */
+export const usePostQdeAdminDeploymentsIdActivate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeAdminDeploymentsIdActivate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostQdeAdminDeploymentsIdActivateMutationOptions(options));
+    }
+
+export const getPostQdeAdminDeploymentsIdRollbackUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/admin/deployments/${id}/rollback`
+}
+
+/**
+ * @summary Roll back to a specific deployment
+ */
+export const postQdeAdminDeploymentsIdRollback = async (id: number, options?: RequestInit): Promise<PostQdeAdminDeploymentsIdRollback200> => {
+
+  return customFetch<PostQdeAdminDeploymentsIdRollback200>(getPostQdeAdminDeploymentsIdRollbackUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostQdeAdminDeploymentsIdRollbackMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postQdeAdminDeploymentsIdRollback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postQdeAdminDeploymentsIdRollback(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostQdeAdminDeploymentsIdRollbackMutationResult = NonNullable<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>>
+
+    export type PostQdeAdminDeploymentsIdRollbackMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Roll back to a specific deployment
+ */
+export const usePostQdeAdminDeploymentsIdRollback = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postQdeAdminDeploymentsIdRollback>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostQdeAdminDeploymentsIdRollbackMutationOptions(options));
+    }
+
+export const getGetQdeAdminDeploymentsIdHealthUrl = (id: number,
+    params?: GetQdeAdminDeploymentsIdHealthParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/deployments/${id}/health?${stringifiedParams}` : `/api/qde/admin/deployments/${id}/health`
+}
+
+/**
+ * @summary Get health metric history for a specific deployment
+ */
+export const getQdeAdminDeploymentsIdHealth = async (id: number,
+    params?: GetQdeAdminDeploymentsIdHealthParams, options?: RequestInit): Promise<GetQdeAdminDeploymentsIdHealth200> => {
+
+  return customFetch<GetQdeAdminDeploymentsIdHealth200>(getGetQdeAdminDeploymentsIdHealthUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsIdHealthQueryKey = (id: number,
+    params?: GetQdeAdminDeploymentsIdHealthParams,) => {
+    return [
+    `/api/qde/admin/deployments/${id}/health`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsIdHealthQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>, TError = ErrorType<unknown>>(id: number,
+    params?: GetQdeAdminDeploymentsIdHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsIdHealthQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>> = ({ signal }) => getQdeAdminDeploymentsIdHealth(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsIdHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>>
+export type GetQdeAdminDeploymentsIdHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get health metric history for a specific deployment
+ */
+
+export function useGetQdeAdminDeploymentsIdHealth<TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>, TError = ErrorType<unknown>>(
+ id: number,
+    params?: GetQdeAdminDeploymentsIdHealthParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsIdHealthQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminDeploymentsIdEventsUrl = (id: number,
+    params?: GetQdeAdminDeploymentsIdEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/qde/admin/deployments/${id}/events?${stringifiedParams}` : `/api/qde/admin/deployments/${id}/events`
+}
+
+/**
+ * @summary Get lifecycle events for a specific deployment
+ */
+export const getQdeAdminDeploymentsIdEvents = async (id: number,
+    params?: GetQdeAdminDeploymentsIdEventsParams, options?: RequestInit): Promise<GetQdeAdminDeploymentsIdEvents200> => {
+
+  return customFetch<GetQdeAdminDeploymentsIdEvents200>(getGetQdeAdminDeploymentsIdEventsUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminDeploymentsIdEventsQueryKey = (id: number,
+    params?: GetQdeAdminDeploymentsIdEventsParams,) => {
+    return [
+    `/api/qde/admin/deployments/${id}/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetQdeAdminDeploymentsIdEventsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>, TError = ErrorType<unknown>>(id: number,
+    params?: GetQdeAdminDeploymentsIdEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminDeploymentsIdEventsQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>> = ({ signal }) => getQdeAdminDeploymentsIdEvents(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminDeploymentsIdEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>>
+export type GetQdeAdminDeploymentsIdEventsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get lifecycle events for a specific deployment
+ */
+
+export function useGetQdeAdminDeploymentsIdEvents<TData = Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>, TError = ErrorType<unknown>>(
+ id: number,
+    params?: GetQdeAdminDeploymentsIdEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminDeploymentsIdEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminDeploymentsIdEventsQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalTelemetryUrl = () => {
+
+
+
+
+  return `/api/operational/telemetry`
+}
+
+/**
+ * @summary EA ingest — submit a full telemetry snapshot
+ */
+export const postOperationalTelemetry = async ( options?: RequestInit): Promise<PostOperationalTelemetry201> => {
+
+  return customFetch<PostOperationalTelemetry201>(getPostOperationalTelemetryUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostOperationalTelemetryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalTelemetry>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalTelemetry>>, TError,void, TContext> => {
+
+const mutationKey = ['postOperationalTelemetry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalTelemetry>>, void> = () => {
+
+
+          return  postOperationalTelemetry(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalTelemetryMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalTelemetry>>>
+
+    export type PostOperationalTelemetryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary EA ingest — submit a full telemetry snapshot
+ */
+export const usePostOperationalTelemetry = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalTelemetry>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalTelemetry>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostOperationalTelemetryMutationOptions(options));
+    }
+
+export const getGetOperationalTelemetryUrl = (params?: GetOperationalTelemetryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/telemetry?${stringifiedParams}` : `/api/operational/telemetry`
+}
+
+/**
+ * @summary Admin — list telemetry snapshots
+ */
+export const getOperationalTelemetry = async (params?: GetOperationalTelemetryParams, options?: RequestInit): Promise<GetOperationalTelemetry200> => {
+
+  return customFetch<GetOperationalTelemetry200>(getGetOperationalTelemetryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalTelemetryQueryKey = (params?: GetOperationalTelemetryParams,) => {
+    return [
+    `/api/operational/telemetry`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalTelemetryQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalTelemetry>>, TError = ErrorType<unknown>>(params?: GetOperationalTelemetryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalTelemetryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalTelemetry>>> = ({ signal }) => getOperationalTelemetry(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetry>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalTelemetryQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalTelemetry>>>
+export type GetOperationalTelemetryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list telemetry snapshots
+ */
+
+export function useGetOperationalTelemetry<TData = Awaited<ReturnType<typeof getOperationalTelemetry>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalTelemetryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetry>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalTelemetryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalTelemetryReplayUrl = (params?: GetOperationalTelemetryReplayParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/telemetry/replay?${stringifiedParams}` : `/api/operational/telemetry/replay`
+}
+
+/**
+ * @summary Admin — account behaviour replay (time-ordered points)
+ */
+export const getOperationalTelemetryReplay = async (params?: GetOperationalTelemetryReplayParams, options?: RequestInit): Promise<GetOperationalTelemetryReplay200> => {
+
+  return customFetch<GetOperationalTelemetryReplay200>(getGetOperationalTelemetryReplayUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalTelemetryReplayQueryKey = (params?: GetOperationalTelemetryReplayParams,) => {
+    return [
+    `/api/operational/telemetry/replay`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalTelemetryReplayQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalTelemetryReplay>>, TError = ErrorType<unknown>>(params?: GetOperationalTelemetryReplayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetryReplay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalTelemetryReplayQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalTelemetryReplay>>> = ({ signal }) => getOperationalTelemetryReplay(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetryReplay>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalTelemetryReplayQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalTelemetryReplay>>>
+export type GetOperationalTelemetryReplayQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — account behaviour replay (time-ordered points)
+ */
+
+export function useGetOperationalTelemetryReplay<TData = Awaited<ReturnType<typeof getOperationalTelemetryReplay>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalTelemetryReplayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTelemetryReplay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalTelemetryReplayQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalHeartbeatUrl = () => {
+
+
+
+
+  return `/api/operational/heartbeat`
+}
+
+/**
+ * @summary EA ping — update heartbeat state
+ */
+export const postOperationalHeartbeat = async ( options?: RequestInit): Promise<PostOperationalHeartbeat200> => {
+
+  return customFetch<PostOperationalHeartbeat200>(getPostOperationalHeartbeatUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostOperationalHeartbeatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalHeartbeat>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalHeartbeat>>, TError,void, TContext> => {
+
+const mutationKey = ['postOperationalHeartbeat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalHeartbeat>>, void> = () => {
+
+
+          return  postOperationalHeartbeat(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalHeartbeatMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalHeartbeat>>>
+
+    export type PostOperationalHeartbeatMutationError = ErrorType<unknown>
+
+    /**
+ * @summary EA ping — update heartbeat state
+ */
+export const usePostOperationalHeartbeat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalHeartbeat>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalHeartbeat>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostOperationalHeartbeatMutationOptions(options));
+    }
+
+export const getGetOperationalHeartbeatStatusUrl = (params?: GetOperationalHeartbeatStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/heartbeat/status?${stringifiedParams}` : `/api/operational/heartbeat/status`
+}
+
+/**
+ * @summary Admin — all EA heartbeat states with summary
+ */
+export const getOperationalHeartbeatStatus = async (params?: GetOperationalHeartbeatStatusParams, options?: RequestInit): Promise<GetOperationalHeartbeatStatus200> => {
+
+  return customFetch<GetOperationalHeartbeatStatus200>(getGetOperationalHeartbeatStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalHeartbeatStatusQueryKey = (params?: GetOperationalHeartbeatStatusParams,) => {
+    return [
+    `/api/operational/heartbeat/status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalHeartbeatStatusQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>, TError = ErrorType<unknown>>(params?: GetOperationalHeartbeatStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalHeartbeatStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>> = ({ signal }) => getOperationalHeartbeatStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalHeartbeatStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>>
+export type GetOperationalHeartbeatStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — all EA heartbeat states with summary
+ */
+
+export function useGetOperationalHeartbeatStatus<TData = Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalHeartbeatStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalHeartbeatStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalHeartbeatOfflineUrl = () => {
+
+
+
+
+  return `/api/operational/heartbeat/offline`
+}
+
+/**
+ * @summary Admin — currently offline EA instances
+ */
+export const getOperationalHeartbeatOffline = async ( options?: RequestInit): Promise<GetOperationalHeartbeatOffline200> => {
+
+  return customFetch<GetOperationalHeartbeatOffline200>(getGetOperationalHeartbeatOfflineUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalHeartbeatOfflineQueryKey = () => {
+    return [
+    `/api/operational/heartbeat/offline`
+    ] as const;
+    }
+
+
+export const getGetOperationalHeartbeatOfflineQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalHeartbeatOfflineQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>> = ({ signal }) => getOperationalHeartbeatOffline({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalHeartbeatOfflineQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>>
+export type GetOperationalHeartbeatOfflineQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — currently offline EA instances
+ */
+
+export function useGetOperationalHeartbeatOffline<TData = Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalHeartbeatOffline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalHeartbeatOfflineQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalExecutionQualityUrl = () => {
+
+
+
+
+  return `/api/operational/execution-quality`
+}
+
+/**
+ * @summary EA ingest — submit execution quality metrics
+ */
+export const postOperationalExecutionQuality = async ( options?: RequestInit): Promise<PostOperationalExecutionQuality200> => {
+
+  return customFetch<PostOperationalExecutionQuality200>(getPostOperationalExecutionQualityUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostOperationalExecutionQualityMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalExecutionQuality>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalExecutionQuality>>, TError,void, TContext> => {
+
+const mutationKey = ['postOperationalExecutionQuality'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalExecutionQuality>>, void> = () => {
+
+
+          return  postOperationalExecutionQuality(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalExecutionQualityMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalExecutionQuality>>>
+
+    export type PostOperationalExecutionQualityMutationError = ErrorType<unknown>
+
+    /**
+ * @summary EA ingest — submit execution quality metrics
+ */
+export const usePostOperationalExecutionQuality = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalExecutionQuality>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalExecutionQuality>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostOperationalExecutionQualityMutationOptions(options));
+    }
+
+export const getGetOperationalExecutionQualityUrl = (params?: GetOperationalExecutionQualityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/execution-quality?${stringifiedParams}` : `/api/operational/execution-quality`
+}
+
+/**
+ * @summary Admin — execution quality list and broker rankings
+ */
+export const getOperationalExecutionQuality = async (params?: GetOperationalExecutionQualityParams, options?: RequestInit): Promise<GetOperationalExecutionQuality200> => {
+
+  return customFetch<GetOperationalExecutionQuality200>(getGetOperationalExecutionQualityUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalExecutionQualityQueryKey = (params?: GetOperationalExecutionQualityParams,) => {
+    return [
+    `/api/operational/execution-quality`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalExecutionQualityQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalExecutionQuality>>, TError = ErrorType<unknown>>(params?: GetOperationalExecutionQualityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalExecutionQualityQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalExecutionQuality>>> = ({ signal }) => getOperationalExecutionQuality(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalExecutionQuality>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalExecutionQualityQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalExecutionQuality>>>
+export type GetOperationalExecutionQualityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — execution quality list and broker rankings
+ */
+
+export function useGetOperationalExecutionQuality<TData = Awaited<ReturnType<typeof getOperationalExecutionQuality>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalExecutionQualityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalExecutionQuality>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalExecutionQualityQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalRiskAlertsUrl = (params?: GetOperationalRiskAlertsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/risk/alerts?${stringifiedParams}` : `/api/operational/risk/alerts`
+}
+
+/**
+ * @summary Admin — list risk alerts
+ */
+export const getOperationalRiskAlerts = async (params?: GetOperationalRiskAlertsParams, options?: RequestInit): Promise<GetOperationalRiskAlerts200> => {
+
+  return customFetch<GetOperationalRiskAlerts200>(getGetOperationalRiskAlertsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalRiskAlertsQueryKey = (params?: GetOperationalRiskAlertsParams,) => {
+    return [
+    `/api/operational/risk/alerts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalRiskAlertsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalRiskAlerts>>, TError = ErrorType<unknown>>(params?: GetOperationalRiskAlertsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalRiskAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalRiskAlertsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalRiskAlerts>>> = ({ signal }) => getOperationalRiskAlerts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalRiskAlerts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalRiskAlertsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalRiskAlerts>>>
+export type GetOperationalRiskAlertsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list risk alerts
+ */
+
+export function useGetOperationalRiskAlerts<TData = Awaited<ReturnType<typeof getOperationalRiskAlerts>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalRiskAlertsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalRiskAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalRiskAlertsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalRiskAlertsIdAcknowledgeUrl = (id: number,) => {
+
+
+
+
+  return `/api/operational/risk/alerts/${id}/acknowledge`
+}
+
+/**
+ * @summary Admin — acknowledge a risk alert
+ */
+export const postOperationalRiskAlertsIdAcknowledge = async (id: number, options?: RequestInit): Promise<PostOperationalRiskAlertsIdAcknowledge200> => {
+
+  return customFetch<PostOperationalRiskAlertsIdAcknowledge200>(getPostOperationalRiskAlertsIdAcknowledgeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostOperationalRiskAlertsIdAcknowledgeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postOperationalRiskAlertsIdAcknowledge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postOperationalRiskAlertsIdAcknowledge(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalRiskAlertsIdAcknowledgeMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>>
+
+    export type PostOperationalRiskAlertsIdAcknowledgeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — acknowledge a risk alert
+ */
+export const usePostOperationalRiskAlertsIdAcknowledge = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalRiskAlertsIdAcknowledge>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostOperationalRiskAlertsIdAcknowledgeMutationOptions(options));
+    }
+
+export const getGetOperationalIncidentsUrl = (params?: GetOperationalIncidentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/incidents?${stringifiedParams}` : `/api/operational/incidents`
+}
+
+/**
+ * @summary Admin — list operational incidents
+ */
+export const getOperationalIncidents = async (params?: GetOperationalIncidentsParams, options?: RequestInit): Promise<GetOperationalIncidents200> => {
+
+  return customFetch<GetOperationalIncidents200>(getGetOperationalIncidentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalIncidentsQueryKey = (params?: GetOperationalIncidentsParams,) => {
+    return [
+    `/api/operational/incidents`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalIncidentsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalIncidents>>, TError = ErrorType<unknown>>(params?: GetOperationalIncidentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalIncidents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalIncidentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalIncidents>>> = ({ signal }) => getOperationalIncidents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalIncidents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalIncidentsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalIncidents>>>
+export type GetOperationalIncidentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list operational incidents
+ */
+
+export function useGetOperationalIncidents<TData = Awaited<ReturnType<typeof getOperationalIncidents>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalIncidentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalIncidents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalIncidentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalIncidentsUrl = () => {
+
+
+
+
+  return `/api/operational/incidents`
+}
+
+/**
+ * @summary Admin — create an incident
+ */
+export const postOperationalIncidents = async (createIncidentInput: CreateIncidentInput, options?: RequestInit): Promise<PostOperationalIncidents201> => {
+
+  return customFetch<PostOperationalIncidents201>(getPostOperationalIncidentsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createIncidentInput)
+  }
+);}
+
+
+
+
+
+export const getPostOperationalIncidentsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalIncidents>>, TError,{data: BodyType<CreateIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalIncidents>>, TError,{data: BodyType<CreateIncidentInput>}, TContext> => {
+
+const mutationKey = ['postOperationalIncidents'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalIncidents>>, {data: BodyType<CreateIncidentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postOperationalIncidents(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalIncidentsMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalIncidents>>>
+    export type PostOperationalIncidentsMutationBody = BodyType<CreateIncidentInput>
+    export type PostOperationalIncidentsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — create an incident
+ */
+export const usePostOperationalIncidents = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalIncidents>>, TError,{data: BodyType<CreateIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalIncidents>>,
+        TError,
+        {data: BodyType<CreateIncidentInput>},
+        TContext
+      > => {
+      return useMutation(getPostOperationalIncidentsMutationOptions(options));
+    }
+
+export const getPatchOperationalIncidentsIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/operational/incidents/${id}`
+}
+
+/**
+ * @summary Admin — update an incident
+ */
+export const patchOperationalIncidentsId = async (id: number,
+    updateIncidentInput: UpdateIncidentInput, options?: RequestInit): Promise<PatchOperationalIncidentsId200> => {
+
+  return customFetch<PatchOperationalIncidentsId200>(getPatchOperationalIncidentsIdUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateIncidentInput)
+  }
+);}
+
+
+
+
+
+export const getPatchOperationalIncidentsIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOperationalIncidentsId>>, TError,{id: number;data: BodyType<UpdateIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchOperationalIncidentsId>>, TError,{id: number;data: BodyType<UpdateIncidentInput>}, TContext> => {
+
+const mutationKey = ['patchOperationalIncidentsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchOperationalIncidentsId>>, {id: number;data: BodyType<UpdateIncidentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  patchOperationalIncidentsId(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchOperationalIncidentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchOperationalIncidentsId>>>
+    export type PatchOperationalIncidentsIdMutationBody = BodyType<UpdateIncidentInput>
+    export type PatchOperationalIncidentsIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — update an incident
+ */
+export const usePatchOperationalIncidentsId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOperationalIncidentsId>>, TError,{id: number;data: BodyType<UpdateIncidentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchOperationalIncidentsId>>,
+        TError,
+        {id: number;data: BodyType<UpdateIncidentInput>},
+        TContext
+      > => {
+      return useMutation(getPatchOperationalIncidentsIdMutationOptions(options));
+    }
+
+export const getDeleteOperationalIncidentsIdUrl = (id: number,) => {
+
+
+
+
+  return `/api/operational/incidents/${id}`
+}
+
+/**
+ * @summary Admin — delete an incident
+ */
+export const deleteOperationalIncidentsId = async (id: number, options?: RequestInit): Promise<DeleteOperationalIncidentsId200> => {
+
+  return customFetch<DeleteOperationalIncidentsId200>(getDeleteOperationalIncidentsIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteOperationalIncidentsIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOperationalIncidentsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteOperationalIncidentsId>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteOperationalIncidentsId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteOperationalIncidentsId>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteOperationalIncidentsId(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteOperationalIncidentsIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteOperationalIncidentsId>>>
+
+    export type DeleteOperationalIncidentsIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — delete an incident
+ */
+export const useDeleteOperationalIncidentsId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOperationalIncidentsId>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteOperationalIncidentsId>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteOperationalIncidentsIdMutationOptions(options));
+    }
+
+export const getGetOperationalAlertsUrl = (params?: GetOperationalAlertsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/alerts?${stringifiedParams}` : `/api/operational/alerts`
+}
+
+/**
+ * @summary Admin — list platform alerts
+ */
+export const getOperationalAlerts = async (params?: GetOperationalAlertsParams, options?: RequestInit): Promise<GetOperationalAlerts200> => {
+
+  return customFetch<GetOperationalAlerts200>(getGetOperationalAlertsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalAlertsQueryKey = (params?: GetOperationalAlertsParams,) => {
+    return [
+    `/api/operational/alerts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalAlertsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalAlerts>>, TError = ErrorType<unknown>>(params?: GetOperationalAlertsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalAlertsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalAlerts>>> = ({ signal }) => getOperationalAlerts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlerts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalAlertsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalAlerts>>>
+export type GetOperationalAlertsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list platform alerts
+ */
+
+export function useGetOperationalAlerts<TData = Awaited<ReturnType<typeof getOperationalAlerts>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalAlertsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalAlertsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalAlertsIdAcknowledgeUrl = (id: number,) => {
+
+
+
+
+  return `/api/operational/alerts/${id}/acknowledge`
+}
+
+/**
+ * @summary Admin — acknowledge a platform alert
+ */
+export const postOperationalAlertsIdAcknowledge = async (id: number, options?: RequestInit): Promise<PostOperationalAlertsIdAcknowledge200> => {
+
+  return customFetch<PostOperationalAlertsIdAcknowledge200>(getPostOperationalAlertsIdAcknowledgeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostOperationalAlertsIdAcknowledgeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postOperationalAlertsIdAcknowledge'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postOperationalAlertsIdAcknowledge(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalAlertsIdAcknowledgeMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>>
+
+    export type PostOperationalAlertsIdAcknowledgeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — acknowledge a platform alert
+ */
+export const usePostOperationalAlertsIdAcknowledge = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalAlertsIdAcknowledge>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostOperationalAlertsIdAcknowledgeMutationOptions(options));
+    }
+
+export const getGetOperationalDashboardUrl = () => {
+
+
+
+
+  return `/api/operational/dashboard`
+}
+
+/**
+ * @summary Admin — operations overview stats
+ */
+export const getOperationalDashboard = async ( options?: RequestInit): Promise<OperationalDashboard> => {
+
+  return customFetch<OperationalDashboard>(getGetOperationalDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalDashboardQueryKey = () => {
+    return [
+    `/api/operational/dashboard`
+    ] as const;
+    }
+
+
+export const getGetOperationalDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalDashboard>>> = ({ signal }) => getOperationalDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalDashboard>>>
+export type GetOperationalDashboardQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — operations overview stats
+ */
+
+export function useGetOperationalDashboard<TData = Awaited<ReturnType<typeof getOperationalDashboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOperationalSupportUserUserIdUrl = (userId: string,) => {
+
+
+
+
+  return `/api/operational/support/user/${userId}`
+}
+
+/**
+ * @summary Staff — safe user support view (no credentials)
+ */
+export const getOperationalSupportUserUserId = async (userId: string, options?: RequestInit): Promise<UserSupportView> => {
+
+  return customFetch<UserSupportView>(getGetOperationalSupportUserUserIdUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalSupportUserUserIdQueryKey = (userId: string,) => {
+    return [
+    `/api/operational/support/user/${userId}`
+    ] as const;
+    }
+
+
+export const getGetOperationalSupportUserUserIdQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalSupportUserUserId>>, TError = ErrorType<unknown>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalSupportUserUserId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalSupportUserUserIdQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalSupportUserUserId>>> = ({ signal }) => getOperationalSupportUserUserId(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalSupportUserUserId>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalSupportUserUserIdQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalSupportUserUserId>>>
+export type GetOperationalSupportUserUserIdQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Staff — safe user support view (no credentials)
+ */
+
+export function useGetOperationalSupportUserUserId<TData = Awaited<ReturnType<typeof getOperationalSupportUserUserId>>, TError = ErrorType<unknown>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalSupportUserUserId>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalSupportUserUserIdQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQdeAdminTradeIntelligenceStatsUrl = () => {
+
+
+
+
+  return `/api/qde/admin/trade-intelligence-stats`
+}
+
+/**
+ * @summary Overview stats for the Trade Intelligence dashboard
+ */
+export const getQdeAdminTradeIntelligenceStats = async ( options?: RequestInit): Promise<TradeIntelligenceStats> => {
+
+  return customFetch<TradeIntelligenceStats>(getGetQdeAdminTradeIntelligenceStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQdeAdminTradeIntelligenceStatsQueryKey = () => {
+    return [
+    `/api/qde/admin/trade-intelligence-stats`
+    ] as const;
+    }
+
+
+export const getGetQdeAdminTradeIntelligenceStatsQueryOptions = <TData = Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQdeAdminTradeIntelligenceStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>> = ({ signal }) => getQdeAdminTradeIntelligenceStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQdeAdminTradeIntelligenceStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>>
+export type GetQdeAdminTradeIntelligenceStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Overview stats for the Trade Intelligence dashboard
+ */
+
+export function useGetQdeAdminTradeIntelligenceStats<TData = Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQdeAdminTradeIntelligenceStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQdeAdminTradeIntelligenceStatsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

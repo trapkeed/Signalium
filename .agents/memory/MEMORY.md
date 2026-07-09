@@ -1,2 +1,5 @@
 - [Signalium project setup](signalium-setup.md) — key architecture decisions, auth quirks, and sharp edges for this project.
 - [S18 inference gateway patterns](s18-inference-gateway.md) — hook call conventions, audit enum, and status-check incrementing lessons from the S18 build.
+- [S19 Trade Telemetry & Learning Loop](s19-trade-telemetry.md) — R-multiple correctness, finalise safe/throwing split, dedup guards, null-aware averages, orval looseObject fix.
+- [S21B Deployment Manager](s21b-deployment-manager.md) — atomic activation via DB transaction, DB-authoritative rollback, health flush atomicity, warm-up fail-closed gate, recordError in all catch blocks, db composite build step.
+- [S22A Ops Infrastructure](s22a-ops-infrastructure.md) — heartbeat identity binding, risk-alert dedup guard, dashboard state math, requireStaff/requireApiKeyAuth locations, enum cast workaround.
