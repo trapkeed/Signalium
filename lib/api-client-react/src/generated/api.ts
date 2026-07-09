@@ -161,6 +161,11 @@ import type {
   GetResilienceQueueDeadLetter200,
   GetResilienceQueueStats200,
   GetResilienceSecretRotation200,
+  GetRunpodConfig200,
+  GetRunpodPods200Item,
+  GetRunpodPodsIdArtifacts200,
+  GetRunpodPodsIdCredentials200Item,
+  GetRunpodPodsIdLogs200,
   GetSymbolNormalizationLogParams,
   GetUnreadNotificationCount200,
   GrantCreditBody,
@@ -263,10 +268,23 @@ import type {
   PostResilienceConfigImportBody,
   PostResilienceQueueIdRequeue200,
   PostResilienceSecretRotationSecretNameMarkRotated200,
+  PostRunpodCredentialsCredentialIdRotate200,
+  PostRunpodPods201,
+  PostRunpodPods422,
+  PostRunpodPodsBody,
+  PostRunpodPodsIdCredentials201,
+  PostRunpodPodsIdCredentialsBody,
+  PostRunpodPodsIdRefresh200,
+  PostRunpodPodsIdRestart200,
+  PostRunpodPodsIdRestart422,
+  PostRunpodPodsIdStop200,
+  PostRunpodPodsIdTerminate200,
   ProviderCapability,
   ProviderCredential,
   ProviderStatus,
   ProviderSymbolMapping,
+  PutRunpodBudget200,
+  PutRunpodBudgetBody,
   QdeRuntimeHealth,
   QdeStatsOverview,
   ReadinessCheck200,
@@ -23793,6 +23811,1031 @@ export const usePostResilienceConfigImport = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getPostResilienceConfigImportMutationOptions(options));
+    }
+
+export const getGetRunpodConfigUrl = () => {
+
+
+
+
+  return `/api/runpod/config`
+}
+
+/**
+ * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ */
+export const getRunpodConfig = async ( options?: RequestInit): Promise<GetRunpodConfig200> => {
+
+  return customFetch<GetRunpodConfig200>(getGetRunpodConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunpodConfigQueryKey = () => {
+    return [
+    `/api/runpod/config`
+    ] as const;
+    }
+
+
+export const getGetRunpodConfigQueryOptions = <TData = Awaited<ReturnType<typeof getRunpodConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunpodConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRunpodConfig>>> = ({ signal }) => getRunpodConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRunpodConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunpodConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getRunpodConfig>>>
+export type GetRunpodConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ */
+
+export function useGetRunpodConfig<TData = Awaited<ReturnType<typeof getRunpodConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunpodConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPutRunpodBudgetUrl = () => {
+
+
+
+
+  return `/api/runpod/budget`
+}
+
+/**
+ * @summary Admin — update RunPod budget guardrails (Task 4)
+ */
+export const putRunpodBudget = async (putRunpodBudgetBody: PutRunpodBudgetBody, options?: RequestInit): Promise<PutRunpodBudget200> => {
+
+  return customFetch<PutRunpodBudget200>(getPutRunpodBudgetUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(putRunpodBudgetBody)
+  }
+);}
+
+
+
+
+
+export const getPutRunpodBudgetMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putRunpodBudget>>, TError,{data: BodyType<PutRunpodBudgetBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof putRunpodBudget>>, TError,{data: BodyType<PutRunpodBudgetBody>}, TContext> => {
+
+const mutationKey = ['putRunpodBudget'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof putRunpodBudget>>, {data: BodyType<PutRunpodBudgetBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  putRunpodBudget(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PutRunpodBudgetMutationResult = NonNullable<Awaited<ReturnType<typeof putRunpodBudget>>>
+    export type PutRunpodBudgetMutationBody = BodyType<PutRunpodBudgetBody>
+    export type PutRunpodBudgetMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — update RunPod budget guardrails (Task 4)
+ */
+export const usePutRunpodBudget = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof putRunpodBudget>>, TError,{data: BodyType<PutRunpodBudgetBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof putRunpodBudget>>,
+        TError,
+        {data: BodyType<PutRunpodBudgetBody>},
+        TContext
+      > => {
+      return useMutation(getPutRunpodBudgetMutationOptions(options));
+    }
+
+export const getGetRunpodPodsUrl = () => {
+
+
+
+
+  return `/api/runpod/pods`
+}
+
+/**
+ * @summary Admin — list RunPod pods (Task 4)
+ */
+export const getRunpodPods = async ( options?: RequestInit): Promise<GetRunpodPods200Item[]> => {
+
+  return customFetch<GetRunpodPods200Item[]>(getGetRunpodPodsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunpodPodsQueryKey = () => {
+    return [
+    `/api/runpod/pods`
+    ] as const;
+    }
+
+
+export const getGetRunpodPodsQueryOptions = <TData = Awaited<ReturnType<typeof getRunpodPods>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPods>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunpodPodsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRunpodPods>>> = ({ signal }) => getRunpodPods({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRunpodPods>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunpodPodsQueryResult = NonNullable<Awaited<ReturnType<typeof getRunpodPods>>>
+export type GetRunpodPodsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list RunPod pods (Task 4)
+ */
+
+export function useGetRunpodPods<TData = Awaited<ReturnType<typeof getRunpodPods>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPods>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunpodPodsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostRunpodPodsUrl = () => {
+
+
+
+
+  return `/api/runpod/pods`
+}
+
+/**
+ * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ */
+export const postRunpodPods = async (postRunpodPodsBody: PostRunpodPodsBody, options?: RequestInit): Promise<PostRunpodPods201> => {
+
+  return customFetch<PostRunpodPods201>(getPostRunpodPodsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postRunpodPodsBody)
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsMutationOptions = <TError = ErrorType<PostRunpodPods422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPods>>, TError,{data: BodyType<PostRunpodPodsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPods>>, TError,{data: BodyType<PostRunpodPodsBody>}, TContext> => {
+
+const mutationKey = ['postRunpodPods'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPods>>, {data: BodyType<PostRunpodPodsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postRunpodPods(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPods>>>
+    export type PostRunpodPodsMutationBody = BodyType<PostRunpodPodsBody>
+    export type PostRunpodPodsMutationError = ErrorType<PostRunpodPods422>
+
+    /**
+ * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ */
+export const usePostRunpodPods = <TError = ErrorType<PostRunpodPods422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPods>>, TError,{data: BodyType<PostRunpodPodsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPods>>,
+        TError,
+        {data: BodyType<PostRunpodPodsBody>},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsMutationOptions(options));
+    }
+
+export const getPostRunpodPodsIdStopUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/stop`
+}
+
+/**
+ * @summary Admin — stop a RunPod pod (Task 4)
+ */
+export const postRunpodPodsIdStop = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdStop200> => {
+
+  return customFetch<PostRunpodPodsIdStop200>(getPostRunpodPodsIdStopUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsIdStopMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdStop>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdStop>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postRunpodPodsIdStop'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPodsIdStop>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postRunpodPodsIdStop(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsIdStopMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPodsIdStop>>>
+
+    export type PostRunpodPodsIdStopMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — stop a RunPod pod (Task 4)
+ */
+export const usePostRunpodPodsIdStop = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdStop>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPodsIdStop>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsIdStopMutationOptions(options));
+    }
+
+export const getPostRunpodPodsIdRestartUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/restart`
+}
+
+/**
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ */
+export const postRunpodPodsIdRestart = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdRestart200> => {
+
+  return customFetch<PostRunpodPodsIdRestart200>(getPostRunpodPodsIdRestartUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsIdRestartMutationOptions = <TError = ErrorType<PostRunpodPodsIdRestart422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postRunpodPodsIdRestart'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postRunpodPodsIdRestart(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsIdRestartMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>>
+
+    export type PostRunpodPodsIdRestartMutationError = ErrorType<PostRunpodPodsIdRestart422>
+
+    /**
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ */
+export const usePostRunpodPodsIdRestart = <TError = ErrorType<PostRunpodPodsIdRestart422>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRestart>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPodsIdRestart>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsIdRestartMutationOptions(options));
+    }
+
+export const getPostRunpodPodsIdTerminateUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/terminate`
+}
+
+/**
+ * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ */
+export const postRunpodPodsIdTerminate = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdTerminate200> => {
+
+  return customFetch<PostRunpodPodsIdTerminate200>(getPostRunpodPodsIdTerminateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsIdTerminateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postRunpodPodsIdTerminate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postRunpodPodsIdTerminate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsIdTerminateMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>>
+
+    export type PostRunpodPodsIdTerminateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ */
+export const usePostRunpodPodsIdTerminate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPodsIdTerminate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsIdTerminateMutationOptions(options));
+    }
+
+export const getPostRunpodPodsIdRefreshUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/refresh`
+}
+
+/**
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ */
+export const postRunpodPodsIdRefresh = async (id: number, options?: RequestInit): Promise<PostRunpodPodsIdRefresh200> => {
+
+  return customFetch<PostRunpodPodsIdRefresh200>(getPostRunpodPodsIdRefreshUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsIdRefreshMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postRunpodPodsIdRefresh'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postRunpodPodsIdRefresh(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsIdRefreshMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>>
+
+    export type PostRunpodPodsIdRefreshMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ */
+export const usePostRunpodPodsIdRefresh = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPodsIdRefresh>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsIdRefreshMutationOptions(options));
+    }
+
+export const getGetRunpodPodsIdLogsUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/logs`
+}
+
+/**
+ * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ */
+export const getRunpodPodsIdLogs = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdLogs200> => {
+
+  return customFetch<GetRunpodPodsIdLogs200>(getGetRunpodPodsIdLogsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunpodPodsIdLogsQueryKey = (id: number,) => {
+    return [
+    `/api/runpod/pods/${id}/logs`
+    ] as const;
+    }
+
+
+export const getGetRunpodPodsIdLogsQueryOptions = <TData = Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunpodPodsIdLogsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRunpodPodsIdLogs>>> = ({ signal }) => getRunpodPodsIdLogs(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunpodPodsIdLogsQueryResult = NonNullable<Awaited<ReturnType<typeof getRunpodPodsIdLogs>>>
+export type GetRunpodPodsIdLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ */
+
+export function useGetRunpodPodsIdLogs<TData = Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunpodPodsIdLogsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRunpodPodsIdArtifactsUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/artifacts`
+}
+
+/**
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ */
+export const getRunpodPodsIdArtifacts = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdArtifacts200> => {
+
+  return customFetch<GetRunpodPodsIdArtifacts200>(getGetRunpodPodsIdArtifactsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunpodPodsIdArtifactsQueryKey = (id: number,) => {
+    return [
+    `/api/runpod/pods/${id}/artifacts`
+    ] as const;
+    }
+
+
+export const getGetRunpodPodsIdArtifactsQueryOptions = <TData = Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunpodPodsIdArtifactsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>> = ({ signal }) => getRunpodPodsIdArtifacts(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunpodPodsIdArtifactsQueryResult = NonNullable<Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>>
+export type GetRunpodPodsIdArtifactsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ */
+
+export function useGetRunpodPodsIdArtifacts<TData = Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdArtifacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunpodPodsIdArtifactsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRunpodPodsIdCredentialsUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/credentials`
+}
+
+/**
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ */
+export const getRunpodPodsIdCredentials = async (id: number, options?: RequestInit): Promise<GetRunpodPodsIdCredentials200Item[]> => {
+
+  return customFetch<GetRunpodPodsIdCredentials200Item[]>(getGetRunpodPodsIdCredentialsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRunpodPodsIdCredentialsQueryKey = (id: number,) => {
+    return [
+    `/api/runpod/pods/${id}/credentials`
+    ] as const;
+    }
+
+
+export const getGetRunpodPodsIdCredentialsQueryOptions = <TData = Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRunpodPodsIdCredentialsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>> = ({ signal }) => getRunpodPodsIdCredentials(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRunpodPodsIdCredentialsQueryResult = NonNullable<Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>>
+export type GetRunpodPodsIdCredentialsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ */
+
+export function useGetRunpodPodsIdCredentials<TData = Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRunpodPodsIdCredentials>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRunpodPodsIdCredentialsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostRunpodPodsIdCredentialsUrl = (id: number,) => {
+
+
+
+
+  return `/api/runpod/pods/${id}/credentials`
+}
+
+/**
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ */
+export const postRunpodPodsIdCredentials = async (id: number,
+    postRunpodPodsIdCredentialsBody?: PostRunpodPodsIdCredentialsBody, options?: RequestInit): Promise<PostRunpodPodsIdCredentials201> => {
+
+  return customFetch<PostRunpodPodsIdCredentials201>(getPostRunpodPodsIdCredentialsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postRunpodPodsIdCredentialsBody)
+  }
+);}
+
+
+
+
+
+export const getPostRunpodPodsIdCredentialsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>, TError,{id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>, TError,{id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>}, TContext> => {
+
+const mutationKey = ['postRunpodPodsIdCredentials'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>, {id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  postRunpodPodsIdCredentials(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodPodsIdCredentialsMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>>
+    export type PostRunpodPodsIdCredentialsMutationBody = BodyType<PostRunpodPodsIdCredentialsBody> | undefined
+    export type PostRunpodPodsIdCredentialsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ */
+export const usePostRunpodPodsIdCredentials = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>, TError,{id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodPodsIdCredentials>>,
+        TError,
+        {id: number;data?: BodyType<PostRunpodPodsIdCredentialsBody>},
+        TContext
+      > => {
+      return useMutation(getPostRunpodPodsIdCredentialsMutationOptions(options));
+    }
+
+export const getPostRunpodCredentialsCredentialIdRotateUrl = (credentialId: number,) => {
+
+
+
+
+  return `/api/runpod/credentials/${credentialId}/rotate`
+}
+
+/**
+ * @summary Admin — rotate a RunPod worker credential (Task 4)
+ */
+export const postRunpodCredentialsCredentialIdRotate = async (credentialId: number, options?: RequestInit): Promise<PostRunpodCredentialsCredentialIdRotate200> => {
+
+  return customFetch<PostRunpodCredentialsCredentialIdRotate200>(getPostRunpodCredentialsCredentialIdRotateUrl(credentialId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostRunpodCredentialsCredentialIdRotateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>, TError,{credentialId: number}, TContext> => {
+
+const mutationKey = ['postRunpodCredentialsCredentialIdRotate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>, {credentialId: number}> = (props) => {
+          const {credentialId} = props ?? {};
+
+          return  postRunpodCredentialsCredentialIdRotate(credentialId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostRunpodCredentialsCredentialIdRotateMutationResult = NonNullable<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>>
+
+    export type PostRunpodCredentialsCredentialIdRotateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — rotate a RunPod worker credential (Task 4)
+ */
+export const usePostRunpodCredentialsCredentialIdRotate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postRunpodCredentialsCredentialIdRotate>>,
+        TError,
+        {credentialId: number},
+        TContext
+      > => {
+      return useMutation(getPostRunpodCredentialsCredentialIdRotateMutationOptions(options));
+    }
+
+export const getDeleteRunpodCredentialsCredentialIdUrl = (credentialId: number,) => {
+
+
+
+
+  return `/api/runpod/credentials/${credentialId}`
+}
+
+/**
+ * @summary Admin — revoke a RunPod worker credential (Task 4)
+ */
+export const deleteRunpodCredentialsCredentialId = async (credentialId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteRunpodCredentialsCredentialIdUrl(credentialId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteRunpodCredentialsCredentialIdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>, TError,{credentialId: number}, TContext> => {
+
+const mutationKey = ['deleteRunpodCredentialsCredentialId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>, {credentialId: number}> = (props) => {
+          const {credentialId} = props ?? {};
+
+          return  deleteRunpodCredentialsCredentialId(credentialId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteRunpodCredentialsCredentialIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>>
+
+    export type DeleteRunpodCredentialsCredentialIdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — revoke a RunPod worker credential (Task 4)
+ */
+export const useDeleteRunpodCredentialsCredentialId = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>, TError,{credentialId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteRunpodCredentialsCredentialId>>,
+        TError,
+        {credentialId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteRunpodCredentialsCredentialIdMutationOptions(options));
     }
 
 export const getGetGovernanceOverviewUrl = () => {

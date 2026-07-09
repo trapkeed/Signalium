@@ -4102,6 +4102,42 @@ export type PostResilienceConfigImportBody = { [key: string]: unknown };
 
 export type PostResilienceConfigImport200 = { [key: string]: unknown };
 
+export type GetRunpodConfig200 = { [key: string]: unknown };
+
+export type PutRunpodBudgetBody = { [key: string]: unknown };
+
+export type PutRunpodBudget200 = { [key: string]: unknown };
+
+export type GetRunpodPods200Item = { [key: string]: unknown };
+
+export type PostRunpodPodsBody = { [key: string]: unknown };
+
+export type PostRunpodPods201 = { [key: string]: unknown };
+
+export type PostRunpodPods422 = { [key: string]: unknown };
+
+export type PostRunpodPodsIdStop200 = { [key: string]: unknown };
+
+export type PostRunpodPodsIdRestart200 = { [key: string]: unknown };
+
+export type PostRunpodPodsIdRestart422 = { [key: string]: unknown };
+
+export type PostRunpodPodsIdTerminate200 = { [key: string]: unknown };
+
+export type PostRunpodPodsIdRefresh200 = { [key: string]: unknown };
+
+export type GetRunpodPodsIdLogs200 = { [key: string]: unknown };
+
+export type GetRunpodPodsIdArtifacts200 = { [key: string]: unknown };
+
+export type GetRunpodPodsIdCredentials200Item = { [key: string]: unknown };
+
+export type PostRunpodPodsIdCredentialsBody = { [key: string]: unknown };
+
+export type PostRunpodPodsIdCredentials201 = { [key: string]: unknown };
+
+export type PostRunpodCredentialsCredentialIdRotate200 = { [key: string]: unknown };
+
 export type GetGovernanceOverview200 = { [key: string]: unknown };
 
 export type GetGovernanceOverview403 = { [key: string]: unknown };

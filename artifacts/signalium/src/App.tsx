@@ -45,6 +45,7 @@ import AdminKnowledgeBase from "@/pages/admin/knowledge-base";
 import AdminStatusPage from "@/pages/admin/status";
 import AdminBrokers from "@/pages/admin/brokers";
 import AdminDataProviders from "@/pages/admin/data-providers";
+import AdminRunpod from "@/pages/admin/runpod";
 import AdminInferenceGateway from "@/pages/admin/inference-gateway";
 import AdminTradeIntelligence from "@/pages/admin/trade-intelligence";
 import AdminDeployments from "@/pages/admin/deployments";
@@ -175,6 +176,7 @@ function AppRoutes() {
               <Route path="/admin/symbols"><ProtectedRoute component={AdminSymbols} /></Route>
               <Route path="/admin/brokers"><ProtectedRoute component={AdminBrokers} /></Route>
               <Route path="/admin/data-providers"><ProtectedRoute component={AdminDataProviders} /></Route>
+              <Route path="/admin/runpod"><ProtectedRoute component={AdminRunpod} /></Route>
               <Route path="/admin/inference-gateway"><ProtectedRoute component={AdminInferenceGateway} /></Route>
               <Route path="/admin/trade-intelligence"><ProtectedRoute component={AdminTradeIntelligence} /></Route>
               <Route path="/admin/deployments"><ProtectedRoute component={AdminDeployments} ops /></Route>

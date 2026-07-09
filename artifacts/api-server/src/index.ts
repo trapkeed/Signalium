@@ -16,6 +16,7 @@ import { startAccountDeletionSweep } from "./lib/dataGovernance";
 import { runStartupDiagnostics } from "./lib/productionReadiness";
 import { seedMarketDataProviders } from "./lib/marketData/seed";
 import { startMarketDataHealthSweep } from "./lib/marketData/health";
+import { startRunpodMonitor } from "./lib/runpod/monitor";
 
 const rawPort = process.env["PORT"];
 
@@ -48,6 +49,8 @@ const server = app.listen(port, (err) => {
     .catch((seedErr) => {
       logger.error({ err: seedErr }, "Failed to seed market data providers");
     });
+
+  startRunpodMonitor(60_000); // poll active RunPod pods every minute
 
   // S30: post-listen startup diagnostics — logs a dependency readiness
   // report and, in production, exits if a required env var is missing.

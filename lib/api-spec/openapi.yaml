@@ -5989,6 +5989,198 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
 
+  /runpod/config:
+    get:
+      summary: Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+      tags: [RunPod]
+      responses:
+        "200":
+          description: RunPod config
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/budget:
+    put:
+      summary: Admin — update RunPod budget guardrails (Task 4)
+      tags: [RunPod]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200":
+          description: Updated budget config
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods:
+    get:
+      summary: Admin — list RunPod pods (Task 4)
+      tags: [RunPod]
+      responses:
+        "200":
+          description: Pods
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, additionalProperties: true } }
+    post:
+      summary: Admin — launch a new RunPod pod, budget-checked (Task 4)
+      tags: [RunPod]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Launched pod
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "422":
+          description: Budget check failed
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/stop:
+    post:
+      summary: Admin — stop a RunPod pod (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Stopped pod
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/restart:
+    post:
+      summary: Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Restarted pod
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "422":
+          description: Budget check failed
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/terminate:
+    post:
+      summary: Admin — terminate a RunPod pod permanently (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Terminated pod
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/refresh:
+    post:
+      summary: Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Refreshed pod
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/logs:
+    get:
+      summary: Admin — fetch recent logs for a RunPod pod (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Logs
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/artifacts:
+    get:
+      summary: Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Artifacts
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/pods/{id}/credentials:
+    get:
+      summary: Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Credential metadata (no raw tokens)
+          content:
+            application/json:
+              schema: { type: array, items: { type: object, additionalProperties: true } }
+    post:
+      summary: Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Issued credential (raw token returned once)
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/credentials/{credentialId}/rotate:
+    post:
+      summary: Admin — rotate a RunPod worker credential (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: credentialId, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: New credential (raw token returned once)
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /runpod/credentials/{credentialId}:
+    delete:
+      summary: Admin — revoke a RunPod worker credential (Task 4)
+      tags: [RunPod]
+      parameters:
+        - { in: path, name: credentialId, required: true, schema: { type: integer } }
+      responses:
+        "204":
+          description: Revoked
+
   /governance/overview:
     get:
       summary: >-

@@ -80,6 +80,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/symbols", label: "Symbols", icon: Coins },
       { href: "/admin/brokers", label: "Brokers", icon: Building2 },
       { href: "/admin/data-providers", label: "Data Providers", icon: Database },
+      { href: "/admin/runpod", label: "RunPod GPU Orchestration", icon: Server, adminOnly: true },
       { href: "/admin/eas", label: "EAs", icon: Box },
       { href: "/admin/ea-builds", label: "EA Builds", icon: Cpu },
       { href: "/admin/qde", label: "QDE Loop", icon: Radio },

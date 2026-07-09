@@ -6680,6 +6680,138 @@ export const PostResilienceConfigImportResponse = zod.record(zod.string(), zod.u
 
 
 /**
+ * @summary Admin — RunPod configuration status, launch defaults, and budget (Task 4)
+ */
+export const GetRunpodConfigResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — update RunPod budget guardrails (Task 4)
+ */
+export const PutRunpodBudgetBody = zod.record(zod.string(), zod.unknown())
+
+export const PutRunpodBudgetResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — list RunPod pods (Task 4)
+ */
+export const GetRunpodPodsResponseItem = zod.record(zod.string(), zod.unknown())
+export const GetRunpodPodsResponse = zod.array(GetRunpodPodsResponseItem)
+
+
+/**
+ * @summary Admin — launch a new RunPod pod, budget-checked (Task 4)
+ */
+export const PostRunpodPodsBody = zod.record(zod.string(), zod.unknown())
+
+export const PostRunpodPodsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — stop a RunPod pod (Task 4)
+ */
+export const PostRunpodPodsIdStopParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostRunpodPodsIdStopResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — restart (resume) a stopped RunPod pod, budget-checked (Task 4)
+ */
+export const PostRunpodPodsIdRestartParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostRunpodPodsIdRestartResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — terminate a RunPod pod permanently (Task 4)
+ */
+export const PostRunpodPodsIdTerminateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostRunpodPodsIdTerminateResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — poll RunPod for the latest status/cost/utilization of a pod (Task 4)
+ */
+export const PostRunpodPodsIdRefreshParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostRunpodPodsIdRefreshResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — fetch recent logs for a RunPod pod (Task 4)
+ */
+export const GetRunpodPodsIdLogsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetRunpodPodsIdLogsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — list artifacts on a RunPod pod's attached network volume (Task 4)
+ */
+export const GetRunpodPodsIdArtifactsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetRunpodPodsIdArtifactsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — list scoped worker credentials issued for a RunPod pod (Task 4)
+ */
+export const GetRunpodPodsIdCredentialsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetRunpodPodsIdCredentialsResponseItem = zod.record(zod.string(), zod.unknown())
+export const GetRunpodPodsIdCredentialsResponse = zod.array(GetRunpodPodsIdCredentialsResponseItem)
+
+
+/**
+ * @summary Admin — issue a new short-lived scoped worker credential for a RunPod pod (Task 4)
+ */
+export const PostRunpodPodsIdCredentialsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostRunpodPodsIdCredentialsBody = zod.record(zod.string(), zod.unknown())
+
+export const PostRunpodPodsIdCredentialsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — rotate a RunPod worker credential (Task 4)
+ */
+export const PostRunpodCredentialsCredentialIdRotateParams = zod.object({
+  "credentialId": zod.coerce.number()
+})
+
+export const PostRunpodCredentialsCredentialIdRotateResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — revoke a RunPod worker credential (Task 4)
+ */
+export const DeleteRunpodCredentialsCredentialIdParams = zod.object({
+  "credentialId": zod.coerce.number()
+})
+
+export const DeleteRunpodCredentialsCredentialIdResponse = zod.void()
+
+
+/**
  * @summary Read-only deployment governance summary (S27): active QDE version, deployment status, certification status, health score, validation score, shadow testing status, deployment history, rollback history. Full detail for SuperAdmin/Admin; a condensed "strategic" view for Founder. No visibility for any other role.
  */
 export const GetGovernanceOverviewResponse = zod.record(zod.string(), zod.unknown())
