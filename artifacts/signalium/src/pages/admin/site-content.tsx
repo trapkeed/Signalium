@@ -178,17 +178,10 @@ export default function AdminSiteContent() {
 
       <Section title="Hero">
         <Field label="Badge" value={content.hero.badge} onChange={(v) => set("hero", { ...content.hero, badge: v })} />
-        <Field label="Headline (line 1)" value={content.hero.headlineLine1} onChange={(v) => set("hero", { ...content.hero, headlineLine1: v })} />
-        <Field label="Headline (line 2)" value={content.hero.headlineLine2} onChange={(v) => set("hero", { ...content.hero, headlineLine2: v })} />
+        <Field label="Headline" value={content.hero.headline} onChange={(v) => set("hero", { ...content.hero, headline: v })} />
         <Field label="Subheadline" value={content.hero.subheadline} onChange={(v) => set("hero", { ...content.hero, subheadline: v })} multiline />
         <Field label="Primary button label" value={content.hero.primaryCtaLabel} onChange={(v) => set("hero", { ...content.hero, primaryCtaLabel: v })} />
         <Field label="Secondary button label" value={content.hero.secondaryCtaLabel} onChange={(v) => set("hero", { ...content.hero, secondaryCtaLabel: v })} />
-      </Section>
-
-      <Section title="Philosophy">
-        <Field label="Heading" value={content.philosophy.heading} onChange={(v) => set("philosophy", { ...content.philosophy, heading: v })} />
-        <Field label="Body" value={content.philosophy.body} onChange={(v) => set("philosophy", { ...content.philosophy, body: v })} multiline />
-        <StringListEditor label="Bullets" items={content.philosophy.bullets} onChange={(v) => set("philosophy", { ...content.philosophy, bullets: v })} />
       </Section>
 
       <Section title="How It Works">
@@ -220,18 +213,6 @@ export default function AdminSiteContent() {
         </div>
       </Section>
 
-      <Section title="Supported Markets">
-        <Field label="Eyebrow" value={content.markets.eyebrow} onChange={(v) => set("markets", { ...content.markets, eyebrow: v })} />
-        <Field label="Heading" value={content.markets.heading} onChange={(v) => set("markets", { ...content.markets, heading: v })} />
-        <ObjectListEditor
-          label="Markets"
-          items={content.markets.items}
-          fields={[{ key: "title", placeholder: "Market name" }, { key: "desc", placeholder: "Description", multiline: true }]}
-          empty={{ title: "", desc: "" }}
-          onChange={(v) => set("markets", { ...content.markets, items: v })}
-        />
-      </Section>
-
       <Section title="Core Pillars">
         <Field label="Eyebrow" value={content.pillars.eyebrow} onChange={(v) => set("pillars", { ...content.pillars, eyebrow: v })} />
         <Field label="Heading" value={content.pillars.heading} onChange={(v) => set("pillars", { ...content.pillars, heading: v })} />
@@ -244,22 +225,11 @@ export default function AdminSiteContent() {
         />
       </Section>
 
-      <Section title="Stats">
-        <ObjectListEditor
-          label="Stats"
-          items={content.stats}
-          fields={[{ key: "value", placeholder: "e.g. 99.99%" }, { key: "label", placeholder: "e.g. System Uptime" }]}
-          empty={{ label: "", value: "" }}
-          onChange={(v) => set("stats", v)}
-        />
-      </Section>
-
-      <Section title="Security & Infrastructure">
+      <Section title="Security">
         <Field label="Eyebrow" value={content.security.eyebrow} onChange={(v) => set("security", { ...content.security, eyebrow: v })} />
         <Field label="Heading" value={content.security.heading} onChange={(v) => set("security", { ...content.security, heading: v })} />
         <Field label="Body" value={content.security.body} onChange={(v) => set("security", { ...content.security, body: v })} multiline />
         <StringListEditor label="Bullets" items={content.security.bullets} onChange={(v) => set("security", { ...content.security, bullets: v })} />
-        <StringListEditor label="Badges" items={content.security.badges} onChange={(v) => set("security", { ...content.security, badges: v })} />
       </Section>
 
       <Section title="FAQ">

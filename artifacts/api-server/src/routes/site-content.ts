@@ -17,13 +17,11 @@ const titledItem = z.object({ title: z.string(), desc: z.string() });
 const siteContentSchema = z.object({
   hero: z.object({
     badge: z.string(),
-    headlineLine1: z.string(),
-    headlineLine2: z.string(),
+    headline: z.string(),
     subheadline: z.string(),
     primaryCtaLabel: z.string(),
     secondaryCtaLabel: z.string(),
   }),
-  philosophy: z.object({ heading: z.string(), body: z.string(), bullets: z.array(z.string()) }),
   howItWorks: z.object({ eyebrow: z.string(), heading: z.string(), steps: z.array(titledItem) }),
   tradingModes: z.object({
     eyebrow: z.string(),
@@ -31,9 +29,7 @@ const siteContentSchema = z.object({
     manual: z.object({ title: z.string(), desc: z.string(), bullets: z.array(z.string()) }),
     autonomous: z.object({ title: z.string(), desc: z.string(), bullets: z.array(z.string()) }),
   }),
-  markets: z.object({ eyebrow: z.string(), heading: z.string(), items: z.array(titledItem) }),
   pillars: z.object({ eyebrow: z.string(), heading: z.string(), items: z.array(titledItem) }),
-  stats: z.array(z.object({ label: z.string(), value: z.string() })),
   security: z.object({
     eyebrow: z.string(),
     heading: z.string(),

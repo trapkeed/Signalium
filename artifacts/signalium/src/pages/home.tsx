@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { motion, type Variants } from "framer-motion";
-import { Activity, Shield, LineChart, Target, ChevronRight, Lock, Server, BarChart4, MousePointerClick, Cpu, Coins, TrendingUp, Layers, Plus, Minus } from "lucide-react";
+import { Activity, Shield, Target, ChevronRight, Lock, MousePointerClick, Cpu, Plus, Minus } from "lucide-react";
 import { useState } from "react";
 import { useListPlans } from "@workspace/api-client-react";
 import { useSiteContent } from "@/hooks/use-site-content";
@@ -82,8 +82,7 @@ export default function Home() {
               {content.hero.badge}
             </motion.div>
             <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-normal tracking-tight text-white mb-8 leading-[1.1]">
-              {content.hero.headlineLine1} <br />
-              <span className="text-muted-foreground">{content.hero.headlineLine2}</span>
+              {content.hero.headline}
             </motion.h1>
             <motion.p variants={fadeUp} className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-12 leading-relaxed font-light">
               {content.hero.subheadline}
@@ -102,67 +101,6 @@ export default function Home() {
               >
                 {content.hero.secondaryCtaLabel}
               </Link>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Philosophy */}
-      <section className="relative z-10 py-24 px-6 border-y border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid md:grid-cols-2 gap-16 items-center"
-          >
-            <div>
-              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-normal text-white mb-6 leading-tight">
-                {content.philosophy.heading}
-              </motion.h2>
-              <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-6 font-light">
-                {content.philosophy.body}
-              </motion.p>
-              <motion.div variants={fadeUp} className="space-y-4">
-                {content.philosophy.bullets.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                    </div>
-                    <span className="text-sm text-white/80">{item}</span>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-            <motion.div variants={fadeUp} className="relative">
-              <div className={`aspect-[4/3] rounded-xl overflow-hidden p-8 flex flex-col justify-between relative ${GLASS}`}>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
-                <div className="relative z-10 flex justify-between items-start mb-12">
-                  <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground uppercase tracking-widest">Execution Status</div>
-                    <div className="text-2xl text-white font-mono">NOMINAL</div>
-                  </div>
-                  <Activity className="w-6 h-6 text-primary" />
-                </div>
-                <div className="space-y-6 relative z-10">
-                  <div className="h-px w-full bg-white/10" />
-                  <div className="flex justify-between items-center text-sm font-mono">
-                    <span className="text-muted-foreground">LATENCY</span>
-                    <span className="text-white">0.4ms</span>
-                  </div>
-                  <div className="h-px w-full bg-white/10" />
-                  <div className="flex justify-between items-center text-sm font-mono">
-                    <span className="text-muted-foreground">UPTIME</span>
-                    <span className="text-success">99.999%</span>
-                  </div>
-                  <div className="h-px w-full bg-white/10" />
-                  <div className="flex justify-between items-center text-sm font-mono">
-                    <span className="text-muted-foreground">CAPITAL ALLOCATED</span>
-                    <span className="text-white">SECURE</span>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           </motion.div>
         </div>
@@ -264,46 +202,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Supported Markets */}
-      <section className="relative z-10 py-32 px-6 border-y border-white/10">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="mb-16 md:mb-24 text-center"
-          >
-            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.markets.eyebrow}</motion.div>
-            <motion.h2 variants={fadeUp} className="text-4xl md:text-5xl font-normal text-white max-w-2xl mx-auto leading-tight">
-              {content.markets.heading}
-            </motion.h2>
-          </motion.div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-50px" }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {content.markets.items.map((m, i) => {
-              const icons = [TrendingUp, Coins, Layers];
-              const Icon = icons[i % icons.length];
-              return (
-                <motion.div key={i} variants={fadeUp} className={`p-8 rounded-xl text-center ${GLASS} ${GLASS_HOVER}`}>
-                  <div className={`w-12 h-12 rounded flex items-center justify-center mb-6 mx-auto ${GLASS}`}>
-                    <Icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-medium text-white mb-3">{m.title}</h3>
-                  <p className="text-muted-foreground font-light leading-relaxed">{m.desc}</p>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
       {/* Core Pillars */}
       <section className="relative z-10 py-32 px-6">
         <div className="max-w-7xl mx-auto">
@@ -328,7 +226,7 @@ export default function Home() {
             className="grid md:grid-cols-3 gap-6"
           >
             {content.pillars.items.map((f, i) => {
-              const icons = [Target, Shield, LineChart, Server, Lock, BarChart4];
+              const icons = [Target, Shield, Lock];
               const Icon = icons[i % icons.length];
               return (
                 <motion.div key={i} variants={fadeUp} className={`group p-8 rounded-xl ${GLASS} ${GLASS_HOVER}`}>
@@ -340,27 +238,6 @@ export default function Home() {
                 </motion.div>
               );
             })}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="relative z-10 border-y border-white/10 bg-[url('/trading-floor.jpg')] bg-cover bg-center bg-fixed relative">
-        <div className="absolute inset-0 bg-background/90 backdrop-blur-md" />
-        <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
-          <motion.div
-             variants={stagger}
-             initial="hidden"
-             whileInView="show"
-             viewport={{ once: true }}
-             className="grid grid-cols-2 md:grid-cols-4 gap-6"
-          >
-            {content.stats.map((s, i) => (
-              <motion.div key={i} variants={fadeUp} className={`text-center md:text-left p-6 rounded-xl ${GLASS}`}>
-                <div className="text-4xl md:text-5xl font-normal text-white font-mono mb-2">{s.value}</div>
-                <div className="text-sm text-primary tracking-widest uppercase">{s.label}</div>
-              </motion.div>
-            ))}
           </motion.div>
         </div>
       </section>
@@ -440,50 +317,30 @@ export default function Home() {
         </section>
       )}
 
-      {/* Security & Infrastructure */}
+      {/* Security */}
       <section className="relative z-10 py-32 px-6 border-y border-white/10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-100px" }}
-            className="grid md:grid-cols-2 gap-16 items-center"
           >
-            <motion.div variants={fadeUp} className="order-2 md:order-1 relative">
-              <div className={`aspect-[4/3] rounded-xl overflow-hidden p-8 flex flex-col justify-center gap-6 relative ${GLASS}`}>
-                <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 blur-[100px] rounded-full" />
-                {content.security.badges.map((label, i) => {
-                  const icons = [Lock, Shield, Server];
-                  const Icon = icons[i % icons.length];
-                  return (
-                    <div key={i} className="relative z-10 flex items-center gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
-                      <Icon className="w-5 h-5 text-primary flex-shrink-0" />
-                      <span className="text-sm text-white/90 font-light">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.security.eyebrow}</motion.div>
+            <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-normal text-white mb-6 leading-tight">
+              {content.security.heading}
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-10 font-light">
+              {content.security.body}
+            </motion.p>
+            <motion.div variants={fadeUp} className="flex flex-col gap-4 items-center">
+              {content.security.bullets.map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                  <span className="text-sm text-white/80">{item}</span>
+                </div>
+              ))}
             </motion.div>
-            <div className="order-1 md:order-2">
-              <motion.div variants={fadeUp} className="text-sm text-primary tracking-widest uppercase mb-4">{content.security.eyebrow}</motion.div>
-              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-normal text-white mb-6 leading-tight">
-                {content.security.heading}
-              </motion.h2>
-              <motion.p variants={fadeUp} className="text-muted-foreground leading-relaxed mb-6 font-light">
-                {content.security.body}
-              </motion.p>
-              <motion.div variants={fadeUp} className="space-y-4">
-                {content.security.bullets.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                    </div>
-                    <span className="text-sm text-white/80">{item}</span>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
           </motion.div>
         </div>
       </section>
@@ -568,7 +425,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-12 text-center text-xs text-muted-foreground/50 font-light">
-            &copy; {new Date().getFullYear()} Signalium Technologies. All rights reserved. High-performance capital routing systems.
+            &copy; {new Date().getFullYear()} Signalium Technologies. All rights reserved.
           </div>
         </div>
       </footer>
