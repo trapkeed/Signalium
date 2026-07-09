@@ -34,6 +34,7 @@ import { getAuth } from "../lib/auth";
 import { db } from "@workspace/db";
 import {
   eaTelemetrySnapshotsTable,
+  eaSymbolTicksTable,
   eaHeartbeatStatesTable,
   eaExecutionQualityTable,
   eaRiskAlertsTable,
@@ -149,6 +150,7 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
         brokerCompany: typeof body.brokerCompany === "string" ? body.brokerCompany : null,
         brokerSymbol: typeof body.brokerSymbol === "string" ? body.brokerSymbol : null,
         leverage: typeof body.leverage === "number" ? body.leverage : null,
+        accountCurrency: typeof body.accountCurrency === "string" ? body.accountCurrency : null,
         tickTimestamp: typeof body.tickTimestamp === "string" || typeof body.tickTimestamp === "number" ? new Date(body.tickTimestamp) : null,
         vpsLatencyMs: typeof body.vpsLatencyMs === "number" ? body.vpsLatencyMs : null,
         eaVersion: typeof body.eaVersion === "string" ? body.eaVersion : null,
@@ -240,6 +242,89 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
     return res.status(201).json({ id: row.id });
   } catch (err) {
     req.log.error(err, "Telemetry ingest error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── POST /operational/ticks — EA continuous per-symbol tick stream ──────────
+// Broker-aware market gateway: the EA streams every subscribed symbol's
+// latest quote here. Upserted (not appended) keyed on eaInstanceId+brokerSymbol
+// since only the latest tick per symbol is needed for feed freshness/failover.
+
+router.post("/ticks", requireApiKeyAuth, async (req, res) => {
+  try {
+    const userId = req.eaAuth!.userId;
+    const body = req.body as Record<string, unknown>;
+    const eaInstanceId = typeof body.eaInstanceId === "string" ? body.eaInstanceId : null;
+    const ticks = Array.isArray(body.ticks) ? (body.ticks as Record<string, unknown>[]) : null;
+
+    if (!eaInstanceId) {
+      return res.status(400).json({ error: "'eaInstanceId' is required" });
+    }
+    if (!ticks || ticks.length === 0) {
+      return res.status(400).json({ error: "'ticks' (non-empty array) is required" });
+    }
+
+    const rows = [];
+    for (const tick of ticks) {
+      const brokerSymbol = typeof tick.brokerSymbol === "string" ? tick.brokerSymbol : null;
+      if (!brokerSymbol) continue;
+
+      const [row] = await db
+        .insert(eaSymbolTicksTable)
+        .values({
+          userId,
+          eaInstanceId,
+          brokerSymbol,
+          normalizedSymbol: typeof tick.normalizedSymbol === "string" ? tick.normalizedSymbol : null,
+          bid: typeof tick.bid === "number" ? tick.bid : null,
+          ask: typeof tick.ask === "number" ? tick.ask : null,
+          spread: typeof tick.spread === "number" ? tick.spread : null,
+          tickVolume: typeof tick.tickVolume === "number" ? tick.tickVolume : null,
+          tickTimestamp: typeof tick.timestamp === "string" || typeof tick.timestamp === "number" ? new Date(tick.timestamp) : null,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [eaSymbolTicksTable.eaInstanceId, eaSymbolTicksTable.brokerSymbol],
+          set: {
+            normalizedSymbol: typeof tick.normalizedSymbol === "string" ? tick.normalizedSymbol : null,
+            bid: typeof tick.bid === "number" ? tick.bid : null,
+            ask: typeof tick.ask === "number" ? tick.ask : null,
+            spread: typeof tick.spread === "number" ? tick.spread : null,
+            tickVolume: typeof tick.tickVolume === "number" ? tick.tickVolume : null,
+            tickTimestamp: typeof tick.timestamp === "string" || typeof tick.timestamp === "number" ? new Date(tick.timestamp) : null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      rows.push(row);
+    }
+
+    return res.status(201).json({ accepted: rows.length });
+  } catch (err) {
+    req.log.error(err, "Symbol tick ingest error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /operational/ticks — admin/dashboard read ───────────────────────────
+
+router.get("/ticks", requireAdmin, async (req, res) => {
+  try {
+    const { eaInstanceId, userId } = req.query;
+    const conditions = [];
+    if (typeof eaInstanceId === "string") conditions.push(eq(eaSymbolTicksTable.eaInstanceId, eaInstanceId));
+    if (typeof userId === "string") conditions.push(eq(eaSymbolTicksTable.userId, userId));
+
+    const rows = await db
+      .select()
+      .from(eaSymbolTicksTable)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(eaSymbolTicksTable.updatedAt))
+      .limit(500);
+    return res.json(rows);
+  } catch (err) {
+    req.log.error(err, "Failed to list symbol ticks");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -1605,6 +1605,251 @@ paths:
                   rawInput:
                     type: string
 
+  /symbols/discovery:
+    post:
+      operationId: syncSymbolDiscovery
+      tags: [symbols]
+      summary: EA broker symbol discovery scan (install-time + 24h refresh)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rawSymbols]
+              properties:
+                brokerName:
+                  type: string
+                  nullable: true
+                brokerId:
+                  type: integer
+                  nullable: true
+                rawSymbols:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Resolved symbol mappings, with a 24h refresh contract
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mappings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rawSymbol:
+                          type: string
+                        canonicalSymbol:
+                          type: string
+                          nullable: true
+                        resolved:
+                          type: boolean
+                  refreshAfterHours:
+                    type: integer
+        "400":
+          description: Missing rawSymbols
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /symbols/admin/mapping-cache:
+    get:
+      operationId: listSymbolMappingCache
+      tags: [symbols]
+      summary: List cached broker symbol -> canonical symbol mappings (admin)
+      responses:
+        "200":
+          description: Cached mappings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /symbols/admin/mapping-conflicts:
+    get:
+      operationId: listSymbolMappingConflicts
+      tags: [symbols]
+      summary: List symbol mapping conflicts (admin)
+      parameters:
+        - name: unresolvedOnly
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: Mapping conflicts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /symbols/admin/mapping-conflicts/{id}/resolve:
+    post:
+      operationId: resolveSymbolMappingConflict
+      tags: [symbols]
+      summary: Mark a symbol mapping conflict as resolved (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated conflict record
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /symbols/admin/regex-patterns:
+    get:
+      operationId: listSymbolRegexPatterns
+      tags: [symbols]
+      summary: List admin-defined regex fallback patterns for symbol resolution
+      responses:
+        "200":
+          description: Regex patterns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+    post:
+      operationId: createSymbolRegexPattern
+      tags: [symbols]
+      summary: Create a regex fallback pattern (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pattern, canonicalSymbol]
+              properties:
+                pattern:
+                  type: string
+                canonicalSymbol:
+                  type: string
+                priority:
+                  type: integer
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Invalid pattern or missing fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Canonical symbol not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /symbols/admin/regex-patterns/{id}:
+    patch:
+      operationId: updateSymbolRegexPattern
+      tags: [symbols]
+      summary: Update a regex fallback pattern (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pattern:
+                  type: string
+                priority:
+                  type: integer
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+    delete:
+      operationId: deleteSymbolRegexPattern
+      tags: [symbols]
+      summary: Delete a regex fallback pattern (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
   /symbols/admin/log:
     get:
       operationId: getSymbolNormalizationLog
@@ -5570,6 +5815,64 @@ paths:
                 properties:
                   snapshots: { type: array, items: { $ref: "#/components/schemas/EaTelemetrySnapshot" } }
                   total: { type: integer }
+
+  /operational/ticks:
+    post:
+      summary: EA ingest — continuous per-symbol tick stream (broker-aware market gateway)
+      tags: [Operational]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [eaInstanceId, ticks]
+              properties:
+                eaInstanceId: { type: string }
+                ticks:
+                  type: array
+                  items:
+                    type: object
+                    required: [brokerSymbol]
+                    properties:
+                      brokerSymbol: { type: string }
+                      normalizedSymbol: { type: string, nullable: true }
+                      bid: { type: number, nullable: true }
+                      ask: { type: number, nullable: true }
+                      spread: { type: number, nullable: true }
+                      tickVolume: { type: integer, nullable: true }
+                      timestamp: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Ticks accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: integer }
+        "400":
+          description: Missing eaInstanceId or ticks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+    get:
+      summary: Admin — latest per-symbol tick snapshot
+      tags: [Operational]
+      parameters:
+        - { in: query, name: eaInstanceId, schema: { type: string } }
+        - { in: query, name: userId, schema: { type: string } }
+      responses:
+        "200":
+          description: Latest ticks per symbol
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
 
   /operational/telemetry/replay:
     get:

@@ -10,9 +10,15 @@ import {
   useCreateSymbolAlias,
   useDeleteSymbolAlias,
   useListBrokers,
+  useListSymbolMappingConflicts,
+  useResolveSymbolMappingConflict,
+  useListSymbolRegexPatterns,
+  useCreateSymbolRegexPattern,
+  useUpdateSymbolRegexPattern,
+  useDeleteSymbolRegexPattern,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
-import { Coins, Plus, Trash2, ScrollText, Tags, CheckCircle2, XCircle } from "lucide-react";
+import { Coins, Plus, Trash2, ScrollText, Tags, CheckCircle2, XCircle, AlertTriangle, Regex } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -248,6 +254,75 @@ function AddAliasDialog({ symbols, defaultAlias }: { symbols: { id: number; cano
   );
 }
 
+function AddRegexPatternDialog({ symbols }: { symbols: { id: number; canonicalSymbol: string }[] }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [pattern, setPattern] = useState("");
+  const [canonicalSymbol, setCanonicalSymbol] = useState("");
+  const [priority, setPriority] = useState("0");
+  const createPattern = useCreateSymbolRegexPattern();
+
+  async function handleSubmit() {
+    if (!pattern || !canonicalSymbol) return;
+    try {
+      await createPattern.mutateAsync({ data: { pattern, canonicalSymbol, priority: Number(priority) || 0 } });
+      toast({ title: "Regex pattern created" });
+      setPattern("");
+      setCanonicalSymbol("");
+      setPriority("0");
+      setOpen(false);
+    } catch (err: any) {
+      toast({ title: "Failed to create pattern", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" className="gap-1.5 font-mono text-xs rounded-sm">
+          <Plus className="w-3.5 h-3.5" /> New Regex Pattern
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="rounded-sm">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-base">New Regex Fallback Pattern</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-mono text-muted-foreground">Pattern (JS regex, matched against raw broker symbol)</Label>
+            <Input value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="^XAU.*USD$" className="rounded-sm font-mono text-sm" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-mono text-muted-foreground">Canonical Symbol</Label>
+            <Select value={canonicalSymbol} onValueChange={setCanonicalSymbol}>
+              <SelectTrigger className="rounded-sm font-mono text-sm">
+                <SelectValue placeholder="Select a canonical symbol" />
+              </SelectTrigger>
+              <SelectContent>
+                {symbols.map((s) => (
+                  <SelectItem key={s.id} value={s.canonicalSymbol}>{s.canonicalSymbol}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-mono text-muted-foreground">Priority (lower tried first)</Label>
+            <Input type="number" value={priority} onChange={(e) => setPriority(e.target.value)} className="rounded-sm font-mono text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost" className="rounded-sm font-mono text-xs">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleSubmit} disabled={createPattern.isPending} className="rounded-sm font-mono text-xs">
+            Create
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminSymbols() {
   const { toast } = useToast();
   const [logFilter, setLogFilter] = useState<"all" | "unresolved">("all");
@@ -260,9 +335,17 @@ export default function AdminSymbols() {
   const { data: log = [] } = useGetSymbolNormalizationLog(
     logFilter === "unresolved" ? { unresolvedOnly: "true" } : undefined,
   );
+  const [conflictFilter, setConflictFilter] = useState<"all" | "unresolved">("unresolved");
+  const { data: conflicts = [], refetch: refetchConflicts } = useListSymbolMappingConflicts(
+    conflictFilter === "unresolved" ? { unresolvedOnly: "true" } : undefined,
+  );
+  const { data: regexPatterns = [], refetch: refetchRegexPatterns } = useListSymbolRegexPatterns();
 
   const deleteSymbol = useDeleteSymbol();
   const deleteAlias = useDeleteSymbolAlias();
+  const resolveConflict = useResolveSymbolMappingConflict();
+  const updateRegexPattern = useUpdateSymbolRegexPattern();
+  const deleteRegexPattern = useDeleteSymbolRegexPattern();
 
   async function handleDeleteSymbol(id: number) {
     try {
@@ -285,6 +368,36 @@ export default function AdminSymbols() {
   }
 
   const unresolvedCount = log.filter((l) => !l.resolved).length;
+  const unresolvedConflictCount = conflicts.filter((c: any) => !c.resolved).length;
+
+  async function handleResolveConflict(id: number) {
+    try {
+      await resolveConflict.mutateAsync({ id });
+      toast({ title: "Conflict marked resolved" });
+      refetchConflicts();
+    } catch (err: any) {
+      toast({ title: "Failed to resolve conflict", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  async function handleToggleRegexPattern(id: number, isActive: boolean) {
+    try {
+      await updateRegexPattern.mutateAsync({ id, data: { isActive: !isActive } });
+      refetchRegexPatterns();
+    } catch (err: any) {
+      toast({ title: "Failed to update pattern", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  async function handleDeleteRegexPattern(id: number) {
+    try {
+      await deleteRegexPattern.mutateAsync({ id });
+      toast({ title: "Regex pattern deleted" });
+      refetchRegexPatterns();
+    } catch (err: any) {
+      toast({ title: "Failed to delete pattern", description: err?.message, variant: "destructive" });
+    }
+  }
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -308,6 +421,15 @@ export default function AdminSymbols() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="conflicts" className="rounded-sm font-mono text-xs">
+              Mapping Conflicts
+              {unresolvedConflictCount > 0 && (
+                <span className="ml-2 bg-destructive/20 text-destructive text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unresolvedConflictCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="regex" className="rounded-sm font-mono text-xs">Regex Fallback</TabsTrigger>
           </TabsList>
 
           <TabsContent value="symbols">
@@ -468,6 +590,144 @@ export default function AdminSymbols() {
                         <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(entry.createdAt).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right">
                           {!entry.resolved && <AddAliasDialog symbols={symbols} defaultAlias={entry.rawInput} />}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="conflicts">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex gap-1 border border-border rounded-sm p-0.5 bg-secondary/30 w-fit">
+                <Button
+                  variant={conflictFilter === "unresolved" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 rounded-sm font-mono text-xs"
+                  onClick={() => setConflictFilter("unresolved")}
+                >
+                  Unresolved
+                </Button>
+                <Button
+                  variant={conflictFilter === "all" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 rounded-sm font-mono text-xs"
+                  onClick={() => setConflictFilter("all")}
+                >
+                  All
+                </Button>
+              </div>
+            </div>
+            <div className="border border-border rounded-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/30">
+                    {["Raw Alias", "Broker", "Previous Symbol", "New Symbol", "Detected", "Status", ""].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {conflicts.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                        <div className="flex flex-col items-center gap-2">
+                          <AlertTriangle className="w-5 h-5" />
+                          No mapping conflicts
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    conflicts.map((c: any) => (
+                      <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                        <td className="px-4 py-3 font-mono text-xs">{c.rawAlias}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                          {c.brokerId ? brokerNameById.get(c.brokerId) ?? `#${c.brokerId}` : "—"}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{c.previousSymbol ?? "—"}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-primary">{c.newSymbol ?? "—"}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(c.createdAt).toLocaleString()}</td>
+                        <td className="px-4 py-3">
+                          {c.resolved ? (
+                            <span className="flex items-center gap-1 text-xs font-mono text-primary"><CheckCircle2 className="w-3 h-3" /> resolved</span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-xs font-mono text-destructive"><AlertTriangle className="w-3 h-3" /> open</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {!c.resolved && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 rounded-sm font-mono text-xs"
+                              onClick={() => handleResolveConflict(c.id)}
+                            >
+                              Resolve
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="regex">
+            <div className="flex justify-end mb-3">
+              <AddRegexPatternDialog symbols={symbols} />
+            </div>
+            <div className="border border-border rounded-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/30">
+                    {["Pattern", "Canonical Symbol", "Priority", "Status", ""].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {regexPatterns.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">
+                        <div className="flex flex-col items-center gap-2">
+                          <Regex className="w-5 h-5" />
+                          No regex fallback patterns yet
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    regexPatterns.map((p: any) => (
+                      <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                        <td className="px-4 py-3 font-mono text-xs">{p.pattern}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-primary">{p.canonicalSymbol}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.priority}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            className="text-xs font-mono"
+                            onClick={() => handleToggleRegexPattern(p.id, p.isActive)}
+                          >
+                            {p.isActive ? (
+                              <span className="flex items-center gap-1 text-primary"><CheckCircle2 className="w-3 h-3" /> active</span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-muted-foreground"><XCircle className="w-3 h-3" /> inactive</span>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive h-7 w-7 p-0 rounded-sm"
+                            onClick={() => handleDeleteRegexPattern(p.id)}
+                            title="Delete"
+                            aria-label={`Delete pattern ${p.pattern}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          </Button>
                         </td>
                       </tr>
                     ))

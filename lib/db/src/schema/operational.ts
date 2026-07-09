@@ -45,6 +45,7 @@ export const eaTelemetrySnapshotsTable = pgTable(
     brokerCompany: text("broker_company"),
     brokerSymbol: text("broker_symbol"),
     leverage: integer("leverage"),
+    accountCurrency: text("account_currency"),
 
     // Broker-side tick time for the reported spread/price snapshot, distinct
     // from `createdAt` (platform ingest time) — used to detect a stale/dead
@@ -84,6 +85,34 @@ export const eaTelemetrySnapshotsTable = pgTable(
 );
 
 export type EaTelemetrySnapshot = typeof eaTelemetrySnapshotsTable.$inferSelect;
+
+// ─── 1b. EA Symbol Ticks ──────────────────────────────────────────────────────
+// Continuous per-symbol tick stream (broker-aware market gateway). One row
+// per (userId, eaInstanceId, brokerSymbol) — upserted on every tick rather
+// than appended, since we only need the latest quote per symbol for feed
+// freshness/failover and dashboard display, not full tick history.
+export const eaSymbolTicksTable = pgTable(
+  "ea_symbol_ticks",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    eaInstanceId: text("ea_instance_id").notNull(),
+    brokerSymbol: text("broker_symbol").notNull(),
+    normalizedSymbol: text("normalized_symbol"),
+    bid: real("bid"),
+    ask: real("ask"),
+    spread: real("spread"),
+    tickVolume: integer("tick_volume"),
+    tickTimestamp: timestamp("tick_timestamp", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("ea_symbol_ticks_instance_symbol_idx").on(t.eaInstanceId, t.brokerSymbol),
+    index("ea_symbol_ticks_user_idx").on(t.userId),
+  ],
+);
+
+export type EaSymbolTick = typeof eaSymbolTicksTable.$inferSelect;
 
 // ─── 2. EA Heartbeat States ───────────────────────────────────────────────────
 // One row per EA instance (upserted on each ping). Tracks online/offline state.

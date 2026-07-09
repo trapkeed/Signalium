@@ -6,14 +6,125 @@ import {
   symbolCategoriesTable,
   symbolAliasesTable,
   symbolNormalizationLogTable,
+  symbolMappingCacheTable,
+  symbolMappingConflictsTable,
+  symbolRegexPatternsTable,
   userSymbolsTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { requireAdmin } from "../middlewares/requireAdmin";
-import { normalizeSymbol, invalidateSymbolCache, listSymbolsWithCategories } from "../lib/symbolNormalizer";
+import { requireApiKeyAuth } from "../middlewares/requireApiKeyAuth";
+import {
+  normalizeSymbol,
+  invalidateSymbolCache,
+  invalidateRegexPatternCache,
+  listSymbolsWithCategories,
+  cacheAliasMapping,
+} from "../lib/symbolNormalizer";
 import { checkUserSymbolLimit } from "../lib/entitlementEngine";
+import { resolveAliasesViaTrainer, TrainerMappingUnavailableError } from "../lib/marketData/symbolDiscovery";
+import { logAudit } from "../lib/auditLog";
 
 const router = Router();
+
+// ─── EA broker symbol discovery ─────────────────────────────────────────────
+// EA install-time (and every 24h thereafter) broker symbol scan. The EA
+// posts every raw symbol its broker exposes; we resolve each to a canonical
+// Signalium symbol via (in order): local exact/alias lookup, suffix
+// stripping, the trainer round-trip, then admin-approved regex fallback.
+// Every resolution is cached (symbolMappingCacheTable) with a 24h refresh
+// contract communicated back to the EA, and a mapping conflict is logged if
+// a raw alias resolves differently than it did last time.
+router.post("/discovery", requireApiKeyAuth, async (req, res) => {
+  const userId = req.eaAuth!.userId;
+  const { brokerName, brokerId, rawSymbols } = req.body as {
+    brokerName?: string;
+    brokerId?: number;
+    rawSymbols?: string[];
+  };
+
+  if (!Array.isArray(rawSymbols) || rawSymbols.length === 0) {
+    return res.status(400).json({ error: "'rawSymbols' (non-empty string array) is required" });
+  }
+
+  try {
+    // Tier 1: resolve locally (exact/alias/suffix-strip) first — no need to
+    // round-trip to the trainer for symbols we already know.
+    const unresolvedAfterLocal: string[] = [];
+    const results = new Map<string, { canonicalSymbol: string | null; symbolId: number | null; source: string }>();
+
+    for (const raw of rawSymbols) {
+      const local = await normalizeSymbol(raw);
+      if (local.resolved) {
+        results.set(raw, { canonicalSymbol: local.canonicalSymbol ?? null, symbolId: local.symbolId ?? null, source: local.source ?? "exact" });
+      } else {
+        unresolvedAfterLocal.push(raw);
+      }
+    }
+
+    // Tier 2: ask the trainer to resolve whatever's left. Honest fallback —
+    // if the trainer isn't configured/reachable, those symbols simply stay
+    // unresolved (already tried regex fallback inside normalizeSymbol).
+    if (unresolvedAfterLocal.length > 0) {
+      try {
+        const trainerMappings = await resolveAliasesViaTrainer({ brokerName: brokerName ?? null, rawAliases: unresolvedAfterLocal });
+        for (const m of trainerMappings) {
+          if (!m.canonicalSymbol) continue;
+          const [symbol] = await db.select().from(symbolsTable).where(eq(symbolsTable.canonicalSymbol, m.canonicalSymbol.toUpperCase()));
+          if (symbol) {
+            results.set(m.rawAlias, { canonicalSymbol: symbol.canonicalSymbol, symbolId: symbol.id, source: "trainer" });
+          }
+        }
+      } catch (err) {
+        if (!(err instanceof TrainerMappingUnavailableError)) throw err;
+        req.log.warn({ err: err.message }, "Trainer symbol mapping unavailable — leaving unresolved symbols as-is");
+      }
+    }
+
+    // Persist + conflict-detect every resolution (resolved or not) so admins
+    // have full visibility into what this broker/account reports.
+    let conflictCount = 0;
+    const mappings = [];
+    for (const raw of rawSymbols) {
+      const resolved = results.get(raw);
+      const mappingSource: "trainer" | "regex_fallback" | "local_normalizer" =
+        resolved?.source === "trainer" || resolved?.source === "regex_fallback" ? resolved.source : "local_normalizer";
+      const { conflict } = await cacheAliasMapping({
+        rawAlias: raw,
+        brokerId: brokerId ?? null,
+        canonicalSymbolId: resolved?.symbolId ?? null,
+        mappingSource,
+      });
+      if (conflict) conflictCount++;
+
+      await db.insert(symbolNormalizationLogTable).values({
+        rawInput: raw,
+        resolvedSymbolId: resolved?.symbolId ?? null,
+        resolved: !!resolved,
+        source: "ea",
+        userId,
+      });
+
+      mappings.push({ rawSymbol: raw, canonicalSymbol: resolved?.canonicalSymbol ?? null, resolved: !!resolved });
+    }
+
+    if (conflictCount > 0) {
+      await logAudit(userId, "symbol_mapping.conflict_detected", "symbol_discovery", brokerName ?? "unknown-broker", { conflictCount, brokerName });
+    }
+
+    await logAudit(userId, "symbol_discovery.synced", "symbol_discovery", brokerName ?? "unknown-broker", {
+      scanned: rawSymbols.length,
+      resolved: mappings.filter((m) => m.resolved).length,
+      conflictCount,
+    });
+
+    return res.json({ mappings, refreshAfterHours: 24 });
+  } catch (err) {
+    req.log.error(err, "Failed to process broker symbol discovery");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // ─── User-facing ────────────────────────────────────────────────────────────
 
@@ -378,6 +489,183 @@ router.delete("/admin/aliases/:id", requireAdmin, async (req, res) => {
     return res.json(deleted);
   } catch (err) {
     req.log.error(err, "Failed to delete symbol alias");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Admin: symbol mapping cache visibility ─────────────────────────────────
+
+router.get("/admin/mapping-cache", requireAdmin, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        id: symbolMappingCacheTable.id,
+        rawAlias: symbolMappingCacheTable.rawAlias,
+        brokerId: symbolMappingCacheTable.brokerId,
+        mappingSource: symbolMappingCacheTable.mappingSource,
+        refreshedAt: symbolMappingCacheTable.refreshedAt,
+        canonicalSymbolId: symbolsTable.id,
+        canonicalSymbol: symbolsTable.canonicalSymbol,
+      })
+      .from(symbolMappingCacheTable)
+      .leftJoin(symbolsTable, eq(symbolMappingCacheTable.canonicalSymbolId, symbolsTable.id))
+      .orderBy(desc(symbolMappingCacheTable.refreshedAt))
+      .limit(500);
+    return res.json(rows);
+  } catch (err) {
+    req.log.error(err, "Failed to list symbol mapping cache");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Admin: mapping conflicts ────────────────────────────────────────────────
+
+router.get("/admin/mapping-conflicts", requireAdmin, async (req, res) => {
+  try {
+    const { unresolvedOnly } = req.query;
+    const conditions = unresolvedOnly === "true" ? [eq(symbolMappingConflictsTable.resolved, false)] : [];
+    const previousSymbols = alias(symbolsTable, "previous_symbols");
+    const newSymbols = alias(symbolsTable, "new_symbols");
+    const rows = await db
+      .select({
+        id: symbolMappingConflictsTable.id,
+        rawAlias: symbolMappingConflictsTable.rawAlias,
+        brokerId: symbolMappingConflictsTable.brokerId,
+        previousSymbolId: symbolMappingConflictsTable.previousSymbolId,
+        newSymbolId: symbolMappingConflictsTable.newSymbolId,
+        previousSymbol: previousSymbols.canonicalSymbol,
+        newSymbol: newSymbols.canonicalSymbol,
+        source: symbolMappingConflictsTable.source,
+        resolved: symbolMappingConflictsTable.resolved,
+        createdAt: symbolMappingConflictsTable.createdAt,
+      })
+      .from(symbolMappingConflictsTable)
+      .leftJoin(previousSymbols, eq(symbolMappingConflictsTable.previousSymbolId, previousSymbols.id))
+      .leftJoin(newSymbols, eq(symbolMappingConflictsTable.newSymbolId, newSymbols.id))
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(symbolMappingConflictsTable.createdAt))
+      .limit(500);
+    return res.json(rows);
+  } catch (err) {
+    req.log.error(err, "Failed to list symbol mapping conflicts");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/admin/mapping-conflicts/:id/resolve", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  const id = Number(req.params.id);
+  try {
+    const [updated] = await db
+      .update(symbolMappingConflictsTable)
+      .set({ resolved: true })
+      .where(eq(symbolMappingConflictsTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    if (userId) await logAudit(userId, "symbol_mapping.conflict_resolved", "symbol_mapping_conflict", String(id));
+    return res.json(updated);
+  } catch (err) {
+    req.log.error(err, "Failed to resolve symbol mapping conflict");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Admin: regex fallback rules ─────────────────────────────────────────────
+// Last-resort resolution tier, tried only after exact/alias/suffix-strip and
+// the trainer round-trip have failed for a raw broker symbol.
+
+router.get("/admin/regex-patterns", requireAdmin, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        id: symbolRegexPatternsTable.id,
+        pattern: symbolRegexPatternsTable.pattern,
+        priority: symbolRegexPatternsTable.priority,
+        isActive: symbolRegexPatternsTable.isActive,
+        createdAt: symbolRegexPatternsTable.createdAt,
+        symbolId: symbolsTable.id,
+        canonicalSymbol: symbolsTable.canonicalSymbol,
+      })
+      .from(symbolRegexPatternsTable)
+      .innerJoin(symbolsTable, eq(symbolRegexPatternsTable.symbolId, symbolsTable.id))
+      .orderBy(symbolRegexPatternsTable.priority);
+    return res.json(rows);
+  } catch (err) {
+    req.log.error(err, "Failed to list symbol regex patterns");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/admin/regex-patterns", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  const { pattern, canonicalSymbol, priority } = req.body as { pattern?: string; canonicalSymbol?: string; priority?: number };
+  if (!pattern || !canonicalSymbol) {
+    return res.status(400).json({ error: "'pattern' and 'canonicalSymbol' are required" });
+  }
+  try {
+    new RegExp(pattern); // validate before persisting
+  } catch {
+    return res.status(400).json({ error: "Invalid regular expression" });
+  }
+
+  try {
+    const [symbol] = await db.select().from(symbolsTable).where(eq(symbolsTable.canonicalSymbol, canonicalSymbol.toUpperCase()));
+    if (!symbol) return res.status(404).json({ error: "Canonical symbol not found" });
+
+    const [created] = await db.insert(symbolRegexPatternsTable).values({
+      pattern,
+      symbolId: symbol.id,
+      priority: priority ?? 0,
+      createdBy: userId ?? null,
+    }).returning();
+    invalidateRegexPatternCache();
+    if (userId) await logAudit(userId, "symbol_regex_pattern.created", "symbol_regex_pattern", String(created.id), { pattern, canonicalSymbol });
+    return res.status(201).json(created);
+  } catch (err) {
+    req.log.error(err, "Failed to create symbol regex pattern");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/admin/regex-patterns/:id", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  const id = Number(req.params.id);
+  const { pattern, priority, isActive } = req.body as { pattern?: string; priority?: number; isActive?: boolean };
+
+  if (pattern !== undefined) {
+    try {
+      new RegExp(pattern);
+    } catch {
+      return res.status(400).json({ error: "Invalid regular expression" });
+    }
+  }
+
+  try {
+    const [updated] = await db.update(symbolRegexPatternsTable)
+      .set({ ...(pattern !== undefined && { pattern }), ...(priority !== undefined && { priority }), ...(isActive !== undefined && { isActive }) })
+      .where(eq(symbolRegexPatternsTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    invalidateRegexPatternCache();
+    if (userId) await logAudit(userId, "symbol_regex_pattern.updated", "symbol_regex_pattern", String(id));
+    return res.json(updated);
+  } catch (err) {
+    req.log.error(err, "Failed to update symbol regex pattern");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/admin/regex-patterns/:id", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  const id = Number(req.params.id);
+  try {
+    const [deleted] = await db.delete(symbolRegexPatternsTable).where(eq(symbolRegexPatternsTable.id, id)).returning();
+    if (!deleted) return res.status(404).json({ error: "Not found" });
+    invalidateRegexPatternCache();
+    if (userId) await logAudit(userId, "symbol_regex_pattern.deleted", "symbol_regex_pattern", String(id));
+    return res.json(deleted);
+  } catch (err) {
+    req.log.error(err, "Failed to delete symbol regex pattern");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

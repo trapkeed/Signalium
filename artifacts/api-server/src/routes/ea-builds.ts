@@ -96,9 +96,9 @@ router.post("/generate", async (req, res) => {
     const { tier, user } = await resolveBuildPrerequisites(userId);
 
     const username = deriveUsername(user);
-    const fileName = buildFileName(username);
     const buildId = crypto.randomUUID();
     const { keyRow: apiKey, rawKey } = await issueBuildApiKey(userId, buildId);
+    const fileName = buildFileName(username, apiKey.keyHash);
 
     const metadata = {
       userId,
@@ -262,9 +262,9 @@ router.post("/:buildId/regenerate", async (req, res) => {
     const { tier, user } = await resolveBuildPrerequisites(existing.userId);
 
     const username = deriveUsername(user);
-    const fileName = buildFileName(username);
     const newBuildId = crypto.randomUUID();
     const { keyRow: apiKey, rawKey } = await issueBuildApiKey(existing.userId, newBuildId);
+    const fileName = buildFileName(username, apiKey.keyHash);
 
     const metadata = {
       userId: existing.userId,

@@ -3348,6 +3348,85 @@ export type NormalizeSymbol422 = {
   rawInput?: string;
 };
 
+export type SyncSymbolDiscoveryBody = {
+  brokerName?: string | null;
+  brokerId?: number | null;
+  rawSymbols: string[];
+};
+
+export type SyncSymbolDiscovery200MappingsItem = {
+  rawSymbol?: string;
+  canonicalSymbol?: string | null;
+  resolved?: boolean;
+};
+
+export type SyncSymbolDiscovery200 = {
+  mappings?: SyncSymbolDiscovery200MappingsItem[];
+  refreshAfterHours?: number;
+};
+
+export type SyncSymbolDiscovery400 = {
+  error?: string;
+};
+
+export type ListSymbolMappingCache200Item = { [key: string]: unknown };
+
+export type ListSymbolMappingConflictsParams = {
+unresolvedOnly?: ListSymbolMappingConflictsUnresolvedOnly;
+};
+
+export type ListSymbolMappingConflictsUnresolvedOnly = typeof ListSymbolMappingConflictsUnresolvedOnly[keyof typeof ListSymbolMappingConflictsUnresolvedOnly];
+
+
+export const ListSymbolMappingConflictsUnresolvedOnly = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type ListSymbolMappingConflicts200Item = { [key: string]: unknown };
+
+export type ResolveSymbolMappingConflict200 = { [key: string]: unknown };
+
+export type ResolveSymbolMappingConflict404 = {
+  error?: string;
+};
+
+export type ListSymbolRegexPatterns200Item = { [key: string]: unknown };
+
+export type CreateSymbolRegexPatternBody = {
+  pattern: string;
+  canonicalSymbol: string;
+  priority?: number;
+};
+
+export type CreateSymbolRegexPattern201 = { [key: string]: unknown };
+
+export type CreateSymbolRegexPattern400 = {
+  error?: string;
+};
+
+export type CreateSymbolRegexPattern404 = {
+  error?: string;
+};
+
+export type UpdateSymbolRegexPatternBody = {
+  pattern?: string;
+  priority?: number;
+  isActive?: boolean;
+};
+
+export type UpdateSymbolRegexPattern200 = { [key: string]: unknown };
+
+export type UpdateSymbolRegexPattern404 = {
+  error?: string;
+};
+
+export type DeleteSymbolRegexPattern200 = { [key: string]: unknown };
+
+export type DeleteSymbolRegexPattern404 = {
+  error?: string;
+};
+
 export type GetSymbolNormalizationLogParams = {
 unresolvedOnly?: GetSymbolNormalizationLogUnresolvedOnly;
 };
@@ -4018,6 +4097,36 @@ export type GetOperationalTelemetry200 = {
   snapshots?: EaTelemetrySnapshot[];
   total?: number;
 };
+
+export type PostOperationalTicksBodyTicksItem = {
+  brokerSymbol: string;
+  normalizedSymbol?: string | null;
+  bid?: number | null;
+  ask?: number | null;
+  spread?: number | null;
+  tickVolume?: number | null;
+  timestamp?: string | null;
+};
+
+export type PostOperationalTicksBody = {
+  eaInstanceId: string;
+  ticks: PostOperationalTicksBodyTicksItem[];
+};
+
+export type PostOperationalTicks201 = {
+  accepted?: number;
+};
+
+export type PostOperationalTicks400 = {
+  error?: string;
+};
+
+export type GetOperationalTicksParams = {
+eaInstanceId?: string;
+userId?: string;
+};
+
+export type GetOperationalTicks200Item = { [key: string]: unknown };
 
 export type GetOperationalTelemetryReplayParams = {
 userId?: string;

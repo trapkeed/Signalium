@@ -1,5 +1,13 @@
-import { db, symbolsTable, symbolAliasesTable, symbolCategoriesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db,
+  symbolsTable,
+  symbolAliasesTable,
+  symbolCategoriesTable,
+  symbolRegexPatternsTable,
+  symbolMappingCacheTable,
+  symbolMappingConflictsTable,
+} from "@workspace/db";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 interface CacheEntry {
   symbolId: number;
@@ -8,6 +16,14 @@ interface CacheEntry {
 
 let cache: Map<string, CacheEntry> | null = null;
 let loadingPromise: Promise<Map<string, CacheEntry>> | null = null;
+let cacheLoadedAt = 0;
+
+// The in-memory lookup table is normally invalidated explicitly on any
+// admin write (see invalidateSymbolCache), but it's also force-refreshed if
+// it's simply gotten old — matches the 24h refresh cadence used for the
+// EA-side broker symbol mapping cache so both layers stay in sync with the
+// same freshness contract.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Broker/EA noise suffixes stripped iteratively when a raw symbol doesn't match directly. */
 const NOISE_SUFFIXES = [
@@ -37,13 +53,20 @@ async function loadCache(): Promise<Map<string, CacheEntry>> {
 export function invalidateSymbolCache(): void {
   cache = null;
   loadingPromise = null;
+  cacheLoadedAt = 0;
 }
 
 async function getCache(): Promise<Map<string, CacheEntry>> {
-  if (cache) return cache;
+  const isStale = cache !== null && Date.now() - cacheLoadedAt > CACHE_TTL_MS;
+  if (cache && !isStale) return cache;
+  if (isStale) {
+    cache = null;
+    loadingPromise = null;
+  }
   if (!loadingPromise) {
     loadingPromise = loadCache().then((m) => {
       cache = m;
+      cacheLoadedAt = Date.now();
       return m;
     });
   }
@@ -54,13 +77,64 @@ export interface NormalizationResult {
   resolved: boolean;
   canonicalSymbol?: string;
   symbolId?: number;
+  /** Which tier resolved this — used for conflict logging/attribution. */
+  source?: "exact" | "suffix_strip" | "regex_fallback";
+}
+
+let regexPatternCache: { symbolId: number; canonicalSymbol: string; regex: RegExp; priority: number }[] | null = null;
+
+async function loadRegexPatterns() {
+  if (regexPatternCache) return regexPatternCache;
+  const rows = await db
+    .select({
+      pattern: symbolRegexPatternsTable.pattern,
+      priority: symbolRegexPatternsTable.priority,
+      symbolId: symbolsTable.id,
+      canonicalSymbol: symbolsTable.canonicalSymbol,
+    })
+    .from(symbolRegexPatternsTable)
+    .innerJoin(symbolsTable, eq(symbolRegexPatternsTable.symbolId, symbolsTable.id))
+    .where(eq(symbolRegexPatternsTable.isActive, true))
+    .orderBy(symbolRegexPatternsTable.priority);
+
+  regexPatternCache = rows.flatMap((r) => {
+    try {
+      return [{ symbolId: r.symbolId, canonicalSymbol: r.canonicalSymbol, regex: new RegExp(r.pattern, "i"), priority: r.priority }];
+    } catch {
+      return []; // malformed admin-entered regex — skip rather than crash normalization
+    }
+  });
+  return regexPatternCache;
+}
+
+/** Invalidates the admin-approved regex fallback cache. Call after any write to symbol_regex_patterns. */
+export function invalidateRegexPatternCache(): void {
+  regexPatternCache = null;
+}
+
+/**
+ * Last-resort fallback tried only after exact/alias lookup, suffix-stripping,
+ * AND the trainer round-trip (see resolveDiscoveredAlias below) have all
+ * failed to resolve a raw broker symbol. Admin-approved regex rules exist
+ * for brokers with truly unpredictable naming schemes the trainer hasn't
+ * seen either (e.g. internal white-label brokers).
+ */
+async function tryRegexFallback(rawInput: string): Promise<NormalizationResult> {
+  const patterns = await loadRegexPatterns();
+  for (const p of patterns) {
+    if (p.regex.test(rawInput)) {
+      return { resolved: true, canonicalSymbol: p.canonicalSymbol, symbolId: p.symbolId, source: "regex_fallback" };
+    }
+  }
+  return { resolved: false };
 }
 
 /**
  * Normalizes a raw EA/broker/platform symbol string to its canonical form.
  * Strategy: exact case-insensitive lookup against canonical symbols + aliases,
  * then iterative stripping of known broker noise suffixes, re-checking the
- * lookup table after each strip. Unknown symbols are rejected (resolved: false).
+ * lookup table after each strip, then (if still unresolved) admin-approved
+ * regex fallback rules. Unknown symbols are rejected (resolved: false).
  */
 export async function normalizeSymbol(rawInput: string): Promise<NormalizationResult> {
   const table = await getCache();
@@ -69,7 +143,7 @@ export async function normalizeSymbol(rawInput: string): Promise<NormalizationRe
 
   let candidate = trimmed.toLowerCase();
   const direct = table.get(candidate);
-  if (direct) return { resolved: true, canonicalSymbol: direct.canonicalSymbol, symbolId: direct.symbolId };
+  if (direct) return { resolved: true, canonicalSymbol: direct.canonicalSymbol, symbolId: direct.symbolId, source: "exact" };
 
   for (let attempt = 0; attempt < 4; attempt++) {
     let stripped = false;
@@ -80,14 +154,65 @@ export async function normalizeSymbol(rawInput: string): Promise<NormalizationRe
         candidate = next;
         stripped = true;
         const hit = table.get(candidate);
-        if (hit) return { resolved: true, canonicalSymbol: hit.canonicalSymbol, symbolId: hit.symbolId };
+        if (hit) return { resolved: true, canonicalSymbol: hit.canonicalSymbol, symbolId: hit.symbolId, source: "suffix_strip" };
         break;
       }
     }
     if (!stripped) break;
   }
 
-  return { resolved: false };
+  return tryRegexFallback(trimmed);
+}
+
+/**
+ * Records a discovered broker alias's resolved mapping into the mapping
+ * cache table, logging a conflict if the newly-resolved canonical symbol
+ * disagrees with what was previously cached for the same raw alias (e.g.
+ * the trainer now maps EURUSDm differently than a stale regex/admin entry
+ * did). Idempotent no-op if the mapping hasn't changed.
+ */
+export async function cacheAliasMapping(params: {
+  rawAlias: string;
+  brokerId: number | null;
+  canonicalSymbolId: number | null;
+  mappingSource: "trainer" | "regex_fallback" | "admin" | "local_normalizer";
+}): Promise<{ conflict: boolean }> {
+  const { rawAlias, brokerId, canonicalSymbolId, mappingSource } = params;
+
+  const [existing] = await db
+    .select()
+    .from(symbolMappingCacheTable)
+    .where(and(eq(symbolMappingCacheTable.rawAlias, rawAlias), brokerId !== null ? eq(symbolMappingCacheTable.brokerId, brokerId) : isNull(symbolMappingCacheTable.brokerId)))
+    .orderBy(desc(symbolMappingCacheTable.refreshedAt))
+    .limit(1);
+
+  let conflict = false;
+  if (
+    existing &&
+    existing.canonicalSymbolId !== null &&
+    canonicalSymbolId !== null &&
+    existing.canonicalSymbolId !== canonicalSymbolId
+  ) {
+    conflict = true;
+    await db.insert(symbolMappingConflictsTable).values({
+      rawAlias,
+      brokerId,
+      previousSymbolId: existing.canonicalSymbolId,
+      newSymbolId: canonicalSymbolId,
+      source: mappingSource,
+    });
+  }
+
+  if (existing) {
+    await db
+      .update(symbolMappingCacheTable)
+      .set({ canonicalSymbolId, mappingSource, refreshedAt: new Date() })
+      .where(eq(symbolMappingCacheTable.id, existing.id));
+  } else {
+    await db.insert(symbolMappingCacheTable).values({ rawAlias, brokerId, canonicalSymbolId, mappingSource });
+  }
+
+  return { conflict };
 }
 
 export async function listSymbolsWithCategories() {

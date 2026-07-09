@@ -2063,6 +2063,112 @@ export const NormalizeSymbolResponse = zod.object({
 
 
 /**
+ * @summary EA broker symbol discovery scan (install-time + 24h refresh)
+ */
+export const SyncSymbolDiscoveryBody = zod.object({
+  "brokerName": zod.string().nullish(),
+  "brokerId": zod.number().nullish(),
+  "rawSymbols": zod.array(zod.string())
+})
+
+export const SyncSymbolDiscoveryResponse = zod.object({
+  "mappings": zod.array(zod.object({
+  "rawSymbol": zod.string().optional(),
+  "canonicalSymbol": zod.string().nullish(),
+  "resolved": zod.boolean().optional()
+})).optional(),
+  "refreshAfterHours": zod.number().optional()
+})
+
+
+/**
+ * @summary List cached broker symbol -> canonical symbol mappings (admin)
+ */
+export const ListSymbolMappingCacheResponseItem = zod.object({
+
+})
+export const ListSymbolMappingCacheResponse = zod.array(ListSymbolMappingCacheResponseItem)
+
+
+/**
+ * @summary List symbol mapping conflicts (admin)
+ */
+export const ListSymbolMappingConflictsQueryParams = zod.object({
+  "unresolvedOnly": zod.enum(['true', 'false']).optional()
+})
+
+export const ListSymbolMappingConflictsResponseItem = zod.object({
+
+})
+export const ListSymbolMappingConflictsResponse = zod.array(ListSymbolMappingConflictsResponseItem)
+
+
+/**
+ * @summary Mark a symbol mapping conflict as resolved (admin)
+ */
+export const ResolveSymbolMappingConflictParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveSymbolMappingConflictResponse = zod.object({
+
+})
+
+
+/**
+ * @summary List admin-defined regex fallback patterns for symbol resolution
+ */
+export const ListSymbolRegexPatternsResponseItem = zod.object({
+
+})
+export const ListSymbolRegexPatternsResponse = zod.array(ListSymbolRegexPatternsResponseItem)
+
+
+/**
+ * @summary Create a regex fallback pattern (admin)
+ */
+export const CreateSymbolRegexPatternBody = zod.object({
+  "pattern": zod.string(),
+  "canonicalSymbol": zod.string(),
+  "priority": zod.number().optional()
+})
+
+export const CreateSymbolRegexPatternResponse = zod.object({
+
+})
+
+
+/**
+ * @summary Update a regex fallback pattern (admin)
+ */
+export const UpdateSymbolRegexPatternParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSymbolRegexPatternBody = zod.object({
+  "pattern": zod.string().optional(),
+  "priority": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateSymbolRegexPatternResponse = zod.object({
+
+})
+
+
+/**
+ * @summary Delete a regex fallback pattern (admin)
+ */
+export const DeleteSymbolRegexPatternParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteSymbolRegexPatternResponse = zod.object({
+
+})
+
+
+/**
  * @summary Symbol normalization telemetry log (admin)
  */
 export const GetSymbolNormalizationLogQueryParams = zod.object({
@@ -6232,6 +6338,41 @@ export const GetOperationalTelemetryResponse = zod.object({
 })).optional(),
   "total": zod.number().optional()
 })
+
+
+/**
+ * @summary EA ingest — continuous per-symbol tick stream (broker-aware market gateway)
+ */
+export const PostOperationalTicksBody = zod.object({
+  "eaInstanceId": zod.string(),
+  "ticks": zod.array(zod.object({
+  "brokerSymbol": zod.string(),
+  "normalizedSymbol": zod.string().nullish(),
+  "bid": zod.number().nullish(),
+  "ask": zod.number().nullish(),
+  "spread": zod.number().nullish(),
+  "tickVolume": zod.number().nullish(),
+  "timestamp": zod.string().nullish()
+}))
+})
+
+export const PostOperationalTicksResponse = zod.object({
+  "accepted": zod.number().optional()
+})
+
+
+/**
+ * @summary Admin — latest per-symbol tick snapshot
+ */
+export const GetOperationalTicksQueryParams = zod.object({
+  "eaInstanceId": zod.coerce.string().optional(),
+  "userId": zod.coerce.string().optional()
+})
+
+export const GetOperationalTicksResponseItem = zod.object({
+
+})
+export const GetOperationalTicksResponse = zod.array(GetOperationalTicksResponseItem)
 
 
 /**

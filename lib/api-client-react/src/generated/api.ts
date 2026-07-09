@@ -56,6 +56,10 @@ import type {
   CreateSymbolAliasBody,
   CreateSymbolBody,
   CreateSymbolCategoryBody,
+  CreateSymbolRegexPattern201,
+  CreateSymbolRegexPattern400,
+  CreateSymbolRegexPattern404,
+  CreateSymbolRegexPatternBody,
   CreateUserInput,
   DataExportResult,
   DataProvider,
@@ -63,6 +67,8 @@ import type {
   DeleteProviderCapability200,
   DeleteProviderCredential200,
   DeleteProviderSymbolMapping200,
+  DeleteSymbolRegexPattern200,
+  DeleteSymbolRegexPattern404,
   DeleteUser200,
   DismissOnboardingChecklist200,
   DownloadToken,
@@ -105,6 +111,8 @@ import type {
   GetOperationalTelemetryParams,
   GetOperationalTelemetryReplay200,
   GetOperationalTelemetryReplayParams,
+  GetOperationalTicks200Item,
+  GetOperationalTicksParams,
   GetOpsDashboardOverview200,
   GetProviderAdapterInfo200,
   GetQdeAdminCounterfactualsParams,
@@ -219,6 +227,10 @@ import type {
   ListResearchLabValidationReports200,
   ListResearchLabValidationReportsParams,
   ListSecurityIncidentsParams,
+  ListSymbolMappingCache200Item,
+  ListSymbolMappingConflicts200Item,
+  ListSymbolMappingConflictsParams,
+  ListSymbolRegexPatterns200Item,
   ListTrainerControlActiveModels200,
   ListTrainerControlDatasets200,
   ListTrainerControlDatasetsParams,
@@ -272,6 +284,9 @@ import type {
   PostOperationalIncidents201,
   PostOperationalRiskAlertsIdAcknowledge200,
   PostOperationalTelemetry201,
+  PostOperationalTicks201,
+  PostOperationalTicks400,
+  PostOperationalTicksBody,
   PostQdeAdminDeploymentsIdActivate200,
   PostQdeAdminDeploymentsIdRollback200,
   PostQdeAdminDeploymentsPoll200,
@@ -331,6 +346,8 @@ import type {
   RequestSupportTicketAttachmentUploadUrl200,
   ResearchLabUnavailableResponse,
   ResolveSeoPageParams,
+  ResolveSymbolMappingConflict200,
+  ResolveSymbolMappingConflict404,
   ReviewPositionBody,
   RevokeAccountSession200,
   RollbackResearchLabDeploymentCandidate200,
@@ -380,6 +397,9 @@ import type {
   SymbolWithCategory,
   SyncLogin200,
   SyncLoginBody,
+  SyncSymbolDiscovery200,
+  SyncSymbolDiscovery400,
+  SyncSymbolDiscoveryBody,
   TelemetryEvent,
   TelemetryInput,
   TestSmtp200,
@@ -406,6 +426,9 @@ import type {
   UpdateSiteContent400,
   UpdateSiteContent401,
   UpdateSymbolBody,
+  UpdateSymbolRegexPattern200,
+  UpdateSymbolRegexPattern404,
+  UpdateSymbolRegexPatternBody,
   UpdateTradingSettingsBody,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -6579,6 +6602,600 @@ export const useNormalizeSymbol = <TError = ErrorType<NormalizeSymbol422>,
         TContext
       > => {
       return useMutation(getNormalizeSymbolMutationOptions(options));
+    }
+
+export const getSyncSymbolDiscoveryUrl = () => {
+
+
+
+
+  return `/api/symbols/discovery`
+}
+
+/**
+ * @summary EA broker symbol discovery scan (install-time + 24h refresh)
+ */
+export const syncSymbolDiscovery = async (syncSymbolDiscoveryBody: SyncSymbolDiscoveryBody, options?: RequestInit): Promise<SyncSymbolDiscovery200> => {
+
+  return customFetch<SyncSymbolDiscovery200>(getSyncSymbolDiscoveryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncSymbolDiscoveryBody)
+  }
+);}
+
+
+
+
+
+export const getSyncSymbolDiscoveryMutationOptions = <TError = ErrorType<SyncSymbolDiscovery400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncSymbolDiscovery>>, TError,{data: BodyType<SyncSymbolDiscoveryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncSymbolDiscovery>>, TError,{data: BodyType<SyncSymbolDiscoveryBody>}, TContext> => {
+
+const mutationKey = ['syncSymbolDiscovery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncSymbolDiscovery>>, {data: BodyType<SyncSymbolDiscoveryBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncSymbolDiscovery(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncSymbolDiscoveryMutationResult = NonNullable<Awaited<ReturnType<typeof syncSymbolDiscovery>>>
+    export type SyncSymbolDiscoveryMutationBody = BodyType<SyncSymbolDiscoveryBody>
+    export type SyncSymbolDiscoveryMutationError = ErrorType<SyncSymbolDiscovery400>
+
+    /**
+ * @summary EA broker symbol discovery scan (install-time + 24h refresh)
+ */
+export const useSyncSymbolDiscovery = <TError = ErrorType<SyncSymbolDiscovery400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncSymbolDiscovery>>, TError,{data: BodyType<SyncSymbolDiscoveryBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncSymbolDiscovery>>,
+        TError,
+        {data: BodyType<SyncSymbolDiscoveryBody>},
+        TContext
+      > => {
+      return useMutation(getSyncSymbolDiscoveryMutationOptions(options));
+    }
+
+export const getListSymbolMappingCacheUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/mapping-cache`
+}
+
+/**
+ * @summary List cached broker symbol -> canonical symbol mappings (admin)
+ */
+export const listSymbolMappingCache = async ( options?: RequestInit): Promise<ListSymbolMappingCache200Item[]> => {
+
+  return customFetch<ListSymbolMappingCache200Item[]>(getListSymbolMappingCacheUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolMappingCacheQueryKey = () => {
+    return [
+    `/api/symbols/admin/mapping-cache`
+    ] as const;
+    }
+
+
+export const getListSymbolMappingCacheQueryOptions = <TData = Awaited<ReturnType<typeof listSymbolMappingCache>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingCache>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolMappingCacheQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbolMappingCache>>> = ({ signal }) => listSymbolMappingCache({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingCache>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolMappingCacheQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbolMappingCache>>>
+export type ListSymbolMappingCacheQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List cached broker symbol -> canonical symbol mappings (admin)
+ */
+
+export function useListSymbolMappingCache<TData = Awaited<ReturnType<typeof listSymbolMappingCache>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingCache>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolMappingCacheQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSymbolMappingConflictsUrl = (params?: ListSymbolMappingConflictsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/symbols/admin/mapping-conflicts?${stringifiedParams}` : `/api/symbols/admin/mapping-conflicts`
+}
+
+/**
+ * @summary List symbol mapping conflicts (admin)
+ */
+export const listSymbolMappingConflicts = async (params?: ListSymbolMappingConflictsParams, options?: RequestInit): Promise<ListSymbolMappingConflicts200Item[]> => {
+
+  return customFetch<ListSymbolMappingConflicts200Item[]>(getListSymbolMappingConflictsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolMappingConflictsQueryKey = (params?: ListSymbolMappingConflictsParams,) => {
+    return [
+    `/api/symbols/admin/mapping-conflicts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSymbolMappingConflictsQueryOptions = <TData = Awaited<ReturnType<typeof listSymbolMappingConflicts>>, TError = ErrorType<unknown>>(params?: ListSymbolMappingConflictsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingConflicts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolMappingConflictsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbolMappingConflicts>>> = ({ signal }) => listSymbolMappingConflicts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingConflicts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolMappingConflictsQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbolMappingConflicts>>>
+export type ListSymbolMappingConflictsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List symbol mapping conflicts (admin)
+ */
+
+export function useListSymbolMappingConflicts<TData = Awaited<ReturnType<typeof listSymbolMappingConflicts>>, TError = ErrorType<unknown>>(
+ params?: ListSymbolMappingConflictsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolMappingConflicts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolMappingConflictsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getResolveSymbolMappingConflictUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/mapping-conflicts/${id}/resolve`
+}
+
+/**
+ * @summary Mark a symbol mapping conflict as resolved (admin)
+ */
+export const resolveSymbolMappingConflict = async (id: number, options?: RequestInit): Promise<ResolveSymbolMappingConflict200> => {
+
+  return customFetch<ResolveSymbolMappingConflict200>(getResolveSymbolMappingConflictUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResolveSymbolMappingConflictMutationOptions = <TError = ErrorType<ResolveSymbolMappingConflict404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSymbolMappingConflict>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveSymbolMappingConflict>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['resolveSymbolMappingConflict'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveSymbolMappingConflict>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  resolveSymbolMappingConflict(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveSymbolMappingConflictMutationResult = NonNullable<Awaited<ReturnType<typeof resolveSymbolMappingConflict>>>
+
+    export type ResolveSymbolMappingConflictMutationError = ErrorType<ResolveSymbolMappingConflict404>
+
+    /**
+ * @summary Mark a symbol mapping conflict as resolved (admin)
+ */
+export const useResolveSymbolMappingConflict = <TError = ErrorType<ResolveSymbolMappingConflict404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSymbolMappingConflict>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resolveSymbolMappingConflict>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getResolveSymbolMappingConflictMutationOptions(options));
+    }
+
+export const getListSymbolRegexPatternsUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/regex-patterns`
+}
+
+/**
+ * @summary List admin-defined regex fallback patterns for symbol resolution
+ */
+export const listSymbolRegexPatterns = async ( options?: RequestInit): Promise<ListSymbolRegexPatterns200Item[]> => {
+
+  return customFetch<ListSymbolRegexPatterns200Item[]>(getListSymbolRegexPatternsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSymbolRegexPatternsQueryKey = () => {
+    return [
+    `/api/symbols/admin/regex-patterns`
+    ] as const;
+    }
+
+
+export const getListSymbolRegexPatternsQueryOptions = <TData = Awaited<ReturnType<typeof listSymbolRegexPatterns>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolRegexPatterns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSymbolRegexPatternsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSymbolRegexPatterns>>> = ({ signal }) => listSymbolRegexPatterns({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSymbolRegexPatterns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSymbolRegexPatternsQueryResult = NonNullable<Awaited<ReturnType<typeof listSymbolRegexPatterns>>>
+export type ListSymbolRegexPatternsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List admin-defined regex fallback patterns for symbol resolution
+ */
+
+export function useListSymbolRegexPatterns<TData = Awaited<ReturnType<typeof listSymbolRegexPatterns>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSymbolRegexPatterns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSymbolRegexPatternsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSymbolRegexPatternUrl = () => {
+
+
+
+
+  return `/api/symbols/admin/regex-patterns`
+}
+
+/**
+ * @summary Create a regex fallback pattern (admin)
+ */
+export const createSymbolRegexPattern = async (createSymbolRegexPatternBody: CreateSymbolRegexPatternBody, options?: RequestInit): Promise<CreateSymbolRegexPattern201> => {
+
+  return customFetch<CreateSymbolRegexPattern201>(getCreateSymbolRegexPatternUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSymbolRegexPatternBody)
+  }
+);}
+
+
+
+
+
+export const getCreateSymbolRegexPatternMutationOptions = <TError = ErrorType<CreateSymbolRegexPattern400 | CreateSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolRegexPattern>>, TError,{data: BodyType<CreateSymbolRegexPatternBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSymbolRegexPattern>>, TError,{data: BodyType<CreateSymbolRegexPatternBody>}, TContext> => {
+
+const mutationKey = ['createSymbolRegexPattern'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSymbolRegexPattern>>, {data: BodyType<CreateSymbolRegexPatternBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSymbolRegexPattern(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSymbolRegexPatternMutationResult = NonNullable<Awaited<ReturnType<typeof createSymbolRegexPattern>>>
+    export type CreateSymbolRegexPatternMutationBody = BodyType<CreateSymbolRegexPatternBody>
+    export type CreateSymbolRegexPatternMutationError = ErrorType<CreateSymbolRegexPattern400 | CreateSymbolRegexPattern404>
+
+    /**
+ * @summary Create a regex fallback pattern (admin)
+ */
+export const useCreateSymbolRegexPattern = <TError = ErrorType<CreateSymbolRegexPattern400 | CreateSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSymbolRegexPattern>>, TError,{data: BodyType<CreateSymbolRegexPatternBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSymbolRegexPattern>>,
+        TError,
+        {data: BodyType<CreateSymbolRegexPatternBody>},
+        TContext
+      > => {
+      return useMutation(getCreateSymbolRegexPatternMutationOptions(options));
+    }
+
+export const getUpdateSymbolRegexPatternUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/regex-patterns/${id}`
+}
+
+/**
+ * @summary Update a regex fallback pattern (admin)
+ */
+export const updateSymbolRegexPattern = async (id: number,
+    updateSymbolRegexPatternBody: UpdateSymbolRegexPatternBody, options?: RequestInit): Promise<UpdateSymbolRegexPattern200> => {
+
+  return customFetch<UpdateSymbolRegexPattern200>(getUpdateSymbolRegexPatternUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateSymbolRegexPatternBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateSymbolRegexPatternMutationOptions = <TError = ErrorType<UpdateSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbolRegexPattern>>, TError,{id: number;data: BodyType<UpdateSymbolRegexPatternBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSymbolRegexPattern>>, TError,{id: number;data: BodyType<UpdateSymbolRegexPatternBody>}, TContext> => {
+
+const mutationKey = ['updateSymbolRegexPattern'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSymbolRegexPattern>>, {id: number;data: BodyType<UpdateSymbolRegexPatternBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSymbolRegexPattern(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSymbolRegexPatternMutationResult = NonNullable<Awaited<ReturnType<typeof updateSymbolRegexPattern>>>
+    export type UpdateSymbolRegexPatternMutationBody = BodyType<UpdateSymbolRegexPatternBody>
+    export type UpdateSymbolRegexPatternMutationError = ErrorType<UpdateSymbolRegexPattern404>
+
+    /**
+ * @summary Update a regex fallback pattern (admin)
+ */
+export const useUpdateSymbolRegexPattern = <TError = ErrorType<UpdateSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbolRegexPattern>>, TError,{id: number;data: BodyType<UpdateSymbolRegexPatternBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSymbolRegexPattern>>,
+        TError,
+        {id: number;data: BodyType<UpdateSymbolRegexPatternBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateSymbolRegexPatternMutationOptions(options));
+    }
+
+export const getDeleteSymbolRegexPatternUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/regex-patterns/${id}`
+}
+
+/**
+ * @summary Delete a regex fallback pattern (admin)
+ */
+export const deleteSymbolRegexPattern = async (id: number, options?: RequestInit): Promise<DeleteSymbolRegexPattern200> => {
+
+  return customFetch<DeleteSymbolRegexPattern200>(getDeleteSymbolRegexPatternUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSymbolRegexPatternMutationOptions = <TError = ErrorType<DeleteSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolRegexPattern>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolRegexPattern>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSymbolRegexPattern'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSymbolRegexPattern>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSymbolRegexPattern(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSymbolRegexPatternMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSymbolRegexPattern>>>
+
+    export type DeleteSymbolRegexPatternMutationError = ErrorType<DeleteSymbolRegexPattern404>
+
+    /**
+ * @summary Delete a regex fallback pattern (admin)
+ */
+export const useDeleteSymbolRegexPattern = <TError = ErrorType<DeleteSymbolRegexPattern404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSymbolRegexPattern>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSymbolRegexPattern>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSymbolRegexPatternMutationOptions(options));
     }
 
 export const getGetSymbolNormalizationLogUrl = (params?: GetSymbolNormalizationLogParams,) => {
@@ -21697,6 +22314,161 @@ export function useGetOperationalTelemetry<TData = Awaited<ReturnType<typeof get
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetOperationalTelemetryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostOperationalTicksUrl = () => {
+
+
+
+
+  return `/api/operational/ticks`
+}
+
+/**
+ * @summary EA ingest — continuous per-symbol tick stream (broker-aware market gateway)
+ */
+export const postOperationalTicks = async (postOperationalTicksBody: PostOperationalTicksBody, options?: RequestInit): Promise<PostOperationalTicks201> => {
+
+  return customFetch<PostOperationalTicks201>(getPostOperationalTicksUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postOperationalTicksBody)
+  }
+);}
+
+
+
+
+
+export const getPostOperationalTicksMutationOptions = <TError = ErrorType<PostOperationalTicks400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalTicks>>, TError,{data: BodyType<PostOperationalTicksBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postOperationalTicks>>, TError,{data: BodyType<PostOperationalTicksBody>}, TContext> => {
+
+const mutationKey = ['postOperationalTicks'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOperationalTicks>>, {data: BodyType<PostOperationalTicksBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postOperationalTicks(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostOperationalTicksMutationResult = NonNullable<Awaited<ReturnType<typeof postOperationalTicks>>>
+    export type PostOperationalTicksMutationBody = BodyType<PostOperationalTicksBody>
+    export type PostOperationalTicksMutationError = ErrorType<PostOperationalTicks400>
+
+    /**
+ * @summary EA ingest — continuous per-symbol tick stream (broker-aware market gateway)
+ */
+export const usePostOperationalTicks = <TError = ErrorType<PostOperationalTicks400>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOperationalTicks>>, TError,{data: BodyType<PostOperationalTicksBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postOperationalTicks>>,
+        TError,
+        {data: BodyType<PostOperationalTicksBody>},
+        TContext
+      > => {
+      return useMutation(getPostOperationalTicksMutationOptions(options));
+    }
+
+export const getGetOperationalTicksUrl = (params?: GetOperationalTicksParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/operational/ticks?${stringifiedParams}` : `/api/operational/ticks`
+}
+
+/**
+ * @summary Admin — latest per-symbol tick snapshot
+ */
+export const getOperationalTicks = async (params?: GetOperationalTicksParams, options?: RequestInit): Promise<GetOperationalTicks200Item[]> => {
+
+  return customFetch<GetOperationalTicks200Item[]>(getGetOperationalTicksUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalTicksQueryKey = (params?: GetOperationalTicksParams,) => {
+    return [
+    `/api/operational/ticks`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetOperationalTicksQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalTicks>>, TError = ErrorType<unknown>>(params?: GetOperationalTicksParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTicks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalTicksQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalTicks>>> = ({ signal }) => getOperationalTicks(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalTicks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalTicksQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalTicks>>>
+export type GetOperationalTicksQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — latest per-symbol tick snapshot
+ */
+
+export function useGetOperationalTicks<TData = Awaited<ReturnType<typeof getOperationalTicks>>, TError = ErrorType<unknown>>(
+ params?: GetOperationalTicksParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalTicks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalTicksQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

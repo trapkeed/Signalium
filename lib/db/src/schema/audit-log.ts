@@ -142,6 +142,13 @@ export const auditLogTable = pgTable("audit_log", {
       // Broker-aware market data architecture
       "market_source.switched",
       "autonomous_market_priority.updated",
+      // Broker symbol discovery / trainer canonical mapping
+      "symbol_discovery.synced",
+      "symbol_mapping.conflict_detected",
+      "symbol_mapping.conflict_resolved",
+      "symbol_regex_pattern.created",
+      "symbol_regex_pattern.updated",
+      "symbol_regex_pattern.deleted",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

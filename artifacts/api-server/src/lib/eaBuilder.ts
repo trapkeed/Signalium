@@ -37,8 +37,14 @@ export function deriveUsername(user: { firstName?: string | null; lastName?: str
   return safe.length > 0 ? safe : "Trader";
 }
 
-export function buildFileName(username: string): string {
-  return `Signalium_${username}_MT5.ex5`;
+/**
+ * Filename convention: `Signalium_<username>_<apikeyhash>.ex5`. The API key
+ * hash (not the raw key) is embedded so filenames are unique per build/key
+ * without ever leaking the credential itself, and support can identify which
+ * key a given binary was compiled with just from its filename.
+ */
+export function buildFileName(username: string, apiKeyHash: string): string {
+  return `Signalium_${username}_${apiKeyHash.slice(0, 16)}.ex5`;
 }
 
 /**
@@ -102,10 +108,12 @@ void OnDeinit(const int reason) {
 
 void OnTimer() {
    SignaliumReportQdeTelemetry();
+   SignaliumRefreshSymbolDiscoveryIfDue(); // every 24h, or immediately on first run
 }
 
 void OnTick() {
    SignaliumReportManualTelemetry();
+   SignaliumStreamSymbolTicks();
    SignaliumReportPositions();
    if (SignaliumAutonomousModeEnabled()) {
       SignaliumRunAutonomousExecution();
@@ -116,6 +124,30 @@ void OnTick() {
 void SignaliumVerifyBuild() {
    // Calls /api/api-keys/verify using the compiled-in SIGNALIUM_API_KEY +
    // build id. No manual key entry required — it ships inside this binary.
+}
+
+// ─── Broker-aware market gateway ──────────────────────────────────────────
+void SignaliumRefreshSymbolDiscoveryIfDue() {
+   // Every 24h (and always on first run): enumerates every symbol the
+   // connected broker exposes via SymbolsTotal()/SymbolName(), and POSTs the
+   // full raw symbol list plus broker identity (name/server) to
+   // POST /api/symbols/discovery (x-api-key auth). The server resolves each
+   // raw broker symbol to its canonical Signalium symbol (local cache ->
+   // trainer round-trip -> admin regex fallback) and returns the mapping,
+   // which is cached locally so OnTick() never blocks on a network call.
+   // Conflicts (a raw symbol resolving differently than last time) are
+   // logged server-side for admin review; this EA always trusts whatever
+   // mapping the server returns, even if it differs from its local cache.
+}
+
+void SignaliumStreamSymbolTicks() {
+   // For every subscribed/discovered symbol, reads the latest broker quote
+   // (SymbolInfoTick: bid, ask, last tick volume/time) and batches it into
+   // the continuous tick stream POSTed to /api/operational/ticks
+   // (x-api-key auth), tagging each tick with both the raw broker symbol
+   // and the locally-cached normalized_symbol from the discovery scan.
+   // Batched/throttled (not one HTTP call per tick) to stay within broker
+   // and platform rate limits while still reflecting live market state.
 }
 
 void SignaliumConnectQdeSocket() {
