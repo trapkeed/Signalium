@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { motion, type Variants } from "framer-motion";
-import { Activity, Shield, Target, ChevronRight, Lock, MousePointerClick, Cpu, Plus, Minus } from "lucide-react";
+import { Activity, Shield, Target, ChevronRight, Lock, MousePointerClick, Cpu, Plus, Minus, Twitter, Linkedin, Github, Youtube } from "lucide-react";
 import { useState } from "react";
 import { useListPlans } from "@workspace/api-client-react";
 import { useSiteContent } from "@/hooks/use-site-content";
@@ -422,6 +422,44 @@ export default function Home() {
               <Link href="/status" className="hover:text-white transition-colors">Security</Link>
               <Link href="/kb" className="hover:text-white transition-colors">Terms</Link>
               <Link href="/contact" className="hover:text-white transition-colors">Privacy</Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://twitter.com/signalium"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Signalium on X (Twitter)"
+                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <Twitter className="w-4 h-4" />
+              </a>
+              <a
+                href="https://linkedin.com/company/signalium"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Signalium on LinkedIn"
+                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <Linkedin className="w-4 h-4" />
+              </a>
+              <a
+                href="https://github.com/signalium"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Signalium on GitHub"
+                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <Github className="w-4 h-4" />
+              </a>
+              <a
+                href="https://youtube.com/@signalium"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Signalium on YouTube"
+                className="w-9 h-9 rounded-full flex items-center justify-center border border-white/10 bg-white/5 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+              >
+                <Youtube className="w-4 h-4" />
+              </a>
             </div>
           </div>
           <div className="mt-12 text-center text-xs text-muted-foreground/50 font-light">
