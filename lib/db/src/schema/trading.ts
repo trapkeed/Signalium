@@ -1,10 +1,16 @@
-import { pgTable, text, serial, timestamp, integer, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, unique, jsonb } from "drizzle-orm/pg-core";
 import { symbolsTable } from "./symbols";
 
 export const userTradingSettingsTable = pgTable("user_trading_settings", {
   userId: text("user_id").primaryKey(),
   tradingMode: text("trading_mode", { enum: ["manual", "autonomous"] }).notNull().default("manual"),
   riskMode: text("risk_mode", { enum: ["manual", "qde"] }).notNull().default("manual"),
+  // Broker-aware market data: last resolved source for this user, persisted
+  // so switches can be detected (and audit-logged) across process restarts
+  // rather than only via an in-memory cache.
+  lastMarketSource: text("last_market_source", { enum: ["EXTERNAL_PROVIDER", "EA_FEED", "HYBRID"] }),
+  lastMarketSourceAt: timestamp("last_market_source_at", { withTimezone: true }),
+  lastMarketSourceDetail: jsonb("last_market_source_detail").$type<Record<string, unknown>>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

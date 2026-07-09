@@ -13,6 +13,7 @@ export interface InferenceControls {
   forcedModelVersion?: string | null;
   liveProviderId?: number | null;
   fallbackProviderId?: number | null;
+  autonomousMarketPriority?: string[];
   updatedAt: string;
   updatedBy?: string | null;
 }

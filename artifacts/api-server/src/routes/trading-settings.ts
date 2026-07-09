@@ -4,6 +4,7 @@ import { db, userTradingSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { checkAutonomousAccess } from "../lib/entitlementEngine";
 import { logAudit } from "../lib/auditLog";
+import { resolveMarketSourceForUser } from "../lib/marketData/marketSource";
 
 const router = Router();
 
@@ -100,6 +101,23 @@ router.put("/", async (req, res) => {
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Failed to update trading settings");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /trading-settings/market-source ─────────────────────────────────────
+// Resolves the market data source currently serving this user (EA feed vs.
+// external provider, with failover already applied for autonomous mode) —
+// backs the dashboard feed-status widget.
+router.get("/market-source", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const resolved = await resolveMarketSourceForUser(userId);
+    return res.json(resolved);
+  } catch (err) {
+    req.log.error(err, "Failed to resolve market source");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

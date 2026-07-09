@@ -1,6 +1,72 @@
-import { useGetRuntimeStatus, useGetRuntimeSummary, useListTelemetry, useGetMySubscription } from "@workspace/api-client-react";
-import { Activity, Wifi, WifiOff, TrendingUp, TrendingDown, AlertCircle, Clock, Cpu } from "lucide-react";
+import { useGetRuntimeStatus, useGetRuntimeSummary, useListTelemetry, useGetMySubscription, useGetMarketSource } from "@workspace/api-client-react";
+import { Activity, Wifi, WifiOff, TrendingUp, TrendingDown, AlertCircle, Clock, Cpu, Radio, Server, ShieldAlert } from "lucide-react";
 import { OnboardingChecklist } from "../components/onboarding-checklist";
+
+const FEED_HEALTH_STYLES: Record<string, string> = {
+  healthy: "bg-success/15 text-success",
+  degraded: "bg-warning/15 text-warning",
+  unavailable: "bg-destructive/15 text-destructive",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  EA_FEED: "EA Feed",
+  EXTERNAL_PROVIDER: "External Provider",
+  HYBRID: "Hybrid (EA + Provider)",
+};
+
+function MarketSourceWidget() {
+  const { data: marketSource, isLoading } = useGetMarketSource();
+
+  return (
+    <div className="border border-border bg-card rounded-lg p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Market Data Feed</div>
+        {marketSource && (
+          <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${FEED_HEALTH_STYLES[marketSource.feedHealth] ?? "bg-muted text-muted-foreground"}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${marketSource.feedHealth === "healthy" ? "bg-success animate-pulse" : marketSource.feedHealth === "degraded" ? "bg-warning" : "bg-destructive"}`} />
+            {marketSource.feedHealth.toUpperCase()}
+          </span>
+        )}
+      </div>
+      {isLoading ? (
+        <div className="h-16 flex items-center justify-center text-muted-foreground text-sm">Loading...</div>
+      ) : marketSource ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            {marketSource.source === "EA_FEED" ? (
+              <Radio className="w-5 h-5 text-primary" />
+            ) : marketSource.source === "HYBRID" ? (
+              <ShieldAlert className="w-5 h-5 text-warning" />
+            ) : (
+              <Server className="w-5 h-5 text-muted-foreground" />
+            )}
+            <div>
+              <div className="font-semibold text-sm">{SOURCE_LABELS[marketSource.source] ?? marketSource.source}</div>
+              {marketSource.source !== "EXTERNAL_PROVIDER" && marketSource.brokerServer && (
+                <div className="text-xs text-muted-foreground">Broker: {marketSource.brokerCompany ?? marketSource.brokerServer}</div>
+              )}
+              {marketSource.source === "EXTERNAL_PROVIDER" && marketSource.providerName && (
+                <div className="text-xs text-muted-foreground">Provider: {marketSource.providerName}</div>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+            <div>
+              <div className="text-xs text-muted-foreground">Last tick</div>
+              <div className="text-sm tabular-nums">
+                {marketSource.lastTickAt ? new Date(marketSource.lastTickAt).toLocaleTimeString() : "—"}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Latency</div>
+              <div className="font-bold text-lg tabular-nums">{marketSource.latencyMs != null ? `${marketSource.latencyMs}ms` : "—"}</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function StatusDot({ connected }: { connected: boolean }) {
   return (
@@ -43,7 +109,7 @@ export default function Dashboard() {
         <OnboardingChecklist />
 
         {/* Runtime status */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <div className="border border-border bg-card rounded-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">QDE Runtime</div>
@@ -82,6 +148,8 @@ export default function Dashboard() {
               </div>
             ) : null}
           </div>
+
+          <MarketSourceWidget />
 
           {/* Subscription */}
           <div className="border border-border bg-card rounded-lg p-6">

@@ -2301,12 +2301,63 @@ export const UserTradingSettingsRiskMode = {
   qde: 'qde',
 } as const;
 
+/**
+ * @nullable
+ */
+export type UserTradingSettingsLastMarketSource = typeof UserTradingSettingsLastMarketSource[keyof typeof UserTradingSettingsLastMarketSource] | null;
+
+
+export const UserTradingSettingsLastMarketSource = {
+  EXTERNAL_PROVIDER: 'EXTERNAL_PROVIDER',
+  EA_FEED: 'EA_FEED',
+  HYBRID: 'HYBRID',
+} as const;
+
 export interface UserTradingSettings {
   userId: string;
   tradingMode: UserTradingSettingsTradingMode;
   riskMode: UserTradingSettingsRiskMode;
   /** @nullable */
   updatedAt?: string | null;
+  /** @nullable */
+  lastMarketSource?: UserTradingSettingsLastMarketSource;
+  /** @nullable */
+  lastMarketSourceAt?: string | null;
+}
+
+export type MarketSourceResolutionSource = typeof MarketSourceResolutionSource[keyof typeof MarketSourceResolutionSource];
+
+
+export const MarketSourceResolutionSource = {
+  EXTERNAL_PROVIDER: 'EXTERNAL_PROVIDER',
+  EA_FEED: 'EA_FEED',
+  HYBRID: 'HYBRID',
+} as const;
+
+export type MarketSourceResolutionFeedHealth = typeof MarketSourceResolutionFeedHealth[keyof typeof MarketSourceResolutionFeedHealth];
+
+
+export const MarketSourceResolutionFeedHealth = {
+  healthy: 'healthy',
+  degraded: 'degraded',
+  unavailable: 'unavailable',
+} as const;
+
+export interface MarketSourceResolution {
+  source: MarketSourceResolutionSource;
+  /** @nullable */
+  providerSlug?: string | null;
+  /** @nullable */
+  providerName?: string | null;
+  /** @nullable */
+  brokerServer?: string | null;
+  /** @nullable */
+  brokerCompany?: string | null;
+  feedHealth: MarketSourceResolutionFeedHealth;
+  /** @nullable */
+  lastTickAt?: string | null;
+  /** @nullable */
+  latencyMs?: number | null;
 }
 
 export interface UserSymbol {
@@ -2360,6 +2411,7 @@ export interface InferenceControls {
   forcedModelVersion?: string | null;
   liveProviderId?: number | null;
   fallbackProviderId?: number | null;
+  autonomousMarketPriority?: string[];
   updatedAt: string;
   updatedBy?: string | null;
 }
@@ -3392,6 +3444,15 @@ export type RequestReasoningBody = {
   question?: string;
 };
 
+export type UpdateInferenceControlsBodyAutonomousMarketPriorityItem = typeof UpdateInferenceControlsBodyAutonomousMarketPriorityItem[keyof typeof UpdateInferenceControlsBodyAutonomousMarketPriorityItem];
+
+
+export const UpdateInferenceControlsBodyAutonomousMarketPriorityItem = {
+  EA_FEED: 'EA_FEED',
+  oanda: 'oanda',
+  tiingo: 'tiingo',
+} as const;
+
 export type UpdateInferenceControlsBody = {
   inferenceEnabled?: boolean;
   autonomousPaused?: boolean;
@@ -3401,6 +3462,7 @@ export type UpdateInferenceControlsBody = {
   liveProviderId?: number | null;
   /** @nullable */
   fallbackProviderId?: number | null;
+  autonomousMarketPriority?: UpdateInferenceControlsBodyAutonomousMarketPriorityItem[];
 };
 
 export type TransitionOpportunityBodyState = typeof TransitionOpportunityBodyState[keyof typeof TransitionOpportunityBodyState];

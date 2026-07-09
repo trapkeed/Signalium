@@ -42,6 +42,14 @@ export const eaTelemetrySnapshotsTable = pgTable(
     // Broker info
     brokerName: text("broker_name"),
     brokerServer: text("broker_server"),
+    brokerCompany: text("broker_company"),
+    brokerSymbol: text("broker_symbol"),
+    leverage: integer("leverage"),
+
+    // Broker-side tick time for the reported spread/price snapshot, distinct
+    // from `createdAt` (platform ingest time) — used to detect a stale/dead
+    // EA feed for autonomous-mode market source failover.
+    tickTimestamp: timestamp("tick_timestamp", { withTimezone: true }),
 
     // Infrastructure
     vpsLatencyMs: integer("vps_latency_ms"),

@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateInferenceControlsBodyAutonomousMarketPriorityItem } from './updateInferenceControlsBodyAutonomousMarketPriorityItem';
 
 export type UpdateInferenceControlsBody = {
   inferenceEnabled?: boolean;
@@ -15,4 +16,5 @@ export type UpdateInferenceControlsBody = {
   liveProviderId?: number | null;
   /** @nullable */
   fallbackProviderId?: number | null;
+  autonomousMarketPriority?: UpdateInferenceControlsBodyAutonomousMarketPriorityItem[];
 };

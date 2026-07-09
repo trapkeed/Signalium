@@ -1907,6 +1907,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntitlementError"
 
+  /trading-settings/market-source:
+    get:
+      operationId: getMarketSource
+      tags: [trading]
+      summary: Resolve the market data source currently serving the current user (EA feed vs. external provider, with autonomous-mode failover applied)
+      responses:
+        "200":
+          description: Resolved market source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketSourceResolution"
+
   /qde/inference:
     post:
       operationId: requestInference
@@ -2123,6 +2136,11 @@ paths:
                   type: ["integer", "null"]
                 fallbackProviderId:
                   type: ["integer", "null"]
+                autonomousMarketPriority:
+                  type: array
+                  items:
+                    type: string
+                    enum: [EA_FEED, oanda, tiingo]
       responses:
         "200":
           description: Updated inference controls
@@ -9954,6 +9972,34 @@ components:
           enum: [manual, qde]
         updatedAt:
           type: ["string", "null"]
+        lastMarketSource:
+          type: ["string", "null"]
+          enum: [EXTERNAL_PROVIDER, EA_FEED, HYBRID, null]
+        lastMarketSourceAt:
+          type: ["string", "null"]
+
+    MarketSourceResolution:
+      type: object
+      required: [source, feedHealth]
+      properties:
+        source:
+          type: string
+          enum: [EXTERNAL_PROVIDER, EA_FEED, HYBRID]
+        providerSlug:
+          type: ["string", "null"]
+        providerName:
+          type: ["string", "null"]
+        brokerServer:
+          type: ["string", "null"]
+        brokerCompany:
+          type: ["string", "null"]
+        feedHealth:
+          type: string
+          enum: [healthy, degraded, unavailable]
+        lastTickAt:
+          type: ["string", "null"]
+        latencyMs:
+          type: ["number", "null"]
 
     UserSymbol:
       type: object
@@ -10068,6 +10114,10 @@ components:
         fallbackProviderId:
           type: integer
           nullable: true
+        autonomousMarketPriority:
+          type: array
+          items:
+            type: string
         updatedAt:
           type: string
         updatedBy:

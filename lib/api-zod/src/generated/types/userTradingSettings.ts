@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UserTradingSettingsLastMarketSource } from './userTradingSettingsLastMarketSource';
 import type { UserTradingSettingsRiskMode } from './userTradingSettingsRiskMode';
 import type { UserTradingSettingsTradingMode } from './userTradingSettingsTradingMode';
 
@@ -14,4 +15,8 @@ export interface UserTradingSettings {
   riskMode: UserTradingSettingsRiskMode;
   /** @nullable */
   updatedAt?: string | null;
+  /** @nullable */
+  lastMarketSource?: UserTradingSettingsLastMarketSource;
+  /** @nullable */
+  lastMarketSourceAt?: string | null;
 }

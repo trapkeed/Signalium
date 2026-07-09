@@ -550,15 +550,30 @@ router.put("/admin/inference-controls", requireAdmin, async (req, res) => {
     forcedModelVersion?: string | null;
     liveProviderId?: number | null;
     fallbackProviderId?: number | null;
+    autonomousMarketPriority?: string[];
   };
 
+  if (body.autonomousMarketPriority !== undefined) {
+    const validEntries = ["EA_FEED", "oanda", "tiingo"];
+    if (
+      !Array.isArray(body.autonomousMarketPriority) ||
+      body.autonomousMarketPriority.length === 0 ||
+      body.autonomousMarketPriority.some((e) => typeof e !== "string" || !validEntries.includes(e))
+    ) {
+      return res.status(400).json({ error: `'autonomousMarketPriority' must be a non-empty array of: ${validEntries.join(", ")}` });
+    }
+  }
+
   try {
+    const [before] = await db.select().from(inferenceControlsTable).where(eq(inferenceControlsTable.id, "global"));
+
     const patch: Partial<typeof inferenceControlsTable.$inferInsert> = { updatedBy: userId!, updatedAt: new Date() };
     if (body.inferenceEnabled !== undefined) patch.inferenceEnabled = body.inferenceEnabled;
     if (body.autonomousPaused !== undefined) patch.autonomousPaused = body.autonomousPaused;
     if ("forcedModelVersion" in body) patch.forcedModelVersion = body.forcedModelVersion ?? null;
     if ("liveProviderId" in body) patch.liveProviderId = body.liveProviderId ?? null;
     if ("fallbackProviderId" in body) patch.fallbackProviderId = body.fallbackProviderId ?? null;
+    if (body.autonomousMarketPriority !== undefined) patch.autonomousMarketPriority = body.autonomousMarketPriority;
 
     const [result] = await db
       .insert(inferenceControlsTable)
@@ -567,6 +582,12 @@ router.put("/admin/inference-controls", requireAdmin, async (req, res) => {
       .returning();
 
     await logAudit(userId!, "inference_controls.updated", "inference_controls", "global", patch);
+    if (body.autonomousMarketPriority !== undefined && JSON.stringify(before?.autonomousMarketPriority) !== JSON.stringify(body.autonomousMarketPriority)) {
+      await logAudit(userId!, "autonomous_market_priority.updated", "inference_controls", "global", {
+        from: before?.autonomousMarketPriority ?? null,
+        to: body.autonomousMarketPriority,
+      });
+    }
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Failed to update inference controls");

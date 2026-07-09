@@ -2270,7 +2270,9 @@ export const GetTradingSettingsResponse = zod.object({
   "userId": zod.string(),
   "tradingMode": zod.enum(['manual', 'autonomous']),
   "riskMode": zod.enum(['manual', 'qde']),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
+  "lastMarketSourceAt": zod.string().nullish()
 })
 
 
@@ -2286,7 +2288,24 @@ export const UpdateTradingSettingsResponse = zod.object({
   "userId": zod.string(),
   "tradingMode": zod.enum(['manual', 'autonomous']),
   "riskMode": zod.enum(['manual', 'qde']),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
+  "lastMarketSourceAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Resolve the market data source currently serving the current user (EA feed vs. external provider, with autonomous-mode failover applied)
+ */
+export const GetMarketSourceResponse = zod.object({
+  "source": zod.enum(['EXTERNAL_PROVIDER', 'EA_FEED', 'HYBRID']),
+  "providerSlug": zod.string().nullish(),
+  "providerName": zod.string().nullish(),
+  "brokerServer": zod.string().nullish(),
+  "brokerCompany": zod.string().nullish(),
+  "feedHealth": zod.enum(['healthy', 'degraded', 'unavailable']),
+  "lastTickAt": zod.string().nullish(),
+  "latencyMs": zod.number().nullish()
 })
 
 
@@ -2517,6 +2536,7 @@ export const GetInferenceControlsResponse = zod.object({
   "forcedModelVersion": zod.string().nullish(),
   "liveProviderId": zod.number().nullish(),
   "fallbackProviderId": zod.number().nullish(),
+  "autonomousMarketPriority": zod.array(zod.string()).optional(),
   "updatedAt": zod.string(),
   "updatedBy": zod.string().nullish()
 })
@@ -2530,7 +2550,8 @@ export const UpdateInferenceControlsBody = zod.object({
   "autonomousPaused": zod.boolean().optional(),
   "forcedModelVersion": zod.string().nullish(),
   "liveProviderId": zod.number().nullish(),
-  "fallbackProviderId": zod.number().nullish()
+  "fallbackProviderId": zod.number().nullish(),
+  "autonomousMarketPriority": zod.array(zod.enum(['EA_FEED', 'oanda', 'tiingo'])).optional()
 })
 
 export const UpdateInferenceControlsResponse = zod.object({
@@ -2540,6 +2561,7 @@ export const UpdateInferenceControlsResponse = zod.object({
   "forcedModelVersion": zod.string().nullish(),
   "liveProviderId": zod.number().nullish(),
   "fallbackProviderId": zod.number().nullish(),
+  "autonomousMarketPriority": zod.array(zod.string()).optional(),
   "updatedAt": zod.string(),
   "updatedBy": zod.string().nullish()
 })
@@ -3719,7 +3741,9 @@ export const ActivateEmergencyStopResponse = zod.object({
   "userId": zod.string(),
   "tradingMode": zod.enum(['manual', 'autonomous']),
   "riskMode": zod.enum(['manual', 'qde']),
-  "updatedAt": zod.string().nullish()
+  "updatedAt": zod.string().nullish(),
+  "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
+  "lastMarketSourceAt": zod.string().nullish()
 })
 
 

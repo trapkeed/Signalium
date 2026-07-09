@@ -234,6 +234,7 @@ import type {
   MaintenanceBanner,
   MaintenanceBannerInput,
   MarketMemoryEntry,
+  MarketSourceResolution,
   MediaAsset,
   MediaAssetInput,
   NormalizeSymbol422,
@@ -7534,6 +7535,83 @@ export const useUpdateTradingSettings = <TError = ErrorType<EntitlementError>,
       > => {
       return useMutation(getUpdateTradingSettingsMutationOptions(options));
     }
+
+export const getGetMarketSourceUrl = () => {
+
+
+
+
+  return `/api/trading-settings/market-source`
+}
+
+/**
+ * @summary Resolve the market data source currently serving the current user (EA feed vs. external provider, with autonomous-mode failover applied)
+ */
+export const getMarketSource = async ( options?: RequestInit): Promise<MarketSourceResolution> => {
+
+  return customFetch<MarketSourceResolution>(getGetMarketSourceUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMarketSourceQueryKey = () => {
+    return [
+    `/api/trading-settings/market-source`
+    ] as const;
+    }
+
+
+export const getGetMarketSourceQueryOptions = <TData = Awaited<ReturnType<typeof getMarketSource>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMarketSourceQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarketSource>>> = ({ signal }) => getMarketSource({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMarketSource>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMarketSourceQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketSource>>>
+export type GetMarketSourceQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Resolve the market data source currently serving the current user (EA feed vs. external provider, with autonomous-mode failover applied)
+ */
+
+export function useGetMarketSource<TData = Awaited<ReturnType<typeof getMarketSource>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketSource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMarketSourceQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getRequestInferenceUrl = () => {
 

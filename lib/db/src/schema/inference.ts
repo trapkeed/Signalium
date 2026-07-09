@@ -121,6 +121,11 @@ export const inferenceControlsTable = pgTable("inference_controls", {
   forcedModelVersion: text("forced_model_version"), // null = use trainer default
   liveProviderId: integer("live_provider_id").references(() => dataProvidersTable.id),
   fallbackProviderId: integer("fallback_provider_id").references(() => dataProvidersTable.id),
+  // Broker-aware market data: ordered list of market sources to try for
+  // autonomous-mode users. Entries are either the literal "EA_FEED" or a
+  // data-provider slug (e.g. "oanda", "tiingo"). Default puts the live EA
+  // feed first, falling back to OANDA then Tiingo if it's stale/disconnected.
+  autonomousMarketPriority: jsonb("autonomous_market_priority").$type<string[]>().notNull().default(["EA_FEED", "oanda", "tiingo"]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   updatedBy: text("updated_by"), // userId of last admin who changed this
 });

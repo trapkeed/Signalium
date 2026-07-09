@@ -139,6 +139,9 @@ export const auditLogTable = pgTable("audit_log", {
       "trainer_control.experiment_created",
       "trainer_control.shadow_test_launched",
       "trainer_control.sensitive_view_accessed",
+      // Broker-aware market data architecture
+      "market_source.switched",
+      "autonomous_market_priority.updated",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),
