@@ -30,7 +30,6 @@ export interface SecretDefinition {
 /** Known secrets/keys this platform depends on. Extend as new integrations are added. */
 export const KNOWN_SECRETS: SecretDefinition[] = [
   { secretName: "sso_signing_key", category: "signing_key", rotationIntervalDays: 90, notes: "Rotated automatically via the SSO admin panel (rotateSigningKey); old keys stay verifiable until their tokens expire." },
-  { secretName: "CLERK_SECRET_KEY", category: "api_key", rotationIntervalDays: 180, notes: "Rotate from the Clerk dashboard, then update the Replit secret." },
   { secretName: "SESSION_SECRET", category: "signing_key", rotationIntervalDays: 180, notes: "Rotate via Replit secrets. Rotating invalidates any externalized session state signed with the old value." },
   { secretName: "DATABASE_URL", category: "db_credential", rotationIntervalDays: 365, notes: "Credential rotation is managed by Replit's managed Postgres; mark rotated here after confirming via the Database pane." },
 ];

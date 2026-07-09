@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { Readable } from "stream";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, invoicesTable, invoiceItemsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";

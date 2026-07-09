@@ -2,13 +2,8 @@ import express, { type Express } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
+import cookieParser from "cookie-parser";
+import { sessionAuthMiddleware } from "./lib/auth";
 import router from "./routes";
 import { robotsTxtHandler, sitemapXmlHandler } from "./routes/seo";
 import { logger } from "./lib/logger";
@@ -68,8 +63,6 @@ app.use(
   }),
 );
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-
 // S29 — CORS is restricted to an explicit allowlist (ALLOWED_ORIGINS, comma
 // separated) rather than reflecting every request's Origin header. Falls
 // back to allowing all in non-production so local/dev preview domains
@@ -116,15 +109,11 @@ app.use(
   }),
 );
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
-);
+// Resolves the session cookie (if any) into `req.auth`, mirroring the slot
+// Clerk's `clerkMiddleware` used to occupy — see lib/auth.ts.
+app.use(sessionAuthMiddleware);
 
 // Real crawlers request these at the site root, not under /api. Mounted
 // directly (in addition to /api/seo/robots.txt and /api/seo/sitemap.xml)

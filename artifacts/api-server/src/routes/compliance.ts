@@ -4,7 +4,7 @@
  * scoped to the caller's own records.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, dataExportRequestsTable, accountDeletionRequestsTable, consentRecordsTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";

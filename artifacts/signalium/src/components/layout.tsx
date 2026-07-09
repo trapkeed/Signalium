@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { UserButton, useUser } from "@clerk/react";
+import { useAuth } from "@/hooks/use-auth";
 import {
   LayoutDashboard,
   Layout,
@@ -39,6 +39,7 @@ import {
   ShieldCheck,
   Sparkles,
   Gauge,
+  LogOut,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -210,8 +211,8 @@ function NavSection({
 
 function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
   const [location] = useLocation();
-  const { user } = useUser();
-  const userRole = user?.publicMetadata?.role as string | undefined;
+  const { user, signOut } = useAuth();
+  const userRole = user?.role;
   const isAdmin = !!userRole && userRole !== "user";
   const isAdminLevel = userRole === "admin" || userRole === "super_admin";
   const isSuperAdmin = userRole === "super_admin";
@@ -239,19 +240,15 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
 
       <div className="mt-auto p-3 border-t border-border shrink-0">
         <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-secondary/40 transition-colors">
-          <UserButton
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "w-8 h-8 rounded-lg",
-              },
-            }}
-          />
+          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
+            {(user?.firstName?.[0] || user?.email?.[0] || "?").toUpperCase()}
+          </div>
           <div className="flex-1 overflow-hidden min-w-0">
             <div className="text-sm font-medium truncate">
-              {user?.firstName || user?.emailAddresses[0]?.emailAddress}
+              {user?.firstName || user?.email}
             </div>
             <div className="text-xs text-muted-foreground truncate">
-              {user?.emailAddresses[0]?.emailAddress}
+              {user?.email}
             </div>
           </div>
           <Link
@@ -261,6 +258,13 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
           >
             <Settings className="w-4 h-4" />
           </Link>
+          <button
+            onClick={() => { signOut(); onNavigate(); }}
+            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-secondary shrink-0"
+            aria-label="Sign out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

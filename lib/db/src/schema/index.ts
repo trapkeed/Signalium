@@ -37,3 +37,4 @@ export * from "./resilience";
 export * from "./compliance";
 export * from "./security-hardening";
 export * from "./admin-secrets";
+export * from "./auth";

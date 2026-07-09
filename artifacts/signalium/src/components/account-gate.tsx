@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import {
   useSyncLogin,
   useGetAccountSecurityStatus,

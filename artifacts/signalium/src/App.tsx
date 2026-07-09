@@ -1,8 +1,6 @@
-import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
-import { dark } from "@clerk/themes";
-import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
-import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -79,90 +77,16 @@ import AdminResearchLabResearchIntelligence from "@/pages/admin/research-lab/res
 import AdminResearchLabGenealogy from "@/pages/admin/research-lab/genealogy";
 
 import { OpsConnectionProvider } from "@/hooks/use-ops-realtime";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { SignInPage } from "@/pages/sign-in";
+import { SignUpPage } from "@/pages/sign-up";
 
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
-
-const isProduction = import.meta.env.PROD;
-const clerkProxyUrl = isProduction
-  ? (import.meta.env.VITE_CLERK_PROXY_URL ?? `${window.location.origin}/api/__clerk`)
-  : undefined;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || "/"
-    : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY in .env file");
-}
-
-const clerkAppearance = {
-  theme: dark,
-  cssLayerName: "clerk",
-  options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-  },
-  variables: {
-    colorPrimary: "hsl(191, 100%, 50%)", // cyan-ish
-    colorBackground: "hsl(220, 20%, 6%)",
-    colorInput: "hsl(220, 20%, 15%)",
-    colorNeutral: "hsl(220, 20%, 12%)",
-    fontFamily: "'Inter', system-ui, sans-serif",
-    borderRadius: "0.25rem",
-  },
-  elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-[#0c1015] border border-[#18212a] rounded-md w-[440px] max-w-full overflow-hidden",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-foreground",
-    headerSubtitle: "text-muted-foreground",
-    socialButtons: "gap-3",
-    socialButtonsBlockButton: "!bg-[#1a2129] !border !border-[#2a333e] hover:!bg-[#232c36] !text-white transition-colors",
-    socialButtonsBlockButtonText: "!text-white font-medium",
-    socialButtonsProviderIcon__google: "brightness-100",
-    formFieldLabel: "text-foreground",
-    footerActionLink: "text-primary hover:text-primary/90",
-    footerActionText: "text-muted-foreground",
-    dividerText: "text-muted-foreground",
-    identityPreviewEditButton: "text-primary hover:text-primary/90",
-    formFieldSuccessText: "text-success",
-    alertText: "text-destructive",
-    formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90",
-    formFieldInput: "bg-input border-border text-foreground rounded-sm",
-  },
-};
-
-function SignInPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
-  );
-}
-
-function SignUpPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
-  );
-}
-
 function HomeRedirect() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Redirect to="/dashboard" />
-      </Show>
-      <Show when="signed-out">
-        <Home />
-      </Show>
-    </>
-  );
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return null;
+  return isSignedIn ? <Redirect to="/dashboard" /> : <Home />;
 }
 
 function ProtectedRoute({ component: Component, ops }: { component: React.ComponentType<any>; ops?: boolean }) {
@@ -170,6 +94,10 @@ function ProtectedRoute({ component: Component, ops }: { component: React.Compon
   // that need it — mounting it app-wide would make every signed-in session
   // (including non-staff users) open and endlessly retry a connection the
   // gateway will always reject with 401.
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+
   const content = ops ? (
     <OpsConnectionProvider>
       <Component />
@@ -178,41 +106,12 @@ function ProtectedRoute({ component: Component, ops }: { component: React.Compon
     <Component />
   );
   return (
-    <>
-      <Show when="signed-in">
-        <AccountGate>
-          <AppLayout>
-            {content}
-          </AppLayout>
-        </AccountGate>
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/sign-in" />
-      </Show>
-    </>
+    <AccountGate>
+      <AppLayout>
+        {content}
+      </AppLayout>
+    </AccountGate>
   );
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const queryClient = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
-        queryClient.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClient]);
-
-  return null;
 }
 
 function SeoHeadManager() {
@@ -234,21 +133,10 @@ function ReferralCaptureManager() {
   return null;
 }
 
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-
+function AppRoutes() {
   return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
+    <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
         <SeoHeadManager />
         <ReferralCaptureManager />
         <TooltipProvider>
@@ -328,14 +216,14 @@ function ClerkProviderWithRoutes() {
             <Toaster />
           </TooltipProvider>
       </QueryClientProvider>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
 
 function App() {
   return (
     <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
+      <AppRoutes />
     </WouterRouter>
   );
 }

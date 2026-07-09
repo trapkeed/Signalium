@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, usersTable, subscriptionsTable, easTable, telemetryTable, plansTable } from "@workspace/db";
 import { eq, count, inArray, sql } from "drizzle-orm";
 import { getLatestSnapshot } from "../lib/platformHealth";

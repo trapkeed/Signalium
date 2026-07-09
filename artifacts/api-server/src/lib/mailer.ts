@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import { db, smtpSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "./logger";
+import { decryptSecret } from "./secretsVault";
 
 /**
  * Sends an email using the active `smtp_settings` row, if one exists. Used
@@ -18,11 +19,14 @@ export async function sendMail(opts: { to: string; subject: string; html: string
       return false;
     }
 
+    // Password is encrypted at rest (see secretsVault.ts) — decrypt just
+    // for this transport, never log or return it in plaintext.
+    const password = decryptSecret(settings.password);
     const transporter = nodemailer.createTransport({
       host: settings.host,
       port: settings.port,
       secure: settings.useTls && settings.port === 465,
-      auth: { user: settings.username, pass: settings.password },
+      auth: { user: settings.username, pass: password },
     });
 
     await transporter.sendMail({

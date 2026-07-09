@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, userTradingSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { checkAutonomousAccess } from "../lib/entitlementEngine";

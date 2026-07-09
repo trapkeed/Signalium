@@ -15,7 +15,7 @@
  *     public requests)                             -> 403 / 401, no visibility
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { getUserRole } from "../middlewares/requireAdmin";
 import { isStaffLevel, type UserRole } from "../lib/roles";
 import { getEffectiveAdminRoles } from "../lib/adminRoles";

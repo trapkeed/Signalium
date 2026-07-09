@@ -7,7 +7,7 @@
  * read routes, for a quick "is this deploy healthy" check post-release.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { runReadinessChecks } from "../lib/productionReadiness";
 import { logAudit } from "../lib/auditLog";

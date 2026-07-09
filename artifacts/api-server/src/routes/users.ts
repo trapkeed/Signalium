@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth, clerkClient } from "@clerk/express";
+import { getAuth, hashPassword } from "../lib/auth";
 import { db, usersTable, subscriptionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import crypto from "crypto";
@@ -38,9 +38,8 @@ router.get("/", requireAdmin, async (req, res) => {
   }
 });
 
-// Create a new user (super_admin only) — provisions in Clerk first (source of
-// truth for auth/credentials), then mirrors the DB row the rest of the app
-// reads. Mirrors the lazy-provisioning shape used at first login.
+// Create a new user (super_admin only) — provisions the local account
+// directly (no Clerk) with an app-generated id and a hashed password.
 router.post("/", requireSuperAdmin, async (req, res) => {
   const { userId: actorUserId } = getAuth(req);
   if (!actorUserId) return res.status(401).json({ error: "Unauthorized" });
@@ -57,17 +56,14 @@ router.post("/", requireSuperAdmin, async (req, res) => {
   }
 
   try {
-    const clerkUser = await clerkClient.users.createUser({
-      emailAddress: [body.data.email],
-      password: body.data.password,
-      firstName: body.data.firstName,
-      lastName: body.data.lastName,
-      publicMetadata: { role: desiredRole },
-    });
+    const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, body.data.email));
+    if (existing) return res.status(409).json({ error: "A user with this email already exists" });
 
+    const passwordHash = await hashPassword(body.data.password);
     const [user] = await db.insert(usersTable).values({
-      id: clerkUser.id,
       email: body.data.email,
+      passwordHash,
+      emailVerified: true,
       firstName: body.data.firstName ?? null,
       lastName: body.data.lastName ?? null,
       role: desiredRole,
@@ -78,12 +74,9 @@ router.post("/", requireSuperAdmin, async (req, res) => {
     await logAudit(actorUserId, "user.created", "user", user.id, { email: user.email, role: desiredRole });
 
     return res.status(201).json({ ...user, subscriptionStatus: null });
-  } catch (err: any) {
-    if (err?.errors?.[0]?.code === "form_identifier_exists") {
-      return res.status(409).json({ error: "A user with this email already exists" });
-    }
+  } catch (err) {
     req.log.error(err, "Failed to create user");
-    return res.status(500).json({ error: err?.errors?.[0]?.message || "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -229,19 +222,6 @@ router.patch("/:id", requireAdmin, async (req, res) => {
     if (!user) return res.status(404).json({ error: "Not found" });
 
     if (body.data.role !== undefined && body.data.role !== before.role) {
-      // Sync role to Clerk's publicMetadata. DB is the source of truth — if
-      // Clerk sync fails we log a warning but do NOT roll back the DB change,
-      // since the backend always re-reads from DB. A stale Clerk metadata
-      // value only affects the frontend admin-nav guard (cosmetic, not a
-      // security boundary). A future background reconciliation job can
-      // re-sync any drift.
-      try {
-        await clerkClient.users.updateUserMetadata(params.data.id, {
-          publicMetadata: { role: user.role },
-        });
-      } catch (clerkErr) {
-        req.log.warn({ err: clerkErr, userId: params.data.id }, "Clerk publicMetadata sync failed — DB role is authoritative, frontend may need hard-refresh");
-      }
       await logAudit(actorUserId, "user.role_changed", "user", user.id, { from: before.role, to: user.role });
     }
     if (body.data.isActive !== undefined && body.data.isActive !== before.isActive) {
@@ -257,8 +237,7 @@ router.patch("/:id", requireAdmin, async (req, res) => {
 
 // Permanently delete a user (super_admin only, strict hierarchy enforced —
 // same rule as role/isActive mutation above: actor must strictly outrank
-// target, and cannot delete self). Removes the Clerk identity first (source
-// of truth for auth), then the DB row.
+// target, and cannot delete self).
 router.delete("/:id", requireSuperAdmin, async (req, res) => {
   const params = GetUserParams.safeParse({ id: req.params.id });
   if (!params.success) return res.status(400).json({ error: "Invalid id" });
@@ -280,12 +259,6 @@ router.delete("/:id", requireSuperAdmin, async (req, res) => {
     const actorLevel = ROLE_LEVEL[actorRole as UserRole] ?? 0;
     if (actorLevel <= targetLevel) {
       return res.status(403).json({ error: `You cannot delete a user with equal or higher role (${target.role}). Requires strictly higher privilege.` });
-    }
-
-    try {
-      await clerkClient.users.deleteUser(target.id);
-    } catch (clerkErr) {
-      req.log.warn({ err: clerkErr, userId: target.id }, "Clerk user deletion failed — proceeding to remove local DB row anyway");
     }
 
     await db.delete(usersTable).where(eq(usersTable.id, target.id));

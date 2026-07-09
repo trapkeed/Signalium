@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, usersTable, referralsTable } from "@workspace/db";
 import { eq, desc, count, inArray } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";

@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { getAuth, clerkClient } from "@clerk/express";
-import { db, loginEventsTable, accountSecurityTable, usersTable, referralsTable, consentRecordsTable, accountDeletionRequestsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { getAuth, revokeSession } from "../lib/auth";
+import { db, loginEventsTable, accountSecurityTable, usersTable, consentRecordsTable, accountDeletionRequestsTable, sessionsTable } from "@workspace/db";
+import { eq, desc, and, gte, isNull } from "drizzle-orm";
 import crypto from "crypto";
 import { sendMail } from "../lib/mailer";
-import { generateUniqueReferralCode } from "../lib/referrals";
 import { logAudit, listOwnAuditLog } from "../lib/auditLog";
 import { buildUserDataExport, recordDataExport, requestAccountDeletion, confirmAccountDeletion, cancelAccountDeletion } from "../lib/dataGovernance";
 
@@ -34,96 +33,39 @@ async function getOrCreateSecurity(userId: string) {
   return created;
 }
 
-/**
- * Lazily provisions the `users` row for a Clerk-authenticated caller the
- * first time we ever see them (there is no signup webhook — see sync-login
- * below for why). No-op if the row already exists. On first-ever creation,
- * attributes a referral if a valid, non-self referral code was supplied —
- * this is the only moment attribution can happen, since it is the only time
- * we know "this is a brand-new user".
- */
-async function ensureUserProvisioned(userId: string, referralCodeInput?: string | null) {
-  const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (existing) return existing;
-
-  const clerkUser = await clerkClient.users.getUser(userId);
-  const email = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
-    ?? clerkUser.emailAddresses[0]?.emailAddress
-    ?? "";
-  const referralCode = await generateUniqueReferralCode();
-
-  const [created] = await db.insert(usersTable).values({
-    id: userId,
-    email,
-    firstName: clerkUser.firstName,
-    lastName: clerkUser.lastName,
-    referralCode,
-  }).onConflictDoNothing().returning();
-
-  // A concurrent request may have won the race and created the row first;
-  // fall back to reading it so callers always get a row back.
-  const user = created ?? (await db.select().from(usersTable).where(eq(usersTable.id, userId)))[0];
-
-  const trimmedInput = referralCodeInput?.trim().toUpperCase();
-  if (created && trimmedInput) {
-    const [referrer] = await db.select().from(usersTable).where(eq(usersTable.referralCode, trimmedInput));
-    // Self-referral is structurally impossible here (a brand-new user cannot
-    // yet know their own code), but guard explicitly for defense in depth.
-    if (referrer && referrer.id !== userId) {
-      await db.insert(referralsTable).values({
-        referrerUserId: referrer.id,
-        referredUserId: userId,
-        referralCode: trimmedInput,
-      }).onConflictDoNothing();
-    }
-  }
-
-  if (created) {
-    await logAudit(userId, "user.account_created", "user", userId, { email: created.email });
-  }
-
-  return user;
+// Rough UA parsing — good enough for the security-timeline display; we
+// don't need a full device-detection library just for this.
+function parseUserAgent(ua?: string): { deviceType?: string; browserName?: string; browserVersion?: string; isMobile?: boolean } {
+  if (!ua) return {};
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(ua);
+  let browserName: string | undefined;
+  let browserVersion: string | undefined;
+  const match = ua.match(/(Chrome|Firefox|Safari|Edge|OPR)\/([\d.]+)/);
+  if (match) { browserName = match[1]; browserVersion = match[2]; }
+  return { deviceType: isMobile ? "mobile" : "desktop", browserName, browserVersion, isMobile };
 }
 
-// POST /account/sync-login — client-triggered session sync. Frontend calls
-// this once per detected Clerk session (see ClerkQueryClientCacheInvalidator /
-// App mount). Replit-managed Clerk has no dashboard/webhook access, so this
-// stands in for a session.created webhook: dedupe by clerkSessionId, and pull
-// real device/IP/geo data from Clerk's backend session activity.
+// POST /account/sync-login — client-triggered session-activity sync, called
+// once per new session (see auth.ts createSession / App mount). Records a
+// `login_events` row for the security timeline, keyed by our own session id
+// (column is still named clerkSessionId — legacy column name, holds our
+// session id now, see auth.ts sessionsTable).
 router.post("/sync-login", async (req, res) => {
   const { userId, sessionId } = getAuth(req);
   if (!userId || !sessionId) return res.status(401).json({ error: "Unauthorized" });
-  const { referralCode } = (req.body ?? {}) as { referralCode?: string };
 
   try {
-    await ensureUserProvisioned(userId, referralCode);
-
     const [existing] = await db.select().from(loginEventsTable).where(eq(loginEventsTable.clerkSessionId, sessionId));
     if (existing) {
       const security = await getOrCreateSecurity(userId);
       return res.json({ event: existing, locked: security.isLocked });
     }
 
-    let activity: {
-      ipAddress?: string; city?: string; country?: string;
-      deviceType?: string; browserName?: string; browserVersion?: string; isMobile?: boolean;
-    } = {};
-    try {
-      const session = await clerkClient.sessions.getSession(sessionId);
-      if (session.latestActivity) {
-        activity = {
-          ipAddress: session.latestActivity.ipAddress,
-          city: session.latestActivity.city,
-          country: session.latestActivity.country,
-          deviceType: session.latestActivity.deviceType,
-          browserName: session.latestActivity.browserName,
-          browserVersion: session.latestActivity.browserVersion,
-          isMobile: session.latestActivity.isMobile,
-        };
-      }
-    } catch (err) {
-      req.log.warn(err, "Failed to fetch Clerk session activity");
-    }
+    // No geo-IP lookup service is wired up (Clerk previously provided city/country
+    // via its activity API) — city/country are always unknown until one is added.
+    const activity: { ipAddress?: string; city?: string; country?: string; deviceType?: string; browserName?: string; browserVersion?: string; isMobile?: boolean } = {
+      ipAddress: req.ip, city: undefined, country: undefined, ...parseUserAgent(req.headers["user-agent"] as string | undefined),
+    };
 
     const priorEvents = await db.select().from(loginEventsTable)
       .where(eq(loginEventsTable.userId, userId))
@@ -168,14 +110,15 @@ router.post("/sync-login", async (req, res) => {
 
     // S29 — concurrent session limit: evict the oldest active session(s)
     // beyond MAX_CONCURRENT_SESSIONS. Never evicts the session that just
-    // authenticated. Best-effort — a Clerk lookup failure here must not
-    // block the login itself.
+    // authenticated. Best-effort — a lookup failure here must not block the
+    // login itself.
     try {
-      const { data: activeSessions } = await clerkClient.sessions.getSessionList({ userId, status: "active" });
-      const sorted = [...activeSessions].sort((a, b) => b.lastActiveAt - a.lastActiveAt);
+      const activeSessions = await db.select().from(sessionsTable)
+        .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gte(sessionsTable.expiresAt, new Date())));
+      const sorted = [...activeSessions].sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
       const toEvict = sorted.filter((s) => s.id !== sessionId).slice(MAX_CONCURRENT_SESSIONS - 1);
       for (const stale of toEvict) {
-        await clerkClient.sessions.revokeSession(stale.id);
+        await revokeSession(stale.id);
       }
       if (toEvict.length > 0) {
         await logAudit(userId, "user.session_evicted", "user", userId, {
@@ -260,27 +203,28 @@ router.get("/login-history", async (req, res) => {
   }
 });
 
-// GET /account/sessions — active Clerk sessions for the current user, with real
-// device/IP/location data from Clerk's backend session activity.
+// GET /account/sessions — active sessions for the current user.
 router.get("/sessions", async (req, res) => {
   const { userId, sessionId: currentSessionId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const { data: sessions } = await clerkClient.sessions.getSessionList({ userId, status: "active" });
+    const sessions = await db.select().from(sessionsTable)
+      .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), gte(sessionsTable.expiresAt, new Date())))
+      .orderBy(desc(sessionsTable.lastSeenAt));
     return res.json(sessions.map((s) => ({
       id: s.id,
       isCurrent: s.id === currentSessionId,
-      status: s.status,
-      lastActiveAt: new Date(s.lastActiveAt).toISOString(),
-      createdAt: new Date(s.createdAt).toISOString(),
-      expireAt: new Date(s.expireAt).toISOString(),
-      ipAddress: s.latestActivity?.ipAddress ?? null,
-      city: s.latestActivity?.city ?? null,
-      country: s.latestActivity?.country ?? null,
-      deviceType: s.latestActivity?.deviceType ?? null,
-      browserName: s.latestActivity?.browserName ?? null,
-      isMobile: s.latestActivity?.isMobile ?? false,
+      status: "active",
+      lastActiveAt: s.lastSeenAt.toISOString(),
+      createdAt: s.createdAt.toISOString(),
+      expireAt: s.expiresAt.toISOString(),
+      ipAddress: s.ipAddress ?? null,
+      city: null,
+      country: null,
+      deviceType: parseUserAgent(s.userAgent ?? undefined).deviceType ?? null,
+      browserName: parseUserAgent(s.userAgent ?? undefined).browserName ?? null,
+      isMobile: parseUserAgent(s.userAgent ?? undefined).isMobile ?? false,
     })));
   } catch (err) {
     req.log.error(err, "Failed to list sessions");
@@ -295,10 +239,10 @@ router.post("/sessions/:sessionId/revoke", async (req, res) => {
   const { sessionId } = req.params;
 
   try {
-    const session = await clerkClient.sessions.getSession(sessionId);
-    if (session.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+    const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, sessionId));
+    if (!session || session.userId !== userId) return res.status(403).json({ error: "Forbidden" });
 
-    await clerkClient.sessions.revokeSession(sessionId);
+    await revokeSession(sessionId);
     return res.json({ ok: true });
   } catch (err) {
     req.log.error(err, "Failed to revoke session");

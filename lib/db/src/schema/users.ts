@@ -1,12 +1,22 @@
 import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { randomUUID } from "crypto";
 
 export const usersTable = pgTable("users", {
-  id: text("id").primaryKey(),
+  // App-generated id (no longer a Clerk id) — a random UUID minted at signup
+  // time, before any row exists, so it can double as the FK every other
+  // table already keys on (adminRoleAssignments, ssoRefreshTokens, etc need
+  // no changes since they were always keyed on plain `text` user ids).
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
   email: text("email").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  // Null when the account was created via Google OAuth only (no password set).
+  passwordHash: text("password_hash"),
+  // Null unless the account is linked to a Google identity.
+  googleId: text("google_id").unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
   role: text("role", { enum: ["user", "clerk", "staff", "admin", "super_admin"] }).notNull().default("user"),
   isActive: boolean("is_active").notNull().default(true),
   // Unique shareable code for the referral program. Generated the first time

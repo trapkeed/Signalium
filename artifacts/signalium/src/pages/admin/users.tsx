@@ -7,7 +7,7 @@ import {
   useGetMyUser,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import { Users, ShieldCheck, User, Crown, Briefcase, ClipboardList, CheckCircle2, XCircle, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -236,15 +236,15 @@ function CreateUserModal({
 export default function AdminUsers() {
   const { data: users, isLoading } = useListUsers();
   const { data: me } = useGetMyUser();
-  const { user: clerkUser } = useUser();
+  const { user: authUser } = useUser();
   const queryClient = useQueryClient();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   const { toast } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Prefer DB role from /users/me; fall back to Clerk publicMetadata during initial load
-  const actorRole = (me?.role ?? clerkUser?.publicMetadata?.role ?? "admin") as UserRole;
+  // Prefer DB role from /users/me; fall back to the auth session's role during initial load
+  const actorRole = (me?.role ?? authUser?.role ?? "admin") as UserRole;
   const isSuperAdmin = actorRole === "super_admin";
 
   const [search, setSearch] = useState("");

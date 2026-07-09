@@ -12,7 +12,7 @@
  * Signalium admin session.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { requireStaff } from "../middlewares/requireAdmin";
 import { getEffectiveAdminRoles } from "../lib/adminRoles";
 import { getJwks, issueTokenPair, refreshTokenPair, revokeRefreshToken, revokeAllTokensForUser, verifyAccessToken, rotateSigningKey, type SsoAudience } from "../lib/sso";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, apiKeysTable, eaRegistrationsTable } from "@workspace/db";
 import { eq, and, count } from "drizzle-orm";
 import crypto from "crypto";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { useGetSupportTicket, useCreateSupportTicketReply, useRequestSupportTicketAttachmentUploadUrl } from "@workspace/api-client-react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";

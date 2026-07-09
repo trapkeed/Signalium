@@ -49,6 +49,7 @@ import opsReadinessRouter from "./ops-readiness";
 import onboardingRouter from "./onboarding";
 import siteContentRouter from "./site-content";
 import adminSecretsRouter from "./admin-secrets";
+import authRouter from "./auth";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -56,9 +57,10 @@ const router: IRouter = Router();
 router.use(healthRouter);
 // Payment webhooks must be reachable regardless of maintenance-lock state
 // (a provider will retry-storm us if we 503 every delivery) and are
-// authenticated by signature verification, not Clerk auth — mounted before
+// authenticated by signature verification, not session auth — mounted before
 // blockWhenLocked and any auth middleware.
 router.use("/payments/webhooks", paymentWebhooksRouter);
+router.use("/auth", authRouter);
 router.use("/account", accountSecurityRouter);
 router.use(blockWhenLocked);
 router.use("/plans", plansRouter);

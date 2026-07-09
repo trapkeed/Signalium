@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import { useGetOpsDashboardOverview } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +66,7 @@ function DistributionList({ data }: { data: Record<string, number> | undefined }
  */
 function useIsAdminLevel(): boolean {
   const { user } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
+  const role = user?.role;
   return role === "admin" || role === "super_admin";
 }
 

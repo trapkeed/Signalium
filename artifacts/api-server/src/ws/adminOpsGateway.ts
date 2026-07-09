@@ -1,6 +1,7 @@
 import type { Server as HttpServer, IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { authenticateRequest, clerkClient } from "@clerk/express";
+import { db, sessionsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { getUserRole } from "../middlewares/requireAdmin";
 import { isStaffLevel } from "../lib/roles";
 import { logger } from "../lib/logger";
@@ -120,23 +121,26 @@ export function attachAdminOpsGateway(server: HttpServer) {
   return wss;
 }
 
+function extractSessionCookie(req: IncomingMessage): string | undefined {
+  const header = req.headers.cookie;
+  if (!header) return undefined;
+  for (const part of header.split(";")) {
+    const [name, ...rest] = part.trim().split("=");
+    if (name === "sid") return decodeURIComponent(rest.join("="));
+  }
+  return undefined;
+}
+
 async function authenticateAdminRequest(req: IncomingMessage): Promise<boolean> {
-  const requestState = await authenticateRequest({
-    clerkClient,
-    // authenticateRequest accepts a raw Node IncomingMessage (it converts it
-    // to a fetch Request internally) — not an Express Request.
-    request: req as unknown as Parameters<typeof authenticateRequest>[0]["request"],
-    options: {
-      secretKey: process.env.CLERK_SECRET_KEY,
-      publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
-    },
-  });
+  const token = extractSessionCookie(req);
+  if (!token) return false;
 
-  const auth = requestState.toAuth();
-  const userId = auth?.userId;
-  if (!userId) return false;
+  const crypto = await import("crypto");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.tokenHash, tokenHash));
+  if (!session || session.revokedAt || session.expiresAt.getTime() < Date.now()) return false;
 
-  const role = await getUserRole(userId);
+  const role = await getUserRole(session.userId);
   return !!role && isStaffLevel(role);
 }
 

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, accountSecurityTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 

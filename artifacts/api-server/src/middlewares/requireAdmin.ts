@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, usersTable, adminSessionActivityTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { isAdminLevel, isStaffLevel, isSuperAdmin, hasPermission, type UserRole, type Permission } from "../lib/roles";

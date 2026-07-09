@@ -9,12 +9,13 @@
  *    give admins one place to see everything the platform depends on.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, adminSecretsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireSuperAdmin } from "../middlewares/requireAdmin";
 import { encryptSecret, decryptSecret, maskSecret } from "../lib/secretsVault";
 import { logAudit } from "../lib/auditLog";
+import { getGoogleCredentials, setGoogleCredentials } from "../lib/googleOAuth";
 
 const router = Router();
 
@@ -23,9 +24,6 @@ const router = Router();
 const SYSTEM_ENV_KEYS: { key: string; category: string; description: string }[] = [
   { key: "DATABASE_URL", category: "db_credential", description: "PostgreSQL connection string." },
   { key: "SESSION_SECRET", category: "signing_key", description: "Signs sessions, tokens, and encrypts admin secrets." },
-  { key: "CLERK_SECRET_KEY", category: "api_key", description: "Clerk server-side auth API key." },
-  { key: "CLERK_PUBLISHABLE_KEY", category: "api_key", description: "Clerk publishable key (frontend)." },
-  { key: "VITE_CLERK_PUBLISHABLE_KEY", category: "api_key", description: "Clerk publishable key exposed to the Vite frontend build." },
   { key: "QDE_TRAINER_URL", category: "other", description: "Base URL of the signalium-trainer service the QDE loop talks to." },
   { key: "QDE_TRAINER_API_KEY", category: "api_key", description: "Service credential used to authenticate to signalium-trainer." },
   { key: "QDE_RESEARCH_LAB_URL", category: "other", description: "Base URL of the Research Lab integration hub." },
@@ -143,6 +141,37 @@ router.delete("/:id", requireSuperAdmin, async (req, res) => {
     return res.json({ success: true });
   } catch (err) {
     req.log.error(err, "Failed to delete admin secret");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── Google OAuth credentials — admin-configurable "Continue with Google" ──
+
+router.get("/google-oauth", requireSuperAdmin, async (req, res) => {
+  try {
+    const creds = await getGoogleCredentials();
+    return res.json({
+      configured: !!creds,
+      clientId: creds ? creds.clientId : null,
+    });
+  } catch (err) {
+    req.log.error(err, "Failed to fetch Google OAuth status");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/google-oauth", requireSuperAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  const { clientId, clientSecret } = req.body as { clientId?: string; clientSecret?: string };
+  if (!clientId || !clientSecret) return res.status(400).json({ error: "clientId and clientSecret are required" });
+
+  try {
+    await setGoogleCredentials(clientId, clientSecret, userId);
+    await logAudit(userId, "admin_secret.updated", "oauth_credentials", "google", { key: "google_oauth" });
+    return res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err, "Failed to set Google OAuth credentials");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

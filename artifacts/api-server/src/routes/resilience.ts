@@ -6,7 +6,7 @@
  * status) must never be visible to a normal user.
  */
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { listBackups, runBackup, validateBackup, buildRestorePlan } from "../lib/backupService";
 import { getQueueStats, listDeadLetterJobs, requeueJob } from "../lib/jobQueue";

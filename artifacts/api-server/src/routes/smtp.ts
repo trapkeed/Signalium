@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, smtpSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
+import { encryptSecret } from "../lib/secretsVault";
 
 const router = Router();
 
@@ -48,7 +49,7 @@ router.post("/", async (req, res) => {
       await db.update(smtpSettingsTable).set({ isActive: false, updatedAt: new Date() });
     }
     const [settings] = await db.insert(smtpSettingsTable).values({
-      host, port: port ?? 587, username, password, fromEmail,
+      host, port: port ?? 587, username, password: encryptSecret(password), fromEmail,
       fromName: fromName ?? "Signalium",
       useTls: useTls ?? true,
       isActive: isActive ?? false,
@@ -76,7 +77,7 @@ router.patch("/:id", async (req, res) => {
     const [settings] = await db.update(smtpSettingsTable)
       .set({
         ...(host && { host }), ...(port && { port }), ...(username && { username }),
-        ...(password && { password }), ...(fromEmail && { fromEmail }),
+        ...(password && { password: encryptSecret(password) }), ...(fromEmail && { fromEmail }),
         ...(fromName && { fromName }), ...(useTls !== undefined && { useTls }),
         ...(isActive !== undefined && { isActive }), updatedAt: new Date(),
       })
@@ -112,7 +113,10 @@ router.post("/test", async (req, res) => {
   try {
     const [settings] = await db.select().from(smtpSettingsTable).where(eq(smtpSettingsTable.isActive, true));
     if (!settings) return res.status(400).json({ error: "No active SMTP configuration" });
-    return res.json({ ok: true, message: `Test email would be sent to ${to} via ${settings.host}:${settings.port}` });
+    const { sendMail } = await import("../lib/mailer");
+    const sent = await sendMail({ to, subject: "Signalium SMTP test", html: `<p>This is a test email from Signalium via ${settings.host}:${settings.port}.</p>` });
+    if (!sent) return res.status(502).json({ error: "Failed to send test email — check SMTP settings" });
+    return res.json({ ok: true, message: `Test email sent to ${to} via ${settings.host}:${settings.port}` });
   } catch (err) {
     req.log.error(err, "Failed to test SMTP");
     return res.status(500).json({ error: "Internal server error" });

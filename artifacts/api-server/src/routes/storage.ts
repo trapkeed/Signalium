@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,

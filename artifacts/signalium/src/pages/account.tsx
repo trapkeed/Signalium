@@ -1,4 +1,4 @@
-import { useUser, UserProfile } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SecurityTab } from "@/components/account/security-tab";
 import { PrivacyTab } from "@/components/account/privacy-tab";
@@ -37,21 +37,20 @@ export default function Account() {
           </TabsList>
 
           <TabsContent value="profile" className="mt-6 max-w-3xl">
-            <UserProfile
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "bg-card border border-border shadow-none rounded-lg",
-                  navbar: "bg-secondary border-r border-border",
-                  navbarButton: "text-muted-foreground hover:text-foreground hover:bg-secondary",
-                  navbarButtonActive: "text-foreground bg-secondary",
-                  pageScrollBox: "bg-card",
-                  formFieldInput: "bg-input border-border text-foreground rounded-lg",
-                  formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg",
-                  badge: "bg-primary/10 text-primary",
-                },
-              }}
-            />
+            <div className="bg-card border border-border rounded-lg p-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</span>
+                <span className="text-sm">{[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "—"}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</span>
+                <span className="text-sm">{user?.email}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sign-in method</span>
+                <span className="text-sm">{user?.googleId ? "Google" : "Email & password"}</span>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="billing" className="mt-6">

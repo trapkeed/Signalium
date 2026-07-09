@@ -11,8 +11,6 @@
     "migrate:seo-assets": "tsx src/scripts/migrate-static-seo-assets.ts"
   },
   "dependencies": {
-    "@clerk/express": "^2.1.36",
-    "@clerk/shared": "^4.24.0",
     "@google-cloud/storage": "^7.21.0",
     "@swc/helpers": "^0.5.23",
     "@workspace/api-zod": "workspace:*",

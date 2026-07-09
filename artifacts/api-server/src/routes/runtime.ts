@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, runtimeStatusTable, telemetryTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { RecordTelemetryBody, RecordHeartbeatBody } from "@workspace/api-zod";

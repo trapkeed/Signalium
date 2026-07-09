@@ -8,7 +8,7 @@
  * access itself.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { requireSuperAdmin } from "../middlewares/requireAdmin";
 import { ADMIN_ROLE_NAMES, ADMIN_ROLE_LABELS, type AdminRoleName } from "../lib/roles";
 import { grantAdminRole, revokeAdminRole, getGrantedAdminRoles, assumeRole, endActiveAssumption, getActiveAssumptionSummary } from "../lib/adminRoles";

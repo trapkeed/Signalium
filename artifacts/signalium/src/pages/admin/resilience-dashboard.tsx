@@ -9,7 +9,7 @@
  * docs/DISASTER_RECOVERY.md.
  */
 import { useState } from "react";
-import { useUser } from "@clerk/react";
+import { useUser } from "@/hooks/use-auth";
 import {
   useGetResilienceBackups,
   usePostResilienceBackupsRun,
@@ -52,7 +52,7 @@ function SectionCard({ title, icon: Icon, action, children }: { title: string; i
 
 function useIsAdminLevel(): boolean {
   const { user } = useUser();
-  const role = user?.publicMetadata?.role as string | undefined;
+  const role = user?.role;
   return role === "admin" || role === "super_admin";
 }
 

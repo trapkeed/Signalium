@@ -8,7 +8,7 @@
  * exist, and needs no separate write path to keep in sync.
  */
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth } from "../lib/auth";
 import { db, subscriptionsTable, apiKeysTable, eaBuildsTable, eaRegistrationsTable, usersTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { logAudit } from "../lib/auditLog";

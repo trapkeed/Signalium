@@ -85,8 +85,6 @@ async function checkDatabase(): Promise<ReadinessCheck> {
 // these is a hard misconfiguration, not just a "degraded feature".
 const REQUIRED_PRODUCTION_ENV_VARS = [
   "SESSION_SECRET",
-  "CLERK_SECRET_KEY",
-  "CLERK_PUBLISHABLE_KEY",
 ];
 
 function checkRequiredEnvVars(): ReadinessCheck {

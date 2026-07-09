@@ -14,6 +14,7 @@ import {
   XCircle,
   ShieldAlert,
   Copy,
+  Chrome,
 } from "lucide-react";
 
 const BASE = (import.meta as any).env?.BASE_URL ?? "/";
@@ -21,7 +22,7 @@ const BASE = (import.meta as any).env?.BASE_URL ?? "/";
 async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE}api/admin/secrets${path}`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(opts.headers ?? {}) },
+    headers: { "Content-Type": "application/json", "x-requested-with": "XMLHttpRequest", ...(opts.headers ?? {}) },
     ...opts,
   });
   if (!res.ok) {
@@ -266,6 +267,98 @@ function ManagedSecretsTab() {
   );
 }
 
+interface GoogleOAuthStatus {
+  configured: boolean;
+  clientId: string | null;
+}
+
+function GoogleOAuthTab() {
+  const { toast } = useToast();
+  const [status, setStatus] = useState<GoogleOAuthStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  function refresh() {
+    api<GoogleOAuthStatus>("/google-oauth").then(setStatus).catch((e) => setError(e.message));
+  }
+
+  useEffect(() => { refresh(); }, []);
+
+  async function save() {
+    if (!clientId.trim() || !clientSecret.trim()) {
+      toast({ title: "Client ID and Client Secret are required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await api("/google-oauth", { method: "POST", body: JSON.stringify({ clientId: clientId.trim(), clientSecret: clientSecret.trim() }) });
+      toast({ title: "Google OAuth credentials saved" });
+      setClientId(""); setClientSecret("");
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Failed to save Google OAuth credentials", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (error) return <div className="text-sm text-destructive font-mono">{error}</div>;
+
+  return (
+    <div className="flex flex-col gap-4 max-w-lg">
+      <div className="flex items-start gap-2 rounded-sm bg-amber-500/10 border border-amber-500/30 px-4 py-3">
+        <ShieldAlert className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+        <p className="text-xs font-mono text-amber-600 dark:text-amber-400">
+          The client secret is encrypted at rest (AES-256-GCM). Redirect URI to register in Google Cloud Console: <span className="break-all">{`${window.location.origin}${BASE}api/auth/google/callback`}</span>
+        </p>
+      </div>
+
+      <div className="border border-border rounded-sm bg-card p-4 flex items-center gap-3">
+        <Chrome className="w-4 h-4 text-muted-foreground" />
+        {status === null ? (
+          <span className="text-xs font-mono text-muted-foreground">Loading…</span>
+        ) : status.configured ? (
+          <span className="flex items-center gap-1.5 text-xs font-mono text-success">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Configured — client ID {status.clientId}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs font-mono text-destructive">
+            <XCircle className="w-3.5 h-3.5" /> Not configured — "Continue with Google" is disabled
+          </span>
+        )}
+      </div>
+
+      <div className="border border-border rounded-sm bg-card p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Client ID</label>
+          <Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="xxxxx.apps.googleusercontent.com" className="font-mono text-xs" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Client Secret</label>
+          <div className="relative">
+            <Input
+              type={showSecret ? "text" : "password"}
+              value={clientSecret}
+              onChange={(e) => setClientSecret(e.target.value)}
+              placeholder="Client secret"
+              className="font-mono text-xs pr-10"
+            />
+            <button type="button" onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+              {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button size="sm" className="font-mono text-xs" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save Credentials"}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSecrets() {
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
@@ -281,9 +374,11 @@ export default function AdminSecrets() {
           <TabsList className="rounded-sm mb-6 bg-secondary/50 border border-border">
             <TabsTrigger value="system" className="rounded-sm font-mono text-xs">System Environment</TabsTrigger>
             <TabsTrigger value="managed" className="rounded-sm font-mono text-xs">Managed Secrets</TabsTrigger>
+            <TabsTrigger value="google-oauth" className="rounded-sm font-mono text-xs">Google OAuth</TabsTrigger>
           </TabsList>
           <TabsContent value="system"><SystemSecretsTab /></TabsContent>
           <TabsContent value="managed"><ManagedSecretsTab /></TabsContent>
+          <TabsContent value="google-oauth"><GoogleOAuthTab /></TabsContent>
         </Tabs>
       </div>
     </div>
