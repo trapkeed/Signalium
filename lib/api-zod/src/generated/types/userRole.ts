@@ -11,5 +11,8 @@ export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export const UserRole = {
   user: 'user',
+  clerk: 'clerk',
+  staff: 'staff',
   admin: 'admin',
+  super_admin: 'super_admin',
 } as const;

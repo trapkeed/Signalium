@@ -163,7 +163,8 @@ function NavSection({
 function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
   const [location] = useLocation();
   const { user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const userRole = user?.publicMetadata?.role as string | undefined;
+  const isAdmin = !!userRole && userRole !== "user";
   const referralsEnabled = useFeatureFlag("referrals_enabled");
 
   const adminGroups = ADMIN_GROUPS.map((group) => ({

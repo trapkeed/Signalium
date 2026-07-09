@@ -7,7 +7,7 @@ export const usersTable = pgTable("users", {
   email: text("email").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+  role: text("role", { enum: ["user", "clerk", "staff", "admin", "super_admin"] }).notNull().default("user"),
   isActive: boolean("is_active").notNull().default(true),
   // Unique shareable code for the referral program. Generated the first time
   // the user's row is provisioned (see account-security.ts sync-login, which

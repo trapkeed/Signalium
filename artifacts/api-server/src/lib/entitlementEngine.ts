@@ -7,12 +7,14 @@ import {
   apiKeysTable,
   positionTelemetryTable,
   userSymbolsTable,
+  usersTable,
   type Subscription,
   type Plan,
   type SubscriptionEvent,
 } from "@workspace/db";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { logger } from "./logger";
+import { isPrivilegedRole } from "./roles";
 
 type DbOrTx = Pick<typeof db, "insert" | "select" | "update">;
 
@@ -169,8 +171,18 @@ function statusDenial(status: Subscription["status"]): EntitlementDenial | null 
   }
 }
 
+/**
+ * Returns true when the user holds a privileged platform role (clerk, staff,
+ * admin, super_admin) that grants blanket free access to all paid features.
+ */
+async function hasPrivilegedRole(userId: string): Promise<boolean> {
+  const [user] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId));
+  return !!user && isPrivilegedRole(user.role);
+}
+
 /** Manual dashboard/platform use — allowed through ACTIVE and GRACE_PERIOD, denied otherwise. */
 export async function checkManualAccess(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const denial = statusDenial(snapshot.subscription.status);
@@ -180,6 +192,7 @@ export async function checkManualAccess(userId: string): Promise<EntitlementResu
 
 /** Autonomous trainer actions — requires an ACTIVE subscription (not grace) AND the plan allowing autonomous mode. */
 export async function checkAutonomousAccess(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const { subscription, plan } = snapshot;
@@ -198,6 +211,7 @@ export async function checkAutonomousAccess(userId: string): Promise<Entitlement
 
 /** API key issuance + EA WebSocket/HTTP polling — requires a truly ACTIVE subscription (grace period explicitly denies EA polling per spec) AND the plan allowing API access. */
 export async function checkApiAccess(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const { subscription, plan } = snapshot;
@@ -221,6 +235,7 @@ export async function checkEaGenerationAccess(userId: string): Promise<Entitleme
 
 /** Research/analytics surfaces — gated on plan.researchAccess in addition to base manual access. */
 export async function checkResearchAccess(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const denial = statusDenial(snapshot.subscription.status);
@@ -233,6 +248,7 @@ export async function checkResearchAccess(userId: string): Promise<EntitlementRe
 
 /** Checks whether the user can register one more active EA terminal under their plan's maxEas limit (null = unlimited). */
 export async function checkMaxActiveEas(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const denial = statusDenial(snapshot.subscription.status);
@@ -257,6 +273,7 @@ export async function checkMaxActiveEas(userId: string): Promise<EntitlementResu
 
 /** Checks whether adding `symbol` would exceed the plan's maxSymbols limit (null = unlimited), based on distinct symbols already seen for this user's recent telemetry. */
 export async function checkSymbolLimit(userId: string, symbol: string | null | undefined): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const denial = statusDenial(snapshot.subscription.status);
@@ -283,6 +300,7 @@ export async function checkSymbolLimit(userId: string, symbol: string | null | u
  * Used by POST /symbols/user before inserting.
  */
 export async function checkUserSymbolLimit(userId: string): Promise<EntitlementResult> {
+  if (await hasPrivilegedRole(userId)) return allow();
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) return deny("SUBSCRIPTION_REQUIRED", "An active subscription is required.");
   const denial = statusDenial(snapshot.subscription.status);
@@ -307,6 +325,20 @@ export async function checkUserSymbolLimit(userId: string): Promise<EntitlementR
 
 /** Full entitlement summary for a user — resolved capabilities/limits, suitable for surfacing in account/billing UI and admin plan displays. */
 export async function getEntitlementSummary(userId: string) {
+  if (await hasPrivilegedRole(userId)) {
+    return {
+      status: "privileged" as const,
+      manualAllowed: true,
+      autonomousAllowed: true,
+      eaGenerationAllowed: true,
+      apiAccessAllowed: true,
+      researchAccess: true,
+      maxSymbols: null,
+      maxActiveEas: null,
+      graceEndsAt: null,
+      planName: "Internal Access",
+    };
+  }
   const snapshot = await resolveCurrentSubscription(userId);
   if (!snapshot) {
     return {

@@ -797,7 +797,7 @@ export const ListUsersResponseItem = zod.object({
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "role": zod.enum(['user', 'admin']),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),
@@ -814,7 +814,7 @@ export const GetMyUserResponse = zod.object({
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "role": zod.enum(['user', 'admin']),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),
@@ -836,7 +836,7 @@ export const UpdateMyUserResponse = zod.object({
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "role": zod.enum(['user', 'admin']),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),
@@ -856,7 +856,7 @@ export const GetUserResponse = zod.object({
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "role": zod.enum(['user', 'admin']),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),
@@ -872,7 +872,7 @@ export const UpdateUserParams = zod.object({
 })
 
 export const UpdateUserBody = zod.object({
-  "role": zod.enum(['user', 'admin']).optional(),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']).optional(),
   "isActive": zod.boolean().optional()
 })
 
@@ -881,7 +881,7 @@ export const UpdateUserResponse = zod.object({
   "email": zod.string(),
   "firstName": zod.string().nullish(),
   "lastName": zod.string().nullish(),
-  "role": zod.enum(['user', 'admin']),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
   "isActive": zod.boolean().optional(),
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),

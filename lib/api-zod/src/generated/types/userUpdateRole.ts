@@ -11,5 +11,8 @@ export type UserUpdateRole = typeof UserUpdateRole[keyof typeof UserUpdateRole];
 
 export const UserUpdateRole = {
   user: 'user',
+  clerk: 'clerk',
+  staff: 'staff',
   admin: 'admin',
+  super_admin: 'super_admin',
 } as const;
