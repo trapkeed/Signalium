@@ -5416,6 +5416,52 @@ paths:
                   deployment:
                     allOf: [{ $ref: "#/components/schemas/ServiceDeployment" }]
 
+  /operational/alert-channels:
+    get:
+      summary: Admin — alert delivery channel settings
+      tags: [Operational]
+      responses:
+        "200":
+          description: Alert channel settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertChannelSettings" }
+    patch:
+      summary: Admin — update alert delivery channel settings
+      tags: [Operational]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emailEnabled: { type: boolean }
+                emailRecipients: { type: array, items: { type: string } }
+                telegramEnabled: { type: boolean }
+                discordEnabled: { type: boolean }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertChannelSettings" }
+
+  /operational/symbol-health:
+    get:
+      summary: Admin — per-symbol data/sync/normalization health
+      tags: [Operational]
+      responses:
+        "200":
+          description: Symbol health rows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  symbols: { type: array, items: { $ref: "#/components/schemas/SymbolHealth" } }
+                  generatedAt: { type: string }
+
   /operational/support/user/{userId}:
     get:
       summary: Staff — safe user support view (no credentials)
@@ -8591,6 +8637,45 @@ components:
         acknowledgedBy: { type: string, nullable: true }
         metadata: { type: object, nullable: true }
         createdAt: { type: string }
+        delivery:
+          type: array
+          items:
+            type: object
+            properties:
+              channel: { type: string, enum: [email, telegram, discord] }
+              status: { type: string, enum: [sent, failed, skipped, not_configured] }
+              detail: { type: string, nullable: true }
+
+    AlertChannelSettings:
+      type: object
+      properties:
+        id: { type: string }
+        emailEnabled: { type: boolean }
+        emailRecipients: { type: array, items: { type: string } }
+        telegramEnabled: { type: boolean }
+        discordEnabled: { type: boolean }
+        telegramConfigured: { type: boolean }
+        discordConfigured: { type: boolean }
+        updatedAt: { type: string }
+
+    SymbolHealth:
+      type: object
+      properties:
+        symbolId: { type: integer }
+        canonicalSymbol: { type: string }
+        displayName: { type: string }
+        categoryId: { type: integer }
+        enabled: { type: boolean }
+        syncStatus: { type: string, enum: [synced, degraded, unsynced] }
+        normalizationStatus: { type: string, enum: [resolved, partial, unresolved, no_data] }
+        normalizationResolvedRate: { type: number, nullable: true }
+        brokerMappingCoverage: { type: integer }
+        totalActiveBrokers: { type: integer }
+        lastDataAt: { type: string, nullable: true }
+        feedLatencyMs: { type: number, nullable: true }
+        mappedProviderCount: { type: integer }
+        reachableProviderCount: { type: integer }
+        qualityScore: { type: integer }
 
     OperationalDashboard:
       type: object

@@ -1,0 +1,11 @@
+---
+name: S23b Alerting Engine & Symbol Health
+description: Alert dispatch/dedup patterns, Telegram/Discord optional-secret gating, and symbol-health approximation approach.
+---
+
+- Alert delivery channels (email/Telegram/Discord) are gated purely on env-secret presence checked at request time (`process.env.TELEGRAM_BOT_TOKEN` etc.), never assumed configured. Every attempt — including "not configured" — is written to a per-(alert,channel) delivery log via upsert, so the Alerts admin UI shows real per-channel status instead of guessing. Extend this pattern (not a new one) if more channels are added.
+- Platform-wide (non-EA-scoped) alert dedup uses a generalized `hasRecentPlatformAlert(type, windowMs)` helper in `alerting.ts` — checks for an unacknowledged alert of the same type within a cooldown window before emitting. Kept separate from the older EA-instance-scoped `hasOpenAlert` in operational.ts since the two have different scoping keys.
+- Periodic background sweeps (alert detectors, platform health) must guard against overlapping runs with an in-memory reentrancy flag — a slow DB call can otherwise let two sweep intervals run concurrently, each passing the dedup check before the other's insert is visible, producing duplicate alerts. This is a recurring pattern across all interval-based checkers in this codebase (platformHealth.ts, alertDetectors.ts).
+- **Why:** code review after the S23b build flagged this race as the top risk before the guard was added.
+- No candle/quote ingestion table exists in this schema. Symbol Health's "last data" / feed latency are approximated from `provider_status.lastSuccessAt`/`latencyMs` (joined via `provider_symbol_mappings`), documented in code/UI copy as an approximation — do not silently upgrade this to look like real market-data telemetry without adding actual ingestion first.
+- drizzle-kit push can pick up stale `.d.ts`/tsbuildinfo from project-referenced packages (e.g. `@workspace/db`) after adding new exported tables — if `tsc --noEmit` in a dependent package reports "no exported member" for something that's clearly exported, rebuild the referenced project (`tsc -b --force` in the lib) rather than assuming the code is wrong.

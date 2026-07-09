@@ -238,11 +238,30 @@ function simulateInferenceHeuristic(request: InferenceRequest): InferenceRespons
  * identical either way, so swapping in a real trainer requires no changes to
  * the platform's forwarding/queueing logic.
  */
+// ─── S23b: trainer availability tracking ───────────────────────────────────
+// In-memory counters (per process) so the alerting engine can detect a
+// trainer that's persistently failing, without adding a DB round-trip to the
+// hot telemetry-ingest path. Reset on the next successful decision.
+let consecutiveTrainerFailures = 0;
+let lastTrainerFailureAt: Date | null = null;
+
+export function getTrainerFailureState(): { consecutiveFailures: number; lastFailureAt: Date | null } {
+  return { consecutiveFailures: consecutiveTrainerFailures, lastFailureAt: lastTrainerFailureAt };
+}
+
 export async function decideAction(telemetry: TelemetrySnapshot): Promise<TrainerDecision> {
-  return retryWithBackoff(() => runTrainer(telemetry), {
-    retries: 3,
-    baseDelayMs: 150,
-  });
+  try {
+    const decision = await retryWithBackoff(() => runTrainer(telemetry), {
+      retries: 3,
+      baseDelayMs: 150,
+    });
+    consecutiveTrainerFailures = 0;
+    return decision;
+  } catch (err) {
+    consecutiveTrainerFailures += 1;
+    lastTrainerFailureAt = new Date();
+    throw err;
+  }
 }
 
 async function runTrainer(t: TelemetrySnapshot): Promise<TrainerDecision> {

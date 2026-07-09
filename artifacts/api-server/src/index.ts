@@ -5,6 +5,7 @@ import { attachEaGateway } from "./ws/eaGateway";
 import { deploymentManager } from "./lib/deploymentManager";
 import { startPlatformHealthMonitor, markSchedulerHeartbeat } from "./lib/platformHealth";
 import { recordBackendDeploymentIfChanged } from "./lib/serviceVersion";
+import { startAlertSweep } from "./lib/alertDetectors";
 
 const rawPort = process.env["PORT"];
 
@@ -38,6 +39,12 @@ attachEaGateway(server);
 // S23a: Platform-level system health monitoring (CPU/RAM/event-loop lag/DB
 // latency/WS connections), independent of QDE deployment health.
 startPlatformHealthMonitor(60 * 1_000); // sample every 60 seconds
+
+// S23b: Alerting engine — periodic detectors for trainer/inference/latency/DB/
+// payment/data-provider/market-wide issues, deduped and dispatched to
+// configured delivery channels (dashboard + email always; Telegram/Discord
+// when credentials are present).
+startAlertSweep(2 * 60_000); // sweep every 2 minutes
 
 // S23a: Record the backend's current git commit as a deployment version
 // (display-only, for the admin deployment dashboard's rollback reference).

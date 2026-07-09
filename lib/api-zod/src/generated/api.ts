@@ -6118,7 +6118,12 @@ export const GetOperationalAlertsResponse = zod.object({
   "metadata": zod.object({
 
 }).nullish(),
-  "createdAt": zod.string().optional()
+  "createdAt": zod.string().optional(),
+  "delivery": zod.array(zod.object({
+  "channel": zod.enum(['email', 'telegram', 'discord']).optional(),
+  "status": zod.enum(['sent', 'failed', 'skipped', 'not_configured']).optional(),
+  "detail": zod.string().nullish()
+})).optional()
 })).optional(),
   "total": zod.number().optional(),
   "unacknowledgedCount": zod.number().optional()
@@ -6280,6 +6285,68 @@ export const PostOperationalDeploymentsVersionsResponse = zod.object({
 
 
 /**
+ * @summary Admin — alert delivery channel settings
+ */
+export const GetOperationalAlertChannelsResponse = zod.object({
+  "id": zod.string().optional(),
+  "emailEnabled": zod.boolean().optional(),
+  "emailRecipients": zod.array(zod.string()).optional(),
+  "telegramEnabled": zod.boolean().optional(),
+  "discordEnabled": zod.boolean().optional(),
+  "telegramConfigured": zod.boolean().optional(),
+  "discordConfigured": zod.boolean().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Admin — update alert delivery channel settings
+ */
+export const PatchOperationalAlertChannelsBody = zod.object({
+  "emailEnabled": zod.boolean().optional(),
+  "emailRecipients": zod.array(zod.string()).optional(),
+  "telegramEnabled": zod.boolean().optional(),
+  "discordEnabled": zod.boolean().optional()
+})
+
+export const PatchOperationalAlertChannelsResponse = zod.object({
+  "id": zod.string().optional(),
+  "emailEnabled": zod.boolean().optional(),
+  "emailRecipients": zod.array(zod.string()).optional(),
+  "telegramEnabled": zod.boolean().optional(),
+  "discordEnabled": zod.boolean().optional(),
+  "telegramConfigured": zod.boolean().optional(),
+  "discordConfigured": zod.boolean().optional(),
+  "updatedAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Admin — per-symbol data/sync/normalization health
+ */
+export const GetOperationalSymbolHealthResponse = zod.object({
+  "symbols": zod.array(zod.object({
+  "symbolId": zod.number().optional(),
+  "canonicalSymbol": zod.string().optional(),
+  "displayName": zod.string().optional(),
+  "categoryId": zod.number().optional(),
+  "enabled": zod.boolean().optional(),
+  "syncStatus": zod.enum(['synced', 'degraded', 'unsynced']).optional(),
+  "normalizationStatus": zod.enum(['resolved', 'partial', 'unresolved', 'no_data']).optional(),
+  "normalizationResolvedRate": zod.number().nullish(),
+  "brokerMappingCoverage": zod.number().optional(),
+  "totalActiveBrokers": zod.number().optional(),
+  "lastDataAt": zod.string().nullish(),
+  "feedLatencyMs": zod.number().nullish(),
+  "mappedProviderCount": zod.number().optional(),
+  "reachableProviderCount": zod.number().optional(),
+  "qualityScore": zod.number().optional()
+})).optional(),
+  "generatedAt": zod.string().optional()
+})
+
+
+/**
  * @summary Staff — safe user support view (no credentials)
  */
 export const GetOperationalSupportUserUserIdParams = zod.object({
@@ -6336,7 +6403,12 @@ export const GetOperationalSupportUserUserIdResponse = zod.object({
   "metadata": zod.object({
 
 }).nullish(),
-  "createdAt": zod.string().optional()
+  "createdAt": zod.string().optional(),
+  "delivery": zod.array(zod.object({
+  "channel": zod.enum(['email', 'telegram', 'discord']).optional(),
+  "status": zod.enum(['sent', 'failed', 'skipped', 'not_configured']).optional(),
+  "detail": zod.string().nullish()
+})).optional()
 })).optional()
 })
 

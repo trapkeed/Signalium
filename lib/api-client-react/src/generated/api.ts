@@ -26,6 +26,7 @@ import type {
   ActiveStatus,
   AddUserSymbolBody,
   AdminStatus,
+  AlertChannelSettings,
   Announcement,
   AnnouncementInput,
   AnnouncementUpdate,
@@ -82,6 +83,7 @@ import type {
   GetOperationalPlatformHealthParams,
   GetOperationalRiskAlerts200,
   GetOperationalRiskAlertsParams,
+  GetOperationalSymbolHealth200,
   GetOperationalTelemetry200,
   GetOperationalTelemetryParams,
   GetOperationalTelemetryReplay200,
@@ -151,6 +153,7 @@ import type {
   Notification,
   OperationalDashboard,
   Opportunity,
+  PatchOperationalAlertChannelsBody,
   PatchOperationalIncidentsId200,
   PatchQdeAdminReasoningValidationIdBody,
   PatchQdeAdminTradeFailuresIdBody,
@@ -21240,6 +21243,231 @@ export const usePostOperationalDeploymentsVersions = <TError = ErrorType<unknown
       > => {
       return useMutation(getPostOperationalDeploymentsVersionsMutationOptions(options));
     }
+
+export const getGetOperationalAlertChannelsUrl = () => {
+
+
+
+
+  return `/api/operational/alert-channels`
+}
+
+/**
+ * @summary Admin — alert delivery channel settings
+ */
+export const getOperationalAlertChannels = async ( options?: RequestInit): Promise<AlertChannelSettings> => {
+
+  return customFetch<AlertChannelSettings>(getGetOperationalAlertChannelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalAlertChannelsQueryKey = () => {
+    return [
+    `/api/operational/alert-channels`
+    ] as const;
+    }
+
+
+export const getGetOperationalAlertChannelsQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalAlertChannels>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlertChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalAlertChannelsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalAlertChannels>>> = ({ signal }) => getOperationalAlertChannels({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlertChannels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalAlertChannelsQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalAlertChannels>>>
+export type GetOperationalAlertChannelsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — alert delivery channel settings
+ */
+
+export function useGetOperationalAlertChannels<TData = Awaited<ReturnType<typeof getOperationalAlertChannels>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalAlertChannels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalAlertChannelsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPatchOperationalAlertChannelsUrl = () => {
+
+
+
+
+  return `/api/operational/alert-channels`
+}
+
+/**
+ * @summary Admin — update alert delivery channel settings
+ */
+export const patchOperationalAlertChannels = async (patchOperationalAlertChannelsBody: PatchOperationalAlertChannelsBody, options?: RequestInit): Promise<AlertChannelSettings> => {
+
+  return customFetch<AlertChannelSettings>(getPatchOperationalAlertChannelsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchOperationalAlertChannelsBody)
+  }
+);}
+
+
+
+
+
+export const getPatchOperationalAlertChannelsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOperationalAlertChannels>>, TError,{data: BodyType<PatchOperationalAlertChannelsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchOperationalAlertChannels>>, TError,{data: BodyType<PatchOperationalAlertChannelsBody>}, TContext> => {
+
+const mutationKey = ['patchOperationalAlertChannels'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchOperationalAlertChannels>>, {data: BodyType<PatchOperationalAlertChannelsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  patchOperationalAlertChannels(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchOperationalAlertChannelsMutationResult = NonNullable<Awaited<ReturnType<typeof patchOperationalAlertChannels>>>
+    export type PatchOperationalAlertChannelsMutationBody = BodyType<PatchOperationalAlertChannelsBody>
+    export type PatchOperationalAlertChannelsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — update alert delivery channel settings
+ */
+export const usePatchOperationalAlertChannels = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOperationalAlertChannels>>, TError,{data: BodyType<PatchOperationalAlertChannelsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof patchOperationalAlertChannels>>,
+        TError,
+        {data: BodyType<PatchOperationalAlertChannelsBody>},
+        TContext
+      > => {
+      return useMutation(getPatchOperationalAlertChannelsMutationOptions(options));
+    }
+
+export const getGetOperationalSymbolHealthUrl = () => {
+
+
+
+
+  return `/api/operational/symbol-health`
+}
+
+/**
+ * @summary Admin — per-symbol data/sync/normalization health
+ */
+export const getOperationalSymbolHealth = async ( options?: RequestInit): Promise<GetOperationalSymbolHealth200> => {
+
+  return customFetch<GetOperationalSymbolHealth200>(getGetOperationalSymbolHealthUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperationalSymbolHealthQueryKey = () => {
+    return [
+    `/api/operational/symbol-health`
+    ] as const;
+    }
+
+
+export const getGetOperationalSymbolHealthQueryOptions = <TData = Awaited<ReturnType<typeof getOperationalSymbolHealth>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalSymbolHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperationalSymbolHealthQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperationalSymbolHealth>>> = ({ signal }) => getOperationalSymbolHealth({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperationalSymbolHealth>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperationalSymbolHealthQueryResult = NonNullable<Awaited<ReturnType<typeof getOperationalSymbolHealth>>>
+export type GetOperationalSymbolHealthQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — per-symbol data/sync/normalization health
+ */
+
+export function useGetOperationalSymbolHealth<TData = Awaited<ReturnType<typeof getOperationalSymbolHealth>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperationalSymbolHealth>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperationalSymbolHealthQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetOperationalSupportUserUserIdUrl = (userId: string,) => {
 

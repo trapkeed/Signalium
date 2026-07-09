@@ -2726,6 +2726,31 @@ export interface UpdateIncidentInput {
 
 export type PlatformAlertMetadata = { [key: string]: unknown } | null;
 
+export type PlatformAlertDeliveryItemChannel = typeof PlatformAlertDeliveryItemChannel[keyof typeof PlatformAlertDeliveryItemChannel];
+
+
+export const PlatformAlertDeliveryItemChannel = {
+  email: 'email',
+  telegram: 'telegram',
+  discord: 'discord',
+} as const;
+
+export type PlatformAlertDeliveryItemStatus = typeof PlatformAlertDeliveryItemStatus[keyof typeof PlatformAlertDeliveryItemStatus];
+
+
+export const PlatformAlertDeliveryItemStatus = {
+  sent: 'sent',
+  failed: 'failed',
+  skipped: 'skipped',
+  not_configured: 'not_configured',
+} as const;
+
+export type PlatformAlertDeliveryItem = {
+  channel?: PlatformAlertDeliveryItemChannel;
+  status?: PlatformAlertDeliveryItemStatus;
+  detail?: string | null;
+};
+
 export interface PlatformAlert {
   id?: number;
   type?: string;
@@ -2739,6 +2764,55 @@ export interface PlatformAlert {
   acknowledgedBy?: string | null;
   metadata?: PlatformAlertMetadata;
   createdAt?: string;
+  delivery?: PlatformAlertDeliveryItem[];
+}
+
+export interface AlertChannelSettings {
+  id?: string;
+  emailEnabled?: boolean;
+  emailRecipients?: string[];
+  telegramEnabled?: boolean;
+  discordEnabled?: boolean;
+  telegramConfigured?: boolean;
+  discordConfigured?: boolean;
+  updatedAt?: string;
+}
+
+export type SymbolHealthSyncStatus = typeof SymbolHealthSyncStatus[keyof typeof SymbolHealthSyncStatus];
+
+
+export const SymbolHealthSyncStatus = {
+  synced: 'synced',
+  degraded: 'degraded',
+  unsynced: 'unsynced',
+} as const;
+
+export type SymbolHealthNormalizationStatus = typeof SymbolHealthNormalizationStatus[keyof typeof SymbolHealthNormalizationStatus];
+
+
+export const SymbolHealthNormalizationStatus = {
+  resolved: 'resolved',
+  partial: 'partial',
+  unresolved: 'unresolved',
+  no_data: 'no_data',
+} as const;
+
+export interface SymbolHealth {
+  symbolId?: number;
+  canonicalSymbol?: string;
+  displayName?: string;
+  categoryId?: number;
+  enabled?: boolean;
+  syncStatus?: SymbolHealthSyncStatus;
+  normalizationStatus?: SymbolHealthNormalizationStatus;
+  normalizationResolvedRate?: number | null;
+  brokerMappingCoverage?: number;
+  totalActiveBrokers?: number;
+  lastDataAt?: string | null;
+  feedLatencyMs?: number | null;
+  mappedProviderCount?: number;
+  reachableProviderCount?: number;
+  qualityScore?: number;
 }
 
 export type OperationalDashboardEaInstances = {
@@ -3629,5 +3703,17 @@ export type PostOperationalDeploymentsVersionsBody = {
 
 export type PostOperationalDeploymentsVersions201 = {
   deployment?: ServiceDeployment;
+};
+
+export type PatchOperationalAlertChannelsBody = {
+  emailEnabled?: boolean;
+  emailRecipients?: string[];
+  telegramEnabled?: boolean;
+  discordEnabled?: boolean;
+};
+
+export type GetOperationalSymbolHealth200 = {
+  symbols?: SymbolHealth[];
+  generatedAt?: string;
 };
 

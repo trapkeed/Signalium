@@ -255,6 +255,14 @@ export const platformAlertsTable = pgTable(
         "expired_subscription",
         "risk_threshold",
         "margin_call",
+        // S23b additions
+        "trainer_unavailable",
+        "inference_failure",
+        "excessive_latency",
+        "database_failure",
+        "payment_failure",
+        "data_provider_outage",
+        "abnormal_market_condition",
       ],
     }).notNull(),
     severity: text("severity", { enum: ["info", "warning", "critical"] }).notNull(),
@@ -342,3 +350,45 @@ export const serviceDeploymentsTable = pgTable(
 );
 
 export type ServiceDeployment = typeof serviceDeploymentsTable.$inferSelect;
+
+// ─── 9. Alert Delivery Log ─────────────────────────────────────────────────
+// S23b — one row per (alert, channel) delivery attempt. Lets the Alerts admin
+// page show per-channel delivery status without overloading platformAlertsTable.
+
+export const alertDeliveryLogTable = pgTable(
+  "alert_delivery_log",
+  {
+    id: serial("id").primaryKey(),
+    alertId: integer("alert_id")
+      .notNull()
+      .references(() => platformAlertsTable.id, { onDelete: "cascade" }),
+    channel: text("channel", { enum: ["email", "telegram", "discord"] }).notNull(),
+    status: text("status", {
+      enum: ["sent", "failed", "skipped", "not_configured"],
+    }).notNull(),
+    detail: text("detail"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("alert_delivery_log_alert_idx").on(t.alertId),
+    uniqueIndex("alert_delivery_log_alert_channel_uniq").on(t.alertId, t.channel),
+  ],
+);
+
+export type AlertDeliveryLog = typeof alertDeliveryLogTable.$inferSelect;
+
+// ─── 10. Alert Channel Settings ───────────────────────────────────────────────
+// S23b — singleton row (id = "global") toggling which delivery channels are
+// active. Credentials themselves (SMTP, Telegram bot token, Discord webhook)
+// live in smtp_settings / environment secrets, never in this table.
+
+export const alertChannelSettingsTable = pgTable("alert_channel_settings", {
+  id: text("id").primaryKey(), // always "global"
+  emailEnabled: boolean("email_enabled").notNull().default(true),
+  emailRecipients: text("email_recipients").array().notNull().default([]),
+  telegramEnabled: boolean("telegram_enabled").notNull().default(true),
+  discordEnabled: boolean("discord_enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type AlertChannelSettings = typeof alertChannelSettingsTable.$inferSelect;

@@ -5,6 +5,7 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { PlatformAlertDeliveryItem } from './platformAlertDeliveryItem';
 import type { PlatformAlertMetadata } from './platformAlertMetadata';
 
 export interface PlatformAlert {
@@ -20,4 +21,5 @@ export interface PlatformAlert {
   acknowledgedBy?: string | null;
   metadata?: PlatformAlertMetadata;
   createdAt?: string;
+  delivery?: PlatformAlertDeliveryItem[];
 }

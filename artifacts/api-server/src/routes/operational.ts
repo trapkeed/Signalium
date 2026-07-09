@@ -46,6 +46,8 @@ import {
   tradeTimelineTable,
   userTradingSettingsTable,
   qdeDeploymentsTable,
+  alertDeliveryLogTable,
+  alertChannelSettingsTable,
 } from "@workspace/db";
 import {
   eq,
@@ -64,6 +66,9 @@ import { requireAdmin } from "../middlewares/requireAdmin";
 import { requireStaff } from "../middlewares/requireAdmin";
 import { requireApiKeyAuth } from "../middlewares/requireApiKeyAuth";
 import { getLatestSnapshot } from "../lib/platformHealth";
+import { emitPlatformAlert } from "../lib/alerting";
+import { getAlertChannelSettings } from "../lib/alertDispatch";
+import { computeSymbolHealth } from "../lib/symbolHealth";
 import pino from "pino";
 
 const logger = pino({ name: "operational-routes" });
@@ -85,32 +90,6 @@ function computeHeartbeatState(row: {
   if (ageMs > OFFLINE_THRESHOLD_MS) return "OFFLINE";
   if (ageMs > OFFLINE_THRESHOLD_MS / 2) return "DEGRADED"; // 60-120s = degraded
   return "ONLINE";
-}
-
-// ─── Utility: generate platform alert ────────────────────────────────────────
-
-async function emitPlatformAlert(opts: {
-  type: typeof platformAlertsTable.$inferInsert["type"];
-  severity: "info" | "warning" | "critical";
-  message: string;
-  userId?: string | null;
-  eaId?: number | null;
-  eaInstanceId?: string | null;
-  metadata?: Record<string, unknown>;
-}) {
-  try {
-    await db.insert(platformAlertsTable).values({
-      type: opts.type,
-      severity: opts.severity,
-      message: opts.message,
-      userId: opts.userId ?? null,
-      eaId: opts.eaId ?? null,
-      eaInstanceId: opts.eaInstanceId ?? null,
-      metadata: opts.metadata ?? null,
-    });
-  } catch (err) {
-    logger.warn({ err }, "Failed to emit platform alert");
-  }
 }
 
 // ─── Utility: compute execution quality score ─────────────────────────────────
@@ -808,9 +787,79 @@ router.get("/alerts", requireAdmin, async (req, res) => {
       .from(platformAlertsTable)
       .where(eq(platformAlertsTable.acknowledged, false));
 
-    return res.json({ alerts: rows, total: rows.length, unacknowledgedCount: unackCount[0]?.count ?? 0 });
+    // S23b: attach per-channel delivery status to each alert.
+    const deliveryByAlert = new Map<number, { channel: string; status: string; detail: string | null }[]>();
+    if (rows.length > 0) {
+      const deliveryRows = await db
+        .select()
+        .from(alertDeliveryLogTable)
+        .where(inArray(alertDeliveryLogTable.alertId, rows.map((r) => r.id)));
+      for (const d of deliveryRows) {
+        const list = deliveryByAlert.get(d.alertId) ?? [];
+        list.push({ channel: d.channel, status: d.status, detail: d.detail });
+        deliveryByAlert.set(d.alertId, list);
+      }
+    }
+    const alertsWithDelivery = rows.map((r) => ({ ...r, delivery: deliveryByAlert.get(r.id) ?? [] }));
+
+    return res.json({ alerts: alertsWithDelivery, total: rows.length, unacknowledgedCount: unackCount[0]?.count ?? 0 });
   } catch (err) {
     req.log.error(err, "Platform alerts list error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET/PATCH /operational/alert-channels — admin: delivery channel settings ─
+
+router.get("/alert-channels", requireAdmin, async (req, res) => {
+  try {
+    const settings = await getAlertChannelSettings();
+    return res.json({
+      ...settings,
+      telegramConfigured: Boolean(process.env["TELEGRAM_BOT_TOKEN"] && process.env["TELEGRAM_CHAT_ID"]),
+      discordConfigured: Boolean(process.env["DISCORD_WEBHOOK_URL"]),
+    });
+  } catch (err) {
+    req.log.error(err, "Alert channel settings fetch error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/alert-channels", requireAdmin, async (req, res) => {
+  try {
+    const body = req.body as Record<string, unknown>;
+    const updates: Partial<typeof alertChannelSettingsTable.$inferInsert> = {};
+    if (typeof body.emailEnabled === "boolean") updates.emailEnabled = body.emailEnabled;
+    if (typeof body.telegramEnabled === "boolean") updates.telegramEnabled = body.telegramEnabled;
+    if (typeof body.discordEnabled === "boolean") updates.discordEnabled = body.discordEnabled;
+    if (Array.isArray(body.emailRecipients)) {
+      const recipients = body.emailRecipients.filter((v): v is string => typeof v === "string" && v.includes("@"));
+      updates.emailRecipients = recipients;
+    }
+    updates.updatedAt = new Date();
+
+    await getAlertChannelSettings(); // ensure the singleton row exists
+    const [updated] = await db
+      .update(alertChannelSettingsTable)
+      .set(updates)
+      .where(eq(alertChannelSettingsTable.id, "global"))
+      .returning();
+
+    return res.json(updated);
+  } catch (err) {
+    req.log.error(err, "Alert channel settings update error");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── GET /operational/symbol-health — admin: per-symbol data health ──────────
+
+router.get("/symbol-health", requireAdmin, async (req, res) => {
+  try {
+    const rows = await computeSymbolHealth();
+    return res.json({ symbols: rows, generatedAt: new Date().toISOString() });
+  } catch (err) {
+    req.log.error(err, "Symbol health fetch error");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

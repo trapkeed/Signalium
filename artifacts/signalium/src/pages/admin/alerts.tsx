@@ -4,16 +4,22 @@ import {
   useGetOperationalRiskAlerts,
   usePostOperationalAlertsIdAcknowledge,
   usePostOperationalRiskAlertsIdAcknowledge,
+  useGetOperationalAlertChannels,
+  usePatchOperationalAlertChannels,
 } from "@workspace/api-client-react";
 import {
   getGetOperationalAlertsQueryKey,
   getGetOperationalRiskAlertsQueryKey,
+  getGetOperationalAlertChannelsQueryKey,
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, AlertTriangle, CheckCircle2, TrendingDown } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Bell, BellOff, AlertTriangle, CheckCircle2, TrendingDown, Settings2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,6 +41,13 @@ const SEVERITY_STYLES: Record<AlertSeverity, string> = {
 const RISK_SEV_STYLES: Record<RiskSeverity, string> = {
   warning:  "bg-yellow-500/10 text-yellow-400",
   critical: "bg-red-500/10 text-red-400",
+};
+
+const DELIVERY_STYLES: Record<string, string> = {
+  sent: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  failed: "bg-red-500/10 text-red-400 border-red-500/20",
+  skipped: "bg-muted text-muted-foreground",
+  not_configured: "bg-muted text-muted-foreground border-dashed",
 };
 
 const RISK_ALERT_LABELS: Record<string, string> = {
@@ -110,6 +123,20 @@ function PlatformAlertsTab() {
                     {a.userId != null && <span>User: {String(a.userId)}</span>}
                     {!!a.acknowledged && <span className="text-emerald-400">✓ Acknowledged {timeAgo(a.acknowledgedAt as string | null)}</span>}
                   </div>
+                  {Array.isArray(a.delivery) && (a.delivery as Array<Record<string, unknown>>).length > 0 && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      {(a.delivery as Array<Record<string, unknown>>).map((d) => (
+                        <Badge
+                          key={d.channel as string}
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 ${DELIVERY_STYLES[d.status as string] ?? ""}`}
+                          title={(d.detail as string | null) ?? undefined}
+                        >
+                          {d.channel as string}: {(d.status as string).replace(/_/g, " ")}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {!a.acknowledged && (
                   <Button
@@ -218,6 +245,121 @@ function RiskAlertsTab() {
   );
 }
 
+// ─── Delivery Channel Settings Tab ─────────────────────────────────────────────
+
+function ChannelSettingsTab() {
+  const { data, isLoading } = useGetOperationalAlertChannels();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [recipientsInput, setRecipientsInput] = useState<string | null>(null);
+
+  const settings = data as Record<string, unknown> | undefined;
+
+  const updateMutation = usePatchOperationalAlertChannels({
+    mutation: {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: getGetOperationalAlertChannelsQueryKey() });
+        toast({ title: "Alert channel settings updated" });
+      },
+      onError: () => toast({ title: "Failed to update settings", variant: "destructive" }),
+    },
+  });
+
+  if (isLoading || !settings) return <div className="text-muted-foreground text-sm">Loading…</div>;
+
+  const recipients = (settings.emailRecipients as string[] | undefined) ?? [];
+  const recipientsValue = recipientsInput ?? recipients.join(", ");
+
+  return (
+    <div className="space-y-4 max-w-xl">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Email</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="email-enabled">Enabled</Label>
+            <Switch
+              id="email-enabled"
+              checked={Boolean(settings.emailEnabled)}
+              onCheckedChange={(checked) => updateMutation.mutate({ data: { emailEnabled: checked } })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email-recipients" className="text-xs text-muted-foreground">Recipients (comma-separated)</Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                id="email-recipients"
+                value={recipientsValue}
+                onChange={(e) => setRecipientsInput(e.target.value)}
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  const list = recipientsValue.split(",").map((s) => s.trim()).filter(Boolean);
+                  updateMutation.mutate({ data: { emailRecipients: list } });
+                  setRecipientsInput(null);
+                }}
+                disabled={updateMutation.isPending}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            Telegram
+            {!settings.telegramConfigured && (
+              <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-dashed">not configured</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="telegram-enabled">Enabled</Label>
+            <Switch
+              id="telegram-enabled"
+              checked={Boolean(settings.telegramEnabled)}
+              onCheckedChange={(checked) => updateMutation.mutate({ data: { telegramEnabled: checked } })}
+            />
+          </div>
+          {!settings.telegramConfigured && (
+            <p className="text-xs text-muted-foreground">Add TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID secrets to activate delivery.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            Discord
+            {!settings.discordConfigured && (
+              <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-dashed">not configured</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="discord-enabled">Enabled</Label>
+            <Switch
+              id="discord-enabled"
+              checked={Boolean(settings.discordEnabled)}
+              onCheckedChange={(checked) => updateMutation.mutate({ data: { discordEnabled: checked } })}
+            />
+          </div>
+          {!settings.discordConfigured && (
+            <p className="text-xs text-muted-foreground">Add a DISCORD_WEBHOOK_URL secret to activate delivery.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminAlerts() {
@@ -241,9 +383,13 @@ export default function AdminAlerts() {
           <TabsTrigger value="risk" className="flex items-center gap-1.5">
             <TrendingDown className="w-3.5 h-3.5" />Risk Alerts
           </TabsTrigger>
+          <TabsTrigger value="channels" className="flex items-center gap-1.5">
+            <Settings2 className="w-3.5 h-3.5" />Delivery Channels
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="platform"><PlatformAlertsTab /></TabsContent>
         <TabsContent value="risk"><RiskAlertsTab /></TabsContent>
+        <TabsContent value="channels"><ChannelSettingsTab /></TabsContent>
       </Tabs>
     </div>
   );

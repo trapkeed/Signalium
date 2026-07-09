@@ -4,3 +4,4 @@
 - [S21B Deployment Manager](s21b-deployment-manager.md) — atomic activation via DB transaction, DB-authoritative rollback, health flush atomicity, warm-up fail-closed gate, recordError in all catch blocks, db composite build step.
 - [S22A Ops Infrastructure](s22a-ops-infrastructure.md) — heartbeat identity binding, risk-alert dedup guard, dashboard state math, requireStaff/requireApiKeyAuth locations, enum cast workaround.
 - [S23a Platform Health & Deployment Tracking](s23a-platform-health-deployment.md) — no Redis infra exists (report unconfigured, don't fake), live-computed vs persisted metrics split, service-version vs QDE-model-deployment separation, interval reentrancy guard.
+- [S23b Alerting Engine & Symbol Health](s23b-alerting-symbol-health.md) — delivery-channel gating on optional secrets, generalized platform-alert dedup, sweep reentrancy guard, symbol health approximated from provider_status (no candle table).

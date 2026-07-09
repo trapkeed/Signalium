@@ -53,6 +53,7 @@ import AdminPlatformHealth from "@/pages/admin/platform-health";
 import AdminEaMonitor from "@/pages/admin/ea-monitor";
 import AdminIncidents from "@/pages/admin/incidents";
 import AdminAlerts from "@/pages/admin/alerts";
+import AdminSymbolHealth from "@/pages/admin/symbol-health";
 import AdminFeatureFlags from "@/pages/admin/feature-flags";
 
 import { AppLayout } from "@/components/layout";
@@ -263,6 +264,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin/ea-monitor"><ProtectedRoute component={AdminEaMonitor} /></Route>
             <Route path="/admin/incidents"><ProtectedRoute component={AdminIncidents} /></Route>
             <Route path="/admin/alerts"><ProtectedRoute component={AdminAlerts} /></Route>
+            <Route path="/admin/symbol-health"><ProtectedRoute component={AdminSymbolHealth} /></Route>
             <Route path="/admin/feature-flags"><ProtectedRoute component={AdminFeatureFlags} /></Route>
             <Route path="/admin/qde"><ProtectedRoute component={AdminQde} /></Route>
             <Route path="/admin/seo"><ProtectedRoute component={AdminSeo} /></Route>

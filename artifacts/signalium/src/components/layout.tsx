@@ -87,6 +87,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/ea-monitor", label: "EA Monitor", icon: Wifi },
       { href: "/admin/incidents", label: "Incidents", icon: AlertTriangle },
       { href: "/admin/alerts", label: "Alerts", icon: Bell },
+      { href: "/admin/symbol-health", label: "Symbol Health", icon: Radio },
     ],
   },
   {
