@@ -1,0 +1,212 @@
+SIGNALIUM REPOSITORY PROMPT
+
+Implement only missing functionality.
+
+Signalium becomes the Infrastructure Control Plane and System of Record for the entire Signalium ecosystem.
+
+PRIMARY RESPONSIBILITIES
+
+Signalium owns:
+
+* users
+* subscriptions
+* authentication
+* SSO
+* billing
+* invoices
+* API keys
+* EA generation
+* broker management
+* infrastructure orchestration
+* environment variables
+* RunPod orchestration
+* trainer management
+* platform settings
+* SEO settings
+* feature flags
+
+TRAINER URL
+
+https://trainer.signaliumai.com
+
+PLATFORM URL
+
+https://signaliumai.com
+
+---
+
+## ENCRYPTED ENVIRONMENT MANAGEMENT
+
+Implement encrypted environment management using AES-256 encryption.
+
+Secrets must never be visible after save.
+
+Secrets may only be replaced.
+
+Audit every change.
+
+Create encrypted variables for:
+
+## SMTP
+
+SMTP_HOST
+SMTP_PORT
+SMTP_USERNAME
+SMTP_PASSWORD
+SMTP_FROM_ADDRESS
+SMTP_FROM_NAME
+SMTP_REPLY_TO
+
+## SSO
+
+JWT_PRIVATE_KEY
+JWT_PUBLIC_KEY
+JWT_EXPIRATION
+JWT_REFRESH_EXPIRATION
+JWT_ISSUER
+JWT_AUDIENCE
+
+## TRAINER COMMUNICATION
+
+TRAINER_URL
+TRAINER_INTERNAL_API_KEY
+TRAINER_REQUEST_TIMEOUT
+TRAINER_MAX_RETRIES
+TRAINER_HEALTH_INTERVAL
+TRAINER_SYNC_INTERVAL
+TRAINER_CIRCUIT_BREAKER_THRESHOLD
+
+## RUNPOD
+
+RUNPOD_API_KEY
+RUNPOD_DEFAULT_TEMPLATE_ID
+RUNPOD_DEFAULT_VOLUME_ID
+RUNPOD_DEFAULT_NETWORK_VOLUME
+RUNPOD_DEFAULT_GPU
+RUNPOD_ALLOWED_GPUS
+RUNPOD_MAX_HOURLY_COST
+RUNPOD_MAX_ACTIVE_PODS
+RUNPOD_REGION
+RUNPOD_AUTO_SHUTDOWN_MINUTES
+
+## PAYMENTS
+
+NOWPAYMENTS_API_KEY
+NOWPAYMENTS_IPN_SECRET
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+PAYPAL_CLIENT_ID
+PAYPAL_CLIENT_SECRET
+
+## OPENAI
+
+OPENAI_API_KEY
+OPENAI_MODEL
+OPENAI_EMBEDDING_MODEL
+
+## SEO
+
+DEFAULT_META_TITLE
+DEFAULT_META_DESCRIPTION
+DEFAULT_META_KEYWORDS
+DEFAULT_OG_IMAGE
+DEFAULT_CANONICAL_URL
+
+## FEATURE FLAGS
+
+ENABLE_AUTONOMOUS_MODE
+ENABLE_MANUAL_MODE
+ENABLE_FOREX
+ENABLE_METALS
+ENABLE_INDICES
+ENABLE_CRYPTO
+ENABLE_RESEARCH_LAB
+ENABLE_SHADOW_DEPLOYMENTS
+
+---
+
+## RUNPOD ORCHESTRATION
+
+Signalium owns all RunPod infrastructure.
+
+Trainer never stores RunPod API credentials.
+
+Signalium must:
+
+* launch pods
+* stop pods
+* restart pods
+* terminate pods
+* monitor utilization
+* monitor costs
+* monitor logs
+* monitor artifacts
+* enforce budgets
+
+Generate temporary worker credentials.
+
+Credential lifetime:
+
+60 minutes.
+
+Support:
+
+* rotation
+* revocation
+* audit logging
+
+---
+
+## TRAINER MANAGEMENT
+
+Signalium Admin and SuperAdmin can:
+
+* launch training
+* stop training
+* create experiments
+* launch shadow tests
+* deploy models
+* rollback models
+* inspect datasets
+* inspect memory
+* inspect reflections
+* inspect research reports
+* inspect active models
+* inspect RunPod jobs
+* inspect costs
+* inspect GPUs
+
+---
+
+## MARKET DATA MANAGEMENT
+
+Create provider management system.
+
+Primary live provider:
+
+* OANDA
+
+Primary historical provider:
+
+* Tiingo
+
+Support future providers:
+
+* Polygon
+* TwelveData
+* Finnhub
+* AlphaVantage
+* DXFeed
+* Interactive Brokers
+
+Providers must be:
+
+* enabled
+* disabled
+* reordered
+* health checked
+* latency monitored
+
+No code changes required when adding providers.
+
+Implement only missing functionality.
