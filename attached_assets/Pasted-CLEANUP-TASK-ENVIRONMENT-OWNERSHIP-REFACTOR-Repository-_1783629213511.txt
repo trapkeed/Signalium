@@ -1,0 +1,156 @@
+CLEANUP TASK — ENVIRONMENT OWNERSHIP REFACTOR
+
+Repository: signalium
+
+Objective:
+Preserve all existing infrastructure while making Signalium Platform the authoritative configuration and secret-management system for the entire ecosystem.
+
+Requirements:
+
+1. Introduce an encrypted configuration vault subsystem.
+
+Create:
+
+* settings_categories
+* settings_definitions
+* encrypted_settings
+* settings_audit_log
+
+All secrets must be encrypted at rest using server-side encryption.
+
+Required capabilities:
+
+* create secret
+* update secret
+* rotate secret
+* disable secret
+* audit secret usage
+* export non-sensitive configuration summaries
+
+2. Move ownership of all platform-level configuration into Signalium.
+
+Signalium becomes the source of truth for:
+
+Authentication:
+
+* JWT_PRIVATE_KEY
+* JWT_PUBLIC_KEY
+* SESSION_SECRET
+* OAuth credentials
+
+Payments:
+
+* STRIPE_*
+* COINBASE_*
+* NOWPAYMENTS_*
+
+Email:
+
+* SMTP_*
+
+Infrastructure:
+
+* CLOUDFLARE_*
+* STORAGE_*
+* BACKUP_*
+
+AI:
+
+* OPENAI_API_KEY
+* GEMINI_API_KEY
+* ANTHROPIC_API_KEY
+
+Trainer Connectivity:
+
+* TRAINER_URL
+* TRAINER_SHARED_SECRET
+* TRAINER_JWT_AUDIENCE
+* TRAINER_JWT_ISSUER
+
+Market Data Provider Credentials:
+
+* OANDA_API_KEY
+* OANDA_ACCOUNT_ID
+* TIINGO_API_KEY
+* future providers
+
+RunPod:
+
+* RUNPOD_API_KEY
+* RUNPOD_TEMPLATE_ID
+* RUNPOD_ENDPOINT_ID
+* RUNPOD_VOLUME_ID
+
+EA Feed:
+
+* EA_FEED_SHARED_SECRET
+* EA_FEED_ENDPOINT
+
+3. Implement Trainer Secret Synchronization.
+
+Create a secure synchronization service:
+
+Signalium Admin
+→ encrypt secrets
+→ send only required trainer secrets
+→ trainer stores locally
+→ trainer acknowledges version hash
+
+Support:
+
+* incremental updates
+* versioning
+* rollback
+* secret rotation
+* synchronization status
+
+4. Trainer synchronization must be selective.
+
+Do NOT send:
+
+* payment credentials
+* OAuth credentials
+* email credentials
+* platform-only secrets
+
+Only send trainer-relevant secrets.
+
+5. Add admin UI pages:
+
+System Settings
+Market Data Providers
+Trainer Integration
+RunPod Integration
+Secret Rotation
+Synchronization Status
+Secret Audit Logs
+
+6. Add synchronization monitoring.
+
+Display:
+
+* last successful sync
+* failed sync attempts
+* trainer version
+* configuration version
+* secret version mismatch warnings
+
+7. Preserve all existing infrastructure.
+
+Do not remove:
+
+* SSO
+* subscription systems
+* billing
+* EA generation
+* trainer integration
+* dashboards
+* existing APIs
+
+This task is strictly an ownership cleanup and synchronization improvement.
+
+No feature removals.
+
+No redesign.
+
+Only implement missing functionality and refactor ownership boundaries.
