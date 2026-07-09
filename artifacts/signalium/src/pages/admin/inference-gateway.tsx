@@ -5,7 +5,7 @@
  * - Opportunities state machine viewer
  * - Market memory viewer
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetInferenceControls,
   useUpdateInferenceControls,
@@ -29,6 +29,9 @@ import {
   TrendingUp,
   BookOpen,
   Layers,
+  ArrowUp,
+  ArrowDown,
+  Server,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +66,67 @@ const STATE_CONFIG: Record<string, { label: string; color: string; icon: any }> 
 
 const ALL_STATES = Object.keys(STATE_CONFIG) as (keyof typeof STATE_CONFIG)[];
 const MEMORY_KINDS = ["failed_setup", "successful_setup", "regime_transition", "session_behavior", "volatility_behavior"] as const;
+
+const PRIORITY_LABELS: Record<string, string> = {
+  EA_FEED: "EA Feed",
+  oanda: "OANDA",
+  tiingo: "Tiingo",
+};
+
+// ─── Autonomous market priority ────────────────────────────────────────────────
+
+function AutonomousPriorityPanel({
+  controls,
+  onSave,
+  isPending,
+}: {
+  controls: InferenceControls | undefined;
+  onSave: (priority: string[]) => void;
+  isPending: boolean;
+}) {
+  const [order, setOrder] = useState<string[]>(
+    (controls?.autonomousMarketPriority as string[] | undefined) ?? ["EA_FEED", "oanda", "tiingo"]
+  );
+
+  useEffect(() => {
+    if (controls?.autonomousMarketPriority) {
+      setOrder(controls.autonomousMarketPriority as string[]);
+    }
+  }, [controls?.autonomousMarketPriority]);
+
+  function move(index: number, dir: -1 | 1) {
+    const next = [...order];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    setOrder(next);
+    onSave(next);
+  }
+
+  return (
+    <div className="border border-border rounded-sm p-5 flex flex-col gap-3">
+      <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground">Autonomous Mode — Market Source Priority</h3>
+      <p className="text-xs text-muted-foreground font-mono">
+        In autonomous mode, users' market data resolves EA-feed-first following this order, failing over down the list when a source is unavailable.
+      </p>
+      <div className="flex flex-col gap-1.5">
+        {order.map((source, i) => (
+          <div key={source} className="flex items-center gap-3 bg-secondary/20 rounded-sm px-3 py-2">
+            <span className="w-5 text-center font-mono text-xs text-muted-foreground">{i + 1}</span>
+            <Server className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="font-mono text-xs font-medium flex-1">{PRIORITY_LABELS[source] ?? source}</span>
+            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" disabled={i === 0 || isPending} onClick={() => move(i, -1)}>
+              <ArrowUp className="w-3 h-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 rounded-sm" disabled={i === order.length - 1 || isPending} onClick={() => move(i, 1)}>
+              <ArrowDown className="w-3 h-3" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Inference Controls ───────────────────────────────────────────────────────
 
@@ -183,6 +247,12 @@ function InferenceControlsPanel() {
           {c?.updatedBy ? ` by ${c.updatedBy.slice(0, 12)}…` : ""}
         </p>
       </div>
+
+      <AutonomousPriorityPanel
+        controls={c}
+        isPending={update.isPending}
+        onSave={(priority) => patch({ autonomousMarketPriority: priority as any })}
+      />
 
       {/* Status banner */}
       {(c?.autonomousPaused || !c?.inferenceEnabled) && (
