@@ -193,3 +193,17 @@ For "add item to user's set" routes (e.g. POST /symbols/user), always check whet
 Admin sidebar nav is organized into named groups (`ADMIN_GROUPS`: Overview / Accounts & Billing / Trading Infrastructure / Content & Growth / Support & Comms / System) rather than one flat list, each rendered as its own `NavSection`. Feature-flagged nav items are filtered out of their group client-side before rendering (empty groups are dropped).
 
 **Why:** flat admin list had grown past a dozen items across unrelated domains (billing, symbols, content, support); grouping keeps the pattern extensible as new admin pages are added.
+
+## Clerk can silently be unconfigured despite dependent code existing
+`checkClerkManagementStatus()` returning `not_configured` (missing `CLERK_SECRET_KEY`/`CLERK_PUBLISHABLE_KEY`/`VITE_CLERK_PUBLISHABLE_KEY`) can coexist with a codebase that fully depends on Clerk — don't assume auth is wired up just because the code references it. `setupClerkWhitelabelAuth()` provisions a fresh managed instance and sets all three secrets.
+
+**Why:** hit this when admin-panel/auth features appeared broken for no obvious reason; the actual root cause was Clerk never having been provisioned in this environment at all.
+
+## Codegen zod.looseObject sed target correction
+The prior memory note said the sed fix targets `z.looseObject(` — the generated code actually emits `zod.looseObject(`. Sed must target `zod\.looseObject(`, not `z\.looseObject(`.
+
+## Admin-only endpoints not in the OpenAPI spec use raw fetch, not generated hooks
+Endpoints intentionally excluded from codegen (e.g. an encrypted secrets vault) are called from the frontend via `fetch(`${BASE_URL}api/...`, { credentials: "include" })` rather than `@workspace/api-client-react` hooks — matches the existing invoice-download pattern in admin/payments.tsx.
+
+## Beginner VPS deployment guide exists
+`DEPLOYMENT_GUIDE.md` at repo root walks through a non-Replit VPS deployment (Ubuntu + Nginx + PM2 + Let's Encrypt), listing every `process.env.*`/`import.meta.env.*` value the app actually reads. Keep it in sync if new required env vars are added.

@@ -116,6 +116,13 @@ export const auditLogTable = pgTable("audit_log", {
       // Homepage/landing-page content CMS
       "site_content.updated",
       "site_content.reset",
+      // Admin user CRUD + secrets vault
+      "user.created",
+      "user.deleted",
+      "admin_secret.created",
+      "admin_secret.updated",
+      "admin_secret.deleted",
+      "admin_secret.revealed",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

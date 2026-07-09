@@ -1,0 +1,48 @@
+Replace Clerk with Custom Auth
+What & Why
+Signalium currently depends entirely on Clerk (hosted) for identity: session cookies, user records keyed by Clerk's userId, and Google sign-in via Clerk's social connection. The user is moving to a live server outside Replit and does not want a Clerk dependency. Replace Clerk everywhere with self-hosted authentication: email+password signup/login, "Continue with Google" via a direct Google OAuth flow, and an admin-configurable, encrypted-at-rest way to supply the Google OAuth credentials and any future third-party API keys from the Admin panel — without touching Replit secrets. Email delivery must stay optional: if SMTP is not configured, signup and login must work with zero emails sent; once SMTP is configured, signup requires an emailed verification code and login requires an emailed one-time code as a second step.
+
+The existing SSO/RBAC layer (JWT issuance, refresh tokens, admin roles, role assumption in sso.ts/adminRoles.ts/roles.ts) must keep working — it currently trusts the Clerk-authenticated session to know who is logged in. It needs to source that identity from the new session mechanism instead, with no other behavior change.
+
+Done looks like
+No Clerk package, environment variable, or @clerk/* import remains anywhere in artifacts/signalium or artifacts/api-server.
+A visitor can sign up with email + password. If SMTP is not configured, the account is created and the user is logged in immediately with no email sent. If SMTP is configured, the user must enter a code emailed to them before the account is treated as verified/usable.
+A visitor can log in with email + password. If SMTP is not configured, a correct password logs them in directly. If SMTP is configured, a correct password triggers a one-time code emailed to them, and they must enter it to complete login.
+A visitor can sign up/log in with "Continue with Google" in one click once Google OAuth credentials are configured; this path never requires an emailed code (Google already verifies the email).
+An admin can open a settings page in the Admin panel and enter/update the Google OAuth Client ID and Client Secret (and the app is structured so future provider credentials can be added the same way). These values are encrypted at rest in the database, never returned in plaintext by any API response, and take effect without a redeploy.
+The existing SMTP password stored in smtp_settings is also encrypted at rest going forward (migrate existing plaintext storage to the same encryption approach).
+All existing admin/staff/role-gated functionality (requireAdmin, requireStaff, admin role assignment/assumption, SSO token issuance to the Trainer) continues to work unchanged from the caller's perspective, now backed by the new session instead of Clerk.
+Sign-in/sign-up pages, account page, and any header/nav user menu reflect the logged-in user (name/email/avatar) without Clerk components.
+Out of scope
+Password reset ("forgot password") flow — note it as a follow-up, do not build it now.
+Any social login provider other than Google.
+Multi-factor authentication beyond the SMTP-gated email code described above.
+Rebuilding the SSO/RBAC/JWT-to-Trainer functionality itself (already implemented) — only adapt what it uses to identify the logged-in user.
+Steps
+Encryption utility — add a small helper to encrypt/decrypt secret values at rest using a dedicated server-side key (request a new secret for this via the environment-secrets flow rather than reusing an existing one). Migrate smtp_settings's stored password to use it (with a one-time migration for any existing row).
+User schema migration — update the users table to support local credentials: password hash, optional Google identity, and an email-verified state; move off Clerk's external id as the primary key to an app-generated id. Add whatever supporting tables are needed for email verification codes and login one-time codes (purpose, expiry, single-use).
+Session layer — replace Clerk's session middleware with a self-hosted session mechanism (signed cookie session, SESSION_SECRET already available). Provide the same "who is the current authenticated user" shape the existing admin/role/SSO code already relies on, so requireAdmin, requireStaff, adminRoles.ts, and sso.ts keep working with minimal changes.
+Email + password endpoints — implement signup, login, email-verification-code confirmation, and login-code confirmation, all branching on whether SMTP is currently configured (reuse the existing SMTP-configured check) so no email is ever attempted when SMTP is off.
+Google OAuth flow — implement the redirect-based Google OAuth flow (start + callback) using credentials read from the new encrypted admin-configured storage, finding-or-creating a user by Google identity/email and logging them in directly (no email code required).
+Admin credentials settings — add an Admin-panel page/route to view (masked) and set the Google OAuth Client ID/Secret, storing them encrypted via the new helper, structured so more providers can be added later the same way.
+Frontend auth UI — replace the Clerk-hosted sign-in/sign-up pages and any @clerk/react hooks (useUser, useAuth, useClerk) with custom pages/components backed by the new endpoints: email+password forms, a Google button, and a conditional "enter the code we emailed you" step for both signup and login.
+Clerk removal — remove ClerkProvider, Clerk middleware/proxy, @clerk/* packages, and any remaining Clerk-specific code paths from both the frontend and backend.
+Relevant files
+artifacts/signalium/src/App.tsx
+artifacts/signalium/src/pages/account.tsx
+artifacts/signalium/src/components/layout.tsx
+artifacts/api-server/src/app.ts
+artifacts/api-server/src/middlewares/requireAdmin.ts
+artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts
+artifacts/api-server/src/lib/roles.ts
+artifacts/api-server/src/lib/adminRoles.ts
+artifacts/api-server/src/lib/sso.ts
+artifacts/api-server/src/routes/sso.ts
+artifacts/api-server/src/routes/users.ts
+artifacts/api-server/src/routes/smtp.ts
+artifacts/api-server/src/lib/mailer.ts
+artifacts/api-server/src/lib/productionReadiness.ts
+lib/db/src/schema/users.ts
+lib/db/src/schema/smtp.ts
+lib/db/src/schema/admin-roles.ts
+lib/db/src/schema/sso.ts

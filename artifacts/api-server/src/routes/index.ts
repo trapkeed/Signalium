@@ -48,6 +48,7 @@ import complianceRouter from "./compliance";
 import opsReadinessRouter from "./ops-readiness";
 import onboardingRouter from "./onboarding";
 import siteContentRouter from "./site-content";
+import adminSecretsRouter from "./admin-secrets";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -124,5 +125,7 @@ router.use("/ops-readiness", opsReadinessRouter);
 router.use("/onboarding", onboardingRouter);
 // Homepage/landing-page content CMS (public GET, admin PATCH)
 router.use("/site-content", siteContentRouter);
+// Secure admin panel for API keys / env-style secrets (encrypted at rest, super_admin only)
+router.use("/admin/secrets", adminSecretsRouter);
 
 export default router;

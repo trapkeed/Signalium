@@ -449,6 +449,25 @@ export interface UserUpdate {
   isActive?: boolean;
 }
 
+export type CreateUserInputRole = typeof CreateUserInputRole[keyof typeof CreateUserInputRole];
+
+
+export const CreateUserInputRole = {
+  user: 'user',
+  clerk: 'clerk',
+  staff: 'staff',
+  admin: 'admin',
+  super_admin: 'super_admin',
+} as const;
+
+export interface CreateUserInput {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  role?: CreateUserInputRole;
+}
+
 /**
  * Self-service profile fields a user may update on their own account.
  */
@@ -3212,6 +3231,10 @@ export type ReadinessCheck200 = {
 export type ReadinessCheck503 = {
   status?: string;
   reason?: string;
+};
+
+export type DeleteUser200 = {
+  success?: boolean;
 };
 
 export type RejectPaymentBody = {

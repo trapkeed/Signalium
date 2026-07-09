@@ -1,15 +1,25 @@
 import {
   useListUsers,
   useUpdateUser,
+  useCreateUser,
+  useDeleteUser,
   getListUsersQueryKey,
   useGetMyUser,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
-import { Users, ShieldCheck, User, Crown, Briefcase, ClipboardList, CheckCircle2, XCircle, ChevronDown } from "lucide-react";
+import { Users, ShieldCheck, User, Crown, Briefcase, ClipboardList, CheckCircle2, XCircle, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,6 +130,107 @@ function RoleSelector({
   );
 }
 
+// ─── Create user modal (super_admin only) ──────────────────────────────────────
+
+function CreateUserModal({
+  open,
+  onOpenChange,
+  actorRole,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  actorRole: UserRole;
+  onCreated: () => void;
+}) {
+  const { toast } = useToast();
+  const createUser = useCreateUser();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState<UserRole>("user");
+
+  const actorLevel = ROLE_LEVEL[actorRole] ?? 0;
+  const assignableRoles = ALL_ROLES.filter((r) => ROLE_LEVEL[r] < actorLevel || r === "user");
+
+  function reset() {
+    setEmail(""); setPassword(""); setFirstName(""); setLastName(""); setRole("user");
+  }
+
+  async function submit() {
+    if (!email.trim() || !password.trim()) {
+      toast({ title: "Email and password are required", variant: "destructive" });
+      return;
+    }
+    try {
+      await createUser.mutateAsync({
+        data: {
+          email: email.trim(),
+          password,
+          firstName: firstName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
+          role,
+        },
+      });
+      toast({ title: "User created" });
+      reset();
+      onOpenChange(false);
+      onCreated();
+    } catch (err: any) {
+      toast({ title: "Failed to create user", description: err?.message ?? "Something went wrong", variant: "destructive" });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-base">Create User</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Email</label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="font-mono text-xs" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Password</label>
+            <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="font-mono text-xs" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">First name</label>
+              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="font-mono text-xs" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Last name</label>
+              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="font-mono text-xs" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as UserRole)}
+              className="h-9 rounded-sm border border-border bg-background px-2 font-mono text-xs"
+            >
+              {assignableRoles.map((r) => (
+                <option key={r} value={r}>{ROLE_CONFIG[r].label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" size="sm" className="font-mono text-xs" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" className="font-mono text-xs" onClick={submit} disabled={createUser.isPending}>
+            {createUser.isPending ? "Creating…" : "Create User"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminUsers() {
@@ -128,7 +239,9 @@ export default function AdminUsers() {
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
   const { toast } = useToast();
+  const [createOpen, setCreateOpen] = useState(false);
 
   // Prefer DB role from /users/me; fall back to Clerk publicMetadata during initial load
   const actorRole = (me?.role ?? clerkUser?.publicMetadata?.role ?? "admin") as UserRole;
@@ -168,13 +281,29 @@ export default function AdminUsers() {
             )}
           </p>
         </div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search users…"
-          className="h-8 w-56 rounded-sm border border-border bg-background px-3 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search users…"
+            className="h-8 w-56 rounded-sm border border-border bg-background px-3 font-mono text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+          {isSuperAdmin && (
+            <Button size="sm" className="h-8 font-mono text-xs gap-1.5" onClick={() => setCreateOpen(true)}>
+              <Plus className="w-3.5 h-3.5" /> Create User
+            </Button>
+          )}
+        </div>
       </div>
+
+      {isSuperAdmin && (
+        <CreateUserModal
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          actorRole={actorRole}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() })}
+        />
+      )}
 
       <div className="p-8">
         {isSuperAdmin && (
@@ -269,15 +398,38 @@ export default function AdminUsers() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleActive(user.id, user.isActive ?? true)}
-                          disabled={updateUser.isPending || isSelf}
-                          className="text-xs font-mono text-muted-foreground hover:text-foreground border border-border hover:border-foreground/30 h-7 px-2 rounded-sm"
-                        >
-                          {user.isActive ? "Deactivate" : "Activate"}
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleActive(user.id, user.isActive ?? true)}
+                            disabled={updateUser.isPending || isSelf}
+                            className="text-xs font-mono text-muted-foreground hover:text-foreground border border-border hover:border-foreground/30 h-7 px-2 rounded-sm"
+                          >
+                            {user.isActive ? "Deactivate" : "Activate"}
+                          </Button>
+                          {isSuperAdmin && !isSelf && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (!confirm(`Permanently delete ${user.email}? This cannot be undone.`)) return;
+                                deleteUser.mutate(
+                                  { id: user.id },
+                                  {
+                                    onSuccess: () => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() }),
+                                    onError: (err: any) => toast({ title: "Failed to delete user", description: err?.message, variant: "destructive" }),
+                                  }
+                                );
+                              }}
+                              disabled={deleteUser.isPending}
+                              className="text-destructive hover:text-destructive border border-border hover:border-destructive/40 h-7 w-7 p-0 rounded-sm"
+                              title="Delete user"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

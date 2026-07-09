@@ -816,6 +816,30 @@ export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
 
 /**
+ * @summary Create a new user (super_admin — provisions in Clerk + DB)
+ */
+export const CreateUserBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']).optional()
+})
+
+export const CreateUserResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "firstName": zod.string().nullish(),
+  "lastName": zod.string().nullish(),
+  "role": zod.enum(['user', 'clerk', 'staff', 'admin', 'super_admin']),
+  "isActive": zod.boolean().optional(),
+  "subscriptionStatus": zod.string().nullish(),
+  "preferredPaymentProviderId": zod.number().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Get the current user's own profile
  */
 export const GetMyUserResponse = zod.object({
@@ -895,6 +919,18 @@ export const UpdateUserResponse = zod.object({
   "subscriptionStatus": zod.string().nullish(),
   "preferredPaymentProviderId": zod.number().nullish(),
   "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Permanently delete a user (super_admin, strict hierarchy enforced)
+ */
+export const DeleteUserParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteUserResponse = zod.object({
+  "success": zod.boolean().optional()
 })
 
 

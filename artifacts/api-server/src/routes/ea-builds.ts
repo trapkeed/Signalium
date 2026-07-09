@@ -7,7 +7,7 @@ import {
   eaBuildAuditLogTable,
   usersTable,
 } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import crypto from "crypto";
 import { requireAdmin, isAdmin } from "../middlewares/requireAdmin";
 import {
@@ -18,10 +18,12 @@ import {
   checksumOf,
   storeEaBuild,
   getEaBuildFile,
+  generateBuildApiKey,
 } from "../lib/eaBuilder";
 import { ObjectNotFoundError } from "../lib/objectStorage";
 import { checkEaGenerationAccess, resolveCurrentSubscription, type EntitlementDenialCode } from "../lib/entitlementEngine";
 import { signArtifact } from "../lib/requestSigning";
+import { generateSigningSecret } from "../lib/eaRequestSigning";
 
 const router = Router();
 
@@ -30,16 +32,20 @@ async function logAudit(buildId: number, userId: string, action: "generated" | "
 }
 
 class BuildPrerequisiteError extends Error {
-  constructor(public code: EntitlementDenialCode | "NO_ACTIVE_API_KEY" | "USER_NOT_FOUND", message: string) {
+  constructor(public code: EntitlementDenialCode | "USER_NOT_FOUND", message: string) {
     super(message);
   }
 }
 
 /**
  * Resolves the current display tier (for build metadata only — access is
- * decided entirely by the EntitlementEngine, never by tier name) plus a
- * usable active API key for a user. Throws BuildPrerequisiteError if
- * generation isn't currently allowed.
+ * decided entirely by the EntitlementEngine, never by tier name) for a user.
+ * Throws BuildPrerequisiteError if generation isn't currently allowed.
+ *
+ * Note: this no longer requires a pre-existing active API key — every EA
+ * build mints its own dedicated key (see generateBuildApiKey) so the raw
+ * value can be compiled directly into the binary and the user never has to
+ * create or paste one in manually.
  */
 async function resolveBuildPrerequisites(userId: string) {
   const access = await checkEaGenerationAccess(userId);
@@ -50,28 +56,32 @@ async function resolveBuildPrerequisites(userId: string) {
   const snapshot = await resolveCurrentSubscription(userId);
   const tier = snapshot?.plan.tier ?? "starter";
 
-  const [apiKey] = await db
-    .select()
-    .from(apiKeysTable)
-    .where(and(eq(apiKeysTable.userId, userId), eq(apiKeysTable.status, "active")))
-    .orderBy(desc(apiKeysTable.createdAt))
-    .limit(1);
-  if (!apiKey) {
-    throw new BuildPrerequisiteError("NO_ACTIVE_API_KEY", "An active API key is required to generate an EA build. Create one first.");
-  }
-
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
   if (!user) {
     throw new BuildPrerequisiteError("USER_NOT_FOUND", "User not found.");
   }
 
-  return { tier, apiKey, user };
+  return { tier, user };
+}
+
+/** Mints a fresh, build-dedicated API key row and returns it plus the raw key to embed. */
+async function issueBuildApiKey(userId: string, buildLabel: string) {
+  const { rawKey, keyHash, keyPrefix } = generateBuildApiKey();
+  const signingSecret = generateSigningSecret();
+  const [keyRow] = await db.insert(apiKeysTable).values({
+    userId,
+    name: `EA build — ${buildLabel}`,
+    keyHash,
+    keyPrefix,
+    status: "active",
+    signingSecret,
+  }).returning();
+  return { keyRow, rawKey };
 }
 
 function prerequisiteErrorResponse(err: unknown): { status: number; body: { error: string; code?: string } } | null {
   if (!(err instanceof BuildPrerequisiteError)) return null;
   if (err.code === "USER_NOT_FOUND") return { status: 404, body: { error: err.message } };
-  if (err.code === "NO_ACTIVE_API_KEY") return { status: 400, body: { error: err.message } };
   return { status: 403, body: { error: err.message, code: err.code } };
 }
 
@@ -83,11 +93,12 @@ router.post("/generate", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const { tier, apiKey, user } = await resolveBuildPrerequisites(userId);
+    const { tier, user } = await resolveBuildPrerequisites(userId);
 
     const username = deriveUsername(user);
     const fileName = buildFileName(username);
     const buildId = crypto.randomUUID();
+    const { keyRow: apiKey, rawKey } = await issueBuildApiKey(userId, buildId);
 
     const metadata = {
       userId,
@@ -98,7 +109,7 @@ router.post("/generate", async (req, res) => {
       platformVersion: "MT5",
     };
 
-    const source = generateMql5Source(metadata);
+    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" });
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
     // S29 — checksum alone only detects accidental corruption; it doesn't
@@ -248,11 +259,12 @@ router.post("/:buildId/regenerate", async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const { tier, apiKey, user } = await resolveBuildPrerequisites(existing.userId);
+    const { tier, user } = await resolveBuildPrerequisites(existing.userId);
 
     const username = deriveUsername(user);
     const fileName = buildFileName(username);
     const newBuildId = crypto.randomUUID();
+    const { keyRow: apiKey, rawKey } = await issueBuildApiKey(existing.userId, newBuildId);
 
     const metadata = {
       userId: existing.userId,
@@ -263,7 +275,7 @@ router.post("/:buildId/regenerate", async (req, res) => {
       platformVersion: "MT5",
     };
 
-    const source = generateMql5Source(metadata);
+    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" });
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
     const signature = signArtifact(checksum);

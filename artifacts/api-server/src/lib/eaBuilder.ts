@@ -10,6 +10,26 @@ export interface EaMetadata {
   platformVersion: string;
 }
 
+export interface EaEmbeddedCredentials {
+  /** Raw API key, compiled directly into the EA so users never type it in. */
+  apiKey: string;
+  hardwareBindingHint: string;
+}
+
+/**
+ * Generates a fresh API key dedicated to a single EA build. Every build gets
+ * its own key (rather than reusing whatever key the user happens to have
+ * active) so the raw value can be embedded directly in the compiled EA and
+ * the platform never needs to persist or re-display it afterwards — only
+ * its SHA-256 hash is stored, matching the same never-store-plaintext rule
+ * used for user-created API keys.
+ */
+export function generateBuildApiKey(): { rawKey: string; keyHash: string; keyPrefix: string } {
+  const rawKey = `sig_ea_${crypto.randomBytes(32).toString("hex")}`;
+  const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+  return { rawKey, keyHash, keyPrefix: rawKey.slice(0, 12) + "..." };
+}
+
 /** Derives a filesystem/EA-safe username from a Clerk user's profile fields. */
 export function deriveUsername(user: { firstName?: string | null; lastName?: string | null; email: string }): string {
   const base = user.firstName || user.email.split("@")[0] || "trader";
@@ -26,7 +46,7 @@ export function buildFileName(username: string): string {
  * template with embedded metadata (as commented constants, never the raw
  * API key) and stub implementations of the required capabilities.
  */
-export function generateMql5Source(metadata: EaMetadata): string {
+export function generateMql5Source(metadata: EaMetadata, credentials: EaEmbeddedCredentials): string {
   return `//+------------------------------------------------------------------+
 //|                                         Signalium Expert Advisor |
 //|                   Auto-generated — do not edit embedded metadata |
@@ -36,8 +56,12 @@ export function generateMql5Source(metadata: EaMetadata): string {
 #property strict
 
 // ─── Embedded build metadata (read-only, verified server-side) ─────────────
-// Never contains the raw API key — only its SHA-256 hash.
+// This build's API key is compiled in below — the user never has to type or
+// paste it into the terminal. The key is scoped to this exact build/hardware
+// pairing (see ea_registrations upsert on first connect); revoking or
+// regenerating the build invalidates it and requires a fresh download.
 #define SIGNALIUM_USER_ID            "${metadata.userId}"
+#define SIGNALIUM_API_KEY            "${credentials.apiKey}"
 #define SIGNALIUM_API_KEY_HASH       "${metadata.apiKeyHash}"
 #define SIGNALIUM_BUILD_ID           "${metadata.buildId}"
 #define SIGNALIUM_SUBSCRIPTION_TIER  "${metadata.subscriptionTier}"
@@ -90,7 +114,8 @@ void OnTick() {
 
 // ─── Capabilities ────────────────────────────────────────────────────────
 void SignaliumVerifyBuild() {
-   // Calls /api/api-keys/verify using the locally-stored raw key + build id.
+   // Calls /api/api-keys/verify using the compiled-in SIGNALIUM_API_KEY +
+   // build id. No manual key entry required — it ships inside this binary.
 }
 
 void SignaliumConnectQdeSocket() {
@@ -142,8 +167,10 @@ void SignaliumReportAccountState(string trigger) {
  * Real MetaEditor compilation is not available in this environment, so we
  * package a structured binary artifact: a magic header, the embedded
  * metadata block (JSON, length-prefixed), and a digest of the source body.
- * This keeps the artifact byte-identical per build and inspectable for
- * audit purposes, while never embedding the raw API key.
+ * The source body (embedded below) already contains the user's compiled-in
+ * API key as a #define — the metadata block itself only stores the key's
+ * hash (for server-side audit/matching), never the raw value, so inspecting
+ * the JSON metadata block alone never leaks the credential.
  */
 export function compileToEx5(source: string, metadata: EaMetadata): Buffer {
   const magic = Buffer.from("SIGX5EA1", "utf-8");

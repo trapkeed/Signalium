@@ -53,7 +53,7 @@ const NAV_ITEMS = [
   { href: "/runtime", label: "Runtime", icon: Activity },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/account", label: "Account & Security", icon: Shield },
-] as { href: string; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[];
+] as { href: string; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; superAdminOnly?: boolean }[];
 
 // Grouped to match the full spec's admin surface: each section below is a
 // coherent slice of the panel rather than one long flat list.
@@ -70,6 +70,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
       { href: "/admin/payments", label: "Payments", icon: Wallet },
       { href: "/admin/api-keys", label: "API Keys", icon: Key },
+      { href: "/admin/secrets", label: "Secrets Vault (Super Admin)", icon: Key, superAdminOnly: true },
     ],
   },
   {
@@ -213,12 +214,14 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
   const userRole = user?.publicMetadata?.role as string | undefined;
   const isAdmin = !!userRole && userRole !== "user";
   const isAdminLevel = userRole === "admin" || userRole === "super_admin";
+  const isSuperAdmin = userRole === "super_admin";
   const referralsEnabled = useFeatureFlag("referrals_enabled");
 
   const adminGroups = ADMIN_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => referralsEnabled || item.href !== "/admin/referrals")
-      .filter((item) => !item.adminOnly || isAdminLevel),
+      .filter((item) => !item.adminOnly || isAdminLevel)
+      .filter((item) => !item.superAdminOnly || isSuperAdmin),
   })).filter((group) => group.items.length > 0);
 
   return (
