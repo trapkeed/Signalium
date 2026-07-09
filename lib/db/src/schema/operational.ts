@@ -266,6 +266,10 @@ export const platformAlertsTable = pgTable(
         // S25 additions
         "autonomous_trading_anomaly",
         "excessive_drawdown_cluster",
+        // S26 additions — scalability/HA/DR
+        "backup_failure",
+        "job_queue_dead_letter",
+        "secret_rotation_overdue",
       ],
     }).notNull(),
     severity: text("severity", { enum: ["info", "warning", "critical"] }).notNull(),

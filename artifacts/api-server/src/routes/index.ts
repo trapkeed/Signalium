@@ -42,6 +42,7 @@ import researchLabRouter from "./research-lab";
 import rolesRouter from "./roles";
 import ssoRouter from "./sso";
 import opsDashboardRouter from "./ops-dashboard";
+import resilienceRouter from "./resilience";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -105,5 +106,7 @@ router.use("/admin/roles", rolesRouter);
 router.use("/sso", ssoRouter);
 // S25: unified Operations Dashboard — admin-only aggregate read across all ops surfaces
 router.use("/ops-dashboard", opsDashboardRouter);
+// S26: Scalability/HA/DR — backups, job-queue, circuit breakers, secret rotation, config export/restore
+router.use("/resilience", resilienceRouter);
 
 export default router;

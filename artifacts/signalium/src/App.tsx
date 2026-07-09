@@ -50,6 +50,7 @@ import AdminTradeIntelligence from "@/pages/admin/trade-intelligence";
 import AdminDeployments from "@/pages/admin/deployments";
 import AdminOperations from "@/pages/admin/operations";
 import AdminOpsDashboard from "@/pages/admin/ops-dashboard";
+import AdminResilienceDashboard from "@/pages/admin/resilience-dashboard";
 import AdminPlatformHealth from "@/pages/admin/platform-health";
 import AdminEaMonitor from "@/pages/admin/ea-monitor";
 import AdminIncidents from "@/pages/admin/incidents";
@@ -283,6 +284,7 @@ function ClerkProviderWithRoutes() {
               <Route path="/admin/deployments"><ProtectedRoute component={AdminDeployments} ops /></Route>
               <Route path="/admin/operations"><ProtectedRoute component={AdminOperations} ops /></Route>
               <Route path="/admin/ops-dashboard"><ProtectedRoute component={AdminOpsDashboard} ops /></Route>
+              <Route path="/admin/resilience"><ProtectedRoute component={AdminResilienceDashboard} ops /></Route>
               <Route path="/admin/platform-health"><ProtectedRoute component={AdminPlatformHealth} ops /></Route>
               <Route path="/admin/ea-monitor"><ProtectedRoute component={AdminEaMonitor} ops /></Route>
               <Route path="/admin/incidents"><ProtectedRoute component={AdminIncidents} ops /></Route>

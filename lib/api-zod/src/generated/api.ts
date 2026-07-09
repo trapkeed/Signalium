@@ -18,6 +18,15 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * Returns 200 with DB connectivity verified, or 503 if the database is unreachable. Distinct from /healthz (liveness), which never depends on downstream services.
+ * @summary Readiness check
+ */
+export const ReadinessCheckResponse = zod.object({
+  "status": zod.string().optional()
+})
+
+
+/**
  * @summary List subscription plans
  */
 export const ListPlansResponseItem = zod.object({
@@ -6222,6 +6231,102 @@ export const GetOperationalDashboardResponse = zod.object({
  * @summary Admin — unified Operations Dashboard overview (SuperAdmin/Admin only)
  */
 export const GetOpsDashboardOverviewResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — list logical database backup records (S26)
+ */
+export const GetResilienceBackupsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — trigger a manual logical database backup (S26)
+ */
+export const PostResilienceBackupsRunResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — re-verify a backup's checksum against stored object storage (S26)
+ */
+export const PostResilienceBackupsIdValidateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostResilienceBackupsIdValidateResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — human-readable restore steps for a backup (dry-run, non-destructive) (S26)
+ */
+export const GetResilienceBackupsIdRestorePlanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetResilienceBackupsIdRestorePlanResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — durable job-queue counts by queue/status (S26)
+ */
+export const GetResilienceQueueStatsResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — jobs that exhausted retries (S26)
+ */
+export const GetResilienceQueueDeadLetterResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — requeue a dead-lettered job (S26)
+ */
+export const PostResilienceQueueIdRequeueParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PostResilienceQueueIdRequeueResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — status of all named circuit breakers (S26)
+ */
+export const GetResilienceCircuitBreakersResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — secret/key rotation due-status calendar (S26)
+ */
+export const GetResilienceSecretRotationResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — record that a secret was rotated (S26)
+ */
+export const PostResilienceSecretRotationSecretNameMarkRotatedParams = zod.object({
+  "secretName": zod.coerce.string()
+})
+
+export const PostResilienceSecretRotationSecretNameMarkRotatedResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — audit-log retention window + current volume (S26)
+ */
+export const GetResilienceAuditRetentionResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — export platform configuration as a portable JSON snapshot (S26)
+ */
+export const GetResilienceConfigExportResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
+ * @summary Admin — import a platform configuration snapshot (idempotent upsert) (S26)
+ */
+export const PostResilienceConfigImportBody = zod.record(zod.string(), zod.unknown())
+
+export const PostResilienceConfigImportResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

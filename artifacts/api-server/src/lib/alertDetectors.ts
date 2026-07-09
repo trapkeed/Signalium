@@ -24,6 +24,7 @@ import { emitPlatformAlert, hasRecentPlatformAlert } from "./alerting";
 import { getTrainerFailureState } from "./qdeTrainer";
 import { computeSymbolHealth } from "./symbolHealth";
 import { logger } from "./logger";
+import { checkOverdueRotations } from "./secretRotation";
 
 // Cooldown before re-alerting on the same condition — long enough to avoid
 // spamming ops on every sweep, short enough that a resolved-then-recurring
@@ -308,6 +309,7 @@ export async function runAlertSweep(): Promise<void> {
       checkBrokerConnectionFailures,
       checkAutonomousTradingAnomalies,
       checkExcessiveDrawdownCluster,
+      checkOverdueRotations, // S26: secret/key rotation due-dates
     ];
     for (const detector of detectors) {
       try {

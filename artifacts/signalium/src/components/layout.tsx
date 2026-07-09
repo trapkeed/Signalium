@@ -89,6 +89,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
     title: "Operations",
     items: [
       { href: "/admin/ops-dashboard", label: "Ops Overview (Admin+)", icon: Gauge, adminOnly: true },
+      { href: "/admin/resilience", label: "Resilience & DR (Admin+)", icon: ShieldCheck, adminOnly: true },
       { href: "/admin/operations", label: "Ops Dashboard", icon: Server },
       { href: "/admin/platform-health", label: "Platform Health", icon: Cpu },
       { href: "/admin/ea-monitor", label: "EA Monitor", icon: Wifi },

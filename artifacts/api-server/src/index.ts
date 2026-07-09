@@ -8,6 +8,10 @@ import { startPlatformHealthMonitor, markSchedulerHeartbeat } from "./lib/platfo
 import { recordBackendDeploymentIfChanged } from "./lib/serviceVersion";
 import { startAlertSweep } from "./lib/alertDetectors";
 import { startSecuritySweep } from "./lib/securityDetectors";
+import { startJobQueueWorker } from "./lib/jobQueue";
+import { startBackupScheduler } from "./lib/backupService";
+import { startAuditRetentionSweep } from "./lib/auditRetention";
+import { seedSecretRotationTracking } from "./lib/secretRotation";
 
 const rawPort = process.env["PORT"];
 
@@ -49,6 +53,15 @@ startPlatformHealthMonitor(60 * 1_000); // sample every 60 seconds
 // when credentials are present).
 startAlertSweep(2 * 60_000); // sweep every 2 minutes
 startSecuritySweep(5 * 60_000); // sweep every 5 minutes
+
+// S26: Scalability/HA/DR background workers — durable job-queue dispatch,
+// daily logical DB backups (+ retention prune), and audit-log retention.
+startJobQueueWorker(15 * 1_000);
+startBackupScheduler(24 * 60 * 60 * 1_000);
+startAuditRetentionSweep(24 * 60 * 60 * 1_000);
+seedSecretRotationTracking().catch((err) => {
+  logger.warn({ err }, "Failed to seed secret rotation tracking");
+});
 
 // S23a: Record the backend's current git commit as a deployment version
 // (display-only, for the admin deployment dashboard's rollback reference).

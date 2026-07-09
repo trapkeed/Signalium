@@ -1,5 +1,12 @@
 import { retryWithBackoff } from "./retry";
 import { getServiceToken } from "./sso";
+import { getCircuitBreaker } from "./circuitBreaker";
+
+// S26: fail fast + degrade gracefully once the external trainer is clearly
+// down, instead of retrying (and timing out) on every single EA tick while
+// it's unresponsive. When open, callers fall back to the local heuristic
+// decision tree so EAs keep receiving *some* guidance instead of nothing.
+const trainerBreaker = getCircuitBreaker("qde-trainer", { failureThreshold: 4, resetTimeoutMs: 60_000, timeoutMs: 8_000 });
 
 export const TRAINER_ACTIONS = [
   "HOLD",
@@ -270,10 +277,16 @@ export async function decideAction(telemetry: TelemetrySnapshot): Promise<Traine
 
 async function runTrainer(t: TelemetrySnapshot): Promise<TrainerDecision> {
   const trainerUrl = process.env["QDE_TRAINER_URL"];
-  if (trainerUrl) {
-    return callExternalTrainer(trainerUrl, t);
+  if (!trainerUrl) {
+    return simulateTrainerHeuristic(t);
   }
-  return simulateTrainerHeuristic(t);
+  // Graceful degradation: if the external trainer's circuit is open, skip
+  // straight to the local heuristic instead of throwing — an EA should never
+  // be left with "no action" just because the ML service is temporarily down.
+  return trainerBreaker.execute(
+    () => callExternalTrainer(trainerUrl, t),
+    () => simulateTrainerHeuristic(t),
+  );
 }
 
 async function callExternalTrainer(url: string, telemetry: TelemetrySnapshot): Promise<TrainerDecision> {

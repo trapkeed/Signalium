@@ -2990,6 +2990,15 @@ export type ResearchLabUnavailableResponse = {
   message?: string;
 };
 
+export type ReadinessCheck200 = {
+  status?: string;
+};
+
+export type ReadinessCheck503 = {
+  status?: string;
+  reason?: string;
+};
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -3764,6 +3773,34 @@ export type PostOperationalAlertsIdAcknowledge200 = {
 };
 
 export type GetOpsDashboardOverview200 = { [key: string]: unknown };
+
+export type GetResilienceBackups200 = { [key: string]: unknown };
+
+export type PostResilienceBackupsRun200 = { [key: string]: unknown };
+
+export type PostResilienceBackupsIdValidate200 = { [key: string]: unknown };
+
+export type GetResilienceBackupsIdRestorePlan200 = { [key: string]: unknown };
+
+export type GetResilienceQueueStats200 = { [key: string]: unknown };
+
+export type GetResilienceQueueDeadLetter200 = { [key: string]: unknown };
+
+export type PostResilienceQueueIdRequeue200 = { [key: string]: unknown };
+
+export type GetResilienceCircuitBreakers200 = { [key: string]: unknown };
+
+export type GetResilienceSecretRotation200 = { [key: string]: unknown };
+
+export type PostResilienceSecretRotationSecretNameMarkRotated200 = { [key: string]: unknown };
+
+export type GetResilienceAuditRetention200 = { [key: string]: unknown };
+
+export type GetResilienceConfigExport200 = { [key: string]: unknown };
+
+export type PostResilienceConfigImportBody = { [key: string]: unknown };
+
+export type PostResilienceConfigImport200 = { [key: string]: unknown };
 
 export type GetOperationalPlatformHealthParams = {
 limit?: number;

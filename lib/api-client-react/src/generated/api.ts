@@ -136,6 +136,14 @@ import type {
   GetResearchLabTrainingResourceUsage200,
   GetResearchLabTrainingRun200,
   GetResearchLabValidationReport200,
+  GetResilienceAuditRetention200,
+  GetResilienceBackups200,
+  GetResilienceBackupsIdRestorePlan200,
+  GetResilienceCircuitBreakers200,
+  GetResilienceConfigExport200,
+  GetResilienceQueueDeadLetter200,
+  GetResilienceQueueStats200,
+  GetResilienceSecretRotation200,
   GetSymbolNormalizationLogParams,
   GetUnreadNotificationCount200,
   GrantCreditBody,
@@ -229,12 +237,20 @@ import type {
   PostQdeAdminTradeTimelineOpportunityIdFinalize200,
   PostQdeSelfEvaluationGenerateBody,
   PostQdeTrainerSync200,
+  PostResilienceBackupsIdValidate200,
+  PostResilienceBackupsRun200,
+  PostResilienceConfigImport200,
+  PostResilienceConfigImportBody,
+  PostResilienceQueueIdRequeue200,
+  PostResilienceSecretRotationSecretNameMarkRotated200,
   ProviderCapability,
   ProviderCredential,
   ProviderStatus,
   ProviderSymbolMapping,
   QdeRuntimeHealth,
   QdeStatsOverview,
+  ReadinessCheck200,
+  ReadinessCheck503,
   ReasoningAccuracy,
   ReasoningValidation,
   RedeliverAction200,
@@ -427,6 +443,84 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReadinessCheckUrl = () => {
+
+
+
+
+  return `/api/ready`
+}
+
+/**
+ * Returns 200 with DB connectivity verified, or 503 if the database is unreachable. Distinct from /healthz (liveness), which never depends on downstream services.
+ * @summary Readiness check
+ */
+export const readinessCheck = async ( options?: RequestInit): Promise<ReadinessCheck200> => {
+
+  return customFetch<ReadinessCheck200>(getReadinessCheckUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getReadinessCheckQueryKey = () => {
+    return [
+    `/api/ready`
+    ] as const;
+    }
+
+
+export const getReadinessCheckQueryOptions = <TData = Awaited<ReturnType<typeof readinessCheck>>, TError = ErrorType<ReadinessCheck503>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof readinessCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getReadinessCheckQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof readinessCheck>>> = ({ signal }) => readinessCheck({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof readinessCheck>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ReadinessCheckQueryResult = NonNullable<Awaited<ReturnType<typeof readinessCheck>>>
+export type ReadinessCheckQueryError = ErrorType<ReadinessCheck503>
+
+
+/**
+ * @summary Readiness check
+ */
+
+export function useReadinessCheck<TData = Awaited<ReturnType<typeof readinessCheck>>, TError = ErrorType<ReadinessCheck503>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof readinessCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getReadinessCheckQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -21214,6 +21308,977 @@ export function useGetOpsDashboardOverview<TData = Awaited<ReturnType<typeof get
 
 
 
+
+export const getGetResilienceBackupsUrl = () => {
+
+
+
+
+  return `/api/resilience/backups`
+}
+
+/**
+ * @summary Admin — list logical database backup records (S26)
+ */
+export const getResilienceBackups = async ( options?: RequestInit): Promise<GetResilienceBackups200> => {
+
+  return customFetch<GetResilienceBackups200>(getGetResilienceBackupsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceBackupsQueryKey = () => {
+    return [
+    `/api/resilience/backups`
+    ] as const;
+    }
+
+
+export const getGetResilienceBackupsQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceBackups>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceBackupsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceBackups>>> = ({ signal }) => getResilienceBackups({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceBackupsQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceBackups>>>
+export type GetResilienceBackupsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — list logical database backup records (S26)
+ */
+
+export function useGetResilienceBackups<TData = Awaited<ReturnType<typeof getResilienceBackups>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceBackupsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostResilienceBackupsRunUrl = () => {
+
+
+
+
+  return `/api/resilience/backups/run`
+}
+
+/**
+ * @summary Admin — trigger a manual logical database backup (S26)
+ */
+export const postResilienceBackupsRun = async ( options?: RequestInit): Promise<PostResilienceBackupsRun200> => {
+
+  return customFetch<PostResilienceBackupsRun200>(getPostResilienceBackupsRunUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostResilienceBackupsRunMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsRun>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsRun>>, TError,void, TContext> => {
+
+const mutationKey = ['postResilienceBackupsRun'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postResilienceBackupsRun>>, void> = () => {
+
+
+          return  postResilienceBackupsRun(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostResilienceBackupsRunMutationResult = NonNullable<Awaited<ReturnType<typeof postResilienceBackupsRun>>>
+
+    export type PostResilienceBackupsRunMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — trigger a manual logical database backup (S26)
+ */
+export const usePostResilienceBackupsRun = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsRun>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postResilienceBackupsRun>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostResilienceBackupsRunMutationOptions(options));
+    }
+
+export const getPostResilienceBackupsIdValidateUrl = (id: number,) => {
+
+
+
+
+  return `/api/resilience/backups/${id}/validate`
+}
+
+/**
+ * @summary Admin — re-verify a backup's checksum against stored object storage (S26)
+ */
+export const postResilienceBackupsIdValidate = async (id: number, options?: RequestInit): Promise<PostResilienceBackupsIdValidate200> => {
+
+  return customFetch<PostResilienceBackupsIdValidate200>(getPostResilienceBackupsIdValidateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostResilienceBackupsIdValidateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postResilienceBackupsIdValidate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postResilienceBackupsIdValidate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostResilienceBackupsIdValidateMutationResult = NonNullable<Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>>
+
+    export type PostResilienceBackupsIdValidateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — re-verify a backup's checksum against stored object storage (S26)
+ */
+export const usePostResilienceBackupsIdValidate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postResilienceBackupsIdValidate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostResilienceBackupsIdValidateMutationOptions(options));
+    }
+
+export const getGetResilienceBackupsIdRestorePlanUrl = (id: number,) => {
+
+
+
+
+  return `/api/resilience/backups/${id}/restore-plan`
+}
+
+/**
+ * @summary Admin — human-readable restore steps for a backup (dry-run, non-destructive) (S26)
+ */
+export const getResilienceBackupsIdRestorePlan = async (id: number, options?: RequestInit): Promise<GetResilienceBackupsIdRestorePlan200> => {
+
+  return customFetch<GetResilienceBackupsIdRestorePlan200>(getGetResilienceBackupsIdRestorePlanUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceBackupsIdRestorePlanQueryKey = (id: number,) => {
+    return [
+    `/api/resilience/backups/${id}/restore-plan`
+    ] as const;
+    }
+
+
+export const getGetResilienceBackupsIdRestorePlanQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceBackupsIdRestorePlanQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>> = ({ signal }) => getResilienceBackupsIdRestorePlan(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceBackupsIdRestorePlanQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>>
+export type GetResilienceBackupsIdRestorePlanQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — human-readable restore steps for a backup (dry-run, non-destructive) (S26)
+ */
+
+export function useGetResilienceBackupsIdRestorePlan<TData = Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceBackupsIdRestorePlan>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceBackupsIdRestorePlanQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResilienceQueueStatsUrl = () => {
+
+
+
+
+  return `/api/resilience/queue/stats`
+}
+
+/**
+ * @summary Admin — durable job-queue counts by queue/status (S26)
+ */
+export const getResilienceQueueStats = async ( options?: RequestInit): Promise<GetResilienceQueueStats200> => {
+
+  return customFetch<GetResilienceQueueStats200>(getGetResilienceQueueStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceQueueStatsQueryKey = () => {
+    return [
+    `/api/resilience/queue/stats`
+    ] as const;
+    }
+
+
+export const getGetResilienceQueueStatsQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceQueueStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceQueueStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceQueueStats>>> = ({ signal }) => getResilienceQueueStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceQueueStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceQueueStats>>>
+export type GetResilienceQueueStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — durable job-queue counts by queue/status (S26)
+ */
+
+export function useGetResilienceQueueStats<TData = Awaited<ReturnType<typeof getResilienceQueueStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceQueueStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResilienceQueueDeadLetterUrl = () => {
+
+
+
+
+  return `/api/resilience/queue/dead-letter`
+}
+
+/**
+ * @summary Admin — jobs that exhausted retries (S26)
+ */
+export const getResilienceQueueDeadLetter = async ( options?: RequestInit): Promise<GetResilienceQueueDeadLetter200> => {
+
+  return customFetch<GetResilienceQueueDeadLetter200>(getGetResilienceQueueDeadLetterUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceQueueDeadLetterQueryKey = () => {
+    return [
+    `/api/resilience/queue/dead-letter`
+    ] as const;
+    }
+
+
+export const getGetResilienceQueueDeadLetterQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceQueueDeadLetterQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>> = ({ signal }) => getResilienceQueueDeadLetter({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceQueueDeadLetterQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>>
+export type GetResilienceQueueDeadLetterQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — jobs that exhausted retries (S26)
+ */
+
+export function useGetResilienceQueueDeadLetter<TData = Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceQueueDeadLetter>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceQueueDeadLetterQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostResilienceQueueIdRequeueUrl = (id: number,) => {
+
+
+
+
+  return `/api/resilience/queue/${id}/requeue`
+}
+
+/**
+ * @summary Admin — requeue a dead-lettered job (S26)
+ */
+export const postResilienceQueueIdRequeue = async (id: number, options?: RequestInit): Promise<PostResilienceQueueIdRequeue200> => {
+
+  return customFetch<PostResilienceQueueIdRequeue200>(getPostResilienceQueueIdRequeueUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostResilienceQueueIdRequeueMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['postResilienceQueueIdRequeue'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postResilienceQueueIdRequeue(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostResilienceQueueIdRequeueMutationResult = NonNullable<Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>>
+
+    export type PostResilienceQueueIdRequeueMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — requeue a dead-lettered job (S26)
+ */
+export const usePostResilienceQueueIdRequeue = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postResilienceQueueIdRequeue>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getPostResilienceQueueIdRequeueMutationOptions(options));
+    }
+
+export const getGetResilienceCircuitBreakersUrl = () => {
+
+
+
+
+  return `/api/resilience/circuit-breakers`
+}
+
+/**
+ * @summary Admin — status of all named circuit breakers (S26)
+ */
+export const getResilienceCircuitBreakers = async ( options?: RequestInit): Promise<GetResilienceCircuitBreakers200> => {
+
+  return customFetch<GetResilienceCircuitBreakers200>(getGetResilienceCircuitBreakersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceCircuitBreakersQueryKey = () => {
+    return [
+    `/api/resilience/circuit-breakers`
+    ] as const;
+    }
+
+
+export const getGetResilienceCircuitBreakersQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceCircuitBreakers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceCircuitBreakers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceCircuitBreakersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceCircuitBreakers>>> = ({ signal }) => getResilienceCircuitBreakers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceCircuitBreakers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceCircuitBreakersQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceCircuitBreakers>>>
+export type GetResilienceCircuitBreakersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — status of all named circuit breakers (S26)
+ */
+
+export function useGetResilienceCircuitBreakers<TData = Awaited<ReturnType<typeof getResilienceCircuitBreakers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceCircuitBreakers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceCircuitBreakersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResilienceSecretRotationUrl = () => {
+
+
+
+
+  return `/api/resilience/secret-rotation`
+}
+
+/**
+ * @summary Admin — secret/key rotation due-status calendar (S26)
+ */
+export const getResilienceSecretRotation = async ( options?: RequestInit): Promise<GetResilienceSecretRotation200> => {
+
+  return customFetch<GetResilienceSecretRotation200>(getGetResilienceSecretRotationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceSecretRotationQueryKey = () => {
+    return [
+    `/api/resilience/secret-rotation`
+    ] as const;
+    }
+
+
+export const getGetResilienceSecretRotationQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceSecretRotation>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceSecretRotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceSecretRotationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceSecretRotation>>> = ({ signal }) => getResilienceSecretRotation({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceSecretRotation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceSecretRotationQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceSecretRotation>>>
+export type GetResilienceSecretRotationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — secret/key rotation due-status calendar (S26)
+ */
+
+export function useGetResilienceSecretRotation<TData = Awaited<ReturnType<typeof getResilienceSecretRotation>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceSecretRotation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceSecretRotationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostResilienceSecretRotationSecretNameMarkRotatedUrl = (secretName: string,) => {
+
+
+
+
+  return `/api/resilience/secret-rotation/${secretName}/mark-rotated`
+}
+
+/**
+ * @summary Admin — record that a secret was rotated (S26)
+ */
+export const postResilienceSecretRotationSecretNameMarkRotated = async (secretName: string, options?: RequestInit): Promise<PostResilienceSecretRotationSecretNameMarkRotated200> => {
+
+  return customFetch<PostResilienceSecretRotationSecretNameMarkRotated200>(getPostResilienceSecretRotationSecretNameMarkRotatedUrl(secretName),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostResilienceSecretRotationSecretNameMarkRotatedMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>, TError,{secretName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>, TError,{secretName: string}, TContext> => {
+
+const mutationKey = ['postResilienceSecretRotationSecretNameMarkRotated'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>, {secretName: string}> = (props) => {
+          const {secretName} = props ?? {};
+
+          return  postResilienceSecretRotationSecretNameMarkRotated(secretName,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostResilienceSecretRotationSecretNameMarkRotatedMutationResult = NonNullable<Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>>
+
+    export type PostResilienceSecretRotationSecretNameMarkRotatedMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — record that a secret was rotated (S26)
+ */
+export const usePostResilienceSecretRotationSecretNameMarkRotated = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>, TError,{secretName: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postResilienceSecretRotationSecretNameMarkRotated>>,
+        TError,
+        {secretName: string},
+        TContext
+      > => {
+      return useMutation(getPostResilienceSecretRotationSecretNameMarkRotatedMutationOptions(options));
+    }
+
+export const getGetResilienceAuditRetentionUrl = () => {
+
+
+
+
+  return `/api/resilience/audit-retention`
+}
+
+/**
+ * @summary Admin — audit-log retention window + current volume (S26)
+ */
+export const getResilienceAuditRetention = async ( options?: RequestInit): Promise<GetResilienceAuditRetention200> => {
+
+  return customFetch<GetResilienceAuditRetention200>(getGetResilienceAuditRetentionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceAuditRetentionQueryKey = () => {
+    return [
+    `/api/resilience/audit-retention`
+    ] as const;
+    }
+
+
+export const getGetResilienceAuditRetentionQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceAuditRetention>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceAuditRetention>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceAuditRetentionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceAuditRetention>>> = ({ signal }) => getResilienceAuditRetention({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceAuditRetention>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceAuditRetentionQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceAuditRetention>>>
+export type GetResilienceAuditRetentionQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — audit-log retention window + current volume (S26)
+ */
+
+export function useGetResilienceAuditRetention<TData = Awaited<ReturnType<typeof getResilienceAuditRetention>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceAuditRetention>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceAuditRetentionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResilienceConfigExportUrl = () => {
+
+
+
+
+  return `/api/resilience/config-export`
+}
+
+/**
+ * @summary Admin — export platform configuration as a portable JSON snapshot (S26)
+ */
+export const getResilienceConfigExport = async ( options?: RequestInit): Promise<GetResilienceConfigExport200> => {
+
+  return customFetch<GetResilienceConfigExport200>(getGetResilienceConfigExportUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResilienceConfigExportQueryKey = () => {
+    return [
+    `/api/resilience/config-export`
+    ] as const;
+    }
+
+
+export const getGetResilienceConfigExportQueryOptions = <TData = Awaited<ReturnType<typeof getResilienceConfigExport>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceConfigExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResilienceConfigExportQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResilienceConfigExport>>> = ({ signal }) => getResilienceConfigExport({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResilienceConfigExport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResilienceConfigExportQueryResult = NonNullable<Awaited<ReturnType<typeof getResilienceConfigExport>>>
+export type GetResilienceConfigExportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — export platform configuration as a portable JSON snapshot (S26)
+ */
+
+export function useGetResilienceConfigExport<TData = Awaited<ReturnType<typeof getResilienceConfigExport>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResilienceConfigExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResilienceConfigExportQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPostResilienceConfigImportUrl = () => {
+
+
+
+
+  return `/api/resilience/config-import`
+}
+
+/**
+ * @summary Admin — import a platform configuration snapshot (idempotent upsert) (S26)
+ */
+export const postResilienceConfigImport = async (postResilienceConfigImportBody: PostResilienceConfigImportBody, options?: RequestInit): Promise<PostResilienceConfigImport200> => {
+
+  return customFetch<PostResilienceConfigImport200>(getPostResilienceConfigImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(postResilienceConfigImportBody)
+  }
+);}
+
+
+
+
+
+export const getPostResilienceConfigImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceConfigImport>>, TError,{data: BodyType<PostResilienceConfigImportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof postResilienceConfigImport>>, TError,{data: BodyType<PostResilienceConfigImportBody>}, TContext> => {
+
+const mutationKey = ['postResilienceConfigImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postResilienceConfigImport>>, {data: BodyType<PostResilienceConfigImportBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  postResilienceConfigImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostResilienceConfigImportMutationResult = NonNullable<Awaited<ReturnType<typeof postResilienceConfigImport>>>
+    export type PostResilienceConfigImportMutationBody = BodyType<PostResilienceConfigImportBody>
+    export type PostResilienceConfigImportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Admin — import a platform configuration snapshot (idempotent upsert) (S26)
+ */
+export const usePostResilienceConfigImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postResilienceConfigImport>>, TError,{data: BodyType<PostResilienceConfigImportBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof postResilienceConfigImport>>,
+        TError,
+        {data: BodyType<PostResilienceConfigImportBody>},
+        TContext
+      > => {
+      return useMutation(getPostResilienceConfigImportMutationOptions(options));
+    }
 
 export const getGetOperationalPlatformHealthUrl = (params?: GetOperationalPlatformHealthParams,) => {
   const normalizedParams = new URLSearchParams();

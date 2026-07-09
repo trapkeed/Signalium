@@ -4,6 +4,7 @@ import { authenticateRequest, clerkClient } from "@clerk/express";
 import { getUserRole } from "../middlewares/requireAdmin";
 import { isStaffLevel } from "../lib/roles";
 import { logger } from "../lib/logger";
+import { publish as publishCrossInstance, subscribe as subscribeCrossInstance } from "../lib/pgBroadcast";
 
 /**
  * ─── Admin Ops WebSocket channel ────────────────────────────────────────
@@ -107,6 +108,14 @@ export function attachAdminOpsGateway(server: HttpServer) {
 
   wss.on("close", () => clearInterval(heartbeat));
 
+  // S26: relay events NOTIFY'd by any instance (including this one) to this
+  // instance's own locally-connected clients — see pgBroadcast.ts. This is
+  // what makes the admin ops event stream work correctly behind a load
+  // balancer with more than one instance, without introducing Redis.
+  subscribeCrossInstance(({ type, data }) => {
+    deliverLocally(type as OpsEventType, data);
+  });
+
   logger.info("Admin ops WebSocket gateway attached at /api/ws/admin-ops");
   return wss;
 }
@@ -137,8 +146,15 @@ function safeSend(ws: WebSocket, payload: unknown) {
   }
 }
 
-/** Broadcasts an ops event to every connected admin/staff client. Never throws — a broadcast failure must not break the underlying mutation it's attached to. */
+/** Broadcasts an ops event to every connected admin/staff client — on THIS instance, plus (via Postgres NOTIFY) every other horizontally-scaled instance's clients. Never throws — a broadcast failure must not break the underlying mutation it's attached to. */
 export function broadcastOpsEvent(type: OpsEventType, data: unknown): void {
+  deliverLocally(type, data);
+  publishCrossInstance(type, data).catch((err) => {
+    logger.warn({ err, type }, "Failed to fan out admin ops event to other instances");
+  });
+}
+
+function deliverLocally(type: OpsEventType, data: unknown): void {
   try {
     const frame = JSON.stringify({ type, data, at: new Date().toISOString() });
     for (const client of clients) {
