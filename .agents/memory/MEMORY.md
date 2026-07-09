@@ -6,3 +6,4 @@
 - [S23a Platform Health & Deployment Tracking](s23a-platform-health-deployment.md) — no Redis infra exists (report unconfigured, don't fake), live-computed vs persisted metrics split, service-version vs QDE-model-deployment separation, interval reentrancy guard.
 - [S23b Alerting Engine & Symbol Health](s23b-alerting-symbol-health.md) — delivery-channel gating on optional secrets, generalized platform-alert dedup, sweep reentrancy guard, symbol health approximated from provider_status (no candle table).
 - [S23c Security Operations & Audit Logs](s23c-security-operations.md) — scopeKey dedup requirement, security_incidents vs operational_incidents, audit-log volume control, shared IP threading for auth.
+- [S24B Research Lab Integration Hub](s24b-research-lab-hub.md) — trainer-proxy gateway pattern, ResearchLabPassthrough opaque schema, audit-on-success-only for sensitive reads.

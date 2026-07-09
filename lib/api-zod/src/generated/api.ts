@@ -6489,3 +6489,335 @@ export const GetQdeAdminTradeIntelligenceStatsResponse = zod.object({
 })
 
 
+/**
+ * @summary Whether the Research Lab (signalium-trainer) gateway is configured
+ */
+export const GetResearchLabStatusResponse = zod.object({
+  "configured": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List experiments
+ */
+export const ListResearchLabExperimentsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListResearchLabExperimentsResponse = zod.object({
+  "experiments": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get experiment detail
+ */
+export const GetResearchLabExperimentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabExperimentResponse = zod.object({
+  "experiment": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get experiment lineage
+ */
+export const GetResearchLabExperimentLineageParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabExperimentLineageResponse = zod.object({
+  "lineage": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get experiment history/timeline
+ */
+export const GetResearchLabExperimentHistoryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabExperimentHistoryResponse = zod.object({
+  "history": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List training runs
+ */
+export const ListResearchLabTrainingRunsQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabTrainingRunsResponse = zod.object({
+  "runs": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get training run detail
+ */
+export const GetResearchLabTrainingRunParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabTrainingRunResponse = zod.object({
+  "run": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get training resource usage
+ */
+export const GetResearchLabTrainingResourceUsageResponse = zod.object({
+  "usage": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List validation/certification reports
+ */
+export const ListResearchLabValidationReportsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabValidationReportsResponse = zod.object({
+  "reports": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get a validation report
+ */
+export const GetResearchLabValidationReportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabValidationReportResponse = zod.object({
+  "report": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get drift monitoring status
+ */
+export const GetResearchLabDriftMonitoringResponse = zod.object({
+  "drift": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List robustness test results
+ */
+export const ListResearchLabRobustnessTestsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabRobustnessTestsResponse = zod.object({
+  "tests": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List active shadow deployments
+ */
+export const ListResearchLabShadowDeploymentsQueryParams = zod.object({
+  "status": zod.coerce.string().optional()
+})
+
+export const ListResearchLabShadowDeploymentsResponse = zod.object({
+  "deployments": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get challenger vs champion comparison for a shadow deployment
+ */
+export const GetResearchLabShadowComparisonParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabShadowComparisonResponse = zod.object({
+  "comparison": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get agreement analysis for a shadow deployment
+ */
+export const GetResearchLabShadowAgreementParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabShadowAgreementResponse = zod.object({
+  "agreement": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get regime comparison for a shadow deployment
+ */
+export const GetResearchLabShadowRegimeComparisonParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabShadowRegimeComparisonResponse = zod.object({
+  "regimes": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List deployment candidates
+ */
+export const ListResearchLabDeploymentCandidatesQueryParams = zod.object({
+  "status": zod.coerce.string().optional()
+})
+
+export const ListResearchLabDeploymentCandidatesResponse = zod.object({
+  "candidates": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get deployment candidate history
+ */
+export const GetResearchLabDeploymentCandidateHistoryQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const GetResearchLabDeploymentCandidateHistoryResponse = zod.object({
+  "history": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get deployment candidate detail
+ */
+export const GetResearchLabDeploymentCandidateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetResearchLabDeploymentCandidateResponse = zod.object({
+  "candidate": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Approve a deployment candidate (audited)
+ */
+export const ApproveResearchLabDeploymentCandidateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const ApproveResearchLabDeploymentCandidateResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Roll back a deployment candidate (audited)
+ */
+export const RollbackResearchLabDeploymentCandidateParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RollbackResearchLabDeploymentCandidateBody = zod.object({
+  "reason": zod.string().nullish()
+})
+
+export const RollbackResearchLabDeploymentCandidateResponse = zod.object({
+  "ok": zod.boolean().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary List discovered features
+ */
+export const ListResearchLabDiscoveredFeaturesQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabDiscoveredFeaturesResponse = zod.object({
+  "features": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List failure investigations
+ */
+export const ListResearchLabFailureInvestigationsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabFailureInvestigationsResponse = zod.object({
+  "investigations": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List self-evaluation findings
+ */
+export const ListResearchLabSelfEvaluationFindingsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabSelfEvaluationFindingsResponse = zod.object({
+  "findings": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary List retraining recommendations
+ */
+export const ListResearchLabRetrainingRecommendationsQueryParams = zod.object({
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListResearchLabRetrainingRecommendationsResponse = zod.object({
+  "recommendations": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+
+/**
+ * @summary Get the model lineage tree
+ */
+export const GetResearchLabGenealogyTreeQueryParams = zod.object({
+  "root": zod.coerce.string().optional()
+})
+
+export const GetResearchLabGenealogyTreeResponse = zod.object({
+  "tree": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary Get genealogy detail for a specific model version
+ */
+export const GetResearchLabModelGenealogyParams = zod.object({
+  "modelVersion": zod.coerce.string()
+})
+
+export const GetResearchLabModelGenealogyResponse = zod.object({
+  "genealogy": zod.record(zod.string(), zod.unknown()).optional().describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')
+})
+
+
+/**
+ * @summary List artifact history for a model version
+ */
+export const ListResearchLabArtifactHistoryParams = zod.object({
+  "modelVersion": zod.coerce.string()
+})
+
+export const ListResearchLabArtifactHistoryResponse = zod.object({
+  "artifacts": zod.array(zod.record(zod.string(), zod.unknown()).describe('Opaque payload proxied verbatim from signalium-trainer\'s Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.')).optional()
+})
+
+

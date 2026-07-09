@@ -32,6 +32,7 @@ import type {
   AnnouncementUpdate,
   ApiKey,
   ApiKeyCreated,
+  ApproveResearchLabDeploymentCandidate200,
   AuditLogEntry,
   Broker,
   ContactMessage,
@@ -117,6 +118,23 @@ import type {
   GetQdeAnalyticsSessions200Item,
   GetQdeAnalyticsSymbols200Item,
   GetQdeSelfEvaluationParams,
+  GetResearchLabDeploymentCandidate200,
+  GetResearchLabDeploymentCandidateHistory200,
+  GetResearchLabDeploymentCandidateHistoryParams,
+  GetResearchLabDriftMonitoring200,
+  GetResearchLabExperiment200,
+  GetResearchLabExperimentHistory200,
+  GetResearchLabExperimentLineage200,
+  GetResearchLabGenealogyTree200,
+  GetResearchLabGenealogyTreeParams,
+  GetResearchLabModelGenealogy200,
+  GetResearchLabShadowAgreement200,
+  GetResearchLabShadowComparison200,
+  GetResearchLabShadowRegimeComparison200,
+  GetResearchLabStatus200,
+  GetResearchLabTrainingResourceUsage200,
+  GetResearchLabTrainingRun200,
+  GetResearchLabValidationReport200,
   GetSymbolNormalizationLogParams,
   GetUnreadNotificationCount200,
   GrantCreditBody,
@@ -141,6 +159,27 @@ import type {
   ListKbArticlesParams,
   ListMarketMemoryParams,
   ListMediaAssetsParams,
+  ListResearchLabArtifactHistory200,
+  ListResearchLabDeploymentCandidates200,
+  ListResearchLabDeploymentCandidatesParams,
+  ListResearchLabDiscoveredFeatures200,
+  ListResearchLabDiscoveredFeaturesParams,
+  ListResearchLabExperiments200,
+  ListResearchLabExperimentsParams,
+  ListResearchLabFailureInvestigations200,
+  ListResearchLabFailureInvestigationsParams,
+  ListResearchLabRetrainingRecommendations200,
+  ListResearchLabRetrainingRecommendationsParams,
+  ListResearchLabRobustnessTests200,
+  ListResearchLabRobustnessTestsParams,
+  ListResearchLabSelfEvaluationFindings200,
+  ListResearchLabSelfEvaluationFindingsParams,
+  ListResearchLabShadowDeployments200,
+  ListResearchLabShadowDeploymentsParams,
+  ListResearchLabTrainingRuns200,
+  ListResearchLabTrainingRunsParams,
+  ListResearchLabValidationReports200,
+  ListResearchLabValidationReportsParams,
   ListSecurityIncidentsParams,
   LockAccount200,
   LoginEvent,
@@ -209,9 +248,12 @@ import type {
   RequestManualAnalysisBody,
   RequestReasoningBody,
   RequestSupportTicketAttachmentUploadUrl200,
+  ResearchLabUnavailableResponse,
   ResolveSeoPageParams,
   ReviewPositionBody,
   RevokeAccountSession200,
+  RollbackResearchLabDeploymentCandidate200,
+  RollbackResearchLabDeploymentCandidateBody,
   RuntimeStatus,
   RuntimeSummary,
   SecurityIncident,
@@ -21770,6 +21812,2235 @@ export function useGetQdeAdminTradeIntelligenceStats<TData = Awaited<ReturnType<
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetQdeAdminTradeIntelligenceStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabStatusUrl = () => {
+
+
+
+
+  return `/api/research-lab/status`
+}
+
+/**
+ * @summary Whether the Research Lab (signalium-trainer) gateway is configured
+ */
+export const getResearchLabStatus = async ( options?: RequestInit): Promise<GetResearchLabStatus200> => {
+
+  return customFetch<GetResearchLabStatus200>(getGetResearchLabStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabStatusQueryKey = () => {
+    return [
+    `/api/research-lab/status`
+    ] as const;
+    }
+
+
+export const getGetResearchLabStatusQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabStatus>>> = ({ signal }) => getResearchLabStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabStatus>>>
+export type GetResearchLabStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Whether the Research Lab (signalium-trainer) gateway is configured
+ */
+
+export function useGetResearchLabStatus<TData = Awaited<ReturnType<typeof getResearchLabStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabExperimentsUrl = (params?: ListResearchLabExperimentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/experiments?${stringifiedParams}` : `/api/research-lab/experiments`
+}
+
+/**
+ * @summary List experiments
+ */
+export const listResearchLabExperiments = async (params?: ListResearchLabExperimentsParams, options?: RequestInit): Promise<ListResearchLabExperiments200> => {
+
+  return customFetch<ListResearchLabExperiments200>(getListResearchLabExperimentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabExperimentsQueryKey = (params?: ListResearchLabExperimentsParams,) => {
+    return [
+    `/api/research-lab/experiments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabExperimentsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabExperiments>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabExperimentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabExperiments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabExperimentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabExperiments>>> = ({ signal }) => listResearchLabExperiments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabExperiments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabExperimentsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabExperiments>>>
+export type ListResearchLabExperimentsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List experiments
+ */
+
+export function useListResearchLabExperiments<TData = Awaited<ReturnType<typeof listResearchLabExperiments>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabExperimentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabExperiments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabExperimentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabExperimentUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/experiments/${id}`
+}
+
+/**
+ * @summary Get experiment detail
+ */
+export const getResearchLabExperiment = async (id: string, options?: RequestInit): Promise<GetResearchLabExperiment200> => {
+
+  return customFetch<GetResearchLabExperiment200>(getGetResearchLabExperimentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabExperimentQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/experiments/${id}`
+    ] as const;
+    }
+
+
+export const getGetResearchLabExperimentQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabExperiment>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperiment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabExperimentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabExperiment>>> = ({ signal }) => getResearchLabExperiment(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperiment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabExperimentQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabExperiment>>>
+export type GetResearchLabExperimentQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get experiment detail
+ */
+
+export function useGetResearchLabExperiment<TData = Awaited<ReturnType<typeof getResearchLabExperiment>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperiment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabExperimentQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabExperimentLineageUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/experiments/${id}/lineage`
+}
+
+/**
+ * @summary Get experiment lineage
+ */
+export const getResearchLabExperimentLineage = async (id: string, options?: RequestInit): Promise<GetResearchLabExperimentLineage200> => {
+
+  return customFetch<GetResearchLabExperimentLineage200>(getGetResearchLabExperimentLineageUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabExperimentLineageQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/experiments/${id}/lineage`
+    ] as const;
+    }
+
+
+export const getGetResearchLabExperimentLineageQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabExperimentLineage>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentLineage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabExperimentLineageQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabExperimentLineage>>> = ({ signal }) => getResearchLabExperimentLineage(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentLineage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabExperimentLineageQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabExperimentLineage>>>
+export type GetResearchLabExperimentLineageQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get experiment lineage
+ */
+
+export function useGetResearchLabExperimentLineage<TData = Awaited<ReturnType<typeof getResearchLabExperimentLineage>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentLineage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabExperimentLineageQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabExperimentHistoryUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/experiments/${id}/history`
+}
+
+/**
+ * @summary Get experiment history/timeline
+ */
+export const getResearchLabExperimentHistory = async (id: string, options?: RequestInit): Promise<GetResearchLabExperimentHistory200> => {
+
+  return customFetch<GetResearchLabExperimentHistory200>(getGetResearchLabExperimentHistoryUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabExperimentHistoryQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/experiments/${id}/history`
+    ] as const;
+    }
+
+
+export const getGetResearchLabExperimentHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabExperimentHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabExperimentHistoryQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabExperimentHistory>>> = ({ signal }) => getResearchLabExperimentHistory(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabExperimentHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabExperimentHistory>>>
+export type GetResearchLabExperimentHistoryQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get experiment history/timeline
+ */
+
+export function useGetResearchLabExperimentHistory<TData = Awaited<ReturnType<typeof getResearchLabExperimentHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabExperimentHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabExperimentHistoryQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabTrainingRunsUrl = (params?: ListResearchLabTrainingRunsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/training/runs?${stringifiedParams}` : `/api/research-lab/training/runs`
+}
+
+/**
+ * @summary List training runs
+ */
+export const listResearchLabTrainingRuns = async (params?: ListResearchLabTrainingRunsParams, options?: RequestInit): Promise<ListResearchLabTrainingRuns200> => {
+
+  return customFetch<ListResearchLabTrainingRuns200>(getListResearchLabTrainingRunsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabTrainingRunsQueryKey = (params?: ListResearchLabTrainingRunsParams,) => {
+    return [
+    `/api/research-lab/training/runs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabTrainingRunsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabTrainingRuns>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabTrainingRunsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabTrainingRuns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabTrainingRunsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabTrainingRuns>>> = ({ signal }) => listResearchLabTrainingRuns(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabTrainingRuns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabTrainingRunsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabTrainingRuns>>>
+export type ListResearchLabTrainingRunsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List training runs
+ */
+
+export function useListResearchLabTrainingRuns<TData = Awaited<ReturnType<typeof listResearchLabTrainingRuns>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabTrainingRunsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabTrainingRuns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabTrainingRunsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabTrainingRunUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/training/runs/${id}`
+}
+
+/**
+ * @summary Get training run detail
+ */
+export const getResearchLabTrainingRun = async (id: string, options?: RequestInit): Promise<GetResearchLabTrainingRun200> => {
+
+  return customFetch<GetResearchLabTrainingRun200>(getGetResearchLabTrainingRunUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabTrainingRunQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/training/runs/${id}`
+    ] as const;
+    }
+
+
+export const getGetResearchLabTrainingRunQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabTrainingRun>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabTrainingRunQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabTrainingRun>>> = ({ signal }) => getResearchLabTrainingRun(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingRun>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabTrainingRunQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabTrainingRun>>>
+export type GetResearchLabTrainingRunQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get training run detail
+ */
+
+export function useGetResearchLabTrainingRun<TData = Awaited<ReturnType<typeof getResearchLabTrainingRun>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabTrainingRunQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabTrainingResourceUsageUrl = () => {
+
+
+
+
+  return `/api/research-lab/training/resource-usage`
+}
+
+/**
+ * @summary Get training resource usage
+ */
+export const getResearchLabTrainingResourceUsage = async ( options?: RequestInit): Promise<GetResearchLabTrainingResourceUsage200> => {
+
+  return customFetch<GetResearchLabTrainingResourceUsage200>(getGetResearchLabTrainingResourceUsageUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabTrainingResourceUsageQueryKey = () => {
+    return [
+    `/api/research-lab/training/resource-usage`
+    ] as const;
+    }
+
+
+export const getGetResearchLabTrainingResourceUsageQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>, TError = ErrorType<ResearchLabUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabTrainingResourceUsageQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>> = ({ signal }) => getResearchLabTrainingResourceUsage({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabTrainingResourceUsageQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>>
+export type GetResearchLabTrainingResourceUsageQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get training resource usage
+ */
+
+export function useGetResearchLabTrainingResourceUsage<TData = Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabTrainingResourceUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabTrainingResourceUsageQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabValidationReportsUrl = (params?: ListResearchLabValidationReportsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/validation/reports?${stringifiedParams}` : `/api/research-lab/validation/reports`
+}
+
+/**
+ * @summary List validation/certification reports
+ */
+export const listResearchLabValidationReports = async (params?: ListResearchLabValidationReportsParams, options?: RequestInit): Promise<ListResearchLabValidationReports200> => {
+
+  return customFetch<ListResearchLabValidationReports200>(getListResearchLabValidationReportsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabValidationReportsQueryKey = (params?: ListResearchLabValidationReportsParams,) => {
+    return [
+    `/api/research-lab/validation/reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabValidationReportsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabValidationReports>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabValidationReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabValidationReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabValidationReportsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabValidationReports>>> = ({ signal }) => listResearchLabValidationReports(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabValidationReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabValidationReportsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabValidationReports>>>
+export type ListResearchLabValidationReportsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List validation/certification reports
+ */
+
+export function useListResearchLabValidationReports<TData = Awaited<ReturnType<typeof listResearchLabValidationReports>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabValidationReportsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabValidationReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabValidationReportsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabValidationReportUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/validation/reports/${id}`
+}
+
+/**
+ * @summary Get a validation report
+ */
+export const getResearchLabValidationReport = async (id: string, options?: RequestInit): Promise<GetResearchLabValidationReport200> => {
+
+  return customFetch<GetResearchLabValidationReport200>(getGetResearchLabValidationReportUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabValidationReportQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/validation/reports/${id}`
+    ] as const;
+    }
+
+
+export const getGetResearchLabValidationReportQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabValidationReport>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabValidationReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabValidationReportQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabValidationReport>>> = ({ signal }) => getResearchLabValidationReport(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabValidationReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabValidationReportQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabValidationReport>>>
+export type GetResearchLabValidationReportQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get a validation report
+ */
+
+export function useGetResearchLabValidationReport<TData = Awaited<ReturnType<typeof getResearchLabValidationReport>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabValidationReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabValidationReportQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabDriftMonitoringUrl = () => {
+
+
+
+
+  return `/api/research-lab/validation/drift`
+}
+
+/**
+ * @summary Get drift monitoring status
+ */
+export const getResearchLabDriftMonitoring = async ( options?: RequestInit): Promise<GetResearchLabDriftMonitoring200> => {
+
+  return customFetch<GetResearchLabDriftMonitoring200>(getGetResearchLabDriftMonitoringUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabDriftMonitoringQueryKey = () => {
+    return [
+    `/api/research-lab/validation/drift`
+    ] as const;
+    }
+
+
+export const getGetResearchLabDriftMonitoringQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>, TError = ErrorType<ResearchLabUnavailableResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabDriftMonitoringQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>> = ({ signal }) => getResearchLabDriftMonitoring({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabDriftMonitoringQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>>
+export type GetResearchLabDriftMonitoringQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get drift monitoring status
+ */
+
+export function useGetResearchLabDriftMonitoring<TData = Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDriftMonitoring>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabDriftMonitoringQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabRobustnessTestsUrl = (params?: ListResearchLabRobustnessTestsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/validation/robustness?${stringifiedParams}` : `/api/research-lab/validation/robustness`
+}
+
+/**
+ * @summary List robustness test results
+ */
+export const listResearchLabRobustnessTests = async (params?: ListResearchLabRobustnessTestsParams, options?: RequestInit): Promise<ListResearchLabRobustnessTests200> => {
+
+  return customFetch<ListResearchLabRobustnessTests200>(getListResearchLabRobustnessTestsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabRobustnessTestsQueryKey = (params?: ListResearchLabRobustnessTestsParams,) => {
+    return [
+    `/api/research-lab/validation/robustness`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabRobustnessTestsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabRobustnessTests>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabRobustnessTestsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRobustnessTests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabRobustnessTestsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabRobustnessTests>>> = ({ signal }) => listResearchLabRobustnessTests(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRobustnessTests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabRobustnessTestsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabRobustnessTests>>>
+export type ListResearchLabRobustnessTestsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List robustness test results
+ */
+
+export function useListResearchLabRobustnessTests<TData = Awaited<ReturnType<typeof listResearchLabRobustnessTests>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabRobustnessTestsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRobustnessTests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabRobustnessTestsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabShadowDeploymentsUrl = (params?: ListResearchLabShadowDeploymentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/shadow-testing/deployments?${stringifiedParams}` : `/api/research-lab/shadow-testing/deployments`
+}
+
+/**
+ * @summary List active shadow deployments
+ */
+export const listResearchLabShadowDeployments = async (params?: ListResearchLabShadowDeploymentsParams, options?: RequestInit): Promise<ListResearchLabShadowDeployments200> => {
+
+  return customFetch<ListResearchLabShadowDeployments200>(getListResearchLabShadowDeploymentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabShadowDeploymentsQueryKey = (params?: ListResearchLabShadowDeploymentsParams,) => {
+    return [
+    `/api/research-lab/shadow-testing/deployments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabShadowDeploymentsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabShadowDeployments>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabShadowDeploymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabShadowDeployments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabShadowDeploymentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabShadowDeployments>>> = ({ signal }) => listResearchLabShadowDeployments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabShadowDeployments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabShadowDeploymentsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabShadowDeployments>>>
+export type ListResearchLabShadowDeploymentsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List active shadow deployments
+ */
+
+export function useListResearchLabShadowDeployments<TData = Awaited<ReturnType<typeof listResearchLabShadowDeployments>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabShadowDeploymentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabShadowDeployments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabShadowDeploymentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabShadowComparisonUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/shadow-testing/deployments/${id}/comparison`
+}
+
+/**
+ * @summary Get challenger vs champion comparison for a shadow deployment
+ */
+export const getResearchLabShadowComparison = async (id: string, options?: RequestInit): Promise<GetResearchLabShadowComparison200> => {
+
+  return customFetch<GetResearchLabShadowComparison200>(getGetResearchLabShadowComparisonUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabShadowComparisonQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/shadow-testing/deployments/${id}/comparison`
+    ] as const;
+    }
+
+
+export const getGetResearchLabShadowComparisonQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabShadowComparison>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowComparison>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabShadowComparisonQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabShadowComparison>>> = ({ signal }) => getResearchLabShadowComparison(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowComparison>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabShadowComparisonQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabShadowComparison>>>
+export type GetResearchLabShadowComparisonQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get challenger vs champion comparison for a shadow deployment
+ */
+
+export function useGetResearchLabShadowComparison<TData = Awaited<ReturnType<typeof getResearchLabShadowComparison>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowComparison>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabShadowComparisonQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabShadowAgreementUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/shadow-testing/deployments/${id}/agreement`
+}
+
+/**
+ * @summary Get agreement analysis for a shadow deployment
+ */
+export const getResearchLabShadowAgreement = async (id: string, options?: RequestInit): Promise<GetResearchLabShadowAgreement200> => {
+
+  return customFetch<GetResearchLabShadowAgreement200>(getGetResearchLabShadowAgreementUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabShadowAgreementQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/shadow-testing/deployments/${id}/agreement`
+    ] as const;
+    }
+
+
+export const getGetResearchLabShadowAgreementQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabShadowAgreement>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabShadowAgreementQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabShadowAgreement>>> = ({ signal }) => getResearchLabShadowAgreement(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowAgreement>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabShadowAgreementQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabShadowAgreement>>>
+export type GetResearchLabShadowAgreementQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get agreement analysis for a shadow deployment
+ */
+
+export function useGetResearchLabShadowAgreement<TData = Awaited<ReturnType<typeof getResearchLabShadowAgreement>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabShadowAgreementQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabShadowRegimeComparisonUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/shadow-testing/deployments/${id}/regimes`
+}
+
+/**
+ * @summary Get regime comparison for a shadow deployment
+ */
+export const getResearchLabShadowRegimeComparison = async (id: string, options?: RequestInit): Promise<GetResearchLabShadowRegimeComparison200> => {
+
+  return customFetch<GetResearchLabShadowRegimeComparison200>(getGetResearchLabShadowRegimeComparisonUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabShadowRegimeComparisonQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/shadow-testing/deployments/${id}/regimes`
+    ] as const;
+    }
+
+
+export const getGetResearchLabShadowRegimeComparisonQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabShadowRegimeComparisonQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>> = ({ signal }) => getResearchLabShadowRegimeComparison(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabShadowRegimeComparisonQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>>
+export type GetResearchLabShadowRegimeComparisonQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get regime comparison for a shadow deployment
+ */
+
+export function useGetResearchLabShadowRegimeComparison<TData = Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabShadowRegimeComparison>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabShadowRegimeComparisonQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabDeploymentCandidatesUrl = (params?: ListResearchLabDeploymentCandidatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/deployment-candidates?${stringifiedParams}` : `/api/research-lab/deployment-candidates`
+}
+
+/**
+ * @summary List deployment candidates
+ */
+export const listResearchLabDeploymentCandidates = async (params?: ListResearchLabDeploymentCandidatesParams, options?: RequestInit): Promise<ListResearchLabDeploymentCandidates200> => {
+
+  return customFetch<ListResearchLabDeploymentCandidates200>(getListResearchLabDeploymentCandidatesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabDeploymentCandidatesQueryKey = (params?: ListResearchLabDeploymentCandidatesParams,) => {
+    return [
+    `/api/research-lab/deployment-candidates`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabDeploymentCandidatesQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabDeploymentCandidatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabDeploymentCandidatesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>> = ({ signal }) => listResearchLabDeploymentCandidates(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabDeploymentCandidatesQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>>
+export type ListResearchLabDeploymentCandidatesQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List deployment candidates
+ */
+
+export function useListResearchLabDeploymentCandidates<TData = Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabDeploymentCandidatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDeploymentCandidates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabDeploymentCandidatesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabDeploymentCandidateHistoryUrl = (params?: GetResearchLabDeploymentCandidateHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/deployment-candidates/history?${stringifiedParams}` : `/api/research-lab/deployment-candidates/history`
+}
+
+/**
+ * @summary Get deployment candidate history
+ */
+export const getResearchLabDeploymentCandidateHistory = async (params?: GetResearchLabDeploymentCandidateHistoryParams, options?: RequestInit): Promise<GetResearchLabDeploymentCandidateHistory200> => {
+
+  return customFetch<GetResearchLabDeploymentCandidateHistory200>(getGetResearchLabDeploymentCandidateHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabDeploymentCandidateHistoryQueryKey = (params?: GetResearchLabDeploymentCandidateHistoryParams,) => {
+    return [
+    `/api/research-lab/deployment-candidates/history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetResearchLabDeploymentCandidateHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: GetResearchLabDeploymentCandidateHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabDeploymentCandidateHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>> = ({ signal }) => getResearchLabDeploymentCandidateHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabDeploymentCandidateHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>>
+export type GetResearchLabDeploymentCandidateHistoryQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get deployment candidate history
+ */
+
+export function useGetResearchLabDeploymentCandidateHistory<TData = Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: GetResearchLabDeploymentCandidateHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidateHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabDeploymentCandidateHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabDeploymentCandidateUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/deployment-candidates/${id}`
+}
+
+/**
+ * @summary Get deployment candidate detail
+ */
+export const getResearchLabDeploymentCandidate = async (id: string, options?: RequestInit): Promise<GetResearchLabDeploymentCandidate200> => {
+
+  return customFetch<GetResearchLabDeploymentCandidate200>(getGetResearchLabDeploymentCandidateUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabDeploymentCandidateQueryKey = (id: string,) => {
+    return [
+    `/api/research-lab/deployment-candidates/${id}`
+    ] as const;
+    }
+
+
+export const getGetResearchLabDeploymentCandidateQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>, TError = ErrorType<ResearchLabUnavailableResponse>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabDeploymentCandidateQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>> = ({ signal }) => getResearchLabDeploymentCandidate(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabDeploymentCandidateQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>>
+export type GetResearchLabDeploymentCandidateQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get deployment candidate detail
+ */
+
+export function useGetResearchLabDeploymentCandidate<TData = Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabDeploymentCandidate>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabDeploymentCandidateQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getApproveResearchLabDeploymentCandidateUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/deployment-candidates/${id}/approve`
+}
+
+/**
+ * @summary Approve a deployment candidate (audited)
+ */
+export const approveResearchLabDeploymentCandidate = async (id: string, options?: RequestInit): Promise<ApproveResearchLabDeploymentCandidate200> => {
+
+  return customFetch<ApproveResearchLabDeploymentCandidate200>(getApproveResearchLabDeploymentCandidateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getApproveResearchLabDeploymentCandidateMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['approveResearchLabDeploymentCandidate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  approveResearchLabDeploymentCandidate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveResearchLabDeploymentCandidateMutationResult = NonNullable<Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>>
+
+    export type ApproveResearchLabDeploymentCandidateMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Approve a deployment candidate (audited)
+ */
+export const useApproveResearchLabDeploymentCandidate = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveResearchLabDeploymentCandidate>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getApproveResearchLabDeploymentCandidateMutationOptions(options));
+    }
+
+export const getRollbackResearchLabDeploymentCandidateUrl = (id: string,) => {
+
+
+
+
+  return `/api/research-lab/deployment-candidates/${id}/rollback`
+}
+
+/**
+ * @summary Roll back a deployment candidate (audited)
+ */
+export const rollbackResearchLabDeploymentCandidate = async (id: string,
+    rollbackResearchLabDeploymentCandidateBody?: RollbackResearchLabDeploymentCandidateBody, options?: RequestInit): Promise<RollbackResearchLabDeploymentCandidate200> => {
+
+  return customFetch<RollbackResearchLabDeploymentCandidate200>(getRollbackResearchLabDeploymentCandidateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(rollbackResearchLabDeploymentCandidateBody)
+  }
+);}
+
+
+
+
+
+export const getRollbackResearchLabDeploymentCandidateMutationOptions = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>, TError,{id: string;data?: BodyType<RollbackResearchLabDeploymentCandidateBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>, TError,{id: string;data?: BodyType<RollbackResearchLabDeploymentCandidateBody>}, TContext> => {
+
+const mutationKey = ['rollbackResearchLabDeploymentCandidate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>, {id: string;data?: BodyType<RollbackResearchLabDeploymentCandidateBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  rollbackResearchLabDeploymentCandidate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RollbackResearchLabDeploymentCandidateMutationResult = NonNullable<Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>>
+    export type RollbackResearchLabDeploymentCandidateMutationBody = BodyType<RollbackResearchLabDeploymentCandidateBody> | undefined
+    export type RollbackResearchLabDeploymentCandidateMutationError = ErrorType<ResearchLabUnavailableResponse>
+
+    /**
+ * @summary Roll back a deployment candidate (audited)
+ */
+export const useRollbackResearchLabDeploymentCandidate = <TError = ErrorType<ResearchLabUnavailableResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>, TError,{id: string;data?: BodyType<RollbackResearchLabDeploymentCandidateBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rollbackResearchLabDeploymentCandidate>>,
+        TError,
+        {id: string;data?: BodyType<RollbackResearchLabDeploymentCandidateBody>},
+        TContext
+      > => {
+      return useMutation(getRollbackResearchLabDeploymentCandidateMutationOptions(options));
+    }
+
+export const getListResearchLabDiscoveredFeaturesUrl = (params?: ListResearchLabDiscoveredFeaturesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/research-intelligence/features?${stringifiedParams}` : `/api/research-lab/research-intelligence/features`
+}
+
+/**
+ * @summary List discovered features
+ */
+export const listResearchLabDiscoveredFeatures = async (params?: ListResearchLabDiscoveredFeaturesParams, options?: RequestInit): Promise<ListResearchLabDiscoveredFeatures200> => {
+
+  return customFetch<ListResearchLabDiscoveredFeatures200>(getListResearchLabDiscoveredFeaturesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabDiscoveredFeaturesQueryKey = (params?: ListResearchLabDiscoveredFeaturesParams,) => {
+    return [
+    `/api/research-lab/research-intelligence/features`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabDiscoveredFeaturesQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabDiscoveredFeaturesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabDiscoveredFeaturesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>> = ({ signal }) => listResearchLabDiscoveredFeatures(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabDiscoveredFeaturesQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>>
+export type ListResearchLabDiscoveredFeaturesQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List discovered features
+ */
+
+export function useListResearchLabDiscoveredFeatures<TData = Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabDiscoveredFeaturesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabDiscoveredFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabDiscoveredFeaturesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabFailureInvestigationsUrl = (params?: ListResearchLabFailureInvestigationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/research-intelligence/failure-investigations?${stringifiedParams}` : `/api/research-lab/research-intelligence/failure-investigations`
+}
+
+/**
+ * @summary List failure investigations
+ */
+export const listResearchLabFailureInvestigations = async (params?: ListResearchLabFailureInvestigationsParams, options?: RequestInit): Promise<ListResearchLabFailureInvestigations200> => {
+
+  return customFetch<ListResearchLabFailureInvestigations200>(getListResearchLabFailureInvestigationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabFailureInvestigationsQueryKey = (params?: ListResearchLabFailureInvestigationsParams,) => {
+    return [
+    `/api/research-lab/research-intelligence/failure-investigations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabFailureInvestigationsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabFailureInvestigationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabFailureInvestigationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>> = ({ signal }) => listResearchLabFailureInvestigations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabFailureInvestigationsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>>
+export type ListResearchLabFailureInvestigationsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List failure investigations
+ */
+
+export function useListResearchLabFailureInvestigations<TData = Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabFailureInvestigationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabFailureInvestigations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabFailureInvestigationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabSelfEvaluationFindingsUrl = (params?: ListResearchLabSelfEvaluationFindingsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/research-intelligence/self-evaluations?${stringifiedParams}` : `/api/research-lab/research-intelligence/self-evaluations`
+}
+
+/**
+ * @summary List self-evaluation findings
+ */
+export const listResearchLabSelfEvaluationFindings = async (params?: ListResearchLabSelfEvaluationFindingsParams, options?: RequestInit): Promise<ListResearchLabSelfEvaluationFindings200> => {
+
+  return customFetch<ListResearchLabSelfEvaluationFindings200>(getListResearchLabSelfEvaluationFindingsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabSelfEvaluationFindingsQueryKey = (params?: ListResearchLabSelfEvaluationFindingsParams,) => {
+    return [
+    `/api/research-lab/research-intelligence/self-evaluations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabSelfEvaluationFindingsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabSelfEvaluationFindingsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabSelfEvaluationFindingsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>> = ({ signal }) => listResearchLabSelfEvaluationFindings(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabSelfEvaluationFindingsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>>
+export type ListResearchLabSelfEvaluationFindingsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List self-evaluation findings
+ */
+
+export function useListResearchLabSelfEvaluationFindings<TData = Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabSelfEvaluationFindingsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabSelfEvaluationFindings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabSelfEvaluationFindingsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabRetrainingRecommendationsUrl = (params?: ListResearchLabRetrainingRecommendationsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/research-intelligence/retraining-recommendations?${stringifiedParams}` : `/api/research-lab/research-intelligence/retraining-recommendations`
+}
+
+/**
+ * @summary List retraining recommendations
+ */
+export const listResearchLabRetrainingRecommendations = async (params?: ListResearchLabRetrainingRecommendationsParams, options?: RequestInit): Promise<ListResearchLabRetrainingRecommendations200> => {
+
+  return customFetch<ListResearchLabRetrainingRecommendations200>(getListResearchLabRetrainingRecommendationsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabRetrainingRecommendationsQueryKey = (params?: ListResearchLabRetrainingRecommendationsParams,) => {
+    return [
+    `/api/research-lab/research-intelligence/retraining-recommendations`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListResearchLabRetrainingRecommendationsQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: ListResearchLabRetrainingRecommendationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabRetrainingRecommendationsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>> = ({ signal }) => listResearchLabRetrainingRecommendations(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabRetrainingRecommendationsQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>>
+export type ListResearchLabRetrainingRecommendationsQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List retraining recommendations
+ */
+
+export function useListResearchLabRetrainingRecommendations<TData = Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: ListResearchLabRetrainingRecommendationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabRetrainingRecommendations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabRetrainingRecommendationsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabGenealogyTreeUrl = (params?: GetResearchLabGenealogyTreeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/research-lab/genealogy/tree?${stringifiedParams}` : `/api/research-lab/genealogy/tree`
+}
+
+/**
+ * @summary Get the model lineage tree
+ */
+export const getResearchLabGenealogyTree = async (params?: GetResearchLabGenealogyTreeParams, options?: RequestInit): Promise<GetResearchLabGenealogyTree200> => {
+
+  return customFetch<GetResearchLabGenealogyTree200>(getGetResearchLabGenealogyTreeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabGenealogyTreeQueryKey = (params?: GetResearchLabGenealogyTreeParams,) => {
+    return [
+    `/api/research-lab/genealogy/tree`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetResearchLabGenealogyTreeQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabGenealogyTree>>, TError = ErrorType<ResearchLabUnavailableResponse>>(params?: GetResearchLabGenealogyTreeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabGenealogyTree>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabGenealogyTreeQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabGenealogyTree>>> = ({ signal }) => getResearchLabGenealogyTree(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabGenealogyTree>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabGenealogyTreeQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabGenealogyTree>>>
+export type GetResearchLabGenealogyTreeQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get the model lineage tree
+ */
+
+export function useGetResearchLabGenealogyTree<TData = Awaited<ReturnType<typeof getResearchLabGenealogyTree>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ params?: GetResearchLabGenealogyTreeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabGenealogyTree>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabGenealogyTreeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetResearchLabModelGenealogyUrl = (modelVersion: string,) => {
+
+
+
+
+  return `/api/research-lab/genealogy/${modelVersion}`
+}
+
+/**
+ * @summary Get genealogy detail for a specific model version
+ */
+export const getResearchLabModelGenealogy = async (modelVersion: string, options?: RequestInit): Promise<GetResearchLabModelGenealogy200> => {
+
+  return customFetch<GetResearchLabModelGenealogy200>(getGetResearchLabModelGenealogyUrl(modelVersion),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResearchLabModelGenealogyQueryKey = (modelVersion: string,) => {
+    return [
+    `/api/research-lab/genealogy/${modelVersion}`
+    ] as const;
+    }
+
+
+export const getGetResearchLabModelGenealogyQueryOptions = <TData = Awaited<ReturnType<typeof getResearchLabModelGenealogy>>, TError = ErrorType<ResearchLabUnavailableResponse>>(modelVersion: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabModelGenealogy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResearchLabModelGenealogyQueryKey(modelVersion);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResearchLabModelGenealogy>>> = ({ signal }) => getResearchLabModelGenealogy(modelVersion, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: modelVersion !== null && modelVersion !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResearchLabModelGenealogy>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResearchLabModelGenealogyQueryResult = NonNullable<Awaited<ReturnType<typeof getResearchLabModelGenealogy>>>
+export type GetResearchLabModelGenealogyQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary Get genealogy detail for a specific model version
+ */
+
+export function useGetResearchLabModelGenealogy<TData = Awaited<ReturnType<typeof getResearchLabModelGenealogy>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ modelVersion: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResearchLabModelGenealogy>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResearchLabModelGenealogyQueryOptions(modelVersion,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListResearchLabArtifactHistoryUrl = (modelVersion: string,) => {
+
+
+
+
+  return `/api/research-lab/genealogy/${modelVersion}/artifacts`
+}
+
+/**
+ * @summary List artifact history for a model version
+ */
+export const listResearchLabArtifactHistory = async (modelVersion: string, options?: RequestInit): Promise<ListResearchLabArtifactHistory200> => {
+
+  return customFetch<ListResearchLabArtifactHistory200>(getListResearchLabArtifactHistoryUrl(modelVersion),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResearchLabArtifactHistoryQueryKey = (modelVersion: string,) => {
+    return [
+    `/api/research-lab/genealogy/${modelVersion}/artifacts`
+    ] as const;
+    }
+
+
+export const getListResearchLabArtifactHistoryQueryOptions = <TData = Awaited<ReturnType<typeof listResearchLabArtifactHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(modelVersion: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabArtifactHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResearchLabArtifactHistoryQueryKey(modelVersion);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResearchLabArtifactHistory>>> = ({ signal }) => listResearchLabArtifactHistory(modelVersion, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: modelVersion !== null && modelVersion !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResearchLabArtifactHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListResearchLabArtifactHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof listResearchLabArtifactHistory>>>
+export type ListResearchLabArtifactHistoryQueryError = ErrorType<ResearchLabUnavailableResponse>
+
+
+/**
+ * @summary List artifact history for a model version
+ */
+
+export function useListResearchLabArtifactHistory<TData = Awaited<ReturnType<typeof listResearchLabArtifactHistory>>, TError = ErrorType<ResearchLabUnavailableResponse>>(
+ modelVersion: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listResearchLabArtifactHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListResearchLabArtifactHistoryQueryOptions(modelVersion,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

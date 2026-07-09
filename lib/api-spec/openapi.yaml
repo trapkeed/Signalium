@@ -52,6 +52,8 @@ tags:
     description: Site-wide maintenance banner scheduling and display.
   - name: trading
     description: User trading mode selection, symbol monitoring preferences, and risk management settings.
+  - name: research-lab
+    description: Admin-only gateway to signalium-trainer's Research Lab (experiments, training, validation, shadow testing, deployment candidates, research intelligence, QDE genealogy). Signalium proxies reads/actions; it never re-implements trainer business logic.
 paths:
   /healthz:
     get:
@@ -5544,8 +5546,598 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/TradeIntelligenceStats" }
 
+  /research-lab/status:
+    get:
+      operationId: getResearchLabStatus
+      summary: Whether the Research Lab (signalium-trainer) gateway is configured
+      tags: [research-lab]
+      responses:
+        "200":
+          description: Configuration status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  configured: { type: boolean }
+
+  /research-lab/experiments:
+    get:
+      operationId: listResearchLabExperiments
+      summary: List experiments
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: Experiment list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  experiments: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/experiments/{id}:
+    get:
+      operationId: getResearchLabExperiment
+      summary: Get experiment detail
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Experiment detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  experiment: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/experiments/{id}/lineage:
+    get:
+      operationId: getResearchLabExperimentLineage
+      summary: Get experiment lineage
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Experiment lineage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lineage: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/experiments/{id}/history:
+    get:
+      operationId: getResearchLabExperimentHistory
+      summary: Get experiment history/timeline
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Experiment history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/training/runs:
+    get:
+      operationId: listResearchLabTrainingRuns
+      summary: List training runs
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Training runs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/training/runs/{id}:
+    get:
+      operationId: getResearchLabTrainingRun
+      summary: Get training run detail
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Training run detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/training/resource-usage:
+    get:
+      operationId: getResearchLabTrainingResourceUsage
+      summary: Get training resource usage
+      tags: [research-lab]
+      responses:
+        "200":
+          description: Resource usage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/validation/reports:
+    get:
+      operationId: listResearchLabValidationReports
+      summary: List validation/certification reports
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Validation reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/validation/reports/{id}:
+    get:
+      operationId: getResearchLabValidationReport
+      summary: Get a validation report
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Validation report detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/validation/drift:
+    get:
+      operationId: getResearchLabDriftMonitoring
+      summary: Get drift monitoring status
+      tags: [research-lab]
+      responses:
+        "200":
+          description: Drift monitoring
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drift: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/validation/robustness:
+    get:
+      operationId: listResearchLabRobustnessTests
+      summary: List robustness test results
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Robustness tests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tests: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/shadow-testing/deployments:
+    get:
+      operationId: listResearchLabShadowDeployments
+      summary: List active shadow deployments
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: Shadow deployments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deployments: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/shadow-testing/deployments/{id}/comparison:
+    get:
+      operationId: getResearchLabShadowComparison
+      summary: Get challenger vs champion comparison for a shadow deployment
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Shadow comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comparison: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/shadow-testing/deployments/{id}/agreement:
+    get:
+      operationId: getResearchLabShadowAgreement
+      summary: Get agreement analysis for a shadow deployment
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Agreement analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agreement: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/shadow-testing/deployments/{id}/regimes:
+    get:
+      operationId: getResearchLabShadowRegimeComparison
+      summary: Get regime comparison for a shadow deployment
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Regime comparison
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  regimes: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/deployment-candidates:
+    get:
+      operationId: listResearchLabDeploymentCandidates
+      summary: List deployment candidates
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deployment candidates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/deployment-candidates/history:
+    get:
+      operationId: getResearchLabDeploymentCandidateHistory
+      summary: Get deployment candidate history
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Deployment candidate history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/deployment-candidates/{id}:
+    get:
+      operationId: getResearchLabDeploymentCandidate
+      summary: Get deployment candidate detail
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Deployment candidate detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidate: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/deployment-candidates/{id}/approve:
+    post:
+      operationId: approveResearchLabDeploymentCandidate
+      summary: Approve a deployment candidate (audited)
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Approval result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  message: { type: string }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/deployment-candidates/{id}/rollback:
+    post:
+      operationId: rollbackResearchLabDeploymentCandidate
+      summary: Roll back a deployment candidate (audited)
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Rollback result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  message: { type: string }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/research-intelligence/features:
+    get:
+      operationId: listResearchLabDiscoveredFeatures
+      summary: List discovered features
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Discovered features
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  features: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/research-intelligence/failure-investigations:
+    get:
+      operationId: listResearchLabFailureInvestigations
+      summary: List failure investigations
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Failure investigations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  investigations: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/research-intelligence/self-evaluations:
+    get:
+      operationId: listResearchLabSelfEvaluationFindings
+      summary: List self-evaluation findings
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Self-evaluation findings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  findings: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/research-intelligence/retraining-recommendations:
+    get:
+      operationId: listResearchLabRetrainingRecommendations
+      summary: List retraining recommendations
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Retraining recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/genealogy/tree:
+    get:
+      operationId: getResearchLabGenealogyTree
+      summary: Get the model lineage tree
+      tags: [research-lab]
+      parameters:
+        - in: query
+          name: root
+          schema: { type: string }
+      responses:
+        "200":
+          description: Genealogy tree
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tree: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/genealogy/{modelVersion}:
+    get:
+      operationId: getResearchLabModelGenealogy
+      summary: Get genealogy detail for a specific model version
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: modelVersion
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Model genealogy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  genealogy: { $ref: "#/components/schemas/ResearchLabPassthrough" }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
+  /research-lab/genealogy/{modelVersion}/artifacts:
+    get:
+      operationId: listResearchLabArtifactHistory
+      summary: List artifact history for a model version
+      tags: [research-lab]
+      parameters:
+        - in: path
+          name: modelVersion
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Artifact history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifacts: { type: array, items: { $ref: "#/components/schemas/ResearchLabPassthrough" } }
+        "503": { $ref: "#/components/responses/ResearchLabUnavailable" }
+
 components:
+  responses:
+    ResearchLabUnavailable:
+      description: signalium-trainer's Research Lab API is not configured or unreachable. Never fabricate data for this case — render an explicit "unavailable" state.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
   schemas:
+    ResearchLabPassthrough:
+      description: Opaque payload proxied verbatim from signalium-trainer's Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.
+      type: object
+      additionalProperties: true
+
     HealthStatus:
       type: object
       properties:

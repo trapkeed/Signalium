@@ -33,6 +33,10 @@ import {
   Bell,
   Wifi,
   ShieldAlert,
+  FlaskConical,
+  GitCommitVertical,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -90,6 +94,18 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
       { href: "/admin/alerts", label: "Alerts", icon: Bell },
       { href: "/admin/symbol-health", label: "Symbol Health", icon: Radio },
       { href: "/admin/security-operations", label: "Security Operations", icon: ShieldAlert },
+    ],
+  },
+  {
+    title: "Research Lab",
+    items: [
+      { href: "/admin/research-lab/experiments", label: "Experiments", icon: FlaskConical },
+      { href: "/admin/research-lab/training", label: "Training", icon: Cpu },
+      { href: "/admin/research-lab/validation", label: "Validation", icon: ShieldCheck },
+      { href: "/admin/research-lab/shadow-testing", label: "Shadow Testing", icon: Radio },
+      { href: "/admin/research-lab/deployment", label: "Deployment", icon: Layers },
+      { href: "/admin/research-lab/research-intelligence", label: "Research Intelligence", icon: Sparkles },
+      { href: "/admin/research-lab/genealogy", label: "QDE Genealogy", icon: GitCommitVertical },
     ],
   },
   {

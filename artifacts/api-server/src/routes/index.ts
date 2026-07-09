@@ -38,6 +38,7 @@ import deploymentsRouter from "./deployments";
 import operationalRouter from "./operational";
 import providerManagementRouter from "./provider-management";
 import securityRouter from "./security";
+import researchLabRouter from "./research-lab";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -93,5 +94,7 @@ router.use("/operational", operationalRouter);
 router.use("/data-providers", providerManagementRouter);
 // S23c: Security Operations — automated security-incident findings (distinct from audit-log's admin-action trail)
 router.use("/security", securityRouter);
+// S24B: Research Lab Integration Hub — admin gateway/proxy to signalium-trainer's research/training/deployment APIs
+router.use("/research-lab", researchLabRouter);
 
 export default router;

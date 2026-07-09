@@ -5,6 +5,11 @@
  * Signalium API specification
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * Opaque payload proxied verbatim from signalium-trainer's Research Lab API. Signalium does not interpret or validate its internal shape — the trainer is the sole authority on this data.
+ */
+export interface ResearchLabPassthrough { [key: string]: unknown }
+
 export interface HealthStatus {
   status: string;
 }
@@ -2976,6 +2981,11 @@ export interface UserSupportView {
   recentPlatformAlerts?: PlatformAlert[];
 }
 
+export type ResearchLabUnavailableResponse = {
+  error?: string;
+  message?: string;
+};
+
 export type RejectPaymentBody = {
   notes?: string;
 };
@@ -3799,5 +3809,173 @@ export type PatchOperationalAlertChannelsBody = {
 export type GetOperationalSymbolHealth200 = {
   symbols?: SymbolHealth[];
   generatedAt?: string;
+};
+
+export type GetResearchLabStatus200 = {
+  configured?: boolean;
+};
+
+export type ListResearchLabExperimentsParams = {
+limit?: number;
+status?: string;
+};
+
+export type ListResearchLabExperiments200 = {
+  experiments?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabExperiment200 = {
+  experiment?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabExperimentLineage200 = {
+  lineage?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabExperimentHistory200 = {
+  history?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabTrainingRunsParams = {
+status?: string;
+limit?: number;
+};
+
+export type ListResearchLabTrainingRuns200 = {
+  runs?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabTrainingRun200 = {
+  run?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabTrainingResourceUsage200 = {
+  usage?: ResearchLabPassthrough;
+};
+
+export type ListResearchLabValidationReportsParams = {
+limit?: number;
+};
+
+export type ListResearchLabValidationReports200 = {
+  reports?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabValidationReport200 = {
+  report?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabDriftMonitoring200 = {
+  drift?: ResearchLabPassthrough;
+};
+
+export type ListResearchLabRobustnessTestsParams = {
+limit?: number;
+};
+
+export type ListResearchLabRobustnessTests200 = {
+  tests?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabShadowDeploymentsParams = {
+status?: string;
+};
+
+export type ListResearchLabShadowDeployments200 = {
+  deployments?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabShadowComparison200 = {
+  comparison?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabShadowAgreement200 = {
+  agreement?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabShadowRegimeComparison200 = {
+  regimes?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabDeploymentCandidatesParams = {
+status?: string;
+};
+
+export type ListResearchLabDeploymentCandidates200 = {
+  candidates?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabDeploymentCandidateHistoryParams = {
+limit?: number;
+};
+
+export type GetResearchLabDeploymentCandidateHistory200 = {
+  history?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabDeploymentCandidate200 = {
+  candidate?: ResearchLabPassthrough;
+};
+
+export type ApproveResearchLabDeploymentCandidate200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type RollbackResearchLabDeploymentCandidateBody = {
+  reason?: string | null;
+};
+
+export type RollbackResearchLabDeploymentCandidate200 = {
+  ok?: boolean;
+  message?: string;
+};
+
+export type ListResearchLabDiscoveredFeaturesParams = {
+limit?: number;
+};
+
+export type ListResearchLabDiscoveredFeatures200 = {
+  features?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabFailureInvestigationsParams = {
+limit?: number;
+};
+
+export type ListResearchLabFailureInvestigations200 = {
+  investigations?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabSelfEvaluationFindingsParams = {
+limit?: number;
+};
+
+export type ListResearchLabSelfEvaluationFindings200 = {
+  findings?: ResearchLabPassthrough[];
+};
+
+export type ListResearchLabRetrainingRecommendationsParams = {
+limit?: number;
+};
+
+export type ListResearchLabRetrainingRecommendations200 = {
+  recommendations?: ResearchLabPassthrough[];
+};
+
+export type GetResearchLabGenealogyTreeParams = {
+root?: string;
+};
+
+export type GetResearchLabGenealogyTree200 = {
+  tree?: ResearchLabPassthrough;
+};
+
+export type GetResearchLabModelGenealogy200 = {
+  genealogy?: ResearchLabPassthrough;
+};
+
+export type ListResearchLabArtifactHistory200 = {
+  artifacts?: ResearchLabPassthrough[];
 };
 

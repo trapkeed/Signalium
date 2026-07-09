@@ -64,6 +64,13 @@ import { REFERRAL_CODE_STORAGE_KEY } from "@/lib/referral";
 import AdminReferrals from "@/pages/admin/referrals";
 import AdminAuditLog from "@/pages/admin/audit-log";
 import AdminSecurityOperations from "@/pages/admin/security-operations";
+import AdminResearchLabExperiments from "@/pages/admin/research-lab/experiments";
+import AdminResearchLabTraining from "@/pages/admin/research-lab/training";
+import AdminResearchLabValidation from "@/pages/admin/research-lab/validation";
+import AdminResearchLabShadowTesting from "@/pages/admin/research-lab/shadow-testing";
+import AdminResearchLabDeployment from "@/pages/admin/research-lab/deployment";
+import AdminResearchLabResearchIntelligence from "@/pages/admin/research-lab/research-intelligence";
+import AdminResearchLabGenealogy from "@/pages/admin/research-lab/genealogy";
 
 import { OpsConnectionProvider } from "@/hooks/use-ops-realtime";
 
@@ -293,6 +300,13 @@ function ClerkProviderWithRoutes() {
               <Route path="/admin/referrals"><ProtectedRoute component={AdminReferrals} /></Route>
               <Route path="/admin/audit-log"><ProtectedRoute component={AdminAuditLog} ops /></Route>
               <Route path="/admin/security-operations"><ProtectedRoute component={AdminSecurityOperations} ops /></Route>
+              <Route path="/admin/research-lab/experiments"><ProtectedRoute component={AdminResearchLabExperiments} /></Route>
+              <Route path="/admin/research-lab/training"><ProtectedRoute component={AdminResearchLabTraining} /></Route>
+              <Route path="/admin/research-lab/validation"><ProtectedRoute component={AdminResearchLabValidation} /></Route>
+              <Route path="/admin/research-lab/shadow-testing"><ProtectedRoute component={AdminResearchLabShadowTesting} /></Route>
+              <Route path="/admin/research-lab/deployment"><ProtectedRoute component={AdminResearchLabDeployment} /></Route>
+              <Route path="/admin/research-lab/research-intelligence"><ProtectedRoute component={AdminResearchLabResearchIntelligence} /></Route>
+              <Route path="/admin/research-lab/genealogy"><ProtectedRoute component={AdminResearchLabGenealogy} /></Route>
 
               <Route component={NotFound} />
             </Switch>
