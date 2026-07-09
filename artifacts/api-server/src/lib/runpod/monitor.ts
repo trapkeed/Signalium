@@ -12,6 +12,28 @@ const POLLABLE_STATUSES = ["pending", "provisioning", "running", "restarting", "
 let sweepInFlight = false;
 let sweepTimer: ReturnType<typeof setInterval> | null = null;
 
+/**
+ * Maps RunPod's `desiredStatus` to our local status enum. RunPod is the
+ * source of truth for whether a pod is actually running — the local status
+ * we set optimistically on launch/stop/restart must be reconciled to this on
+ * every poll, or the admin UI and cost accrual both drift from reality.
+ */
+function mapRunpodStatus(desiredStatus: string): (typeof runpodPodsTable.$inferSelect)["status"] | null {
+  switch (desiredStatus.toUpperCase()) {
+    case "RUNNING":
+      return "running";
+    case "EXITED":
+    case "STOPPED":
+      return "stopped";
+    case "TERMINATED":
+      return "terminated";
+    case "RESTARTING":
+      return "restarting";
+    default:
+      return null; // unrecognized RunPod status — leave local status untouched rather than guess
+  }
+}
+
 export async function pollRunpodPod(podRowId: number): Promise<void> {
   const [pod] = await db.select().from(runpodPodsTable).where(eq(runpodPodsTable.id, podRowId));
   if (!pod || !pod.runpodPodId) return;
@@ -26,18 +48,28 @@ export async function pollRunpodPod(podRowId: number): Promise<void> {
       return;
     }
 
-    const runningMs = pod.launchedAt ? Date.now() - pod.launchedAt.getTime() : 0;
+    const mappedStatus = mapRunpodStatus(status.desiredStatus);
+    // Never resurrect a pod we've already terminated locally, even if
+    // RunPod's status lags — terminal state is authoritative once reached.
+    const nextStatus = pod.status === "terminated" ? pod.status : mappedStatus ?? pod.status;
+
     const costPerHr = status.costPerHr ?? pod.costPerHrUsd ?? 0;
-    const accruedCostUsd = pod.status === "running" ? (costPerHr * runningMs) / 3_600_000 : pod.accruedCostUsd;
+    // Cost accrual is derived from RunPod's own reported uptime, not local
+    // elapsed wall-clock time or local status — those can drift or be wrong
+    // if a poll is missed or the pod was restarted outside our control.
+    const uptimeSeconds = nextStatus === "running" ? status.runtime?.uptimeInSeconds ?? 0 : 0;
+    const accruedCostUsd = nextStatus === "running" ? (costPerHr * uptimeSeconds) / 3600 : pod.accruedCostUsd;
 
     await db
       .update(runpodPodsTable)
       .set({
+        status: nextStatus,
         lastReportedCostPerHrUsd: status.costPerHr,
         lastUtilizationPct: status.gpuUtilPercent,
         accruedCostUsd,
         lastPolledAt: new Date(),
         lastError: null,
+        stoppedAt: nextStatus === "stopped" && pod.status !== "stopped" ? new Date() : pod.stoppedAt,
         updatedAt: new Date(),
       })
       .where(eq(runpodPodsTable.id, podRowId));

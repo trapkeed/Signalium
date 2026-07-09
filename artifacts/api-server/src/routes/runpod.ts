@@ -13,6 +13,7 @@ import {
   listVolumeArtifacts,
   isRunpodConfigured,
   getRunpodLaunchDefaults,
+  resolveTrustedGpuCost,
 } from "../lib/runpod/client";
 import { checkBudgetForLaunch, getBudgetConfig } from "../lib/runpod/budget";
 import { pollRunpodPod } from "../lib/runpod/monitor";
@@ -80,13 +81,12 @@ router.get("/pods", async (req, res) => {
 
 router.post("/pods", async (req, res) => {
   const { userId } = getAuth(req);
-  const { name, gpuType, templateId, volumeId, region, costPerHrUsd } = req.body as {
+  const { name, gpuType, templateId, volumeId, region } = req.body as {
     name?: string;
     gpuType?: string;
     templateId?: string;
     volumeId?: string | null;
     region?: string | null;
-    costPerHrUsd?: number;
   };
 
   if (!name || !gpuType || !templateId) {
@@ -98,7 +98,22 @@ router.post("/pods", async (req, res) => {
       return res.status(409).json({ error: "RunPod is not configured — set runpod.api_key in Admin \u2192 Managed Secrets." });
     }
 
-    const candidateCost = costPerHrUsd ?? 0;
+    const defaults = await getRunpodLaunchDefaults();
+    if (defaults.allowedGpus.length > 0 && !defaults.allowedGpus.includes(gpuType)) {
+      await logAudit(userId!, "runpod_pod.launch_denied_budget", "runpod_pod", name, { reason: "GPU type not in allowed_gpus", gpuType });
+      return res.status(422).json({ error: `GPU type "${gpuType}" is not in the configured allowed_gpus list.` });
+    }
+
+    // Budget enforcement must use a server-trusted cost, never a
+    // caller-supplied value — otherwise a request could understate its own
+    // cost to slip past the budget cap. If the GPU has no configured price,
+    // fail closed rather than treating it as free.
+    const candidateCost = await resolveTrustedGpuCost(gpuType);
+    if (candidateCost === null) {
+      return res.status(422).json({
+        error: `No hourly price configured for GPU type "${gpuType}" — set runpod.gpu_pricing_json in Admin \u2192 Managed Secrets before launching this GPU type.`,
+      });
+    }
     const budgetCheck = await checkBudgetForLaunch(candidateCost);
     if (!budgetCheck.allowed) {
       await logAudit(userId!, "runpod_pod.launch_denied_budget", "runpod_pod", name, { reason: budgetCheck.reason, candidateCost });

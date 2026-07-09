@@ -57,15 +57,39 @@ export interface RunpodLaunchDefaults {
   gpuType: string | null;
   allowedGpus: string[];
   region: string | null;
+  gpuPricing: Record<string, number>;
+}
+
+/**
+ * Admin-configured hourly price per GPU type, e.g. `{"NVIDIA A100": 1.29}`.
+ * This is the ONLY trusted source of per-GPU cost for budget enforcement —
+ * a caller-supplied cost on the launch request body must never be used to
+ * decide whether a launch is within budget, or an admin could understate it
+ * to bypass the cap.
+ */
+async function getGpuPricing(): Promise<Record<string, number>> {
+  const raw = await resolveManagedConfig("runpod.gpu_pricing_json", "RUNPOD_GPU_PRICING_JSON");
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    const out: Record<string, number> = {};
+    for (const [gpu, price] of Object.entries(parsed)) {
+      if (typeof price === "number" && Number.isFinite(price) && price >= 0) out[gpu] = price;
+    }
+    return out;
+  } catch {
+    return {};
+  }
 }
 
 export async function getRunpodLaunchDefaults(): Promise<RunpodLaunchDefaults> {
-  const [templateId, volumeId, gpuType, allowedGpusRaw, region] = await Promise.all([
+  const [templateId, volumeId, gpuType, allowedGpusRaw, region, gpuPricing] = await Promise.all([
     resolveManagedConfig("runpod.default_template_id", "RUNPOD_DEFAULT_TEMPLATE_ID"),
     resolveManagedConfig("runpod.default_volume_id", "RUNPOD_DEFAULT_VOLUME_ID"),
     resolveManagedConfig("runpod.default_gpu", "RUNPOD_DEFAULT_GPU"),
     resolveManagedConfig("runpod.allowed_gpus", "RUNPOD_ALLOWED_GPUS"),
     resolveManagedConfig("runpod.region", "RUNPOD_REGION"),
+    getGpuPricing(),
   ]);
   return {
     templateId,
@@ -73,7 +97,18 @@ export async function getRunpodLaunchDefaults(): Promise<RunpodLaunchDefaults> {
     gpuType,
     allowedGpus: allowedGpusRaw ? allowedGpusRaw.split(",").map((g) => g.trim()).filter(Boolean) : [],
     region,
+    gpuPricing,
   };
+}
+
+/**
+ * Resolves the trusted hourly cost for a GPU type from the admin-configured
+ * pricing map. Returns null if the GPU isn't priced, so callers can fail
+ * closed (refuse to launch) instead of silently treating it as free.
+ */
+export async function resolveTrustedGpuCost(gpuType: string): Promise<number | null> {
+  const pricing = await getGpuPricing();
+  return pricing[gpuType] ?? null;
 }
 
 // ─── Pod lifecycle ────────────────────────────────────────────────────────────
