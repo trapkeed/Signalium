@@ -3802,6 +3802,10 @@ export type PostResilienceConfigImportBody = { [key: string]: unknown };
 
 export type PostResilienceConfigImport200 = { [key: string]: unknown };
 
+export type GetGovernanceOverview200 = { [key: string]: unknown };
+
+export type GetGovernanceOverview403 = { [key: string]: unknown };
+
 export type GetOperationalPlatformHealthParams = {
 limit?: number;
 };

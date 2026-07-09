@@ -98,6 +98,8 @@ export * from './executionTelemetry';
 export * from './extendSubscriptionBody';
 export * from './failurePattern';
 export * from './featureFlag';
+export * from './getGovernanceOverview200';
+export * from './getGovernanceOverview403';
 export * from './getOperationalAlerts200';
 export * from './getOperationalAlertsParams';
 export * from './getOperationalDeploymentsVersions200';

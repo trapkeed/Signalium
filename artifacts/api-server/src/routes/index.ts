@@ -43,6 +43,7 @@ import rolesRouter from "./roles";
 import ssoRouter from "./sso";
 import opsDashboardRouter from "./ops-dashboard";
 import resilienceRouter from "./resilience";
+import governanceRouter from "./governance";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -108,5 +109,7 @@ router.use("/sso", ssoRouter);
 router.use("/ops-dashboard", opsDashboardRouter);
 // S26: Scalability/HA/DR — backups, job-queue, circuit breakers, secret rotation, config export/restore
 router.use("/resilience", resilienceRouter);
+// S27: Deployment Governance Visibility — read-only institutional summary (full for Admin/SuperAdmin, strategic for Founder)
+router.use("/governance", governanceRouter);
 
 export default router;

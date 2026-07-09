@@ -6330,6 +6330,12 @@ export const PostResilienceConfigImportResponse = zod.record(zod.string(), zod.u
 
 
 /**
+ * @summary Read-only deployment governance summary (S27): active QDE version, deployment status, certification status, health score, validation score, shadow testing status, deployment history, rollback history. Full detail for SuperAdmin/Admin; a condensed "strategic" view for Founder. No visibility for any other role.
+ */
+export const GetGovernanceOverviewResponse = zod.record(zod.string(), zod.unknown())
+
+
+/**
  * @summary Admin — latest + recent platform system health snapshots
  */
 export const getOperationalPlatformHealthQueryLimitDefault = 60;

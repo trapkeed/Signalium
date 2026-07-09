@@ -112,6 +112,12 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
     ],
   },
   {
+    title: "Governance",
+    items: [
+      { href: "/admin/governance", label: "Deployment Governance", icon: ShieldCheck },
+    ],
+  },
+  {
     title: "Content & Growth",
     items: [
       { href: "/admin/announcements", label: "Announcements", icon: Megaphone },

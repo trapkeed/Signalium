@@ -70,6 +70,8 @@ import type {
   ExtendSubscriptionBody,
   FailurePattern,
   FeatureFlag,
+  GetGovernanceOverview200,
+  GetGovernanceOverview403,
   GetOperationalAlerts200,
   GetOperationalAlertsParams,
   GetOperationalDeploymentsVersions200,
@@ -22279,6 +22281,83 @@ export const usePostResilienceConfigImport = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getPostResilienceConfigImportMutationOptions(options));
     }
+
+export const getGetGovernanceOverviewUrl = () => {
+
+
+
+
+  return `/api/governance/overview`
+}
+
+/**
+ * @summary Read-only deployment governance summary (S27): active QDE version, deployment status, certification status, health score, validation score, shadow testing status, deployment history, rollback history. Full detail for SuperAdmin/Admin; a condensed "strategic" view for Founder. No visibility for any other role.
+ */
+export const getGovernanceOverview = async ( options?: RequestInit): Promise<GetGovernanceOverview200> => {
+
+  return customFetch<GetGovernanceOverview200>(getGetGovernanceOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGovernanceOverviewQueryKey = () => {
+    return [
+    `/api/governance/overview`
+    ] as const;
+    }
+
+
+export const getGetGovernanceOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getGovernanceOverview>>, TError = ErrorType<GetGovernanceOverview403>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGovernanceOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGovernanceOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGovernanceOverview>>> = ({ signal }) => getGovernanceOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGovernanceOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGovernanceOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getGovernanceOverview>>>
+export type GetGovernanceOverviewQueryError = ErrorType<GetGovernanceOverview403>
+
+
+/**
+ * @summary Read-only deployment governance summary (S27): active QDE version, deployment status, certification status, health score, validation score, shadow testing status, deployment history, rollback history. Full detail for SuperAdmin/Admin; a condensed "strategic" view for Founder. No visibility for any other role.
+ */
+
+export function useGetGovernanceOverview<TData = Awaited<ReturnType<typeof getGovernanceOverview>>, TError = ErrorType<GetGovernanceOverview403>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGovernanceOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGovernanceOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetOperationalPlatformHealthUrl = (params?: GetOperationalPlatformHealthParams,) => {
   const normalizedParams = new URLSearchParams();

@@ -5586,6 +5586,27 @@ paths:
             application/json:
               schema: { type: object, additionalProperties: true }
 
+  /governance/overview:
+    get:
+      summary: >-
+        Read-only deployment governance summary (S27): active QDE version,
+        deployment status, certification status, health score, validation
+        score, shadow testing status, deployment history, rollback history.
+        Full detail for SuperAdmin/Admin; a condensed "strategic" view for
+        Founder. No visibility for any other role.
+      tags: [Governance]
+      responses:
+        "200":
+          description: Governance summary
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        "403":
+          description: Caller does not hold Admin, SuperAdmin, or Founder visibility
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
   /operational/platform-health:
     get:
       summary: Admin — latest + recent platform system health snapshots
