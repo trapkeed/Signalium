@@ -5395,6 +5395,23 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OperationalDashboard" }
 
+  /ops-dashboard/overview:
+    get:
+      summary: Admin — unified Operations Dashboard overview (SuperAdmin/Admin only)
+      description: >-
+        Single consolidated read covering user monitoring, EA monitoring,
+        autonomous trading monitoring, infrastructure monitoring, and an
+        admin-alerts summary. Restricted to admin-level accounts.
+      tags: [Operational]
+      responses:
+        "200":
+          description: Operations dashboard overview
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
   /operational/platform-health:
     get:
       summary: Admin — latest + recent platform system health snapshots
@@ -6631,7 +6648,11 @@ components:
         errors:
           type: integer
         uptime:
-          type: number
+          type: ["number", "null"]
+          description: >-
+            Platform-wide DB-health proxy (100 if the latest health snapshot
+            is healthy, 0 if not, null if no snapshot has been recorded yet).
+            Not a per-user uptime metric.
         lastActivity:
           type: ["string", "null"]
 

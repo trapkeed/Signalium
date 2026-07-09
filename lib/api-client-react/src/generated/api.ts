@@ -89,6 +89,7 @@ import type {
   GetOperationalTelemetryParams,
   GetOperationalTelemetryReplay200,
   GetOperationalTelemetryReplayParams,
+  GetOpsDashboardOverview200,
   GetQdeAdminCounterfactualsParams,
   GetQdeAdminDecisions200,
   GetQdeAdminDecisionsId200,
@@ -21124,6 +21125,84 @@ export function useGetOperationalDashboard<TData = Awaited<ReturnType<typeof get
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetOperationalDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOpsDashboardOverviewUrl = () => {
+
+
+
+
+  return `/api/ops-dashboard/overview`
+}
+
+/**
+ * Single consolidated read covering user monitoring, EA monitoring, autonomous trading monitoring, infrastructure monitoring, and an admin-alerts summary. Restricted to admin-level accounts.
+ * @summary Admin — unified Operations Dashboard overview (SuperAdmin/Admin only)
+ */
+export const getOpsDashboardOverview = async ( options?: RequestInit): Promise<GetOpsDashboardOverview200> => {
+
+  return customFetch<GetOpsDashboardOverview200>(getGetOpsDashboardOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOpsDashboardOverviewQueryKey = () => {
+    return [
+    `/api/ops-dashboard/overview`
+    ] as const;
+    }
+
+
+export const getGetOpsDashboardOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getOpsDashboardOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOpsDashboardOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOpsDashboardOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOpsDashboardOverview>>> = ({ signal }) => getOpsDashboardOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOpsDashboardOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOpsDashboardOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getOpsDashboardOverview>>>
+export type GetOpsDashboardOverviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin — unified Operations Dashboard overview (SuperAdmin/Admin only)
+ */
+
+export function useGetOpsDashboardOverview<TData = Awaited<ReturnType<typeof getOpsDashboardOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOpsDashboardOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOpsDashboardOverviewQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

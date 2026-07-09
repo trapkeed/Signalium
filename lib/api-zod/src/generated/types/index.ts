@@ -120,6 +120,7 @@ export * from './getOperationalTelemetryParams';
 export * from './getOperationalTelemetryReplay200';
 export * from './getOperationalTelemetryReplay200PointsItem';
 export * from './getOperationalTelemetryReplayParams';
+export * from './getOpsDashboardOverview200';
 export * from './getQdeAdminCounterfactualsParams';
 export * from './getQdeAdminDecisions200';
 export * from './getQdeAdminDecisionsId200';

@@ -15,8 +15,11 @@ import {
   webhookEventsTable,
   providerStatusTable,
   dataProvidersTable,
+  eaTelemetrySnapshotsTable,
+  tradeFailuresTable,
+  userTradingSettingsTable,
 } from "@workspace/db";
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, sql, inArray } from "drizzle-orm";
 import { emitPlatformAlert, hasRecentPlatformAlert } from "./alerting";
 import { getTrainerFailureState } from "./qdeTrainer";
 import { computeSymbolHealth } from "./symbolHealth";
@@ -182,6 +185,103 @@ async function checkAbnormalMarketConditions(): Promise<void> {
   });
 }
 
+// S25 — Platform-wide broker connectivity: if several distinct accounts'
+// most recent telemetry snapshot reports a disconnected broker, that's a
+// broker/feed-level outage rather than isolated user issues.
+async function checkBrokerConnectionFailures(): Promise<void> {
+  const since = new Date(Date.now() - 15 * 60_000);
+  const recentRows = await db
+    .select({
+      userId: eaTelemetrySnapshotsTable.userId,
+      connectivityState: eaTelemetrySnapshotsTable.connectivityState,
+      createdAt: eaTelemetrySnapshotsTable.createdAt,
+    })
+    .from(eaTelemetrySnapshotsTable)
+    .where(gte(eaTelemetrySnapshotsTable.createdAt, since))
+    .orderBy(desc(eaTelemetrySnapshotsTable.createdAt));
+
+  // Keep only the latest snapshot per user within the window.
+  const latestByUser = new Map<string, string | null>();
+  for (const row of recentRows) {
+    if (!latestByUser.has(row.userId)) latestByUser.set(row.userId, row.connectivityState);
+  }
+  const disconnectedUsers = [...latestByUser.entries()].filter(([, state]) => state === "disconnected");
+  if (disconnectedUsers.length < 3) return;
+  if (await hasRecentPlatformAlert("broker_disconnect", DEDUP_WINDOW_MS)) return;
+
+  await emitPlatformAlert({
+    type: "broker_disconnect",
+    severity: disconnectedUsers.length >= 10 ? "critical" : "warning",
+    message: `${disconnectedUsers.length} account(s) reporting a disconnected broker in the last 15 minutes — possible broker/feed-wide outage`,
+  });
+}
+
+// S25 — Autonomous-trading anomaly: an elevated rate of investigated trade
+// failures (loss > 1R) among autonomous-mode users in a short window points
+// at a model/strategy regression rather than an isolated bad trade.
+async function checkAutonomousTradingAnomalies(): Promise<void> {
+  const autonomousUsers = await db
+    .select({ userId: userTradingSettingsTable.userId })
+    .from(userTradingSettingsTable)
+    .where(eq(userTradingSettingsTable.tradingMode, "autonomous"));
+  if (autonomousUsers.length === 0) return;
+  const userIds = autonomousUsers.map((u) => u.userId);
+
+  const since = new Date(Date.now() - 60 * 60_000);
+  const [failureRow] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tradeFailuresTable)
+    .where(and(inArray(tradeFailuresTable.userId, userIds), gte(tradeFailuresTable.createdAt, since)));
+  const failureCount = failureRow?.count ?? 0;
+  // Scale the threshold to fleet size so a small autonomous cohort doesn't
+  // false-positive on 2-3 normal losing trades.
+  const threshold = Math.max(5, Math.ceil(userIds.length * 0.2));
+  if (failureCount < threshold) return;
+  if (await hasRecentPlatformAlert("autonomous_trading_anomaly", DEDUP_WINDOW_MS)) return;
+
+  await emitPlatformAlert({
+    type: "autonomous_trading_anomaly",
+    severity: failureCount >= threshold * 2 ? "critical" : "warning",
+    message: `${failureCount} autonomous-mode trade failures (>1R loss) in the last hour across ${userIds.length} autonomous account(s) — possible strategy/model regression`,
+    metadata: { failureCount, autonomousUserCount: userIds.length },
+  });
+}
+
+// S25 — Excessive drawdown cluster: many accounts hitting a high drawdown
+// simultaneously indicates a market-wide or systemic issue rather than one
+// user's risk-taking — distinct from the per-EA-instance drawdown check
+// already run inline during telemetry ingest.
+async function checkExcessiveDrawdownCluster(): Promise<void> {
+  const since = new Date(Date.now() - 15 * 60_000);
+  const recentRows = await db
+    .select({
+      userId: eaTelemetrySnapshotsTable.userId,
+      currentDrawdownPct: eaTelemetrySnapshotsTable.currentDrawdownPct,
+      createdAt: eaTelemetrySnapshotsTable.createdAt,
+    })
+    .from(eaTelemetrySnapshotsTable)
+    .where(gte(eaTelemetrySnapshotsTable.createdAt, since))
+    .orderBy(desc(eaTelemetrySnapshotsTable.createdAt));
+
+  const latestByUser = new Map<string, number | null>();
+  for (const row of recentRows) {
+    if (!latestByUser.has(row.userId)) latestByUser.set(row.userId, row.currentDrawdownPct);
+  }
+  const total = latestByUser.size;
+  if (total === 0) return;
+  const inCriticalDrawdown = [...latestByUser.values()].filter((pct) => pct !== null && pct >= 10).length;
+  const ratio = inCriticalDrawdown / total;
+  if (inCriticalDrawdown < 3 || ratio < 0.15) return;
+  if (await hasRecentPlatformAlert("excessive_drawdown_cluster", DEDUP_WINDOW_MS)) return;
+
+  await emitPlatformAlert({
+    type: "excessive_drawdown_cluster",
+    severity: ratio >= 0.35 ? "critical" : "warning",
+    message: `${inCriticalDrawdown}/${total} active accounts (${(ratio * 100).toFixed(0)}%) are in ≥10% drawdown — possible market-wide adverse move`,
+    metadata: { inCriticalDrawdown, total },
+  });
+}
+
 // Reentrancy guard: if a sweep is still running when the next interval
 // fires (e.g. a slow DB), skip the new one rather than letting two sweeps
 // run concurrently — concurrent sweeps would each pass the dedup check
@@ -205,6 +305,9 @@ export async function runAlertSweep(): Promise<void> {
       checkPaymentFailures,
       checkDataProviderOutages,
       checkAbnormalMarketConditions,
+      checkBrokerConnectionFailures,
+      checkAutonomousTradingAnomalies,
+      checkExcessiveDrawdownCluster,
     ];
     for (const detector of detectors) {
       try {

@@ -37,6 +37,7 @@ import {
   GitCommitVertical,
   ShieldCheck,
   Sparkles,
+  Gauge,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ const NAV_ITEMS = [
   { href: "/runtime", label: "Runtime", icon: Activity },
   { href: "/support", label: "Support", icon: LifeBuoy },
   { href: "/account", label: "Account & Security", icon: Shield },
-];
+] as { href: string; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[];
 
 // Grouped to match the full spec's admin surface: each section below is a
 // coherent slice of the panel rather than one long flat list.
@@ -87,6 +88,7 @@ const ADMIN_GROUPS: { title: string; items: typeof NAV_ITEMS }[] = [
   {
     title: "Operations",
     items: [
+      { href: "/admin/ops-dashboard", label: "Ops Overview (Admin+)", icon: Gauge, adminOnly: true },
       { href: "/admin/operations", label: "Ops Dashboard", icon: Server },
       { href: "/admin/platform-health", label: "Platform Health", icon: Cpu },
       { href: "/admin/ea-monitor", label: "EA Monitor", icon: Wifi },
@@ -200,11 +202,13 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
   const { user } = useUser();
   const userRole = user?.publicMetadata?.role as string | undefined;
   const isAdmin = !!userRole && userRole !== "user";
+  const isAdminLevel = userRole === "admin" || userRole === "super_admin";
   const referralsEnabled = useFeatureFlag("referrals_enabled");
 
   const adminGroups = ADMIN_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => referralsEnabled || item.href !== "/admin/referrals"),
+    items: group.items.filter((item) => referralsEnabled || item.href !== "/admin/referrals")
+      .filter((item) => !item.adminOnly || isAdminLevel),
   })).filter((group) => group.items.length > 0);
 
   return (

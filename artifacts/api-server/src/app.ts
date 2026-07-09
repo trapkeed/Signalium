@@ -11,6 +11,7 @@ import {
 import router from "./routes";
 import { robotsTxtHandler, sitemapXmlHandler } from "./routes/seo";
 import { logger } from "./lib/logger";
+import { apiResponseTimeMiddleware } from "./lib/apiResponseTime";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -42,6 +43,8 @@ app.use(
     },
   }),
 );
+
+app.use(apiResponseTimeMiddleware);
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 

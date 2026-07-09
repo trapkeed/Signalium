@@ -41,6 +41,7 @@ import securityRouter from "./security";
 import researchLabRouter from "./research-lab";
 import rolesRouter from "./roles";
 import ssoRouter from "./sso";
+import opsDashboardRouter from "./ops-dashboard";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -102,5 +103,7 @@ router.use("/research-lab", researchLabRouter);
 router.use("/admin/roles", rolesRouter);
 // S24C: SSO Identity Provider — token issuance/refresh/revocation/verification for trusted internal services
 router.use("/sso", ssoRouter);
+// S25: unified Operations Dashboard — admin-only aggregate read across all ops surfaces
+router.use("/ops-dashboard", opsDashboardRouter);
 
 export default router;

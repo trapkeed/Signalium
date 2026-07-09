@@ -476,7 +476,11 @@ export interface RuntimeSummary {
   tradesOpened: number;
   tradesClosed: number;
   errors: number;
-  uptime: number;
+  /**
+     * Platform-wide DB-health proxy (100 if the latest health snapshot is healthy, 0 if not, null if no snapshot has been recorded yet). Not a per-user uptime metric.
+     * @nullable
+     */
+  uptime: number | null;
   /** @nullable */
   lastActivity?: string | null;
 }
@@ -3758,6 +3762,8 @@ export type GetOperationalAlerts200 = {
 export type PostOperationalAlertsIdAcknowledge200 = {
   ok?: boolean;
 };
+
+export type GetOpsDashboardOverview200 = { [key: string]: unknown };
 
 export type GetOperationalPlatformHealthParams = {
 limit?: number;

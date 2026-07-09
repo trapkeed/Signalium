@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, subscriptionsTable, easTable, telemetryTable, plansTable } from "@workspace/db";
 import { eq, count, inArray, sql } from "drizzle-orm";
+import { getLatestSnapshot } from "../lib/platformHealth";
 
 const router = Router();
 
@@ -60,12 +61,19 @@ router.get("/runtime-summary", async (req, res) => {
     const sorted = [...events].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     const lastEvent = sorted[0];
 
+    // Real system-health proxy rather than a hardcoded placeholder: the
+    // most recent platform-health snapshot's DB-healthy flag. There is no
+    // dedicated per-user uptime ledger, so this reflects platform-wide
+    // operational status, not this specific user's EA connectivity.
+    const latestHealth = await getLatestSnapshot();
+    const uptime = latestHealth ? (latestHealth.dbHealthy ? 100 : 0) : null;
+
     return res.json({
       totalEvents: events.length,
       tradesOpened,
       tradesClosed,
       errors,
-      uptime: 99.9,
+      uptime,
       lastActivity: lastEvent?.createdAt?.toISOString() ?? null,
     });
   } catch (err) {

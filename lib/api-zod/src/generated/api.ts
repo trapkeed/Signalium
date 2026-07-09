@@ -3407,7 +3407,7 @@ export const GetRuntimeSummaryResponse = zod.object({
   "tradesOpened": zod.number(),
   "tradesClosed": zod.number(),
   "errors": zod.number(),
-  "uptime": zod.number(),
+  "uptime": zod.number().nullable().describe('Platform-wide DB-health proxy (100 if the latest health snapshot is healthy, 0 if not, null if no snapshot has been recorded yet). Not a per-user uptime metric.'),
   "lastActivity": zod.string().nullish()
 })
 
@@ -6215,6 +6215,13 @@ export const GetOperationalDashboardResponse = zod.object({
   "avgVpsLatencyMs": zod.number().nullish(),
   "timestamp": zod.string().optional()
 })
+
+
+/**
+ * Single consolidated read covering user monitoring, EA monitoring, autonomous trading monitoring, infrastructure monitoring, and an admin-alerts summary. Restricted to admin-level accounts.
+ * @summary Admin — unified Operations Dashboard overview (SuperAdmin/Admin only)
+ */
+export const GetOpsDashboardOverviewResponse = zod.record(zod.string(), zod.unknown())
 
 
 /**

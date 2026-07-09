@@ -263,6 +263,9 @@ export const platformAlertsTable = pgTable(
         "payment_failure",
         "data_provider_outage",
         "abnormal_market_condition",
+        // S25 additions
+        "autonomous_trading_anomaly",
+        "excessive_drawdown_cluster",
       ],
     }).notNull(),
     severity: text("severity", { enum: ["info", "warning", "critical"] }).notNull(),

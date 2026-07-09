@@ -8,3 +8,4 @@
 - [S23c Security Operations & Audit Logs](s23c-security-operations.md) — scopeKey dedup requirement, security_incidents vs operational_incidents, audit-log volume control, shared IP threading for auth.
 - [S24B Research Lab Integration Hub](s24b-research-lab-hub.md) — trainer-proxy gateway pattern, ResearchLabPassthrough opaque schema, audit-on-success-only for sensitive reads.
 - [S24C SSO Identity Provider](s24c-sso-identity-provider.md) — additive role table over enum rewrite, DB-persisted signing key, atomic refresh rotation, mandatory JWT audience, least-privilege service-token scope.
+- [S25 Ops Dashboard](s25-ops-dashboard.md) — "report unconfigured" proxy pattern extended to trial/exposure/uptime, process-local response-time ring buffer, orval looseObject sed re-run, db push+tsc-b for new enum values.
