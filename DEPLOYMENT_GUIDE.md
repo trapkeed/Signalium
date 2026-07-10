@@ -300,13 +300,24 @@ pull new code — it only adds what's missing.
 
 ## 9. Seed your super admin account
 
+The seed script requires you to pass in the email and password as
+environment variables — it will refuse to run without them, so no shared
+default credential ever ends up in your database:
+
 ```bash
 cd /var/www/signalium
+SUPER_ADMIN_EMAIL="you@yourdomain.com" \
+SUPER_ADMIN_PASSWORD="choose-a-strong-password" \
 pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts
 ```
 
-This creates the initial super admin login. Open the script file first if
-you want to change the seeded email/password before running it.
+- Password must be at least 12 characters.
+- The script is idempotent — if a user with that email already exists it's
+  promoted to `super_admin` and its password reset, rather than creating a
+  duplicate. Re-running it later with a new password is a safe way to
+  rotate the super admin credential.
+- This is the account you'll use to sign in and access the Admin section
+  once the app is live (step 14).
 
 ---
 

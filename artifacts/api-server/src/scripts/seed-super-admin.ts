@@ -4,17 +4,35 @@
  * exists, it is promoted to super_admin and its password reset instead of
  * duplicated.
  *
- * Usage: pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts
+ * Usage:
+ *   SUPER_ADMIN_EMAIL=you@example.com SUPER_ADMIN_PASSWORD='choose-a-strong-password' \
+ *     pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts
+ *
+ * Both env vars are required — the script refuses to run without them so no
+ * default/shared credential ever ends up seeded.
  */
 import crypto from "crypto";
 import { eq } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { hashPassword } from "../lib/auth";
 
-const EMAIL = "t3002843@gmail.com";
-const PASSWORD = "Chachabrian2001/";
+const EMAIL = process.env.SUPER_ADMIN_EMAIL;
+const PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
 
 async function main() {
+  if (!EMAIL || !PASSWORD) {
+    console.error(
+      "Missing SUPER_ADMIN_EMAIL and/or SUPER_ADMIN_PASSWORD environment variables.\n" +
+      "Usage: SUPER_ADMIN_EMAIL=you@example.com SUPER_ADMIN_PASSWORD='strong-password' " +
+      "pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts"
+    );
+    process.exit(1);
+  }
+  if (PASSWORD.length < 12) {
+    console.error("SUPER_ADMIN_PASSWORD must be at least 12 characters.");
+    process.exit(1);
+  }
+
   console.log(`Seeding super admin: ${EMAIL}`);
 
   const passwordHash = await hashPassword(PASSWORD);
