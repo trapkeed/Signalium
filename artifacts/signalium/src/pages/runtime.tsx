@@ -1,5 +1,5 @@
 import { useGetRuntimeStatus, useListTelemetry } from "@workspace/api-client-react";
-import { Activity, Wifi, WifiOff, Clock, AlertCircle } from "lucide-react";
+import { Activity, Wifi, WifiOff, Clock, AlertCircle, Info } from "lucide-react";
 
 const EVENT_COLORS: Record<string, string> = {
   trade_open: "text-success border-success/30 bg-success/10",
@@ -33,6 +33,18 @@ export default function Runtime() {
       </div>
 
       <div className="p-8 space-y-8">
+        {/* Setup guide */}
+        {!isConnected && !statusLoading && (
+          <div className="flex items-start gap-3 border border-primary/20 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
+            <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="text-foreground font-medium">No runtime connected yet. </span>
+              Install an EA from the EA Library, attach it to a chart in your MT4/MT5 terminal with your API key,
+              and this page will update automatically once it starts sending heartbeats.
+            </div>
+          </div>
+        )}
+
         {/* Connection status */}
         <div className="grid md:grid-cols-3 gap-4">
           <div className="border border-border bg-card rounded-lg p-5">

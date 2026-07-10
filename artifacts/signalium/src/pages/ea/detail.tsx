@@ -1,6 +1,6 @@
 import { useParams, Link } from "wouter";
 import { useGetEa, useGetEaDownloadToken, getGetEaQueryKey } from "@workspace/api-client-react";
-import { Download, ArrowLeft, Cpu, Clock } from "lucide-react";
+import { Download, ArrowLeft, Cpu, Clock, Info } from "lucide-react";
 
 const TIER_COLORS: Record<string, string> = {
   starter: "text-success border-success/30 bg-success/10",
@@ -73,6 +73,20 @@ export default function EaDetail() {
       </div>
 
       <div className="p-8 max-w-3xl space-y-8">
+        {/* Setup guide */}
+        <div className="flex items-start gap-3 border border-primary/20 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
+          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="text-foreground font-medium">Installing this EA</div>
+            <ol className="list-decimal list-inside space-y-0.5">
+              <li>Click "Generate download token" above and copy the token shown.</li>
+              <li>In your MT4/MT5 terminal, open File → Open Data Folder → MQL{ea.platform === "mt4" ? "4" : "5"}/Experts.</li>
+              <li>Paste the downloaded EA file into that folder, then restart the terminal.</li>
+              <li>Drag the EA onto a chart and paste the token into its "API Token" input when prompted.</li>
+            </ol>
+          </div>
+        </div>
+
         {/* Meta */}
         <div className="border border-border bg-card rounded-lg p-6">
           <div className="grid md:grid-cols-4 gap-6">

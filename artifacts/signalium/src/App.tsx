@@ -37,6 +37,8 @@ import AdminAnnouncements from "@/pages/admin/announcements";
 import AdminSiteContent from "@/pages/admin/site-content";
 import AdminMaintenanceBanner from "@/pages/admin/maintenance-banner";
 import Contact from "@/pages/contact";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
 import KnowledgeBase from "@/pages/knowledge-base";
 import KbArticle from "@/pages/kb-article";
 import StatusPage from "@/pages/status-page";
@@ -150,6 +152,8 @@ function AppRoutes() {
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/contact" component={Contact} />
+              <Route path="/terms" component={Terms} />
+              <Route path="/privacy" component={Privacy} />
               <Route path="/kb" component={KnowledgeBase} />
               <Route path="/kb/:slug" component={KbArticle} />
               <Route path="/status" component={StatusPage} />

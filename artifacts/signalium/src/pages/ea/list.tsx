@@ -1,5 +1,5 @@
 import { useListEas, useGetEaDownloadToken, useGetMySubscription } from "@workspace/api-client-react";
-import { Download, Cpu, Lock } from "lucide-react";
+import { Download, Cpu, Lock, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListEasQueryKey } from "@workspace/api-client-react";
@@ -46,6 +46,14 @@ export default function EaList() {
       </div>
 
       <div className="p-8">
+        <div className="mb-6 flex items-start gap-3 border border-primary/20 bg-primary/5 rounded-lg p-4 text-sm text-muted-foreground">
+          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <div>
+            <span className="text-foreground font-medium">How to install an EA: </span>
+            click "Download" to generate a one-time token, then open the EA's detail page for instructions on
+            loading it into your MT4/MT5 terminal. Tokens expire shortly after creation, so use them right away.
+          </div>
+        </div>
         {isLoading ? (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (

@@ -419,9 +419,9 @@ export default function Home() {
               Institutional Trading Infrastructure
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground font-light">
-              <Link href="/status" className="hover:text-white transition-colors">Security</Link>
-              <Link href="/kb" className="hover:text-white transition-colors">Terms</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Privacy</Link>
+              <Link href="/status" className="hover:text-white transition-colors">Status</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             </div>
             <div className="flex items-center gap-4">
               <a

@@ -25,8 +25,12 @@ export function PublicShell({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <footer className="border-t border-white/5 bg-background py-8 px-6">
-        <div className="max-w-5xl mx-auto text-center text-xs text-muted-foreground/60 font-light">
-          &copy; {new Date().getFullYear()} Signalium Technologies. All rights reserved.
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground/60 font-light">
+          <div>&copy; {new Date().getFullYear()} Signalium Technologies. All rights reserved.</div>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          </div>
         </div>
       </footer>
     </div>

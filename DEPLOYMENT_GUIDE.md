@@ -10,6 +10,41 @@ step. No prior server experience assumed.
 
 ---
 
+## 0. Already running other sites on this VPS? Read this first
+
+If your server already hosts other live websites, Signalium can run
+alongside them safely — Nginx and PM2 are both designed to host many
+independent apps on one machine. Just keep these rules in mind as you go
+through the guide:
+
+- **Never reinstall or restart shared infrastructure carelessly.** In step 4,
+  skip `apt install` for anything already present (`nginx`, `postgresql`,
+  `pm2`) — check first with `nginx -v`, `psql --version`, `pm2 -v`. Installing
+  again is harmless, but running `systemctl restart nginx` later will briefly
+  drop connections for your *other* sites too, so only do it right after
+  validating your new config with `nginx -t`.
+- **Pick a backend port that isn't already taken.** Run `pm2 status` and
+  `ss -tlnp` to see what ports your existing sites use, then choose a free one
+  for Signalium's API (this guide uses `3000` as an example — change it to
+  `3001`, `3002`, etc. if that's already in use by another app).
+- **Give Signalium its own Nginx server block, not a shared one.** You'll add
+  a *new* file in step 12 (`/etc/nginx/sites-available/signalium`) — never
+  edit another site's existing config file. Nginx routes by `server_name`
+  (domain), so each site's file stays independent as long as the domain and
+  port combination is unique.
+- **Use a unique PM2 process name.** This guide uses `signalium-api` — make
+  sure it doesn't collide with a name already shown in `pm2 status`.
+- **Use a separate database and database user.** Step 5 already creates a
+  dedicated `signalium` database and `signalium_user` — don't reuse another
+  site's database or credentials.
+- **Put the code in its own directory**, e.g. `/var/www/signalium`, never
+  inside another site's folder.
+
+As long as each site has its own port, PM2 process name, Nginx server block,
+and database, they won't interfere with each other.
+
+---
+
 ## 1. What you'll need
 
 - A VPS running **Ubuntu 22.04** (or newer), with at least 2GB RAM. Any
@@ -53,6 +88,11 @@ an SSH key during signup.)
 
 ## 4. Install the basics
 
+> **Already have other sites on this box?** Check what's installed before
+> running these — `node -v`, `pnpm -v`, `psql --version`, `nginx -v`, `pm2 -v`.
+> Skip any `apt install`/`npm install -g` line below whose tool is already
+> present; re-running them is harmless but unnecessary.
+
 Run these commands one at a time on the server:
 
 ```bash
@@ -66,16 +106,19 @@ apt install -y nodejs
 # Install pnpm (the package manager this project uses)
 npm install -g pnpm
 
-# Install Postgres (skip if you're using a managed database like Neon)
+# Install Postgres (skip if you're using a managed database like Neon, or if
+# it's already installed for one of your other sites)
 apt install -y postgresql postgresql-contrib
 
-# Install Nginx (reverse proxy — routes public traffic to your app)
+# Install Nginx (reverse proxy — routes public traffic to your app; skip if
+# already installed — one Nginx install can serve unlimited sites)
 apt install -y nginx
 
-# Install PM2 (keeps your app running forever, restarts it if it crashes)
+# Install PM2 (keeps your app running forever, restarts it if it crashes;
+# skip if already installed — one PM2 install can manage unlimited apps)
 npm install -g pm2
 
-# Install Certbot (free HTTPS certificates)
+# Install Certbot (free HTTPS certificates; skip if already installed)
 apt install -y certbot python3-certbot-nginx
 ```
 
