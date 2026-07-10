@@ -8,7 +8,7 @@
  * and of every other user's switch.
  */
 import { db, userTradingSettingsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { logAudit } from "./auditLog";
 
 export type QdeSwitchStatus = "stopped" | "initializing" | "running";
@@ -27,19 +27,36 @@ export async function isQdeActiveForUser(userId: string): Promise<boolean> {
   return isQdeStatusActive((row?.qdeStatus ?? "stopped") as QdeSwitchStatus);
 }
 
-async function setQdeStatus(userId: string, status: QdeSwitchStatus) {
+async function setQdeStatus(userId: string, status: QdeSwitchStatus, requireCurrentStatus?: QdeSwitchStatus) {
   const [existing] = await db
     .select()
     .from(userTradingSettingsTable)
     .where(eq(userTradingSettingsTable.userId, userId));
 
   if (existing) {
+    if (requireCurrentStatus && existing.qdeStatus !== requireCurrentStatus) {
+      // Someone else (e.g. a stop request) changed the status since we
+      // scheduled this transition — don't clobber their intent.
+      return existing;
+    }
     const [updated] = await db
       .update(userTradingSettingsTable)
       .set({ qdeStatus: status, qdeStatusUpdatedAt: new Date(), updatedAt: new Date() })
-      .where(eq(userTradingSettingsTable.userId, userId))
+      .where(
+        requireCurrentStatus
+          ? and(
+              eq(userTradingSettingsTable.userId, userId),
+              eq(userTradingSettingsTable.qdeStatus, requireCurrentStatus),
+            )
+          : eq(userTradingSettingsTable.userId, userId),
+      )
       .returning();
-    return updated;
+    return updated ?? existing;
+  }
+  if (requireCurrentStatus) {
+    // Row didn't exist, so it can't already be in `requireCurrentStatus` —
+    // nothing to transition.
+    return undefined;
   }
   const [inserted] = await db
     .insert(userTradingSettingsTable)
@@ -60,8 +77,15 @@ export async function startQdeForUser(userId: string) {
   await logAudit(userId, "qde.switch_start_requested", "user", userId, {});
 
   setTimeout(() => {
-    setQdeStatus(userId, "running")
-      .then(() => logAudit(userId, "qde.switch_running", "user", userId, {}))
+    setQdeStatus(userId, "running", "initializing")
+      .then(async (updated) => {
+        // Only audit if we actually made the transition — if the user
+        // stopped the switch during warm-up, `updated` reflects "stopped"
+        // (or is undefined) and we must not claim it started running.
+        if (updated?.qdeStatus === "running") {
+          await logAudit(userId, "qde.switch_running", "user", userId, {});
+        }
+      })
       .catch(() => {
         // Best-effort — a failed warm-up flip shouldn't crash the process;
         // the user can re-check status or click start again.
