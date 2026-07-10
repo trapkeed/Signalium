@@ -45,6 +45,69 @@ and database, they won't interfere with each other.
 
 ---
 
+## 0b. Replacing an old version of this same site at the same URL
+
+If you already have an older deployment of this exact app running at the
+same domain and you want to fully remove it (code, database, and all) before
+putting the new version up, do it in this order — **back up first, then
+delete, then deploy fresh** using the rest of this guide.
+
+> **This is irreversible.** Deleting a database drops all rows in it
+> permanently, and `rm -rf` does not go to a trash bin. Do not skip the
+> backup step unless you are certain you don't need any existing data (users,
+> trades, settings, etc.) from the old deployment.
+
+**Step 1 — back up the old database (always do this, even if you think you
+don't need it):**
+
+```bash
+# Replace with the old deployment's actual DB name/user
+sudo -u postgres pg_dump old_database_name > ~/old_site_backup_$(date +%F).sql
+```
+
+Copy that `.sql` file somewhere off the server too (e.g. `scp` it to your own
+computer) in case you need to recover something later.
+
+**Step 2 — stop and remove the old app process:**
+
+```bash
+pm2 status                      # find the old app's process name
+pm2 stop <old-process-name>
+pm2 delete <old-process-name>
+pm2 save
+```
+
+**Step 3 — remove the old Nginx site config:**
+
+```bash
+ls /etc/nginx/sites-enabled/     # find the old site's config filename
+rm /etc/nginx/sites-enabled/<old-config-name>
+rm /etc/nginx/sites-available/<old-config-name>
+nginx -t                        # should say "syntax is ok"
+systemctl reload nginx
+```
+
+**Step 4 — drop the old database** (only after Step 1's backup is safely
+copied off-server):
+
+```bash
+sudo -u postgres psql -c "DROP DATABASE old_database_name;"
+sudo -u postgres psql -c "DROP USER old_database_user;"
+```
+
+**Step 5 — delete the old code directory:**
+
+```bash
+rm -rf /var/www/<old-site-folder>
+```
+
+**Step 6 — confirm the URL is clear**, then continue from **Section 1**
+below to deploy Signalium fresh at the same domain (steps 6–13 will
+re-create the code directory, database, PM2 process, and Nginx config under
+Signalium's own names).
+
+---
+
 ## 1. What you'll need
 
 - A VPS running **Ubuntu 22.04** (or newer), with at least 2GB RAM. Any
