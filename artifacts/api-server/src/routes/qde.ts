@@ -14,6 +14,7 @@ import { decideAction, TRAINER_ACTIONS, type TelemetrySnapshot } from "../lib/qd
 import { deliverAction, getActiveConnections } from "../ws/eaGateway";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 import { logAudit } from "../lib/auditLog";
+import { isQdeActiveForUser } from "../lib/qdeSwitch";
 
 const router = Router();
 
@@ -93,6 +94,19 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
         action: null,
         code: autonomousAccess.code,
         message: autonomousAccess.message,
+      });
+    }
+
+    // Per-user QDE start/stop switch: while stopped, no QDE decision is
+    // issued for this user (safe no-op) — the shared trainer and every
+    // other user's telemetry/decision flow are unaffected.
+    const qdeActive = await isQdeActiveForUser(auth.userId);
+    if (!qdeActive) {
+      return res.status(202).json({
+        telemetryId: row.id,
+        action: null,
+        code: "QDE_STOPPED",
+        message: "QDE is currently stopped for this account.",
       });
     }
 

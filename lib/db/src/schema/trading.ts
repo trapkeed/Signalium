@@ -20,6 +20,14 @@ export const userTradingSettingsTable = pgTable("user_trading_settings", {
     takeProfitPips?: number;
     maxDailyLossPct?: number;
   }>(),
+  // Per-user master on/off switch for QDE-driven trading/analysis. Additive
+  // to tradingMode/riskMode — this does not change how those work, it just
+  // gates whether the user receives any QDE output at all. Independent of
+  // the shared QDE model/trainer process and of other users' state.
+  // "stopped" is the only inactive state; "initializing" and "running" are
+  // both considered active (initializing = background warm-up in progress).
+  qdeStatus: text("qde_status", { enum: ["stopped", "initializing", "running"] }).notNull().default("stopped"),
+  qdeStatusUpdatedAt: timestamp("qde_status_updated_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

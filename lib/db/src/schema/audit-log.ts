@@ -153,6 +153,10 @@ export const auditLogTable = pgTable("audit_log", {
       "symbol_regex_pattern.created",
       "symbol_regex_pattern.updated",
       "symbol_regex_pattern.deleted",
+      // Per-user QDE start/stop switch
+      "qde.switch_start_requested",
+      "qde.switch_running",
+      "qde.switch_stopped",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

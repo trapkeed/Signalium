@@ -2431,7 +2431,9 @@ export const GetTradingSettingsResponse = zod.object({
   "stopLossPips": zod.number().optional(),
   "takeProfitPips": zod.number().optional(),
   "maxDailyLossPct": zod.number().optional()
-}).nullish()
+}).nullish(),
+  "qdeStatus": zod.enum(['stopped', 'initializing', 'running']).optional(),
+  "qdeStatusUpdatedAt": zod.string().nullish()
 })
 
 
@@ -2461,7 +2463,51 @@ export const UpdateTradingSettingsResponse = zod.object({
   "stopLossPips": zod.number().optional(),
   "takeProfitPips": zod.number().optional(),
   "maxDailyLossPct": zod.number().optional()
-}).nullish()
+}).nullish(),
+  "qdeStatus": zod.enum(['stopped', 'initializing', 'running']).optional(),
+  "qdeStatusUpdatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Start the current user's QDE switch — flips to initializing, then running after background warm-up
+ */
+export const StartQdeResponse = zod.object({
+  "userId": zod.string(),
+  "tradingMode": zod.enum(['manual', 'autonomous']),
+  "riskMode": zod.enum(['manual', 'qde']),
+  "updatedAt": zod.string().nullish(),
+  "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
+  "lastMarketSourceAt": zod.string().nullish(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish(),
+  "qdeStatus": zod.enum(['stopped', 'initializing', 'running']).optional(),
+  "qdeStatusUpdatedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Stop the current user's QDE switch immediately
+ */
+export const StopQdeResponse = zod.object({
+  "userId": zod.string(),
+  "tradingMode": zod.enum(['manual', 'autonomous']),
+  "riskMode": zod.enum(['manual', 'qde']),
+  "updatedAt": zod.string().nullish(),
+  "lastMarketSource": zod.union([zod.literal('EXTERNAL_PROVIDER'),zod.literal('EA_FEED'),zod.literal('HYBRID'),zod.literal(null)]).nullish(),
+  "lastMarketSourceAt": zod.string().nullish(),
+  "riskParams": zod.object({
+  "lotSize": zod.number().optional(),
+  "stopLossPips": zod.number().optional(),
+  "takeProfitPips": zod.number().optional(),
+  "maxDailyLossPct": zod.number().optional()
+}).nullish(),
+  "qdeStatus": zod.enum(['stopped', 'initializing', 'running']).optional(),
+  "qdeStatusUpdatedAt": zod.string().nullish()
 })
 
 
@@ -3920,7 +3966,9 @@ export const ActivateEmergencyStopResponse = zod.object({
   "stopLossPips": zod.number().optional(),
   "takeProfitPips": zod.number().optional(),
   "maxDailyLossPct": zod.number().optional()
-}).nullish()
+}).nullish(),
+  "qdeStatus": zod.enum(['stopped', 'initializing', 'running']).optional(),
+  "qdeStatusUpdatedAt": zod.string().nullish()
 })
 
 

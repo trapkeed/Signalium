@@ -611,6 +611,7 @@ export * from './userSupportViewLatestAccount';
 export * from './userSymbol';
 export * from './userTradingSettings';
 export * from './userTradingSettingsLastMarketSource';
+export * from './userTradingSettingsQdeStatus';
 export * from './userTradingSettingsRiskMode';
 export * from './userTradingSettingsRiskParams';
 export * from './userTradingSettingsTradingMode';

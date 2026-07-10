@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UserTradingSettingsLastMarketSource } from './userTradingSettingsLastMarketSource';
+import type { UserTradingSettingsQdeStatus } from './userTradingSettingsQdeStatus';
 import type { UserTradingSettingsRiskMode } from './userTradingSettingsRiskMode';
 import type { UserTradingSettingsRiskParams } from './userTradingSettingsRiskParams';
 import type { UserTradingSettingsTradingMode } from './userTradingSettingsTradingMode';
@@ -22,4 +23,7 @@ export interface UserTradingSettings {
   lastMarketSourceAt?: string | null;
   /** @nullable */
   riskParams?: UserTradingSettingsRiskParams;
+  qdeStatus?: UserTradingSettingsQdeStatus;
+  /** @nullable */
+  qdeStatusUpdatedAt?: string | null;
 }

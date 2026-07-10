@@ -17,6 +17,7 @@ import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/
 import { ingestPositionSnapshot, emitTradeEvent } from "../lib/tradeLifecycle";
 import { logAudit } from "../lib/auditLog";
 import { broadcastOpsEvent } from "./adminOpsGateway";
+import { isQdeActiveForUser } from "../lib/qdeSwitch";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -299,6 +300,14 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
   const autonomousAccess = await checkAutonomousAccess(state.userId);
   if (!autonomousAccess.allowed) {
     safeSend(state.ws, { type: "error", code: autonomousAccess.code, message: autonomousAccess.message });
+    return;
+  }
+
+  // Per-user QDE start/stop switch: while stopped, this user simply receives
+  // no QDE decisions — the shared trainer keeps running for everyone else,
+  // and this is not surfaced as an error since it's a deliberate user choice.
+  const qdeActive = await isQdeActiveForUser(state.userId);
+  if (!qdeActive) {
     return;
   }
 

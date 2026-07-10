@@ -47,6 +47,7 @@ import { logAudit } from "../lib/auditLog";
 import { captureQdeDecision, emitTradeEvent, finaliseExitedTrade, finaliseExitedTradeSafe } from "../lib/tradeLifecycle";
 import { deploymentManager } from "../lib/deploymentManager";
 import { getActiveProvider } from "../lib/marketData/registry";
+import { isQdeActiveForUser } from "../lib/qdeSwitch";
 
 const router = Router();
 
@@ -329,6 +330,17 @@ router.post("/manual-analysis", async (req, res) => {
 
   const gate = await ensureInferenceAllowed(userId);
   if (!gate.allowed) return res.status(403).json({ error: gate.message, code: gate.code });
+
+  // Per-user QDE start/stop switch: while stopped, this user gets no
+  // QDE-driven analysis — a safe no-op response, not an error, since it's a
+  // deliberate self-service choice. Other users are unaffected.
+  const qdeActive = await isQdeActiveForUser(userId);
+  if (!qdeActive) {
+    return res.status(200).json({
+      reasoning: "QDE is currently stopped for your account. Start QDE from the Trading page to receive analysis.",
+      warnings: ["QDE_STOPPED"],
+    });
+  }
 
   const { symbol, timeframe, notes } = req.body as {
     symbol?: string;

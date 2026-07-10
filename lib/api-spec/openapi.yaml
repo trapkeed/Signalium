@@ -2193,6 +2193,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/EntitlementError"
 
+  /trading-settings/qde/start:
+    post:
+      operationId: startQde
+      tags: [trading]
+      summary: Start the current user's QDE switch — flips to initializing, then running after background warm-up
+      responses:
+        "200":
+          description: Updated trading settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTradingSettings"
+
+  /trading-settings/qde/stop:
+    post:
+      operationId: stopQde
+      tags: [trading]
+      summary: Stop the current user's QDE switch immediately
+      responses:
+        "200":
+          description: Updated trading settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTradingSettings"
+
   /trading-settings/market-source:
     get:
       operationId: getMarketSource
@@ -10337,6 +10363,11 @@ components:
               type: number
             maxDailyLossPct:
               type: number
+        qdeStatus:
+          type: string
+          enum: [stopped, initializing, running]
+        qdeStatusUpdatedAt:
+          type: ["string", "null"]
 
     MarketSourceResolution:
       type: object

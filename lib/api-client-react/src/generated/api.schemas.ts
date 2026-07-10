@@ -2323,6 +2323,15 @@ export type UserTradingSettingsRiskParams = {
   maxDailyLossPct?: number;
 } | null;
 
+export type UserTradingSettingsQdeStatus = typeof UserTradingSettingsQdeStatus[keyof typeof UserTradingSettingsQdeStatus];
+
+
+export const UserTradingSettingsQdeStatus = {
+  stopped: 'stopped',
+  initializing: 'initializing',
+  running: 'running',
+} as const;
+
 export interface UserTradingSettings {
   userId: string;
   tradingMode: UserTradingSettingsTradingMode;
@@ -2335,6 +2344,9 @@ export interface UserTradingSettings {
   lastMarketSourceAt?: string | null;
   /** @nullable */
   riskParams?: UserTradingSettingsRiskParams;
+  qdeStatus?: UserTradingSettingsQdeStatus;
+  /** @nullable */
+  qdeStatusUpdatedAt?: string | null;
 }
 
 export type MarketSourceResolutionSource = typeof MarketSourceResolutionSource[keyof typeof MarketSourceResolutionSource];

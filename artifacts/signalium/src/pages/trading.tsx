@@ -4,6 +4,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetTradingSettings,
   useUpdateTradingSettings,
+  useStartQde,
+  useStopQde,
   useListUserSymbols,
   useAddUserSymbol,
   useRemoveUserSymbol,
@@ -19,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, TrendingUp, Bot, ShieldCheck, BarChart2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, TrendingUp, Bot, ShieldCheck, BarChart2, Power, Loader2 } from "lucide-react";
 import type { UserSymbol } from "@workspace/api-client-react";
 
 interface TradingProps {
@@ -75,10 +77,50 @@ export default function Trading({ embedded }: TradingProps) {
   const updateSettings = useUpdateTradingSettings();
   const addSymbol = useAddUserSymbol();
   const removeSymbol = useRemoveUserSymbol();
+  const startQdeMutation = useStartQde();
+  const stopQdeMutation = useStopQde();
 
   const currentMode = settings?.tradingMode ?? "manual";
   const currentRisk = settings?.riskMode ?? "manual";
   const autonomousAllowed = entitlement?.autonomousAllowed ?? false;
+  const qdeStatus = (settings as { qdeStatus?: "stopped" | "initializing" | "running" })?.qdeStatus ?? "stopped";
+
+  useEffect(() => {
+    if (qdeStatus !== "initializing") return;
+    const interval = setInterval(() => {
+      invalidateSettings();
+    }, 1500);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qdeStatus]);
+
+  async function handleStartQde() {
+    try {
+      await startQdeMutation.mutateAsync();
+      invalidateSettings();
+      toast({
+        title: "Starting QDE",
+        description: "The QDE is initializing for your account.",
+      });
+    } catch (err) {
+      const { message } = parseApiError(err);
+      toast({ title: "Could not start QDE", description: message, variant: "destructive" });
+    }
+  }
+
+  async function handleStopQde() {
+    try {
+      await stopQdeMutation.mutateAsync();
+      invalidateSettings();
+      toast({
+        title: "QDE stopped",
+        description: "QDE-driven trading and analysis are now disabled for your account.",
+      });
+    } catch (err) {
+      const { message } = parseApiError(err);
+      toast({ title: "Could not stop QDE", description: message, variant: "destructive" });
+    }
+  }
 
   useEffect(() => {
     if (settings && !riskFormDirty) {
@@ -213,6 +255,60 @@ export default function Trading({ embedded }: TradingProps) {
 
       <div className={embedded ? "" : "p-4 sm:p-8"}>
         <div className="flex flex-col gap-6 max-w-3xl">
+          {/* QDE Switch Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Power className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">QDE Switch</CardTitle>
+                <Badge
+                  variant={qdeStatus === "running" ? "default" : qdeStatus === "initializing" ? "secondary" : "outline"}
+                  className="ml-auto capitalize"
+                >
+                  {qdeStatus === "initializing" && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                  {qdeStatus}
+                </Badge>
+              </div>
+              <CardDescription>
+                Turn QDE-driven trading and analysis on or off for your account. When stopped, the
+                QDE will not analyse your positions, send trade instructions, or run manual
+                analysis on your behalf — this does not affect other users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {qdeStatus === "stopped" ? (
+                <Button onClick={handleStartQde} disabled={startQdeMutation.isPending || settingsLoading}>
+                  {startQdeMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Starting…
+                    </>
+                  ) : (
+                    "Start QDE"
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  onClick={handleStopQde}
+                  disabled={stopQdeMutation.isPending || settingsLoading}
+                >
+                  {stopQdeMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Stopping…
+                    </>
+                  ) : (
+                    "Stop QDE"
+                  )}
+                </Button>
+              )}
+              {qdeStatus === "initializing" && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  The QDE is warming up for your account. This usually takes a few seconds.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Trading Mode Card */}
           <Card>
             <CardHeader>

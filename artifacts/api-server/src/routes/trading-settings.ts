@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { checkAutonomousAccess } from "../lib/entitlementEngine";
 import { logAudit } from "../lib/auditLog";
 import { resolveMarketSourceForUser } from "../lib/marketData/marketSource";
+import { startQdeForUser, stopQdeForUser } from "../lib/qdeSwitch";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get("/", async (req, res) => {
       .where(eq(userTradingSettingsTable.userId, userId));
 
     return res.json(
-      settings ?? { userId, tradingMode: "manual", riskMode: "manual", updatedAt: null },
+      settings ?? { userId, tradingMode: "manual", riskMode: "manual", qdeStatus: "stopped", updatedAt: null },
     );
   } catch (err) {
     req.log.error(err, "Failed to get trading settings");
@@ -176,6 +177,36 @@ router.post("/emergency-stop", async (req, res) => {
     return res.json(result);
   } catch (err) {
     req.log.error(err, "Failed to activate emergency stop");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── QDE per-user start/stop switch ──────────────────────────────────────────
+// Additive master on/off gate for QDE-driven trading/analysis, independent
+// of tradingMode/riskMode and of the shared QDE model/other users' state.
+
+router.post("/qde/start", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const result = await startQdeForUser(userId);
+    return res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to start QDE for user");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/qde/stop", async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const result = await stopQdeForUser(userId);
+    return res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to stop QDE for user");
     return res.status(500).json({ error: "Internal server error" });
   }
 });

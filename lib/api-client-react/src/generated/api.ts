@@ -8226,6 +8226,148 @@ export const useUpdateTradingSettings = <TError = ErrorType<EntitlementError>,
       return useMutation(getUpdateTradingSettingsMutationOptions(options));
     }
 
+export const getStartQdeUrl = () => {
+
+
+
+
+  return `/api/trading-settings/qde/start`
+}
+
+/**
+ * @summary Start the current user's QDE switch — flips to initializing, then running after background warm-up
+ */
+export const startQde = async ( options?: RequestInit): Promise<UserTradingSettings> => {
+
+  return customFetch<UserTradingSettings>(getStartQdeUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getStartQdeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startQde>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startQde>>, TError,void, TContext> => {
+
+const mutationKey = ['startQde'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startQde>>, void> = () => {
+
+
+          return  startQde(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartQdeMutationResult = NonNullable<Awaited<ReturnType<typeof startQde>>>
+
+    export type StartQdeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start the current user's QDE switch — flips to initializing, then running after background warm-up
+ */
+export const useStartQde = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startQde>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startQde>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStartQdeMutationOptions(options));
+    }
+
+export const getStopQdeUrl = () => {
+
+
+
+
+  return `/api/trading-settings/qde/stop`
+}
+
+/**
+ * @summary Stop the current user's QDE switch immediately
+ */
+export const stopQde = async ( options?: RequestInit): Promise<UserTradingSettings> => {
+
+  return customFetch<UserTradingSettings>(getStopQdeUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getStopQdeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopQde>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stopQde>>, TError,void, TContext> => {
+
+const mutationKey = ['stopQde'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stopQde>>, void> = () => {
+
+
+          return  stopQde(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StopQdeMutationResult = NonNullable<Awaited<ReturnType<typeof stopQde>>>
+
+    export type StopQdeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Stop the current user's QDE switch immediately
+ */
+export const useStopQde = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopQde>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stopQde>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStopQdeMutationOptions(options));
+    }
+
 export const getGetMarketSourceUrl = () => {
 
 
