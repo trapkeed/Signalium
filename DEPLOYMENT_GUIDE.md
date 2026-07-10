@@ -286,15 +286,34 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_live_xxxxxxxx
 
 ---
 
-## 8. Push the database schema
+## 8. Set up / migrate the database schema
+
+The database schema is version-controlled as SQL migration files in
+`lib/db/drizzle/`. On a **first deploy**, run the migration to create every
+table the app needs:
 
 ```bash
 cd /var/www/signalium
-pnpm --filter @workspace/db run push
+pnpm --filter @workspace/db run migrate
 ```
 
-This creates all the tables the app needs. It's safe to re-run any time you
-pull new code — it only adds what's missing.
+This applies each `.sql` file in `lib/db/drizzle/` in order and records which
+ones have already run (in a `__drizzle_migrations` tracking table), so it's
+always safe to re-run — it only applies what's new.
+
+> **Quick reference:**
+> - `pnpm --filter @workspace/db run generate` — after changing schema code
+>   in `lib/db/src/schema/`, run this to create a new migration `.sql` file
+>   under `lib/db/drizzle/`. Commit that file to git.
+> - `pnpm --filter @workspace/db run migrate` — applies any migration files
+>   that haven't been run against this database yet. Run this on the server
+>   every time you pull code that includes a new migration file (see step 15
+>   for adding new tables later).
+> - `pnpm --filter @workspace/db run push` still exists for quick local/dev
+>   iteration (it diffs the schema and applies changes directly, with no
+>   migration file). **Don't use `push` in production** — it doesn't leave a
+>   reviewable history and can prompt for destructive changes non-interactively.
+>   Always use `generate` + `migrate` for the live server.
 
 ---
 
@@ -430,11 +449,33 @@ When you have new code to deploy:
 cd /var/www/signalium
 git pull
 pnpm install
-pnpm --filter @workspace/db run push
+pnpm --filter @workspace/db run migrate
 pnpm --filter @workspace/api-server run build
 pnpm --filter @workspace/signalium run build
 pm2 restart signalium-api
 ```
+
+`migrate` is safe to run every time, even if the pull didn't include any
+schema changes — it simply does nothing if there are no new migration files.
+
+### Adding new tables / changing the schema
+
+Do this on your development machine (not the VPS), then ship the resulting
+file through git like any other code change:
+
+1. Edit or add a file in `lib/db/src/schema/` (e.g. a new table definition).
+2. Generate the migration: `pnpm --filter @workspace/db run generate`. This
+   writes a new numbered `.sql` file into `lib/db/drizzle/` describing exactly
+   what changed (new tables, columns, indexes, etc).
+3. Review the generated `.sql` file — this is your chance to catch anything
+   unexpected (e.g. an accidental column drop) before it ever touches
+   production data.
+4. Commit both the schema code change and the new migration file, then push
+   to GitHub.
+5. On the VPS, run the normal update flow above (`git pull` → `pnpm install`
+   → `pnpm --filter @workspace/db run migrate` → rebuild → `pm2 restart`).
+   The `migrate` step will apply only the new file(s), creating the new
+   tables/columns without touching anything already there.
 
 ---
 
@@ -452,6 +493,12 @@ pm2 restart signalium-api
 - **Database connection errors** — double-check `DATABASE_URL` is correct and
   that Postgres is accepting connections (`systemctl status postgresql`, or
   check your managed provider's connection settings/IP allowlist).
+- **`relation "..." already exists` when running `migrate`** — this means the
+  tables were previously created another way (e.g. an old `push` run) without
+  the migration tracking table. Back up the database, then either restore
+  from a truly fresh database and run `migrate` from scratch, or ask for help
+  reconciling the two before proceeding — don't force it, since a failed
+  migration can leave the schema half-applied.
 - **Signalium-trainer (QDE) connection** — if this deployment needs to talk to
   a separate signalium-trainer service, set its base URL as a secret in the
   Secrets Vault (Admin → Secrets Vault → Add Secret) once the app is running,
