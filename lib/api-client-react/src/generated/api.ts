@@ -83,6 +83,7 @@ import type {
   EaInput,
   EaRegistration,
   EaUpdate,
+  EffectiveRiskLimits,
   EntitlementError,
   EntitlementSummary,
   ErrorEnvelope,
@@ -360,6 +361,8 @@ import type {
   ResolveSymbolMappingConflict404,
   ReviewPositionBody,
   RevokeAccountSession200,
+  RiskPresets,
+  RiskProfileResponse,
   RollbackResearchLabDeploymentCandidate200,
   RollbackResearchLabDeploymentCandidateBody,
   RuntimeStatus,
@@ -433,6 +436,7 @@ import type {
   UpdatePlatformStatusBody,
   UpdateProviderCredentialBody,
   UpdateProviderPriorityBody,
+  UpdateRiskProfileRequest,
   UpdateSecurityIncidentStatusBody,
   UpdateSiteContent400,
   UpdateSiteContent401,
@@ -454,6 +458,8 @@ import type {
   UserSymbol,
   UserTradingSettings,
   UserUpdate,
+  ValidateRiskRequest,
+  ValidateRiskResponse,
   VerifyApiKey200,
   VerifyApiKeyBody,
   VolumeConstraintInput
@@ -8461,6 +8467,379 @@ export function useGetVolumeConstraintsForSymbol<TData = Awaited<ReturnType<type
 
 
 
+
+export const getGetRiskProfilePresetsUrl = () => {
+
+
+
+
+  return `/api/risk-profile/presets`
+}
+
+/**
+ * @summary Get the platform-defined preset values for all named risk profiles
+ */
+export const getRiskProfilePresets = async ( options?: RequestInit): Promise<RiskPresets> => {
+
+  return customFetch<RiskPresets>(getGetRiskProfilePresetsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRiskProfilePresetsQueryKey = () => {
+    return [
+    `/api/risk-profile/presets`
+    ] as const;
+    }
+
+
+export const getGetRiskProfilePresetsQueryOptions = <TData = Awaited<ReturnType<typeof getRiskProfilePresets>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskProfilePresets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRiskProfilePresetsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRiskProfilePresets>>> = ({ signal }) => getRiskProfilePresets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRiskProfilePresets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRiskProfilePresetsQueryResult = NonNullable<Awaited<ReturnType<typeof getRiskProfilePresets>>>
+export type GetRiskProfilePresetsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the platform-defined preset values for all named risk profiles
+ */
+
+export function useGetRiskProfilePresets<TData = Awaited<ReturnType<typeof getRiskProfilePresets>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskProfilePresets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRiskProfilePresetsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRiskProfileUrl = () => {
+
+
+
+
+  return `/api/risk-profile`
+}
+
+/**
+ * @summary Get the user's current risk profile and resolved effective limits
+ */
+export const getRiskProfile = async ( options?: RequestInit): Promise<RiskProfileResponse> => {
+
+  return customFetch<RiskProfileResponse>(getGetRiskProfileUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRiskProfileQueryKey = () => {
+    return [
+    `/api/risk-profile`
+    ] as const;
+    }
+
+
+export const getGetRiskProfileQueryOptions = <TData = Awaited<ReturnType<typeof getRiskProfile>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRiskProfileQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRiskProfile>>> = ({ signal }) => getRiskProfile({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRiskProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRiskProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getRiskProfile>>>
+export type GetRiskProfileQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the user's current risk profile and resolved effective limits
+ */
+
+export function useGetRiskProfile<TData = Awaited<ReturnType<typeof getRiskProfile>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRiskProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRiskProfileQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateRiskProfileUrl = () => {
+
+
+
+
+  return `/api/risk-profile`
+}
+
+/**
+ * @summary Update the user's risk profile type and/or field overrides
+ */
+export const updateRiskProfile = async (updateRiskProfileRequest: UpdateRiskProfileRequest, options?: RequestInit): Promise<RiskProfileResponse> => {
+
+  return customFetch<RiskProfileResponse>(getUpdateRiskProfileUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateRiskProfileRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateRiskProfileMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskProfile>>, TError,{data: BodyType<UpdateRiskProfileRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateRiskProfile>>, TError,{data: BodyType<UpdateRiskProfileRequest>}, TContext> => {
+
+const mutationKey = ['updateRiskProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRiskProfile>>, {data: BodyType<UpdateRiskProfileRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateRiskProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRiskProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateRiskProfile>>>
+    export type UpdateRiskProfileMutationBody = BodyType<UpdateRiskProfileRequest>
+    export type UpdateRiskProfileMutationError = ErrorType<void>
+
+    /**
+ * @summary Update the user's risk profile type and/or field overrides
+ */
+export const useUpdateRiskProfile = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRiskProfile>>, TError,{data: BodyType<UpdateRiskProfileRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateRiskProfile>>,
+        TError,
+        {data: BodyType<UpdateRiskProfileRequest>},
+        TContext
+      > => {
+      return useMutation(getUpdateRiskProfileMutationOptions(options));
+    }
+
+export const getGetEffectiveRiskLimitsUrl = () => {
+
+
+
+
+  return `/api/risk-profile/effective-limits`
+}
+
+/**
+ * @summary Get the resolved effective ceilings for the current user
+ */
+export const getEffectiveRiskLimits = async ( options?: RequestInit): Promise<EffectiveRiskLimits> => {
+
+  return customFetch<EffectiveRiskLimits>(getGetEffectiveRiskLimitsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEffectiveRiskLimitsQueryKey = () => {
+    return [
+    `/api/risk-profile/effective-limits`
+    ] as const;
+    }
+
+
+export const getGetEffectiveRiskLimitsQueryOptions = <TData = Awaited<ReturnType<typeof getEffectiveRiskLimits>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEffectiveRiskLimits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEffectiveRiskLimitsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEffectiveRiskLimits>>> = ({ signal }) => getEffectiveRiskLimits({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEffectiveRiskLimits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEffectiveRiskLimitsQueryResult = NonNullable<Awaited<ReturnType<typeof getEffectiveRiskLimits>>>
+export type GetEffectiveRiskLimitsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the resolved effective ceilings for the current user
+ */
+
+export function useGetEffectiveRiskLimits<TData = Awaited<ReturnType<typeof getEffectiveRiskLimits>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEffectiveRiskLimits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEffectiveRiskLimitsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getValidateRiskUrl = () => {
+
+
+
+
+  return `/api/risk-profile/validate`
+}
+
+/**
+ * @summary Validate a risk proposal against the user's effective ceilings
+ */
+export const validateRisk = async (validateRiskRequest: ValidateRiskRequest, options?: RequestInit): Promise<ValidateRiskResponse> => {
+
+  return customFetch<ValidateRiskResponse>(getValidateRiskUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(validateRiskRequest)
+  }
+);}
+
+
+
+
+
+export const getValidateRiskMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateRisk>>, TError,{data: BodyType<ValidateRiskRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof validateRisk>>, TError,{data: BodyType<ValidateRiskRequest>}, TContext> => {
+
+const mutationKey = ['validateRisk'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validateRisk>>, {data: BodyType<ValidateRiskRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  validateRisk(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidateRiskMutationResult = NonNullable<Awaited<ReturnType<typeof validateRisk>>>
+    export type ValidateRiskMutationBody = BodyType<ValidateRiskRequest>
+    export type ValidateRiskMutationError = ErrorType<void>
+
+    /**
+ * @summary Validate a risk proposal against the user's effective ceilings
+ */
+export const useValidateRisk = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateRisk>>, TError,{data: BodyType<ValidateRiskRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof validateRisk>>,
+        TError,
+        {data: BodyType<ValidateRiskRequest>},
+        TContext
+      > => {
+      return useMutation(getValidateRiskMutationOptions(options));
+    }
 
 export const getGetTradingSettingsUrl = () => {
 

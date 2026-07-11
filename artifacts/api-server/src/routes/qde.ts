@@ -19,6 +19,7 @@ import { deliverAction, getActiveConnections } from "../ws/eaGateway";
 import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/entitlementEngine";
 import { logAudit } from "../lib/auditLog";
 import { isQdeActiveForUser } from "../lib/qdeSwitch";
+import { validateRiskFromTelemetry } from "../lib/riskProfile";
 import {
   syncPositions,
   parsePositionList,
@@ -126,6 +127,40 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
     } catch (err) {
       req.log.error(err, "Trainer decision failed after retries");
       return res.status(202).json({ telemetryId: row.id, action: null, message: "Telemetry recorded; trainer unavailable" });
+    }
+
+    // ── Risk personality profile: hard-ceiling gate ────────────────────────
+    // The QDE may not issue an ADD action when doing so would breach the
+    // user's effective risk ceilings (maxSimultaneousTrades, maxPortfolioRisk,
+    // maxDrawdownTolerance).  The QDE determines WHAT to trade; the profile
+    // determines the envelope within which it is permitted to act.
+    // Per-trade risk (maxRiskPerTrade) is enforced by the EA before order
+    // submission via POST /risk-profile/validate — not here, because the lot
+    // size is not known at the telemetry-processing stage.
+    if (decision.action === "ADD") {
+      try {
+        const riskCheck = await validateRiskFromTelemetry(auth.userId, {
+          openPositions: telemetry.openPositions,
+          drawdown: telemetry.drawdown ?? null,
+          balance: telemetry.balance,
+          equity: telemetry.equity,
+        });
+        if (!riskCheck.allowed) {
+          const reasons = riskCheck.violations.map((v) => v.message).join("; ");
+          req.log.info(
+            { userId: auth.userId, violations: riskCheck.violations },
+            "QDE ADD blocked by risk profile ceiling",
+          );
+          decision = {
+            action: "HOLD" as const,
+            reasoning: `Risk profile ceiling reached — ADD suppressed. ${reasons}`,
+          };
+        }
+      } catch (riskErr) {
+        // Non-fatal: if the ceiling check fails (e.g. DB blip), log and allow
+        // the original decision through rather than silently halting trading.
+        req.log.warn(riskErr, "Risk profile ceiling check failed; proceeding with trainer decision");
+      }
     }
 
     // Insert with an atomically-computed per-EA sequence number (C8 ordering guarantee).

@@ -159,6 +159,8 @@ export const auditLogTable = pgTable("audit_log", {
       "qde.switch_stopped",
       // C8: Platform Integration — execution confirmation loop
       "model_request.action_confirmed",
+      // Risk Personality Profiles
+      "trading.risk_profile_updated",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

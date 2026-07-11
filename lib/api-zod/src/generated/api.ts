@@ -2535,6 +2535,132 @@ export const GetVolumeConstraintsForSymbolResponse = zod.array(GetVolumeConstrai
 
 
 /**
+ * @summary Get the platform-defined preset values for all named risk profiles
+ */
+export const GetRiskProfilePresetsResponse = zod.object({
+  "preservation": zod.object({
+  "maxRiskPerTrade": zod.number().describe('Max % of account balance at risk per individual trade.'),
+  "maxPortfolioRisk": zod.number().describe('Max total open risk as % of account balance.'),
+  "maxSimultaneousTrades": zod.number().describe('Max number of concurrently open positions.'),
+  "maxDrawdownTolerance": zod.number().describe('Max drawdown % before QDE stops issuing ADD actions.')
+}).optional(),
+  "balanced": zod.object({
+  "maxRiskPerTrade": zod.number().describe('Max % of account balance at risk per individual trade.'),
+  "maxPortfolioRisk": zod.number().describe('Max total open risk as % of account balance.'),
+  "maxSimultaneousTrades": zod.number().describe('Max number of concurrently open positions.'),
+  "maxDrawdownTolerance": zod.number().describe('Max drawdown % before QDE stops issuing ADD actions.')
+}).optional(),
+  "aggressive_growth": zod.object({
+  "maxRiskPerTrade": zod.number().describe('Max % of account balance at risk per individual trade.'),
+  "maxPortfolioRisk": zod.number().describe('Max total open risk as % of account balance.'),
+  "maxSimultaneousTrades": zod.number().describe('Max number of concurrently open positions.'),
+  "maxDrawdownTolerance": zod.number().describe('Max drawdown % before QDE stops issuing ADD actions.')
+}).optional(),
+  "hyper_growth": zod.object({
+  "maxRiskPerTrade": zod.number().describe('Max % of account balance at risk per individual trade.'),
+  "maxPortfolioRisk": zod.number().describe('Max total open risk as % of account balance.'),
+  "maxSimultaneousTrades": zod.number().describe('Max number of concurrently open positions.'),
+  "maxDrawdownTolerance": zod.number().describe('Max drawdown % before QDE stops issuing ADD actions.')
+}).optional()
+}).describe('Platform-defined preset ceilings keyed by profileType (excludes custom).')
+
+
+/**
+ * @summary Get the user's current risk profile and resolved effective limits
+ */
+export const GetRiskProfileResponse = zod.object({
+  "profile": zod.object({
+  "userId": zod.string(),
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish().describe('User override. null means use preset default.'),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "updatedAt": zod.string()
+}),
+  "effectiveLimits": zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish()
+}).describe('Resolved ceilings after applying user overrides over presets. null means unconstrained.')
+})
+
+
+/**
+ * @summary Update the user's risk profile type and/or field overrides
+ */
+export const UpdateRiskProfileBody = zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']).optional(),
+  "maxRiskPerTrade": zod.number().nullish().describe('null clears the override (falls back to preset).'),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "keepOverrides": zod.boolean().optional().describe('When switching profileType, set true to keep existing field overrides. Default false.')
+}).describe('All fields optional. Provide at least one.')
+
+export const UpdateRiskProfileResponse = zod.object({
+  "profile": zod.object({
+  "userId": zod.string(),
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish().describe('User override. null means use preset default.'),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "updatedAt": zod.string()
+}),
+  "effectiveLimits": zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish()
+}).describe('Resolved ceilings after applying user overrides over presets. null means unconstrained.')
+})
+
+
+/**
+ * @summary Get the resolved effective ceilings for the current user
+ */
+export const GetEffectiveRiskLimitsResponse = zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish()
+}).describe('Resolved ceilings after applying user overrides over presets. null means unconstrained.')
+
+
+/**
+ * @summary Validate a risk proposal against the user's effective ceilings
+ */
+export const ValidateRiskBody = zod.object({
+  "riskPerTrade": zod.number().optional().describe('Proposed per-trade risk as % of account balance.'),
+  "portfolioRisk": zod.number().optional().describe('Total open risk after this trade as % of account balance.'),
+  "openPositions": zod.number().optional().describe('Number of open positions AFTER adding this trade.'),
+  "drawdown": zod.number().optional().describe('Current drawdown %.')
+}).describe('Provide any subset of dimensions to check. Only provided dimensions are validated.')
+
+export const ValidateRiskResponse = zod.object({
+  "allowed": zod.boolean(),
+  "violations": zod.array(zod.object({
+  "field": zod.enum(['maxRiskPerTrade', 'maxPortfolioRisk', 'maxSimultaneousTrades', 'maxDrawdownTolerance']),
+  "ceiling": zod.number(),
+  "actual": zod.number(),
+  "message": zod.string()
+})),
+  "effectiveLimits": zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish()
+}).describe('Resolved ceilings after applying user overrides over presets. null means unconstrained.')
+})
+
+
+/**
  * @summary Get the current user's trading mode and risk preferences
  */
 export const GetTradingSettingsResponse = zod.object({

@@ -2294,6 +2294,101 @@ paths:
         "401":
           description: Unauthorized
 
+  /risk-profile/presets:
+    get:
+      operationId: getRiskProfilePresets
+      tags: [risk]
+      summary: Get the platform-defined preset values for all named risk profiles
+      responses:
+        "200":
+          description: Map of profileType → preset limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskPresets"
+
+  /risk-profile:
+    get:
+      operationId: getRiskProfile
+      tags: [risk]
+      summary: Get the user's current risk profile and resolved effective limits
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Risk profile and effective limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskProfileResponse"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateRiskProfile
+      tags: [risk]
+      summary: Update the user's risk profile type and/or field overrides
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRiskProfileRequest"
+      responses:
+        "200":
+          description: Updated profile and effective limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskProfileResponse"
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+
+  /risk-profile/effective-limits:
+    get:
+      operationId: getEffectiveRiskLimits
+      tags: [risk]
+      summary: Get the resolved effective ceilings for the current user
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Effective risk limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EffectiveRiskLimits"
+        "401":
+          description: Unauthorized
+
+  /risk-profile/validate:
+    post:
+      operationId: validateRisk
+      tags: [risk]
+      summary: Validate a risk proposal against the user's effective ceilings
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateRiskRequest"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidateRiskResponse"
+        "400":
+          description: No dimensions provided
+        "401":
+          description: Unauthorized
+
   /trading-settings:
     get:
       operationId: getTradingSettings
@@ -9273,6 +9368,147 @@ components:
           type: boolean
         createdAt:
           type: string
+
+    RiskProfileLimits:
+      type: object
+      required: [maxRiskPerTrade, maxPortfolioRisk, maxSimultaneousTrades, maxDrawdownTolerance]
+      properties:
+        maxRiskPerTrade:
+          type: number
+          description: Max % of account balance at risk per individual trade.
+        maxPortfolioRisk:
+          type: number
+          description: Max total open risk as % of account balance.
+        maxSimultaneousTrades:
+          type: integer
+          description: Max number of concurrently open positions.
+        maxDrawdownTolerance:
+          type: number
+          description: Max drawdown % before QDE stops issuing ADD actions.
+
+    RiskPresets:
+      type: object
+      description: Platform-defined preset ceilings keyed by profileType (excludes custom).
+      properties:
+        preservation:
+          $ref: "#/components/schemas/RiskProfileLimits"
+        balanced:
+          $ref: "#/components/schemas/RiskProfileLimits"
+        aggressive_growth:
+          $ref: "#/components/schemas/RiskProfileLimits"
+        hyper_growth:
+          $ref: "#/components/schemas/RiskProfileLimits"
+
+    RiskProfile:
+      type: object
+      required: [userId, profileType, updatedAt]
+      properties:
+        userId:
+          type: string
+        profileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+          description: User override. null means use preset default.
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+        updatedAt:
+          type: string
+
+    EffectiveRiskLimits:
+      type: object
+      required: [profileType]
+      description: Resolved ceilings after applying user overrides over presets. null means unconstrained.
+      properties:
+        profileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+
+    RiskProfileResponse:
+      type: object
+      required: [profile, effectiveLimits]
+      properties:
+        profile:
+          $ref: "#/components/schemas/RiskProfile"
+        effectiveLimits:
+          $ref: "#/components/schemas/EffectiveRiskLimits"
+
+    UpdateRiskProfileRequest:
+      type: object
+      description: All fields optional. Provide at least one.
+      properties:
+        profileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+          description: null clears the override (falls back to preset).
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+        keepOverrides:
+          type: boolean
+          description: When switching profileType, set true to keep existing field overrides. Default false.
+
+    RiskViolation:
+      type: object
+      required: [field, ceiling, actual, message]
+      properties:
+        field:
+          type: string
+          enum: [maxRiskPerTrade, maxPortfolioRisk, maxSimultaneousTrades, maxDrawdownTolerance]
+        ceiling:
+          type: number
+        actual:
+          type: number
+        message:
+          type: string
+
+    ValidateRiskRequest:
+      type: object
+      description: Provide any subset of dimensions to check. Only provided dimensions are validated.
+      properties:
+        riskPerTrade:
+          type: number
+          description: Proposed per-trade risk as % of account balance.
+        portfolioRisk:
+          type: number
+          description: Total open risk after this trade as % of account balance.
+        openPositions:
+          type: number
+          description: Number of open positions AFTER adding this trade.
+        drawdown:
+          type: number
+          description: Current drawdown %.
+
+    ValidateRiskResponse:
+      type: object
+      required: [allowed, violations, effectiveLimits]
+      properties:
+        allowed:
+          type: boolean
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskViolation"
+        effectiveLimits:
+          $ref: "#/components/schemas/EffectiveRiskLimits"
 
     BrokerVolumeConstraint:
       type: object

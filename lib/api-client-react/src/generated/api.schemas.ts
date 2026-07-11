@@ -1019,6 +1019,154 @@ export interface Broker {
   createdAt: string;
 }
 
+export interface RiskProfileLimits {
+  /** Max % of account balance at risk per individual trade. */
+  maxRiskPerTrade: number;
+  /** Max total open risk as % of account balance. */
+  maxPortfolioRisk: number;
+  /** Max number of concurrently open positions. */
+  maxSimultaneousTrades: number;
+  /** Max drawdown % before QDE stops issuing ADD actions. */
+  maxDrawdownTolerance: number;
+}
+
+/**
+ * Platform-defined preset ceilings keyed by profileType (excludes custom).
+ */
+export interface RiskPresets {
+  preservation?: RiskProfileLimits;
+  balanced?: RiskProfileLimits;
+  aggressive_growth?: RiskProfileLimits;
+  hyper_growth?: RiskProfileLimits;
+}
+
+export type RiskProfileProfileType = typeof RiskProfileProfileType[keyof typeof RiskProfileProfileType];
+
+
+export const RiskProfileProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+export interface RiskProfile {
+  userId: string;
+  profileType: RiskProfileProfileType;
+  /**
+     * User override. null means use preset default.
+     * @nullable
+     */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+  updatedAt: string;
+}
+
+export type EffectiveRiskLimitsProfileType = typeof EffectiveRiskLimitsProfileType[keyof typeof EffectiveRiskLimitsProfileType];
+
+
+export const EffectiveRiskLimitsProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+/**
+ * Resolved ceilings after applying user overrides over presets. null means unconstrained.
+ */
+export interface EffectiveRiskLimits {
+  profileType: EffectiveRiskLimitsProfileType;
+  /** @nullable */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+}
+
+export interface RiskProfileResponse {
+  profile: RiskProfile;
+  effectiveLimits: EffectiveRiskLimits;
+}
+
+export type UpdateRiskProfileRequestProfileType = typeof UpdateRiskProfileRequestProfileType[keyof typeof UpdateRiskProfileRequestProfileType];
+
+
+export const UpdateRiskProfileRequestProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+/**
+ * All fields optional. Provide at least one.
+ */
+export interface UpdateRiskProfileRequest {
+  profileType?: UpdateRiskProfileRequestProfileType;
+  /**
+     * null clears the override (falls back to preset).
+     * @nullable
+     */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+  /** When switching profileType, set true to keep existing field overrides. Default false. */
+  keepOverrides?: boolean;
+}
+
+export type RiskViolationField = typeof RiskViolationField[keyof typeof RiskViolationField];
+
+
+export const RiskViolationField = {
+  maxRiskPerTrade: 'maxRiskPerTrade',
+  maxPortfolioRisk: 'maxPortfolioRisk',
+  maxSimultaneousTrades: 'maxSimultaneousTrades',
+  maxDrawdownTolerance: 'maxDrawdownTolerance',
+} as const;
+
+export interface RiskViolation {
+  field: RiskViolationField;
+  ceiling: number;
+  actual: number;
+  message: string;
+}
+
+/**
+ * Provide any subset of dimensions to check. Only provided dimensions are validated.
+ */
+export interface ValidateRiskRequest {
+  /** Proposed per-trade risk as % of account balance. */
+  riskPerTrade?: number;
+  /** Total open risk after this trade as % of account balance. */
+  portfolioRisk?: number;
+  /** Number of open positions AFTER adding this trade. */
+  openPositions?: number;
+  /** Current drawdown %. */
+  drawdown?: number;
+}
+
+export interface ValidateRiskResponse {
+  allowed: boolean;
+  violations: RiskViolation[];
+  effectiveLimits: EffectiveRiskLimits;
+}
+
 /**
  * How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.
  */

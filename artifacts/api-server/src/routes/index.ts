@@ -53,6 +53,7 @@ import authRouter from "./auth";
 import runpodRouter from "./runpod";
 import trainerControlRouter from "./trainer-control";
 import volumeConstraintsRouter from "./volume-constraints";
+import riskProfilesRouter from "./risk-profiles";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -140,5 +141,7 @@ router.use("/runpod", runpodRouter);
 router.use("/trainer-control", trainerControlRouter);
 // Broker volume constraints — EA init reporting + user-facing normalise/validate
 router.use("/volume-constraints", volumeConstraintsRouter);
+// Risk personality profiles — preset ceilings + user overrides + QDE hard-stop enforcement
+router.use("/risk-profile", riskProfilesRouter);
 
 export default router;

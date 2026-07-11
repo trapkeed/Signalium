@@ -25,3 +25,4 @@
 - [C8 Platform Integration](c8-platform-integration.md) — new audit action enum entry required for any new model_request.* action; sequence numbers use MAX+1 in a tx; positionSync.ts is the shared sync helper for both HTTP and WS.
 - [Symbol normalization alias system](symbol-normalization.md) — alias enabled column, noise suffix additions, seed aliases, EA build-time symbol map embedding, recurring orval looseObject sed fix.
 - [Broker volume normalization](broker-volume-normalization.md) — constraint schema, normalizeVolume/validateVolume math, EA OnInit reporting, MQL5 embedding pattern.
+- [Risk Personality Profiles](risk-personality-profiles.md) — 5 profiles, DB schema, riskProfile lib, routes, QDE hard-ceiling gate design.
