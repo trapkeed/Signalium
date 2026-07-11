@@ -128,7 +128,7 @@ In your domain registrar's DNS settings, add an **A record**:
 
 ```
 Type: A
-Name: @  (or "app" for a subdomain like app.yourdomain.com)
+Name: @  (or "app" for a subdomain like app.signaliumai.com)
 Value: <your VPS's public IP address>
 ```
 
@@ -244,10 +244,10 @@ Paste in (replace every placeholder with your real value):
 # Core
 NODE_ENV=production
 DATABASE_URL=postgresql://signalium_user:choose-a-strong-password@localhost:5432/signalium
-PUBLIC_APP_URL=https://yourdomain.com
+PUBLIC_APP_URL=https://signaliumai.com
 SESSION_SECRET=<generate with: openssl rand -hex 32>
 SECRETS_ENCRYPTION_KEY=<generate with: openssl rand -hex 32>
-ALLOWED_ORIGINS=https://yourdomain.com
+ALLOWED_ORIGINS=https://signaliumai.com
 
 # Auth (Clerk) — from your Clerk dashboard, Production instance
 CLERK_SECRET_KEY=sk_live_xxxxxxxx
@@ -325,7 +325,7 @@ default credential ever ends up in your database:
 
 ```bash
 cd /var/www/signalium
-SUPER_ADMIN_EMAIL="you@yourdomain.com" \
+SUPER_ADMIN_EMAIL="admin@signaliumai.com" \
 SUPER_ADMIN_PASSWORD="choose-a-strong-password" \
 pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts
 ```
@@ -384,7 +384,7 @@ Paste in:
 ```nginx
 server {
     listen 80;
-    server_name yourdomain.com;
+    server_name signaliumai.com;
 
     # Serve the built frontend
     root /var/www/signalium/artifacts/signalium/dist;
@@ -422,7 +422,7 @@ systemctl restart nginx
 ## 13. Enable HTTPS (free, via Let's Encrypt)
 
 ```bash
-certbot --nginx -d yourdomain.com
+certbot --nginx -d signaliumai.com
 ```
 
 Follow the prompts (enter your email, agree to terms). Certbot will
@@ -433,7 +433,7 @@ auto-renewal.
 
 ## 14. Verify everything works
 
-- Visit `https://yourdomain.com` — you should see the Signalium sign-in page.
+- Visit `https://signaliumai.com` — you should see the Signalium sign-in page.
 - Sign in with the super admin account you seeded in step 9.
 - Go to **Admin → Secrets Vault** — confirm your environment variables show
   as "configured".
@@ -499,7 +499,8 @@ file through git like any other code change:
   from a truly fresh database and run `migrate` from scratch, or ask for help
   reconciling the two before proceeding — don't force it, since a failed
   migration can leave the schema half-applied.
-- **Signalium-trainer (QDE) connection** — if this deployment needs to talk to
-  a separate signalium-trainer service, set its base URL as a secret in the
-  Secrets Vault (Admin → Secrets Vault → Add Secret) once the app is running,
-  rather than hardcoding it — this keeps rotation and audit logging intact.
+- **Signalium-trainer (QDE) connection** — the trainer service runs at
+  `https://trainer.signaliumai.com`. Set its base URL as a secret in the
+  Secrets Vault (Admin → Secrets Vault → Add Secret → key `TRAINER_BASE_URL`,
+  value `https://trainer.signaliumai.com`) once the app is running, rather
+  than hardcoding it — this keeps rotation and audit logging intact.
