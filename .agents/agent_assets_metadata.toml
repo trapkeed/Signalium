@@ -12,3 +12,9 @@ id = "UvKL53NytJv08OaXqd4YZ"
 uri = "file://signalium-trainer-integration.txt"
 type = "text"
 title = "Signalium Trainer Integration Brief"
+
+[[outputs]]
+id = "tRnSLye7b9Qt8WvwydLvW"
+uri = "file://docs/PRODUCTION_DEPLOYMENT.md"
+type = "text"
+title = "Production Deployment Guide"
