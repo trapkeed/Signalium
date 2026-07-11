@@ -2317,6 +2317,7 @@ export const ListSymbolAliasesResponseItem = zod.object({
   "id": zod.number(),
   "alias": zod.string(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "enabled": zod.boolean(),
   "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -2340,6 +2341,32 @@ export const CreateSymbolAliasResponse = zod.object({
   "alias": zod.string(),
   "symbolId": zod.number(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "enabled": zod.boolean().describe('When false the alias is excluded from normalization lookups but preserved for re-activation'),
+  "brokerId": zod.number().nullish(),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Enable, disable, or remap a symbol alias (admin)
+ */
+export const UpdateSymbolAliasParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSymbolAliasBody = zod.object({
+  "enabled": zod.boolean().optional().describe('Set to false to disable (exclude from normalization) or true to re-enable'),
+  "alias": zod.string().optional().describe('Rename the raw alias string'),
+  "canonicalSymbol": zod.string().optional().describe('Remap to a different canonical symbol')
+})
+
+export const UpdateSymbolAliasResponse = zod.object({
+  "id": zod.number(),
+  "alias": zod.string(),
+  "symbolId": zod.number(),
+  "source": zod.enum(['admin', 'ea', 'broker']),
+  "enabled": zod.boolean().describe('When false the alias is excluded from normalization lookups but preserved for re-activation'),
   "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string()
@@ -2358,6 +2385,7 @@ export const DeleteSymbolAliasResponse = zod.object({
   "alias": zod.string(),
   "symbolId": zod.number(),
   "source": zod.enum(['admin', 'ea', 'broker']),
+  "enabled": zod.boolean().describe('When false the alias is excluded from normalization lookups but preserved for re-activation'),
   "brokerId": zod.number().nullish(),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string()
@@ -3495,11 +3523,13 @@ export const SubmitEaTelemetryResponse = zod.object({
   "symbol": zod.string().nullish(),
   "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
   "reasoning": zod.string().nullish(),
-  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "sequenceNum": zod.number().nullish().describe('C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.'),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'confirmed', 'failed']),
   "retryCount": zod.number(),
   "createdAt": zod.string(),
   "deliveredAt": zod.string().nullish(),
-  "acknowledgedAt": zod.string().nullish()
+  "acknowledgedAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish()
 })
 })
 
@@ -3544,11 +3574,13 @@ export const GetPendingActionsResponseItem = zod.object({
   "symbol": zod.string().nullish(),
   "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
   "reasoning": zod.string().nullish(),
-  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "sequenceNum": zod.number().nullish().describe('C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.'),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'confirmed', 'failed']),
   "retryCount": zod.number(),
   "createdAt": zod.string(),
   "deliveredAt": zod.string().nullish(),
-  "acknowledgedAt": zod.string().nullish()
+  "acknowledgedAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish()
 })
 export const GetPendingActionsResponse = zod.array(GetPendingActionsResponseItem)
 
@@ -3570,11 +3602,13 @@ export const AcknowledgeActionResponse = zod.object({
   "symbol": zod.string().nullish(),
   "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
   "reasoning": zod.string().nullish(),
-  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "sequenceNum": zod.number().nullish().describe('C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.'),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'confirmed', 'failed']),
   "retryCount": zod.number(),
   "createdAt": zod.string(),
   "deliveredAt": zod.string().nullish(),
-  "acknowledgedAt": zod.string().nullish()
+  "acknowledgedAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish()
 })
 
 
@@ -3590,11 +3624,13 @@ export const ListOwnActionsResponseItem = zod.object({
   "symbol": zod.string().nullish(),
   "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
   "reasoning": zod.string().nullish(),
-  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "sequenceNum": zod.number().nullish().describe('C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.'),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'confirmed', 'failed']),
   "retryCount": zod.number(),
   "createdAt": zod.string(),
   "deliveredAt": zod.string().nullish(),
-  "acknowledgedAt": zod.string().nullish()
+  "acknowledgedAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish()
 })
 export const ListOwnActionsResponse = zod.array(ListOwnActionsResponseItem)
 
@@ -3658,11 +3694,13 @@ export const ListAllActionsResponseItem = zod.object({
   "symbol": zod.string().nullish(),
   "action": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
   "reasoning": zod.string().nullish(),
-  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'failed']),
+  "sequenceNum": zod.number().nullish().describe('C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.'),
+  "status": zod.enum(['queued', 'delivered', 'acknowledged', 'confirmed', 'failed']),
   "retryCount": zod.number(),
   "createdAt": zod.string(),
   "deliveredAt": zod.string().nullish(),
-  "acknowledgedAt": zod.string().nullish()
+  "acknowledgedAt": zod.string().nullish(),
+  "confirmedAt": zod.string().nullish()
 })
 export const ListAllActionsResponse = zod.array(ListAllActionsResponseItem)
 
@@ -3676,7 +3714,9 @@ export const GetQdeStatsOverviewResponse = zod.object({
   "telemetryLast5Min": zod.number(),
   "actionBreakdownLast5Min": zod.record(zod.string(), zod.number()),
   "queueDepth": zod.number(),
-  "actionsWithRetries": zod.number()
+  "actionsWithRetries": zod.number(),
+  "openPositionCount": zod.number().describe('C8: Number of currently open positions across all EAs.'),
+  "confirmationsLast5Min": zod.number().describe('C8: Execution confirmations received in the last 5 minutes.')
 })
 
 
@@ -3690,6 +3730,321 @@ export const RedeliverActionParams = zod.object({
 export const RedeliverActionResponse = zod.object({
   "delivered": zod.boolean()
 })
+
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * Records what the broker actually did — the ticket affected, the price
+ * achieved, and whether the execution succeeded. Distinct from /ack which
+ * only records that the EA received the message.
+ * Idempotent: a second call for the same action returns the existing record.
+ * @summary EA reports the broker-level execution result of a command (C8)
+ */
+export const ConfirmActionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const confirmActionBodyBrokerTypeDefault = `MT5`;
+
+export const ConfirmActionBody = zod.object({
+  "success": zod.boolean(),
+  "brokerTicketId": zod.string().nullish(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']).default(confirmActionBodyBrokerTypeDefault),
+  "actualPrice": zod.number().nullish(),
+  "actualLots": zod.number().nullish(),
+  "slippage": zod.number().nullish(),
+  "executionDelayMs": zod.number().nullish(),
+  "errorCode": zod.string().nullish(),
+  "errorMessage": zod.string().nullish()
+})
+
+export const ConfirmActionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "trainerActionId": zod.number(),
+  "brokerTicketId": zod.string().nullish(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "executedAction": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "success": zod.boolean(),
+  "actualPrice": zod.number().nullish(),
+  "actualLots": zod.number().nullish(),
+  "slippage": zod.number().nullish(),
+  "executionDelayMs": zod.number().nullish(),
+  "errorCode": zod.string().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "confirmedAt": zod.string()
+})
+
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * Upserts each position into open_positions, writes broker-ticket audit
+ * events for new / modified / closed tickets, and returns counts.
+ * Send on connect, after every broker-side position change, and at a
+ * minimum on each telemetry tick when openPositions > 0.
+ * Accepts either a top-level array or { "positions": [...] } envelope.
+ * @summary EA pushes its full current open position list (C8)
+ */
+export const syncPositionsBodyOneItemBrokerTypeDefault = `MT5`;
+export const syncPositionsBodyTwoPositionsItemBrokerTypeDefault = `MT5`;
+
+export const SyncPositionsBody = zod.union([zod.array(zod.object({
+  "brokerTicketId": zod.string(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']).default(syncPositionsBodyOneItemBrokerTypeDefault),
+  "symbol": zod.string(),
+  "side": zod.enum(['buy', 'sell']),
+  "lots": zod.number(),
+  "entryPrice": zod.number(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "floatingPnl": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "openedAt": zod.coerce.date().nullish(),
+  "mt5Magic": zod.number().nullish(),
+  "mt5Comment": zod.string().nullish()
+})),zod.object({
+  "positions": zod.array(zod.object({
+  "brokerTicketId": zod.string(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']).default(syncPositionsBodyTwoPositionsItemBrokerTypeDefault),
+  "symbol": zod.string(),
+  "side": zod.enum(['buy', 'sell']),
+  "lots": zod.number(),
+  "entryPrice": zod.number(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "floatingPnl": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "openedAt": zod.coerce.date().nullish(),
+  "mt5Magic": zod.number().nullish(),
+  "mt5Comment": zod.string().nullish()
+}))
+})])
+
+export const SyncPositionsResponse = zod.object({
+  "syncedCount": zod.number().describe('Total positions in the incoming list.'),
+  "newCount": zod.number().describe('Positions seen for the first time (broker ticket opened).'),
+  "modifiedCount": zod.number().describe('Existing positions with changed lots or entry price.'),
+  "closedCount": zod.number().describe('Positions present in the last sync but absent from this one (broker ticket closed).')
+})
+
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * One row per EA registration — upserted on every call.
+ * Send on connect, on reconnect, and when connection status changes.
+ * @summary EA reports its broker connection and account state (C8)
+ */
+export const syncBrokerStateBodyBrokerTypeDefault = `MT5`;
+
+export const SyncBrokerStateBody = zod.object({
+  "brokerType": zod.enum(['MT5', 'GENERIC']).default(syncBrokerStateBodyBrokerTypeDefault),
+  "connectionStatus": zod.enum(['connected', 'disconnected', 'error']),
+  "brokerServer": zod.string().nullish(),
+  "accountNumber": zod.string().nullish(),
+  "accountCurrency": zod.string().nullish(),
+  "accountBalance": zod.number().nullish(),
+  "accountEquity": zod.number().nullish(),
+  "accountLeverage": zod.number().nullish(),
+  "accountMarginLevel": zod.number().nullish(),
+  "pingMs": zod.number().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "tradeAllowed": zod.boolean().nullish(),
+  "expertEnabled": zod.boolean().nullish(),
+  "errorMessage": zod.string().nullish()
+})
+
+export const SyncBrokerStateResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "connectionStatus": zod.enum(['connected', 'disconnected', 'error']),
+  "brokerServer": zod.string().nullish(),
+  "accountNumber": zod.string().nullish(),
+  "accountCurrency": zod.string().nullish(),
+  "accountBalance": zod.number().nullish(),
+  "accountEquity": zod.number().nullish(),
+  "accountLeverage": zod.number().nullish(),
+  "accountMarginLevel": zod.number().nullish(),
+  "pingMs": zod.number().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "tradeAllowed": zod.boolean().nullish(),
+  "expertEnabled": zod.boolean().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "syncedAt": zod.string()
+})
+
+
+/**
+ * @summary Current user's broker connection states
+ */
+export const ListOwnBrokerStatesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "connectionStatus": zod.enum(['connected', 'disconnected', 'error']),
+  "brokerServer": zod.string().nullish(),
+  "accountNumber": zod.string().nullish(),
+  "accountCurrency": zod.string().nullish(),
+  "accountBalance": zod.number().nullish(),
+  "accountEquity": zod.number().nullish(),
+  "accountLeverage": zod.number().nullish(),
+  "accountMarginLevel": zod.number().nullish(),
+  "pingMs": zod.number().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "tradeAllowed": zod.boolean().nullish(),
+  "expertEnabled": zod.boolean().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "syncedAt": zod.string()
+})
+export const ListOwnBrokerStatesResponse = zod.array(ListOwnBrokerStatesResponseItem)
+
+
+/**
+ * @summary Current user's live open positions
+ */
+export const ListOwnOpenPositionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerTicketId": zod.string(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "symbol": zod.string(),
+  "side": zod.enum(['buy', 'sell']),
+  "lots": zod.number(),
+  "entryPrice": zod.number(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "floatingPnl": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "mt5Magic": zod.number().nullish(),
+  "mt5Comment": zod.string().nullish(),
+  "openedAt": zod.string().nullish(),
+  "closedAt": zod.string().nullish(),
+  "closePrice": zod.number().nullish(),
+  "closePnl": zod.number().nullish(),
+  "firstSeenAt": zod.string(),
+  "syncedAt": zod.string()
+})
+export const ListOwnOpenPositionsResponse = zod.array(ListOwnOpenPositionsResponseItem)
+
+
+/**
+ * @summary All EAs' open positions (admin, C8)
+ */
+export const ListAllOpenPositionsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerTicketId": zod.string(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "symbol": zod.string(),
+  "side": zod.enum(['buy', 'sell']),
+  "lots": zod.number(),
+  "entryPrice": zod.number(),
+  "currentPrice": zod.number().nullish(),
+  "stopLoss": zod.number().nullish(),
+  "takeProfit": zod.number().nullish(),
+  "swap": zod.number().nullish(),
+  "commission": zod.number().nullish(),
+  "floatingPnl": zod.number().nullish(),
+  "tradeAgeSeconds": zod.number().nullish(),
+  "mt5Magic": zod.number().nullish(),
+  "mt5Comment": zod.string().nullish(),
+  "openedAt": zod.string().nullish(),
+  "closedAt": zod.string().nullish(),
+  "closePrice": zod.number().nullish(),
+  "closePnl": zod.number().nullish(),
+  "firstSeenAt": zod.string(),
+  "syncedAt": zod.string()
+})
+export const ListAllOpenPositionsResponse = zod.array(ListAllOpenPositionsResponseItem)
+
+
+/**
+ * @summary Broker ticket audit log — opened/modified/closed events (admin, C8)
+ */
+export const ListBrokerTicketsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerTicketId": zod.string(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "symbol": zod.string(),
+  "side": zod.enum(['buy', 'sell']),
+  "lots": zod.number(),
+  "entryPrice": zod.number(),
+  "event": zod.enum(['opened', 'modified', 'closed']),
+  "eventPrice": zod.number().nullish(),
+  "eventLots": zod.number().nullish(),
+  "eventPnl": zod.number().nullish(),
+  "recordedAt": zod.string()
+})
+export const ListBrokerTicketsResponse = zod.array(ListBrokerTicketsResponseItem)
+
+
+/**
+ * @summary EA execution confirmation records (admin, C8)
+ */
+export const ListExecutionConfirmationsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "trainerActionId": zod.number(),
+  "brokerTicketId": zod.string().nullish(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "executedAction": zod.enum(['HOLD', 'ADD', 'REDUCE', 'TRAIL', 'BREAKEVEN', 'LOCK_PROFIT', 'CLOSE']),
+  "success": zod.boolean(),
+  "actualPrice": zod.number().nullish(),
+  "actualLots": zod.number().nullish(),
+  "slippage": zod.number().nullish(),
+  "executionDelayMs": zod.number().nullish(),
+  "errorCode": zod.string().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "confirmedAt": zod.string()
+})
+export const ListExecutionConfirmationsResponse = zod.array(ListExecutionConfirmationsResponseItem)
+
+
+/**
+ * @summary All EAs' broker connection states (admin, C8)
+ */
+export const ListAllBrokerStatesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "eaRegistrationId": zod.number(),
+  "brokerType": zod.enum(['MT5', 'GENERIC']),
+  "connectionStatus": zod.enum(['connected', 'disconnected', 'error']),
+  "brokerServer": zod.string().nullish(),
+  "accountNumber": zod.string().nullish(),
+  "accountCurrency": zod.string().nullish(),
+  "accountBalance": zod.number().nullish(),
+  "accountEquity": zod.number().nullish(),
+  "accountLeverage": zod.number().nullish(),
+  "accountMarginLevel": zod.number().nullish(),
+  "pingMs": zod.number().nullish(),
+  "terminalBuild": zod.string().nullish(),
+  "platformVersion": zod.string().nullish(),
+  "tradeAllowed": zod.boolean().nullish(),
+  "expertEnabled": zod.boolean().nullish(),
+  "errorMessage": zod.string().nullish(),
+  "syncedAt": zod.string()
+})
+export const ListAllBrokerStatesResponse = zod.array(ListAllBrokerStatesResponseItem)
 
 
 /**

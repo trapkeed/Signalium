@@ -12,6 +12,8 @@ export interface SymbolAlias {
   alias: string;
   symbolId: number;
   source: SymbolAliasSource;
+  /** When false the alias is excluded from normalization lookups but preserved for re-activation */
+  enabled: boolean;
   /** @nullable */
   brokerId?: number | null;
   /** @nullable */

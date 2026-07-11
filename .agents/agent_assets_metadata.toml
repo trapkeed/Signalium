@@ -6,3 +6,9 @@ id = "cuD_Ks-DY460xrEbo6wfQ"
 uri = "file://artifacts/signalium/public/trading-floor.jpg"
 type = "image"
 title = "financial trading floor professional"
+
+[[outputs]]
+id = "UvKL53NytJv08OaXqd4YZ"
+uri = "file://signalium-trainer-integration.txt"
+type = "text"
+title = "Signalium Trainer Integration Contract"

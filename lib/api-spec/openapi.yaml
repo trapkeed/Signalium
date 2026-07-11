@@ -2046,6 +2046,57 @@ paths:
                 $ref: "#/components/schemas/SymbolAlias"
 
   /symbols/admin/aliases/{id}:
+    patch:
+      operationId: updateSymbolAlias
+      tags: [symbols]
+      summary: Enable, disable, or remap a symbol alias (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  description: Set to false to disable (exclude from normalization) or true to re-enable
+                alias:
+                  type: string
+                  description: Rename the raw alias string
+                canonicalSymbol:
+                  type: string
+                  description: Remap to a different canonical symbol
+      responses:
+        "200":
+          description: Updated alias
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymbolAlias"
+        "400":
+          description: No fields provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: Alias or canonical symbol not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
     delete:
       operationId: deleteSymbolAlias
       tags: [symbols]
@@ -9057,7 +9108,7 @@ components:
 
     SymbolAlias:
       type: object
-      required: [id, alias, symbolId, source, createdAt]
+      required: [id, alias, symbolId, source, enabled, createdAt]
       properties:
         id:
           type: integer
@@ -9068,6 +9119,9 @@ components:
         source:
           type: string
           enum: [admin, ea, broker]
+        enabled:
+          type: boolean
+          description: When false the alias is excluded from normalization lookups but preserved for re-activation
         brokerId:
           type: ["integer", "null"]
         createdBy:
@@ -9077,7 +9131,7 @@ components:
 
     SymbolAliasWithCanonical:
       type: object
-      required: [id, alias, source, createdAt, symbolId, canonicalSymbol]
+      required: [id, alias, source, enabled, createdAt, symbolId, canonicalSymbol]
       properties:
         id:
           type: integer
@@ -9086,6 +9140,8 @@ components:
         source:
           type: string
           enum: [admin, ea, broker]
+        enabled:
+          type: boolean
         brokerId:
           type: ["integer", "null"]
         createdBy:

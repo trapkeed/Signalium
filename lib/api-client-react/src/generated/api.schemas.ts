@@ -977,6 +977,8 @@ export interface SymbolAlias {
   alias: string;
   symbolId: number;
   source: SymbolAliasSource;
+  /** When false the alias is excluded from normalization lookups but preserved for re-activation */
+  enabled: boolean;
   /** @nullable */
   brokerId?: number | null;
   /** @nullable */
@@ -997,6 +999,7 @@ export interface SymbolAliasWithCanonical {
   id: number;
   alias: string;
   source: SymbolAliasWithCanonicalSource;
+  enabled: boolean;
   /** @nullable */
   brokerId?: number | null;
   /** @nullable */
@@ -1135,6 +1138,7 @@ export const TrainerActionStatus = {
   queued: 'queued',
   delivered: 'delivered',
   acknowledged: 'acknowledged',
+  confirmed: 'confirmed',
   failed: 'failed',
 } as const;
 
@@ -1149,6 +1153,11 @@ export interface TrainerAction {
   action: TrainerActionAction;
   /** @nullable */
   reasoning?: string | null;
+  /**
+     * C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.
+     * @nullable
+     */
+  sequenceNum?: number | null;
   status: TrainerActionStatus;
   retryCount: number;
   createdAt: string;
@@ -1156,6 +1165,8 @@ export interface TrainerAction {
   deliveredAt?: string | null;
   /** @nullable */
   acknowledgedAt?: string | null;
+  /** @nullable */
+  confirmedAt?: string | null;
 }
 
 export type EaConnectionTransport = typeof EaConnectionTransport[keyof typeof EaConnectionTransport];
@@ -1200,6 +1211,340 @@ export interface QdeStatsOverview {
   actionBreakdownLast5Min: QdeStatsOverviewActionBreakdownLast5Min;
   queueDepth: number;
   actionsWithRetries: number;
+  /** C8: Number of currently open positions across all EAs. */
+  openPositionCount: number;
+  /** C8: Execution confirmations received in the last 5 minutes. */
+  confirmationsLast5Min: number;
+}
+
+export type OpenPositionBrokerType = typeof OpenPositionBrokerType[keyof typeof OpenPositionBrokerType];
+
+
+export const OpenPositionBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type OpenPositionSide = typeof OpenPositionSide[keyof typeof OpenPositionSide];
+
+
+export const OpenPositionSide = {
+  buy: 'buy',
+  sell: 'sell',
+} as const;
+
+export interface OpenPosition {
+  id: number;
+  userId: string;
+  eaRegistrationId: number;
+  brokerTicketId: string;
+  brokerType: OpenPositionBrokerType;
+  symbol: string;
+  side: OpenPositionSide;
+  lots: number;
+  entryPrice: number;
+  /** @nullable */
+  currentPrice?: number | null;
+  /** @nullable */
+  stopLoss?: number | null;
+  /** @nullable */
+  takeProfit?: number | null;
+  /** @nullable */
+  swap?: number | null;
+  /** @nullable */
+  commission?: number | null;
+  /** @nullable */
+  floatingPnl?: number | null;
+  /** @nullable */
+  tradeAgeSeconds?: number | null;
+  /** @nullable */
+  mt5Magic?: number | null;
+  /** @nullable */
+  mt5Comment?: string | null;
+  /** @nullable */
+  openedAt?: string | null;
+  /** @nullable */
+  closedAt?: string | null;
+  /** @nullable */
+  closePrice?: number | null;
+  /** @nullable */
+  closePnl?: number | null;
+  firstSeenAt: string;
+  syncedAt: string;
+}
+
+export type IncomingPositionBrokerType = typeof IncomingPositionBrokerType[keyof typeof IncomingPositionBrokerType];
+
+
+export const IncomingPositionBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type IncomingPositionSide = typeof IncomingPositionSide[keyof typeof IncomingPositionSide];
+
+
+export const IncomingPositionSide = {
+  buy: 'buy',
+  sell: 'sell',
+} as const;
+
+export interface IncomingPosition {
+  brokerTicketId: string;
+  brokerType?: IncomingPositionBrokerType;
+  symbol: string;
+  side: IncomingPositionSide;
+  lots: number;
+  entryPrice: number;
+  /** @nullable */
+  currentPrice?: number | null;
+  /** @nullable */
+  stopLoss?: number | null;
+  /** @nullable */
+  takeProfit?: number | null;
+  /** @nullable */
+  swap?: number | null;
+  /** @nullable */
+  commission?: number | null;
+  /** @nullable */
+  floatingPnl?: number | null;
+  /** @nullable */
+  tradeAgeSeconds?: number | null;
+  /** @nullable */
+  openedAt?: string | null;
+  /** @nullable */
+  mt5Magic?: number | null;
+  /** @nullable */
+  mt5Comment?: string | null;
+}
+
+export interface PositionSyncResult {
+  /** Total positions in the incoming list. */
+  syncedCount: number;
+  /** Positions seen for the first time (broker ticket opened). */
+  newCount: number;
+  /** Existing positions with changed lots or entry price. */
+  modifiedCount: number;
+  /** Positions present in the last sync but absent from this one (broker ticket closed). */
+  closedCount: number;
+}
+
+export type BrokerTicketBrokerType = typeof BrokerTicketBrokerType[keyof typeof BrokerTicketBrokerType];
+
+
+export const BrokerTicketBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type BrokerTicketSide = typeof BrokerTicketSide[keyof typeof BrokerTicketSide];
+
+
+export const BrokerTicketSide = {
+  buy: 'buy',
+  sell: 'sell',
+} as const;
+
+export type BrokerTicketEvent = typeof BrokerTicketEvent[keyof typeof BrokerTicketEvent];
+
+
+export const BrokerTicketEvent = {
+  opened: 'opened',
+  modified: 'modified',
+  closed: 'closed',
+} as const;
+
+export interface BrokerTicket {
+  id: number;
+  userId: string;
+  eaRegistrationId: number;
+  brokerTicketId: string;
+  brokerType: BrokerTicketBrokerType;
+  symbol: string;
+  side: BrokerTicketSide;
+  lots: number;
+  entryPrice: number;
+  event: BrokerTicketEvent;
+  /** @nullable */
+  eventPrice?: number | null;
+  /** @nullable */
+  eventLots?: number | null;
+  /** @nullable */
+  eventPnl?: number | null;
+  recordedAt: string;
+}
+
+export type ExecutionConfirmationRequestBrokerType = typeof ExecutionConfirmationRequestBrokerType[keyof typeof ExecutionConfirmationRequestBrokerType];
+
+
+export const ExecutionConfirmationRequestBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export interface ExecutionConfirmationRequest {
+  success: boolean;
+  /** @nullable */
+  brokerTicketId?: string | null;
+  brokerType?: ExecutionConfirmationRequestBrokerType;
+  /** @nullable */
+  actualPrice?: number | null;
+  /** @nullable */
+  actualLots?: number | null;
+  /** @nullable */
+  slippage?: number | null;
+  /** @nullable */
+  executionDelayMs?: number | null;
+  /** @nullable */
+  errorCode?: string | null;
+  /** @nullable */
+  errorMessage?: string | null;
+}
+
+export type ExecutionConfirmationBrokerType = typeof ExecutionConfirmationBrokerType[keyof typeof ExecutionConfirmationBrokerType];
+
+
+export const ExecutionConfirmationBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type ExecutionConfirmationExecutedAction = typeof ExecutionConfirmationExecutedAction[keyof typeof ExecutionConfirmationExecutedAction];
+
+
+export const ExecutionConfirmationExecutedAction = {
+  HOLD: 'HOLD',
+  ADD: 'ADD',
+  REDUCE: 'REDUCE',
+  TRAIL: 'TRAIL',
+  BREAKEVEN: 'BREAKEVEN',
+  LOCK_PROFIT: 'LOCK_PROFIT',
+  CLOSE: 'CLOSE',
+} as const;
+
+export interface ExecutionConfirmation {
+  id: number;
+  userId: string;
+  eaRegistrationId: number;
+  trainerActionId: number;
+  /** @nullable */
+  brokerTicketId?: string | null;
+  brokerType: ExecutionConfirmationBrokerType;
+  executedAction: ExecutionConfirmationExecutedAction;
+  success: boolean;
+  /** @nullable */
+  actualPrice?: number | null;
+  /** @nullable */
+  actualLots?: number | null;
+  /** @nullable */
+  slippage?: number | null;
+  /** @nullable */
+  executionDelayMs?: number | null;
+  /** @nullable */
+  errorCode?: string | null;
+  /** @nullable */
+  errorMessage?: string | null;
+  confirmedAt: string;
+}
+
+export type BrokerStateRequestBrokerType = typeof BrokerStateRequestBrokerType[keyof typeof BrokerStateRequestBrokerType];
+
+
+export const BrokerStateRequestBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type BrokerStateRequestConnectionStatus = typeof BrokerStateRequestConnectionStatus[keyof typeof BrokerStateRequestConnectionStatus];
+
+
+export const BrokerStateRequestConnectionStatus = {
+  connected: 'connected',
+  disconnected: 'disconnected',
+  error: 'error',
+} as const;
+
+export interface BrokerStateRequest {
+  brokerType?: BrokerStateRequestBrokerType;
+  connectionStatus: BrokerStateRequestConnectionStatus;
+  /** @nullable */
+  brokerServer?: string | null;
+  /** @nullable */
+  accountNumber?: string | null;
+  /** @nullable */
+  accountCurrency?: string | null;
+  /** @nullable */
+  accountBalance?: number | null;
+  /** @nullable */
+  accountEquity?: number | null;
+  /** @nullable */
+  accountLeverage?: number | null;
+  /** @nullable */
+  accountMarginLevel?: number | null;
+  /** @nullable */
+  pingMs?: number | null;
+  /** @nullable */
+  terminalBuild?: string | null;
+  /** @nullable */
+  platformVersion?: string | null;
+  /** @nullable */
+  tradeAllowed?: boolean | null;
+  /** @nullable */
+  expertEnabled?: boolean | null;
+  /** @nullable */
+  errorMessage?: string | null;
+}
+
+export type BrokerStateBrokerType = typeof BrokerStateBrokerType[keyof typeof BrokerStateBrokerType];
+
+
+export const BrokerStateBrokerType = {
+  MT5: 'MT5',
+  GENERIC: 'GENERIC',
+} as const;
+
+export type BrokerStateConnectionStatus = typeof BrokerStateConnectionStatus[keyof typeof BrokerStateConnectionStatus];
+
+
+export const BrokerStateConnectionStatus = {
+  connected: 'connected',
+  disconnected: 'disconnected',
+  error: 'error',
+} as const;
+
+export interface BrokerState {
+  id: number;
+  userId: string;
+  eaRegistrationId: number;
+  brokerType: BrokerStateBrokerType;
+  connectionStatus: BrokerStateConnectionStatus;
+  /** @nullable */
+  brokerServer?: string | null;
+  /** @nullable */
+  accountNumber?: string | null;
+  /** @nullable */
+  accountCurrency?: string | null;
+  /** @nullable */
+  accountBalance?: number | null;
+  /** @nullable */
+  accountEquity?: number | null;
+  /** @nullable */
+  accountLeverage?: number | null;
+  /** @nullable */
+  accountMarginLevel?: number | null;
+  /** @nullable */
+  pingMs?: number | null;
+  /** @nullable */
+  terminalBuild?: string | null;
+  /** @nullable */
+  platformVersion?: string | null;
+  /** @nullable */
+  tradeAllowed?: boolean | null;
+  /** @nullable */
+  expertEnabled?: boolean | null;
+  /** @nullable */
+  errorMessage?: string | null;
+  syncedAt: string;
 }
 
 export interface LoginEvent {
@@ -3502,6 +3847,23 @@ export type CreateSymbolAliasBody = {
   brokerId?: number;
 };
 
+export type UpdateSymbolAliasBody = {
+  /** Set to false to disable (exclude from normalization) or true to re-enable */
+  enabled?: boolean;
+  /** Rename the raw alias string */
+  alias?: string;
+  /** Remap to a different canonical symbol */
+  canonicalSymbol?: string;
+};
+
+export type UpdateSymbolAlias400 = {
+  error?: string;
+};
+
+export type UpdateSymbolAlias404 = {
+  error?: string;
+};
+
 export type AddUserSymbolBody = {
   symbolId: number;
 };
@@ -3740,6 +4102,10 @@ export type SubmitEaTelemetry201 = {
 
 export type RedeliverAction200 = {
   delivered: boolean;
+};
+
+export type SyncPositionsBody = IncomingPosition[] | {
+  positions: IncomingPosition[];
 };
 
 export type SyncLoginBody = {

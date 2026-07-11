@@ -13,5 +13,6 @@ export const TrainerActionStatus = {
   queued: 'queued',
   delivered: 'delivered',
   acknowledged: 'acknowledged',
+  confirmed: 'confirmed',
   failed: 'failed',
 } as const;

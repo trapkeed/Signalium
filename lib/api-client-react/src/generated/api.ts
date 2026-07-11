@@ -37,6 +37,9 @@ import type {
   AuditChainVerification,
   AuditLogEntry,
   Broker,
+  BrokerState,
+  BrokerStateRequest,
+  BrokerTicket,
   CancelAccountDeletion200,
   ComplianceRetentionPolicy,
   ConfirmAccountDeletion200,
@@ -82,6 +85,8 @@ import type {
   EntitlementError,
   EntitlementSummary,
   ErrorEnvelope,
+  ExecutionConfirmation,
+  ExecutionConfirmationRequest,
   ExecutionQualityMetrics,
   ExecutionTelemetry,
   ExportComplianceAuditLog200,
@@ -253,6 +258,7 @@ import type {
   NormalizeSymbolBody,
   Notification,
   OnboardingChecklist,
+  OpenPosition,
   OperationalDashboard,
   Opportunity,
   PatchOperationalAlertChannelsBody,
@@ -274,6 +280,7 @@ import type {
   PlatformStatus,
   PositionMetrics,
   PositionSnapshot,
+  PositionSyncResult,
   PositionTelemetry,
   PositionTelemetryInput,
   PostOperationalAlertsIdAcknowledge200,
@@ -397,6 +404,7 @@ import type {
   SymbolWithCategory,
   SyncLogin200,
   SyncLoginBody,
+  SyncPositionsBody,
   SyncSymbolDiscovery200,
   SyncSymbolDiscovery400,
   SyncSymbolDiscoveryBody,
@@ -425,6 +433,9 @@ import type {
   UpdateSecurityIncidentStatusBody,
   UpdateSiteContent400,
   UpdateSiteContent401,
+  UpdateSymbolAlias400,
+  UpdateSymbolAlias404,
+  UpdateSymbolAliasBody,
   UpdateSymbolBody,
   UpdateSymbolRegexPattern200,
   UpdateSymbolRegexPattern404,
@@ -7788,6 +7799,78 @@ export const useCreateSymbolAlias = <TError = ErrorType<unknown>,
       return useMutation(getCreateSymbolAliasMutationOptions(options));
     }
 
+export const getUpdateSymbolAliasUrl = (id: number,) => {
+
+
+
+
+  return `/api/symbols/admin/aliases/${id}`
+}
+
+/**
+ * @summary Enable, disable, or remap a symbol alias (admin)
+ */
+export const updateSymbolAlias = async (id: number,
+    updateSymbolAliasBody: UpdateSymbolAliasBody, options?: RequestInit): Promise<SymbolAlias> => {
+
+  return customFetch<SymbolAlias>(getUpdateSymbolAliasUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateSymbolAliasBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateSymbolAliasMutationOptions = <TError = ErrorType<UpdateSymbolAlias400 | UpdateSymbolAlias404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbolAlias>>, TError,{id: number;data: BodyType<UpdateSymbolAliasBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSymbolAlias>>, TError,{id: number;data: BodyType<UpdateSymbolAliasBody>}, TContext> => {
+
+const mutationKey = ['updateSymbolAlias'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSymbolAlias>>, {id: number;data: BodyType<UpdateSymbolAliasBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSymbolAlias(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSymbolAliasMutationResult = NonNullable<Awaited<ReturnType<typeof updateSymbolAlias>>>
+    export type UpdateSymbolAliasMutationBody = BodyType<UpdateSymbolAliasBody>
+    export type UpdateSymbolAliasMutationError = ErrorType<UpdateSymbolAlias400 | UpdateSymbolAlias404>
+
+    /**
+ * @summary Enable, disable, or remap a symbol alias (admin)
+ */
+export const useUpdateSymbolAlias = <TError = ErrorType<UpdateSymbolAlias400 | UpdateSymbolAlias404>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSymbolAlias>>, TError,{id: number;data: BodyType<UpdateSymbolAliasBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSymbolAlias>>,
+        TError,
+        {id: number;data: BodyType<UpdateSymbolAliasBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateSymbolAliasMutationOptions(options));
+    }
+
 export const getDeleteSymbolAliasUrl = (id: number,) => {
 
 
@@ -12380,6 +12463,696 @@ export const useRedeliverAction = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getRedeliverActionMutationOptions(options));
     }
+
+export const getConfirmActionUrl = (id: number,) => {
+
+
+
+
+  return `/api/qde/actions/${id}/confirm`
+}
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * Records what the broker actually did — the ticket affected, the price
+ * achieved, and whether the execution succeeded. Distinct from /ack which
+ * only records that the EA received the message.
+ * Idempotent: a second call for the same action returns the existing record.
+ * @summary EA reports the broker-level execution result of a command (C8)
+ */
+export const confirmAction = async (id: number,
+    executionConfirmationRequest: ExecutionConfirmationRequest, options?: RequestInit): Promise<ExecutionConfirmation> => {
+
+  return customFetch<ExecutionConfirmation>(getConfirmActionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(executionConfirmationRequest)
+  }
+);}
+
+
+
+
+
+export const getConfirmActionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAction>>, TError,{id: number;data: BodyType<ExecutionConfirmationRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmAction>>, TError,{id: number;data: BodyType<ExecutionConfirmationRequest>}, TContext> => {
+
+const mutationKey = ['confirmAction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmAction>>, {id: number;data: BodyType<ExecutionConfirmationRequest>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  confirmAction(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmActionMutationResult = NonNullable<Awaited<ReturnType<typeof confirmAction>>>
+    export type ConfirmActionMutationBody = BodyType<ExecutionConfirmationRequest>
+    export type ConfirmActionMutationError = ErrorType<void>
+
+    /**
+ * @summary EA reports the broker-level execution result of a command (C8)
+ */
+export const useConfirmAction = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAction>>, TError,{id: number;data: BodyType<ExecutionConfirmationRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmAction>>,
+        TError,
+        {id: number;data: BodyType<ExecutionConfirmationRequest>},
+        TContext
+      > => {
+      return useMutation(getConfirmActionMutationOptions(options));
+    }
+
+export const getSyncPositionsUrl = () => {
+
+
+
+
+  return `/api/qde/positions/sync`
+}
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * Upserts each position into open_positions, writes broker-ticket audit
+ * events for new / modified / closed tickets, and returns counts.
+ * Send on connect, after every broker-side position change, and at a
+ * minimum on each telemetry tick when openPositions > 0.
+ * Accepts either a top-level array or { "positions": [...] } envelope.
+ * @summary EA pushes its full current open position list (C8)
+ */
+export const syncPositions = async (syncPositionsBody: SyncPositionsBody, options?: RequestInit): Promise<PositionSyncResult> => {
+
+  return customFetch<PositionSyncResult>(getSyncPositionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncPositionsBody)
+  }
+);}
+
+
+
+
+
+export const getSyncPositionsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPositions>>, TError,{data: BodyType<SyncPositionsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncPositions>>, TError,{data: BodyType<SyncPositionsBody>}, TContext> => {
+
+const mutationKey = ['syncPositions'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncPositions>>, {data: BodyType<SyncPositionsBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncPositions(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncPositionsMutationResult = NonNullable<Awaited<ReturnType<typeof syncPositions>>>
+    export type SyncPositionsMutationBody = BodyType<SyncPositionsBody>
+    export type SyncPositionsMutationError = ErrorType<void>
+
+    /**
+ * @summary EA pushes its full current open position list (C8)
+ */
+export const useSyncPositions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPositions>>, TError,{data: BodyType<SyncPositionsBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncPositions>>,
+        TError,
+        {data: BodyType<SyncPositionsBody>},
+        TContext
+      > => {
+      return useMutation(getSyncPositionsMutationOptions(options));
+    }
+
+export const getSyncBrokerStateUrl = () => {
+
+
+
+
+  return `/api/qde/broker-state`
+}
+
+/**
+ * Authenticated via x-api-key / x-hardware-id headers.
+ * One row per EA registration — upserted on every call.
+ * Send on connect, on reconnect, and when connection status changes.
+ * @summary EA reports its broker connection and account state (C8)
+ */
+export const syncBrokerState = async (brokerStateRequest: BrokerStateRequest, options?: RequestInit): Promise<BrokerState> => {
+
+  return customFetch<BrokerState>(getSyncBrokerStateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(brokerStateRequest)
+  }
+);}
+
+
+
+
+
+export const getSyncBrokerStateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncBrokerState>>, TError,{data: BodyType<BrokerStateRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncBrokerState>>, TError,{data: BodyType<BrokerStateRequest>}, TContext> => {
+
+const mutationKey = ['syncBrokerState'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncBrokerState>>, {data: BodyType<BrokerStateRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  syncBrokerState(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncBrokerStateMutationResult = NonNullable<Awaited<ReturnType<typeof syncBrokerState>>>
+    export type SyncBrokerStateMutationBody = BodyType<BrokerStateRequest>
+    export type SyncBrokerStateMutationError = ErrorType<void>
+
+    /**
+ * @summary EA reports its broker connection and account state (C8)
+ */
+export const useSyncBrokerState = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncBrokerState>>, TError,{data: BodyType<BrokerStateRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncBrokerState>>,
+        TError,
+        {data: BodyType<BrokerStateRequest>},
+        TContext
+      > => {
+      return useMutation(getSyncBrokerStateMutationOptions(options));
+    }
+
+export const getListOwnBrokerStatesUrl = () => {
+
+
+
+
+  return `/api/qde/broker-state`
+}
+
+/**
+ * @summary Current user's broker connection states
+ */
+export const listOwnBrokerStates = async ( options?: RequestInit): Promise<BrokerState[]> => {
+
+  return customFetch<BrokerState[]>(getListOwnBrokerStatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnBrokerStatesQueryKey = () => {
+    return [
+    `/api/qde/broker-state`
+    ] as const;
+    }
+
+
+export const getListOwnBrokerStatesQueryOptions = <TData = Awaited<ReturnType<typeof listOwnBrokerStates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnBrokerStates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnBrokerStatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnBrokerStates>>> = ({ signal }) => listOwnBrokerStates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnBrokerStates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnBrokerStatesQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnBrokerStates>>>
+export type ListOwnBrokerStatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current user's broker connection states
+ */
+
+export function useListOwnBrokerStates<TData = Awaited<ReturnType<typeof listOwnBrokerStates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnBrokerStates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnBrokerStatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListOwnOpenPositionsUrl = () => {
+
+
+
+
+  return `/api/qde/positions`
+}
+
+/**
+ * @summary Current user's live open positions
+ */
+export const listOwnOpenPositions = async ( options?: RequestInit): Promise<OpenPosition[]> => {
+
+  return customFetch<OpenPosition[]>(getListOwnOpenPositionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOwnOpenPositionsQueryKey = () => {
+    return [
+    `/api/qde/positions`
+    ] as const;
+    }
+
+
+export const getListOwnOpenPositionsQueryOptions = <TData = Awaited<ReturnType<typeof listOwnOpenPositions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnOpenPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOwnOpenPositionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOwnOpenPositions>>> = ({ signal }) => listOwnOpenPositions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOwnOpenPositions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOwnOpenPositionsQueryResult = NonNullable<Awaited<ReturnType<typeof listOwnOpenPositions>>>
+export type ListOwnOpenPositionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Current user's live open positions
+ */
+
+export function useListOwnOpenPositions<TData = Awaited<ReturnType<typeof listOwnOpenPositions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOwnOpenPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOwnOpenPositionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAllOpenPositionsUrl = () => {
+
+
+
+
+  return `/api/qde/admin/open-positions`
+}
+
+/**
+ * @summary All EAs' open positions (admin, C8)
+ */
+export const listAllOpenPositions = async ( options?: RequestInit): Promise<OpenPosition[]> => {
+
+  return customFetch<OpenPosition[]>(getListAllOpenPositionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllOpenPositionsQueryKey = () => {
+    return [
+    `/api/qde/admin/open-positions`
+    ] as const;
+    }
+
+
+export const getListAllOpenPositionsQueryOptions = <TData = Awaited<ReturnType<typeof listAllOpenPositions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllOpenPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllOpenPositionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllOpenPositions>>> = ({ signal }) => listAllOpenPositions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllOpenPositions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllOpenPositionsQueryResult = NonNullable<Awaited<ReturnType<typeof listAllOpenPositions>>>
+export type ListAllOpenPositionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary All EAs' open positions (admin, C8)
+ */
+
+export function useListAllOpenPositions<TData = Awaited<ReturnType<typeof listAllOpenPositions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllOpenPositions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllOpenPositionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListBrokerTicketsUrl = () => {
+
+
+
+
+  return `/api/qde/admin/broker-tickets`
+}
+
+/**
+ * @summary Broker ticket audit log — opened/modified/closed events (admin, C8)
+ */
+export const listBrokerTickets = async ( options?: RequestInit): Promise<BrokerTicket[]> => {
+
+  return customFetch<BrokerTicket[]>(getListBrokerTicketsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBrokerTicketsQueryKey = () => {
+    return [
+    `/api/qde/admin/broker-tickets`
+    ] as const;
+    }
+
+
+export const getListBrokerTicketsQueryOptions = <TData = Awaited<ReturnType<typeof listBrokerTickets>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBrokerTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBrokerTicketsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBrokerTickets>>> = ({ signal }) => listBrokerTickets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBrokerTickets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBrokerTicketsQueryResult = NonNullable<Awaited<ReturnType<typeof listBrokerTickets>>>
+export type ListBrokerTicketsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Broker ticket audit log — opened/modified/closed events (admin, C8)
+ */
+
+export function useListBrokerTickets<TData = Awaited<ReturnType<typeof listBrokerTickets>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBrokerTickets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBrokerTicketsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListExecutionConfirmationsUrl = () => {
+
+
+
+
+  return `/api/qde/admin/execution-confirmations`
+}
+
+/**
+ * @summary EA execution confirmation records (admin, C8)
+ */
+export const listExecutionConfirmations = async ( options?: RequestInit): Promise<ExecutionConfirmation[]> => {
+
+  return customFetch<ExecutionConfirmation[]>(getListExecutionConfirmationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListExecutionConfirmationsQueryKey = () => {
+    return [
+    `/api/qde/admin/execution-confirmations`
+    ] as const;
+    }
+
+
+export const getListExecutionConfirmationsQueryOptions = <TData = Awaited<ReturnType<typeof listExecutionConfirmations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listExecutionConfirmations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExecutionConfirmationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExecutionConfirmations>>> = ({ signal }) => listExecutionConfirmations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExecutionConfirmations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListExecutionConfirmationsQueryResult = NonNullable<Awaited<ReturnType<typeof listExecutionConfirmations>>>
+export type ListExecutionConfirmationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary EA execution confirmation records (admin, C8)
+ */
+
+export function useListExecutionConfirmations<TData = Awaited<ReturnType<typeof listExecutionConfirmations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listExecutionConfirmations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListExecutionConfirmationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAllBrokerStatesUrl = () => {
+
+
+
+
+  return `/api/qde/admin/broker-states`
+}
+
+/**
+ * @summary All EAs' broker connection states (admin, C8)
+ */
+export const listAllBrokerStates = async ( options?: RequestInit): Promise<BrokerState[]> => {
+
+  return customFetch<BrokerState[]>(getListAllBrokerStatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllBrokerStatesQueryKey = () => {
+    return [
+    `/api/qde/admin/broker-states`
+    ] as const;
+    }
+
+
+export const getListAllBrokerStatesQueryOptions = <TData = Awaited<ReturnType<typeof listAllBrokerStates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllBrokerStates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllBrokerStatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllBrokerStates>>> = ({ signal }) => listAllBrokerStates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllBrokerStates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllBrokerStatesQueryResult = NonNullable<Awaited<ReturnType<typeof listAllBrokerStates>>>
+export type ListAllBrokerStatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary All EAs' broker connection states (admin, C8)
+ */
+
+export function useListAllBrokerStates<TData = Awaited<ReturnType<typeof listAllBrokerStates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllBrokerStates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllBrokerStatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetStatsOverviewUrl = () => {
 

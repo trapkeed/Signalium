@@ -14,4 +14,8 @@ export interface QdeStatsOverview {
   actionBreakdownLast5Min: QdeStatsOverviewActionBreakdownLast5Min;
   queueDepth: number;
   actionsWithRetries: number;
+  /** C8: Number of currently open positions across all EAs. */
+  openPositionCount: number;
+  /** C8: Execution confirmations received in the last 5 minutes. */
+  confirmationsLast5Min: number;
 }

@@ -480,6 +480,41 @@ router.post("/admin/aliases", requireAdmin, async (req, res) => {
   }
 });
 
+// Enable or disable an alias without deleting it, and allow remapping to a
+// different canonical symbol or renaming the alias string.
+router.patch("/admin/aliases/:id", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  const id = Number(req.params.id);
+  const { enabled, canonicalSymbol, alias } = req.body as { enabled?: boolean; canonicalSymbol?: string; alias?: string };
+
+  if (enabled === undefined && canonicalSymbol === undefined && alias === undefined) {
+    return res.status(400).json({ error: "At least one of 'enabled', 'canonicalSymbol', or 'alias' is required" });
+  }
+
+  try {
+    const updates: Record<string, unknown> = {};
+    if (enabled !== undefined) updates.enabled = enabled;
+    if (alias !== undefined) updates.alias = alias.toLowerCase();
+
+    if (canonicalSymbol !== undefined) {
+      const [symbol] = await db.select().from(symbolsTable).where(eq(symbolsTable.canonicalSymbol, canonicalSymbol.toUpperCase()));
+      if (!symbol) return res.status(404).json({ error: "Canonical symbol not found" });
+      updates.symbolId = symbol.id;
+    }
+
+    const [updated] = await db.update(symbolAliasesTable).set(updates).where(eq(symbolAliasesTable.id, id)).returning();
+    if (!updated) return res.status(404).json({ error: "Not found" });
+    invalidateSymbolCache();
+    if (userId && enabled !== undefined) {
+      await logAudit(userId, "symbol_mapping.conflict_resolved", "symbol_alias", String(id), { enabled });
+    }
+    return res.json(updated);
+  } catch (err) {
+    req.log.error(err, "Failed to update symbol alias");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.delete("/admin/aliases/:id", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   try {

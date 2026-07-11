@@ -28,7 +28,7 @@ Four new tables in `lib/db/src/schema/qde.ts`:
 
 **flushQueuedActions ordering:** Updated to use `.orderBy(sequenceNum, createdAt)` so reconnect flush respects command order.
 
-**deliverAction WS frame:** Now includes `sequenceNum` field so EAs receive it alongside the actionId.
+**deliverAction WS frame:** Now includes `sequenceNum` field so the EA can enforce it.
 
 ## How to apply
 - After any schema change: `pnpm --filter @workspace/db run push` then `pnpm run typecheck`.

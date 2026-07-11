@@ -19,6 +19,11 @@ export interface TrainerAction {
   action: TrainerActionAction;
   /** @nullable */
   reasoning?: string | null;
+  /**
+     * C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps.
+     * @nullable
+     */
+  sequenceNum?: number | null;
   status: TrainerActionStatus;
   retryCount: number;
   createdAt: string;
@@ -26,4 +31,6 @@ export interface TrainerAction {
   deliveredAt?: string | null;
   /** @nullable */
   acknowledgedAt?: string | null;
+  /** @nullable */
+  confirmedAt?: string | null;
 }

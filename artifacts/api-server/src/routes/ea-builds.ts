@@ -19,6 +19,7 @@ import {
   storeEaBuild,
   getEaBuildFile,
   generateBuildApiKey,
+  buildSymbolMapForEa,
 } from "../lib/eaBuilder";
 import { ObjectNotFoundError } from "../lib/objectStorage";
 import { checkEaGenerationAccess, resolveCurrentSubscription, type EntitlementDenialCode } from "../lib/entitlementEngine";
@@ -109,7 +110,10 @@ router.post("/generate", async (req, res) => {
       platformVersion: "MT5",
     };
 
-    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" });
+    // Embed the current canonical symbol map and any broker-specific overrides
+    // so the EA has an offline fallback before its first 24h discovery scan.
+    const symbolMap = await buildSymbolMapForEa();
+    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" }, symbolMap);
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
     // S29 — checksum alone only detects accidental corruption; it doesn't
@@ -275,7 +279,8 @@ router.post("/:buildId/regenerate", async (req, res) => {
       platformVersion: "MT5",
     };
 
-    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" });
+    const symbolMap = await buildSymbolMapForEa();
+    const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" }, symbolMap);
     const binary = compileToEx5(source, metadata);
     const checksum = checksumOf(binary);
     const signature = signArtifact(checksum);

@@ -10,6 +10,28 @@ export interface EaMetadata {
   platformVersion: string;
 }
 
+/**
+ * A point-in-time snapshot of the canonical symbol registry embedded into the
+ * EA at build time. The EA uses this as an offline fallback so it can resolve
+ * broker symbols without a server round-trip; the 24h discovery scan updates
+ * it with any overrides the server returns.
+ */
+export interface EaSymbolMap {
+  /** All canonical symbols the platform supports. */
+  canonicalSymbols: string[];
+  /**
+   * Universal alias → canonical mappings (source: "admin", all brokers).
+   * Stored as parallel arrays so MQL5 can use a simple linear scan.
+   */
+  aliases: { alias: string; canonical: string }[];
+  /**
+   * Broker-specific alias → canonical overrides keyed by broker name.
+   * Only populated when the EA is built for a known broker (i.e. the EA
+   * registration already has a brokerId on record).
+   */
+  brokerMappings: { alias: string; canonical: string; brokerName: string }[];
+}
+
 export interface EaEmbeddedCredentials {
   /** Raw API key, compiled directly into the EA so users never type it in. */
   apiKey: string;
@@ -30,6 +52,48 @@ export function generateBuildApiKey(): { rawKey: string; keyHash: string; keyPre
   return { rawKey, keyHash, keyPrefix: rawKey.slice(0, 12) + "..." };
 }
 
+/**
+ * Fetches the current canonical symbol registry and builds an EaSymbolMap
+ * snapshot for embedding into an EA at build time.
+ *
+ * @param brokerId  Optional: when set, broker-specific aliases (brokerId = X)
+ *                  are appended after universal aliases so they win via the
+ *                  last-match-wins scan in the generated MQL5 lookup function.
+ */
+export async function buildSymbolMapForEa(brokerId?: number | null): Promise<EaSymbolMap> {
+  // We import here (not at top) to avoid a circular dep with the route layer.
+  const { db, symbolsTable, symbolAliasesTable } = await import("@workspace/db");
+  const { eq, and, or, isNull } = await import("drizzle-orm");
+
+  const symbols = await db.select({ canonical: symbolsTable.canonicalSymbol }).from(symbolsTable).where(eq(symbolsTable.enabled, true));
+
+  // Universal aliases (not broker-specific) that are enabled.
+  const universalRows = await db
+    .select({ alias: symbolAliasesTable.alias, canonical: symbolsTable.canonicalSymbol })
+    .from(symbolAliasesTable)
+    .innerJoin(symbolsTable, eq(symbolAliasesTable.symbolId, symbolsTable.id))
+    .where(and(eq(symbolAliasesTable.enabled, true), isNull(symbolAliasesTable.brokerId)));
+
+  // Broker-specific aliases for the known broker, if provided.
+  let brokerRows: { alias: string; canonical: string; brokerName: string }[] = [];
+  if (brokerId != null) {
+    const { brokersTable } = await import("@workspace/db");
+    const brokerSpecific = await db
+      .select({ alias: symbolAliasesTable.alias, canonical: symbolsTable.canonicalSymbol, brokerName: brokersTable.name })
+      .from(symbolAliasesTable)
+      .innerJoin(symbolsTable, eq(symbolAliasesTable.symbolId, symbolsTable.id))
+      .innerJoin(brokersTable, eq(symbolAliasesTable.brokerId, brokersTable.id))
+      .where(and(eq(symbolAliasesTable.enabled, true), eq(symbolAliasesTable.brokerId, brokerId)));
+    brokerRows = brokerSpecific;
+  }
+
+  return {
+    canonicalSymbols: symbols.map((s) => s.canonical),
+    aliases: universalRows,
+    brokerMappings: brokerRows,
+  };
+}
+
 /** Derives a filesystem/EA-safe username from a Clerk user's profile fields. */
 export function deriveUsername(user: { firstName?: string | null; lastName?: string | null; email: string }): string {
   const base = user.firstName || user.email.split("@")[0] || "trader";
@@ -48,11 +112,70 @@ export function buildFileName(username: string, apiKeyHash: string): string {
 }
 
 /**
+ * Renders the embedded symbol map as MQL5 array literals so the EA has a
+ * static offline lookup that mirrors the platform's canonical registry.
+ * Two tables are emitted:
+ *   - SIGNALIUM_CANONICAL_SYMBOLS — the authoritative list of canonical names
+ *   - SIGNALIUM_ALIAS_MAP_RAW / SIGNALIUM_ALIAS_MAP_CANONICAL — parallel
+ *     arrays for exact-match alias resolution (broker string → canonical)
+ * Broker-specific overrides are appended to the alias arrays and win because
+ * the EA linear-scans from the end (last match wins).
+ */
+function renderSymbolMapMql5(symbolMap: EaSymbolMap): string {
+  const canonicals = symbolMap.canonicalSymbols;
+
+  // Merge universal aliases first, then broker-specific ones (so broker wins).
+  const allAliases = [
+    ...symbolMap.aliases,
+    ...symbolMap.brokerMappings.map((m) => ({ alias: m.alias, canonical: m.canonical })),
+  ];
+
+  const q = (s: string) => `"${s.replace(/"/g, '\\"')}"`;
+  const canonicalsLiteral = canonicals.map(q).join(", ");
+  const aliasRawLiteral = allAliases.map((a) => q(a.alias)).join(", ");
+  const aliasCanonicalLiteral = allAliases.map((a) => q(a.canonical)).join(", ");
+
+  return `
+// ─── Embedded symbol registry (generated at build time, refreshed every 24h) ─
+// Canonical symbol list — the only symbols the platform and trainer recognise.
+// The EA normalises every broker raw string to one of these before sending
+// telemetry so the trainer never needs to handle broker-specific naming.
+#define SIGNALIUM_CANONICAL_COUNT ${canonicals.length}
+string SIGNALIUM_CANONICAL_SYMBOLS[${canonicals.length}] = {${canonicalsLiteral}};
+
+// Alias lookup tables (parallel arrays — aliasRaw[i] maps to aliasCanonical[i]).
+// Universal aliases come first; broker-specific overrides are appended and win
+// via last-match-wins scan.  Refreshed on each 24h discovery scan.
+#define SIGNALIUM_ALIAS_COUNT ${allAliases.length}
+string SIGNALIUM_ALIAS_MAP_RAW[${allAliases.length || 1}]       = {${aliasRawLiteral || '""'}};
+string SIGNALIUM_ALIAS_MAP_CANONICAL[${allAliases.length || 1}] = {${aliasCanonicalLiteral || '""'}};
+
+// Normalises a raw broker symbol string to its canonical form using the
+// embedded tables above.  Returns the empty string if no mapping is found;
+// the EA must then fall back to the 24h server discovery scan result.
+string SignaliumNormaliseSymbol(string raw) {
+   string lower = StringToLower(raw);
+   // Last-match-wins: broker-specific overrides are at the tail of the array.
+   for (int i = SIGNALIUM_ALIAS_COUNT - 1; i >= 0; i--) {
+      if (lower == StringToLower(SIGNALIUM_ALIAS_MAP_RAW[i]))
+         return SIGNALIUM_ALIAS_MAP_CANONICAL[i];
+   }
+   // Check canonical symbols directly (e.g. EA already uses canonical name).
+   for (int i = 0; i < SIGNALIUM_CANONICAL_COUNT; i++) {
+      if (lower == StringToLower(SIGNALIUM_CANONICAL_SYMBOLS[i]))
+         return SIGNALIUM_CANONICAL_SYMBOLS[i];
+   }
+   return ""; // unresolved — server discovery scan will handle it
+}
+`;
+}
+
+/**
  * Generates the MQL5 source for the user's EA. This is the human-readable
  * template with embedded metadata (as commented constants, never the raw
  * API key) and stub implementations of the required capabilities.
  */
-export function generateMql5Source(metadata: EaMetadata, credentials: EaEmbeddedCredentials): string {
+export function generateMql5Source(metadata: EaMetadata, credentials: EaEmbeddedCredentials, symbolMap?: EaSymbolMap): string {
   return `//+------------------------------------------------------------------+
 //|                                         Signalium Expert Advisor |
 //|                   Auto-generated — do not edit embedded metadata |
@@ -73,7 +196,7 @@ export function generateMql5Source(metadata: EaMetadata, credentials: EaEmbedded
 #define SIGNALIUM_SUBSCRIPTION_TIER  "${metadata.subscriptionTier}"
 #define SIGNALIUM_GENERATED_AT       "${metadata.generationTimestamp}"
 #define SIGNALIUM_PLATFORM_VERSION   "${metadata.platformVersion}"
-
+${symbolMap ? renderSymbolMapMql5(symbolMap) : "// Symbol map not available at build time — resolved entirely via 24h discovery scan."}
 // ─── QDE loop (S14): EA <-> Platform <-> Trainer, every 30 seconds ─────────
 // Primary channel: WebSocket to wss://<host>/ws/ea?apiKey=<key>&hardwareId=<id>
 //   - On connect, send {"type":"telemetry", ...} frames every 30s (see below).

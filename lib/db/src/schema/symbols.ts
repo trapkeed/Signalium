@@ -35,6 +35,9 @@ export const symbolAliasesTable = pgTable("symbol_aliases", {
   // Nullable: which broker reports this raw alias, if known. Lets symbol
   // normalization reference the brokers registry without requiring it.
   brokerId: integer("broker_id").references(() => brokersTable.id),
+  // Soft-disable: disabled aliases are excluded from normalization lookups but
+  // preserved in the DB so admins can re-enable them without recreating them.
+  enabled: boolean("enabled").notNull().default(true),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

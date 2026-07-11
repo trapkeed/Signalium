@@ -8,6 +8,7 @@ import {
   useCreateSymbol,
   useDeleteSymbol,
   useCreateSymbolAlias,
+  useUpdateSymbolAlias,
   useDeleteSymbolAlias,
   useListBrokers,
   useListSymbolMappingConflicts,
@@ -342,6 +343,7 @@ export default function AdminSymbols() {
   const { data: regexPatterns = [], refetch: refetchRegexPatterns } = useListSymbolRegexPatterns();
 
   const deleteSymbol = useDeleteSymbol();
+  const updateAlias = useUpdateSymbolAlias();
   const deleteAlias = useDeleteSymbolAlias();
   const resolveConflict = useResolveSymbolMappingConflict();
   const updateRegexPattern = useUpdateSymbolRegexPattern();
@@ -354,6 +356,16 @@ export default function AdminSymbols() {
       refetchSymbols();
     } catch (err: any) {
       toast({ title: "Failed to delete symbol", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  async function handleToggleAlias(id: number, currentEnabled: boolean) {
+    try {
+      await updateAlias.mutateAsync({ id, data: { enabled: !currentEnabled } });
+      toast({ title: currentEnabled ? "Alias disabled" : "Alias enabled" });
+      refetchAliases();
+    } catch (err: any) {
+      toast({ title: "Failed to update alias", description: err?.message, variant: "destructive" });
     }
   }
 
@@ -496,23 +508,36 @@ export default function AdminSymbols() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/30">
-                    {["Alias", "Canonical Symbol", "Broker", "Source", "Added", ""].map((h) => (
+                    {["Alias", "Canonical Symbol", "Broker", "Source", "Status", "Added", ""].map((h) => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {aliases.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No aliases yet</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No aliases yet</td></tr>
                   ) : (
                     aliases.map((a) => (
-                      <tr key={a.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                      <tr key={a.id} className={`border-b border-border last:border-0 hover:bg-secondary/20 ${(a as any).enabled === false ? "opacity-50" : ""}`}>
                         <td className="px-4 py-3 font-mono text-xs">{a.alias}</td>
                         <td className="px-4 py-3 font-mono text-xs text-primary">{a.canonicalSymbol}</td>
                         <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
                           {a.brokerId ? brokerNameById.get(a.brokerId) ?? `#${a.brokerId}` : "—"}
                         </td>
                         <td className="px-4 py-3 text-xs font-mono text-muted-foreground capitalize">{a.source}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            className="text-xs font-mono"
+                            onClick={() => handleToggleAlias(a.id, (a as any).enabled !== false)}
+                            title={(a as any).enabled !== false ? "Click to disable" : "Click to enable"}
+                          >
+                            {(a as any).enabled !== false ? (
+                              <span className="flex items-center gap-1 text-primary"><CheckCircle2 className="w-3 h-3" /> active</span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-muted-foreground"><XCircle className="w-3 h-3" /> disabled</span>
+                            )}
+                          </button>
+                        </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{new Date(a.createdAt).toLocaleDateString()}</td>
                         <td className="px-4 py-3 text-right">
                           <Button

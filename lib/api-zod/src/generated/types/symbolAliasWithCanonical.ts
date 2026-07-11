@@ -11,6 +11,7 @@ export interface SymbolAliasWithCanonical {
   id: number;
   alias: string;
   source: SymbolAliasWithCanonicalSource;
+  enabled: boolean;
   /** @nullable */
   brokerId?: number | null;
   /** @nullable */

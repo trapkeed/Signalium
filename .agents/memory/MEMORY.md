@@ -23,3 +23,4 @@
 - [Config Vault Categories, Rotation & Sync Status](config-vault-categories-sync-status.md) — keep secret-push-to-external-service out of scope, additive rotate/disable over delete, server-enforced category enum, persisted sync-probe history.
 - [EA broker-aware market gateway](ea-broker-market-gateway.md) — layered symbol resolution (local→trainer→regex) with conflict logging, double self-join to resolve conflict symbol IDs to names for admin UI.
 - [C8 Platform Integration](c8-platform-integration.md) — new audit action enum entry required for any new model_request.* action; sequence numbers use MAX+1 in a tx; positionSync.ts is the shared sync helper for both HTTP and WS.
+- [Symbol normalization alias system](symbol-normalization.md) — alias enabled column, noise suffix additions, seed aliases, EA build-time symbol map embedding, recurring orval looseObject sed fix.

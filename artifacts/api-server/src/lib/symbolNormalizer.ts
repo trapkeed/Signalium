@@ -8,6 +8,7 @@ import {
   symbolMappingConflictsTable,
 } from "@workspace/db";
 import { eq, and, desc, isNull } from "drizzle-orm";
+export type { SymbolAlias } from "@workspace/db";
 
 interface CacheEntry {
   symbolId: number;
@@ -27,14 +28,23 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Broker/EA noise suffixes stripped iteratively when a raw symbol doesn't match directly. */
 const NOISE_SUFFIXES = [
+  // dot-prefixed broker decorators (must be checked before bare suffixes)
   ".a", ".b", ".c", ".i", ".x", ".m", ".pro", ".raw", ".ecn", ".micro", ".mini",
-  ".cent", ".std", ".classic", ".prime", ".zero", "-", "_",
+  ".cent", ".std", ".classic", ".prime", ".zero", ".cash",
+  // underscore variants common in MT5 (e.g. EURUSD_i, XAUUSD_a)
+  "_i", "_a", "_b", "_c", "_x",
+  // separators stripped as a last resort
+  "-", "_",
+  // bare suffixes
   "pro", "raw", "ecn", "micro", "mini", "cent", "classic", "prime", "zero", "m",
+  // trailing dot (some brokers append a period: EURUSD.)
+  ".",
 ];
 
 async function loadCache(): Promise<Map<string, CacheEntry>> {
   const symbols = await db.select().from(symbolsTable);
-  const aliases = await db.select().from(symbolAliasesTable);
+  // Only enabled aliases participate in normalization lookups.
+  const aliases = await db.select().from(symbolAliasesTable).where(eq(symbolAliasesTable.enabled, true));
 
   const map = new Map<string, CacheEntry>();
   for (const s of symbols) {
@@ -254,18 +264,28 @@ const SEED_SYMBOLS: { canonicalSymbol: string; displayName: string; categorySlug
 ];
 
 const SEED_ALIASES: { alias: string; canonicalSymbol: string }[] = [
+  // Metals
   { alias: "GOLD", canonicalSymbol: "XAUUSD" },
   { alias: "SILVER", canonicalSymbol: "XAGUSD" },
+  // EURUSD broker variants that suffix-strip can't reach
+  { alias: "fx_EURUSD", canonicalSymbol: "EURUSD" },
+  // US30 broker aliases — suffix-strip can't deduce these from the base string
+  { alias: "DJ30",       canonicalSymbol: "US30" },
+  { alias: "WS30",       canonicalSymbol: "US30" },
   { alias: "WALLSTREET30", canonicalSymbol: "US30" },
-  { alias: "US30CASH", canonicalSymbol: "US30" },
-  { alias: "NASDAQ100", canonicalSymbol: "NAS100" },
-  { alias: "USTECH100", canonicalSymbol: "NAS100" },
-  { alias: "SP500", canonicalSymbol: "SPX500" },
-  { alias: "US500", canonicalSymbol: "SPX500" },
-  { alias: "DE40", canonicalSymbol: "GER40" },
-  { alias: "DAX40", canonicalSymbol: "GER40" },
-  { alias: "FTSE100", canonicalSymbol: "UK100" },
-  { alias: "NIKKEI225", canonicalSymbol: "JPN225" },
+  { alias: "US30CASH",   canonicalSymbol: "US30" },
+  // NAS100
+  { alias: "NASDAQ100",  canonicalSymbol: "NAS100" },
+  { alias: "USTECH100",  canonicalSymbol: "NAS100" },
+  // SPX500
+  { alias: "SP500",      canonicalSymbol: "SPX500" },
+  { alias: "US500",      canonicalSymbol: "SPX500" },
+  // GER40
+  { alias: "DE40",       canonicalSymbol: "GER40" },
+  { alias: "DAX40",      canonicalSymbol: "GER40" },
+  // Other indices
+  { alias: "FTSE100",    canonicalSymbol: "UK100" },
+  { alias: "NIKKEI225",  canonicalSymbol: "JPN225" },
 ];
 
 /** Idempotently seeds the canonical symbol registry with well-known instruments and aliases. */
