@@ -8,6 +8,8 @@ import {
   trainerActionsTable,
   executionTelemetryTable,
   executionQualityMetricsTable,
+  executionConfirmationsTable,
+  brokerStateTable,
 } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { resolveApiKeyAuth } from "../middlewares/requireApiKeyAuth";
@@ -18,6 +20,12 @@ import { ingestPositionSnapshot, emitTradeEvent } from "../lib/tradeLifecycle";
 import { logAudit } from "../lib/auditLog";
 import { broadcastOpsEvent } from "./adminOpsGateway";
 import { isQdeActiveForUser } from "../lib/qdeSwitch";
+import {
+  syncPositions,
+  parsePositionList,
+  parseBrokerStatePayload,
+  nextSequenceNum,
+} from "../lib/positionSync";
 
 /**
  * ─── EA <-> Platform <-> Trainer WebSocket contract ────────────────────────
@@ -35,17 +43,59 @@ import { isQdeActiveForUser } from "../lib/qdeSwitch";
  *
  *   { "type": "ping" }
  *
+ *   // C8: Full position list sync (sent on connect and after every broker-side
+ *   // change). Triggers open/modified/closed audit events for each ticket.
+ *   { "type": "position_sync", "data": [
+ *       { "brokerTicketId": "12345678", "symbol": "XAUUSD", "side": "buy",
+ *         "lots": 0.1, "entryPrice": 2385.10, "currentPrice": 2381.5,
+ *         "floatingPnl": -36.0, "swap": -1.2, "commission": -0.4,
+ *         "tradeAgeSeconds": 1800, "openedAt": "2026-07-11T06:00:00Z",
+ *         "mt5Magic": 20240101, "mt5Comment": "SignaliumEA" }
+ *   ] }
+ *
+ *   // C8: Broker connection and account state (sent on connect, on reconnect,
+ *   // and when connection status changes).
+ *   { "type": "broker_state", "data": {
+ *       "connectionStatus": "connected",
+ *       "brokerType": "MT5",
+ *       "brokerServer": "MetaQuotes-Demo",
+ *       "accountNumber": "12345",
+ *       "accountCurrency": "USD",
+ *       "accountBalance": 10250.50,
+ *       "accountEquity": 10190.20,
+ *       "accountLeverage": 100,
+ *       "pingMs": 45,
+ *       "terminalBuild": "3815",
+ *       "tradeAllowed": true,
+ *       "expertEnabled": true
+ *   } }
+ *
+ *   // EA acknowledges it received and will apply an action (observability).
+ *   { "type": "ack", "actionId": 123 }
+ *
+ *   // C8: EA reports broker-level execution result (what the broker actually did).
+ *   { "type": "confirm", "actionId": 123, "data": {
+ *       "success": true,
+ *       "brokerTicketId": "12345678",
+ *       "executionDelayMs": 312,
+ *       "actualPrice": 2381.40,
+ *       "actualLots": 0.1,
+ *       "slippage": 0.04
+ *   } }
+ *
  * Platform -> EA frames:
- *   { "type": "action", "actionId": 123, "data": {
+ *   { "type": "action", "actionId": 123, "sequenceNum": 7, "data": {
  *       "action": "TRAIL", "reasoning": "...", "symbol": "XAUUSD",
  *       "telemetryId": 456
  *   } }
  *
+ *   { "type": "position_sync_ack", "syncedCount": 3, "newCount": 0,
+ *     "modifiedCount": 0, "closedCount": 1 }
+ *
+ *   { "type": "broker_state_ack" }
+ *
  *   { "type": "pong" }
  *   { "type": "error", "message": "..." }
- *
- * EA -> Platform acknowledgement (closes the loop for observability):
- *   { "type": "ack", "actionId": 123 }
  *
  * Offline handling: if the EA is disconnected when a trainer action is
  * produced, the action row stays in status "queued" in `trainer_actions` and
@@ -166,6 +216,24 @@ export function attachEaGateway(server: HttpServer) {
 
         if (message.type === "telemetry") {
           await handleTelemetry(state, message.data);
+          return;
+        }
+
+        // C8: Full position list sync.
+        if (message.type === "position_sync") {
+          await handlePositionSync(state, message.data);
+          return;
+        }
+
+        // C8: Broker connection and account state.
+        if (message.type === "broker_state") {
+          await handleBrokerState(state, message.data);
+          return;
+        }
+
+        // C8: Execution confirmation (EA reports what the broker actually did).
+        if (message.type === "confirm" && typeof message.actionId === "number") {
+          await handleConfirm(state, message.actionId, message.data);
           return;
         }
 
@@ -320,16 +388,22 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
     return;
   }
 
-  const [actionRow] = await db.insert(trainerActionsTable).values({
-    userId: state.userId,
-    apiKeyId: state.apiKeyId,
-    eaRegistrationId: state.eaRegistrationId,
-    telemetryId: row.id,
-    symbol: telemetry.symbol ?? null,
-    action: decision.action,
-    reasoning: decision.reasoning,
-    status: "queued",
-  }).returning();
+  // Insert with an atomically-computed per-EA sequence number (C8 ordering guarantee).
+  const actionRow = await db.transaction(async (tx) => {
+    const seqNum = await nextSequenceNum(tx, state.eaRegistrationId);
+    const [inserted] = await tx.insert(trainerActionsTable).values({
+      userId: state.userId,
+      apiKeyId: state.apiKeyId,
+      eaRegistrationId: state.eaRegistrationId,
+      telemetryId: row.id,
+      symbol: telemetry.symbol ?? null,
+      action: decision.action,
+      reasoning: decision.reasoning,
+      sequenceNum: seqNum,
+      status: "queued",
+    }).returning();
+    return inserted;
+  });
 
   // Note: trade events require a known opportunityId (FK NOT NULL). The EA gateway
   // doesn't manage opportunities — those are created by inference-gateway. Events
@@ -342,10 +416,145 @@ async function handleTelemetry(state: ConnectionState, data: unknown) {
       action: decision.action,
       symbol: telemetry.symbol ?? null,
       eaRegistrationId: state.eaRegistrationId,
+      sequenceNum: actionRow.sequenceNum,
     });
   }
 
   await deliverAction(actionRow.id);
+}
+
+// ─── C8: Position sync handler ───────────────────────────────────────────────
+async function handlePositionSync(state: ConnectionState, data: unknown) {
+  const positions = parsePositionList(Array.isArray(data) ? data : null);
+  if (positions === null) {
+    safeSend(state.ws, { type: "error", message: "Invalid position_sync payload — expected array of position objects" });
+    return;
+  }
+
+  try {
+    const result = await syncPositions(state.userId, state.eaRegistrationId, positions);
+    safeSend(state.ws, { type: "position_sync_ack", ...result });
+    logger.info({ eaRegistrationId: state.eaRegistrationId, ...result }, "Position sync processed");
+  } catch (err) {
+    logger.error({ err, eaRegistrationId: state.eaRegistrationId }, "Failed to process position sync");
+    safeSend(state.ws, { type: "error", message: "Failed to process position sync" });
+  }
+}
+
+// ─── C8: Broker state handler ────────────────────────────────────────────────
+async function handleBrokerState(state: ConnectionState, data: unknown) {
+  const payload = parseBrokerStatePayload(data);
+  if (!payload) {
+    safeSend(state.ws, { type: "error", message: "Invalid broker_state payload — connectionStatus is required" });
+    return;
+  }
+
+  try {
+    await db
+      .insert(brokerStateTable)
+      .values({
+        userId: state.userId,
+        eaRegistrationId: state.eaRegistrationId,
+        brokerType: payload.brokerType,
+        connectionStatus: payload.connectionStatus,
+        brokerServer: payload.brokerServer ?? null,
+        accountNumber: payload.accountNumber ?? null,
+        accountCurrency: payload.accountCurrency ?? null,
+        accountBalance: payload.accountBalance ?? null,
+        accountEquity: payload.accountEquity ?? null,
+        accountLeverage: payload.accountLeverage ?? null,
+        accountMarginLevel: payload.accountMarginLevel ?? null,
+        pingMs: payload.pingMs ?? null,
+        terminalBuild: payload.terminalBuild ?? null,
+        platformVersion: payload.platformVersion ?? null,
+        tradeAllowed: payload.tradeAllowed ?? null,
+        expertEnabled: payload.expertEnabled ?? null,
+        errorMessage: payload.errorMessage ?? null,
+        syncedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [brokerStateTable.eaRegistrationId],
+        set: {
+          brokerType: payload.brokerType,
+          connectionStatus: payload.connectionStatus,
+          brokerServer: payload.brokerServer ?? null,
+          accountNumber: payload.accountNumber ?? null,
+          accountCurrency: payload.accountCurrency ?? null,
+          accountBalance: payload.accountBalance ?? null,
+          accountEquity: payload.accountEquity ?? null,
+          accountLeverage: payload.accountLeverage ?? null,
+          accountMarginLevel: payload.accountMarginLevel ?? null,
+          pingMs: payload.pingMs ?? null,
+          terminalBuild: payload.terminalBuild ?? null,
+          platformVersion: payload.platformVersion ?? null,
+          tradeAllowed: payload.tradeAllowed ?? null,
+          expertEnabled: payload.expertEnabled ?? null,
+          errorMessage: payload.errorMessage ?? null,
+          syncedAt: new Date(),
+        },
+      });
+
+    safeSend(state.ws, { type: "broker_state_ack" });
+  } catch (err) {
+    logger.error({ err, eaRegistrationId: state.eaRegistrationId }, "Failed to process broker state");
+    safeSend(state.ws, { type: "error", message: "Failed to process broker state" });
+  }
+}
+
+// ─── C8: Execution confirmation handler ─────────────────────────────────────
+async function handleConfirm(state: ConnectionState, actionId: number, data: unknown) {
+  const d = (data && typeof data === "object") ? data as Record<string, unknown> : {};
+  const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  const success = typeof d.success === "boolean" ? d.success : undefined;
+  if (success === undefined) {
+    safeSend(state.ws, { type: "error", message: "confirm frame: success (boolean) is required" });
+    return;
+  }
+
+  try {
+    const [action] = await db.select().from(trainerActionsTable).where(eq(trainerActionsTable.id, actionId));
+    if (!action || action.eaRegistrationId !== state.eaRegistrationId) {
+      safeSend(state.ws, { type: "error", message: `confirm: action ${actionId} not found` });
+      return;
+    }
+
+    // Idempotency — ignore duplicate confirmations silently.
+    const [existing] = await db.select().from(executionConfirmationsTable)
+      .where(eq(executionConfirmationsTable.trainerActionId, actionId));
+    if (existing) return;
+
+    await db.insert(executionConfirmationsTable).values({
+      userId: state.userId,
+      eaRegistrationId: state.eaRegistrationId,
+      trainerActionId: actionId,
+      brokerTicketId: typeof d.brokerTicketId === "string" ? d.brokerTicketId : null,
+      brokerType: (d.brokerType === "GENERIC" ? "GENERIC" : "MT5") as "MT5" | "GENERIC",
+      executedAction: action.action as "HOLD" | "ADD" | "REDUCE" | "TRAIL" | "BREAKEVEN" | "LOCK_PROFIT" | "CLOSE",
+      success,
+      actualPrice: num(d.actualPrice) ?? null,
+      actualLots: num(d.actualLots) ?? null,
+      slippage: num(d.slippage) ?? null,
+      executionDelayMs: typeof d.executionDelayMs === "number" ? d.executionDelayMs : null,
+      errorCode: typeof d.errorCode === "string" ? d.errorCode : null,
+      errorMessage: typeof d.errorMessage === "string" ? d.errorMessage : null,
+    });
+
+    await db.update(trainerActionsTable)
+      .set({ status: "confirmed", confirmedAt: new Date(), acknowledgedAt: action.acknowledgedAt ?? new Date() })
+      .where(eq(trainerActionsTable.id, actionId));
+
+    if (action.action !== "HOLD") {
+      await logAudit(state.userId, "model_request.action_confirmed", "trainer_action", String(actionId), {
+        success,
+        executedAction: action.action,
+        brokerTicketId: typeof d.brokerTicketId === "string" ? d.brokerTicketId : null,
+        eaRegistrationId: state.eaRegistrationId,
+      });
+    }
+  } catch (err) {
+    logger.error({ err, actionId, eaRegistrationId: state.eaRegistrationId }, "Failed to process execution confirmation");
+    safeSend(state.ws, { type: "error", message: "Failed to record execution confirmation" });
+  }
 }
 
 async function getMessageCount(connectionId: string): Promise<number> {
@@ -367,6 +576,8 @@ export async function deliverAction(actionId: number): Promise<boolean> {
     safeSend(state.ws, {
       type: "action",
       actionId: action.id,
+      // C8: include sequence number so the EA can enforce ordering.
+      sequenceNum: action.sequenceNum,
       data: {
         action: action.action as TrainerActionType,
         reasoning: action.reasoning,
@@ -396,8 +607,10 @@ async function acknowledgeAction(actionId: number, eaRegistrationId: number) {
 }
 
 async function flushQueuedActions(state: ConnectionState) {
+  // Deliver in sequence_num order to honour ordering guarantees (C8).
   const queued = await db.select().from(trainerActionsTable)
-    .where(and(eq(trainerActionsTable.eaRegistrationId, state.eaRegistrationId), eq(trainerActionsTable.status, "queued")));
+    .where(and(eq(trainerActionsTable.eaRegistrationId, state.eaRegistrationId), eq(trainerActionsTable.status, "queued")))
+    .orderBy(trainerActionsTable.sequenceNum, trainerActionsTable.createdAt);
   for (const action of queued) {
     await deliverAction(action.id);
   }

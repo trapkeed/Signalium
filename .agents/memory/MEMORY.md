@@ -22,3 +22,4 @@
 - [Trainer Admin Control Plane](s32-trainer-control-plane.md) — audit-both-paths for trainer mutations, link out to existing deploy/rollback instead of duplicating, RunPod reads stay DB-authoritative, recurring orval looseObject sed fix.
 - [Config Vault Categories, Rotation & Sync Status](config-vault-categories-sync-status.md) — keep secret-push-to-external-service out of scope, additive rotate/disable over delete, server-enforced category enum, persisted sync-probe history.
 - [EA broker-aware market gateway](ea-broker-market-gateway.md) — layered symbol resolution (local→trainer→regex) with conflict logging, double self-join to resolve conflict symbol IDs to names for admin UI.
+- [C8 Platform Integration](c8-platform-integration.md) — new audit action enum entry required for any new model_request.* action; sequence numbers use MAX+1 in a tx; positionSync.ts is the shared sync helper for both HTTP and WS.

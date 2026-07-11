@@ -3471,6 +3471,200 @@ paths:
                   delivered:
                     type: boolean
 
+  /qde/actions/{id}/confirm:
+    post:
+      operationId: confirmAction
+      tags: [qde]
+      summary: EA reports the broker-level execution result of a command (C8)
+      description: |
+        Authenticated via x-api-key / x-hardware-id headers.
+        Records what the broker actually did — the ticket affected, the price
+        achieved, and whether the execution succeeded. Distinct from /ack which
+        only records that the EA received the message.
+        Idempotent: a second call for the same action returns the existing record.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecutionConfirmationRequest"
+      responses:
+        "201":
+          description: Confirmation recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionConfirmation"
+        "200":
+          description: Confirmation already existed (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionConfirmation"
+        "400":
+          description: Invalid payload
+        "404":
+          description: Action not found or not owned by this EA
+
+  /qde/positions/sync:
+    post:
+      operationId: syncPositions
+      tags: [qde]
+      summary: EA pushes its full current open position list (C8)
+      description: |
+        Authenticated via x-api-key / x-hardware-id headers.
+        Upserts each position into open_positions, writes broker-ticket audit
+        events for new / modified / closed tickets, and returns counts.
+        Send on connect, after every broker-side position change, and at a
+        minimum on each telemetry tick when openPositions > 0.
+        Accepts either a top-level array or { "positions": [...] } envelope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    $ref: "#/components/schemas/IncomingPosition"
+                - type: object
+                  required: [positions]
+                  properties:
+                    positions:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/IncomingPosition"
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionSyncResult"
+        "400":
+          description: Invalid payload
+        "403":
+          description: API access denied
+
+  /qde/broker-state:
+    post:
+      operationId: syncBrokerState
+      tags: [qde]
+      summary: EA reports its broker connection and account state (C8)
+      description: |
+        Authenticated via x-api-key / x-hardware-id headers.
+        One row per EA registration — upserted on every call.
+        Send on connect, on reconnect, and when connection status changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrokerStateRequest"
+      responses:
+        "200":
+          description: Broker state upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrokerState"
+        "400":
+          description: Invalid payload
+    get:
+      operationId: listOwnBrokerStates
+      tags: [qde]
+      summary: Current user's broker connection states
+      responses:
+        "200":
+          description: Broker states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokerState"
+
+  /qde/positions:
+    get:
+      operationId: listOwnOpenPositions
+      tags: [qde]
+      summary: Current user's live open positions
+      responses:
+        "200":
+          description: Open positions (closedAt IS NULL)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenPosition"
+
+  /qde/admin/open-positions:
+    get:
+      operationId: listAllOpenPositions
+      tags: [qde]
+      summary: All EAs' open positions (admin, C8)
+      responses:
+        "200":
+          description: Open positions across all registrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenPosition"
+
+  /qde/admin/broker-tickets:
+    get:
+      operationId: listBrokerTickets
+      tags: [qde]
+      summary: Broker ticket audit log — opened/modified/closed events (admin, C8)
+      responses:
+        "200":
+          description: Broker ticket events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokerTicket"
+
+  /qde/admin/execution-confirmations:
+    get:
+      operationId: listExecutionConfirmations
+      tags: [qde]
+      summary: EA execution confirmation records (admin, C8)
+      responses:
+        "200":
+          description: Execution confirmations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExecutionConfirmation"
+
+  /qde/admin/broker-states:
+    get:
+      operationId: listAllBrokerStates
+      tags: [qde]
+      summary: All EAs' broker connection states (admin, C8)
+      responses:
+        "200":
+          description: Broker states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokerState"
+
   /stats/overview:
     get:
       operationId: getStatsOverview
@@ -9091,9 +9285,12 @@ components:
           enum: [HOLD, ADD, REDUCE, TRAIL, BREAKEVEN, LOCK_PROFIT, CLOSE]
         reasoning:
           type: ["string", "null"]
+        sequenceNum:
+          type: ["integer", "null"]
+          description: "C8: Monotonic per-EA sequence number. EAs must process commands in this order and detect gaps."
         status:
           type: string
-          enum: [queued, delivered, acknowledged, failed]
+          enum: [queued, delivered, acknowledged, confirmed, failed]
         retryCount:
           type: integer
         createdAt:
@@ -9101,6 +9298,8 @@ components:
         deliveredAt:
           type: ["string", "null"]
         acknowledgedAt:
+          type: ["string", "null"]
+        confirmedAt:
           type: ["string", "null"]
 
     EaConnection:
@@ -9136,7 +9335,7 @@ components:
 
     QdeStatsOverview:
       type: object
-      required: [liveConnections, registeredTerminals, telemetryLast5Min, actionBreakdownLast5Min, queueDepth, actionsWithRetries]
+      required: [liveConnections, registeredTerminals, telemetryLast5Min, actionBreakdownLast5Min, queueDepth, actionsWithRetries, openPositionCount, confirmationsLast5Min]
       properties:
         liveConnections:
           type: integer
@@ -9152,6 +9351,306 @@ components:
           type: integer
         actionsWithRetries:
           type: integer
+        openPositionCount:
+          type: integer
+          description: "C8: Number of currently open positions across all EAs."
+        confirmationsLast5Min:
+          type: integer
+          description: "C8: Execution confirmations received in the last 5 minutes."
+
+    OpenPosition:
+      type: object
+      required: [id, userId, eaRegistrationId, brokerTicketId, brokerType, symbol, side, lots, entryPrice, firstSeenAt, syncedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        eaRegistrationId:
+          type: integer
+        brokerTicketId:
+          type: string
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: number
+        entryPrice:
+          type: number
+        currentPrice:
+          type: ["number", "null"]
+        stopLoss:
+          type: ["number", "null"]
+        takeProfit:
+          type: ["number", "null"]
+        swap:
+          type: ["number", "null"]
+        commission:
+          type: ["number", "null"]
+        floatingPnl:
+          type: ["number", "null"]
+        tradeAgeSeconds:
+          type: ["integer", "null"]
+        mt5Magic:
+          type: ["integer", "null"]
+        mt5Comment:
+          type: ["string", "null"]
+        openedAt:
+          type: ["string", "null"]
+        closedAt:
+          type: ["string", "null"]
+        closePrice:
+          type: ["number", "null"]
+        closePnl:
+          type: ["number", "null"]
+        firstSeenAt:
+          type: string
+        syncedAt:
+          type: string
+
+    IncomingPosition:
+      type: object
+      required: [brokerTicketId, symbol, side, lots, entryPrice]
+      properties:
+        brokerTicketId:
+          type: string
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+          default: MT5
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: number
+        entryPrice:
+          type: number
+        currentPrice:
+          type: ["number", "null"]
+        stopLoss:
+          type: ["number", "null"]
+        takeProfit:
+          type: ["number", "null"]
+        swap:
+          type: ["number", "null"]
+        commission:
+          type: ["number", "null"]
+        floatingPnl:
+          type: ["number", "null"]
+        tradeAgeSeconds:
+          type: ["integer", "null"]
+        openedAt:
+          type: ["string", "null"]
+          format: date-time
+        mt5Magic:
+          type: ["integer", "null"]
+        mt5Comment:
+          type: ["string", "null"]
+
+    PositionSyncResult:
+      type: object
+      required: [syncedCount, newCount, modifiedCount, closedCount]
+      properties:
+        syncedCount:
+          type: integer
+          description: Total positions in the incoming list.
+        newCount:
+          type: integer
+          description: Positions seen for the first time (broker ticket opened).
+        modifiedCount:
+          type: integer
+          description: Existing positions with changed lots or entry price.
+        closedCount:
+          type: integer
+          description: Positions present in the last sync but absent from this one (broker ticket closed).
+
+    BrokerTicket:
+      type: object
+      required: [id, userId, eaRegistrationId, brokerTicketId, brokerType, symbol, side, lots, entryPrice, event, recordedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        eaRegistrationId:
+          type: integer
+        brokerTicketId:
+          type: string
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+        symbol:
+          type: string
+        side:
+          type: string
+          enum: [buy, sell]
+        lots:
+          type: number
+        entryPrice:
+          type: number
+        event:
+          type: string
+          enum: [opened, modified, closed]
+        eventPrice:
+          type: ["number", "null"]
+        eventLots:
+          type: ["number", "null"]
+        eventPnl:
+          type: ["number", "null"]
+        recordedAt:
+          type: string
+
+    ExecutionConfirmationRequest:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        brokerTicketId:
+          type: ["string", "null"]
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+          default: MT5
+        actualPrice:
+          type: ["number", "null"]
+        actualLots:
+          type: ["number", "null"]
+        slippage:
+          type: ["number", "null"]
+        executionDelayMs:
+          type: ["integer", "null"]
+        errorCode:
+          type: ["string", "null"]
+        errorMessage:
+          type: ["string", "null"]
+
+    ExecutionConfirmation:
+      type: object
+      required: [id, userId, eaRegistrationId, trainerActionId, brokerType, executedAction, success, confirmedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        eaRegistrationId:
+          type: integer
+        trainerActionId:
+          type: integer
+        brokerTicketId:
+          type: ["string", "null"]
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+        executedAction:
+          type: string
+          enum: [HOLD, ADD, REDUCE, TRAIL, BREAKEVEN, LOCK_PROFIT, CLOSE]
+        success:
+          type: boolean
+        actualPrice:
+          type: ["number", "null"]
+        actualLots:
+          type: ["number", "null"]
+        slippage:
+          type: ["number", "null"]
+        executionDelayMs:
+          type: ["integer", "null"]
+        errorCode:
+          type: ["string", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        confirmedAt:
+          type: string
+
+    BrokerStateRequest:
+      type: object
+      required: [connectionStatus]
+      properties:
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+          default: MT5
+        connectionStatus:
+          type: string
+          enum: [connected, disconnected, error]
+        brokerServer:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+        accountCurrency:
+          type: ["string", "null"]
+        accountBalance:
+          type: ["number", "null"]
+        accountEquity:
+          type: ["number", "null"]
+        accountLeverage:
+          type: ["integer", "null"]
+        accountMarginLevel:
+          type: ["number", "null"]
+        pingMs:
+          type: ["integer", "null"]
+        terminalBuild:
+          type: ["string", "null"]
+        platformVersion:
+          type: ["string", "null"]
+        tradeAllowed:
+          type: ["boolean", "null"]
+        expertEnabled:
+          type: ["boolean", "null"]
+        errorMessage:
+          type: ["string", "null"]
+
+    BrokerState:
+      type: object
+      required: [id, userId, eaRegistrationId, brokerType, connectionStatus, syncedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        eaRegistrationId:
+          type: integer
+        brokerType:
+          type: string
+          enum: [MT5, GENERIC]
+        connectionStatus:
+          type: string
+          enum: [connected, disconnected, error]
+        brokerServer:
+          type: ["string", "null"]
+        accountNumber:
+          type: ["string", "null"]
+        accountCurrency:
+          type: ["string", "null"]
+        accountBalance:
+          type: ["number", "null"]
+        accountEquity:
+          type: ["number", "null"]
+        accountLeverage:
+          type: ["integer", "null"]
+        accountMarginLevel:
+          type: ["number", "null"]
+        pingMs:
+          type: ["integer", "null"]
+        terminalBuild:
+          type: ["string", "null"]
+        platformVersion:
+          type: ["string", "null"]
+        tradeAllowed:
+          type: ["boolean", "null"]
+        expertEnabled:
+          type: ["boolean", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        syncedAt:
+          type: string
 
     LoginEvent:
       type: object

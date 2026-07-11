@@ -157,6 +157,8 @@ export const auditLogTable = pgTable("audit_log", {
       "qde.switch_start_requested",
       "qde.switch_running",
       "qde.switch_stopped",
+      // C8: Platform Integration — execution confirmation loop
+      "model_request.action_confirmed",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),
