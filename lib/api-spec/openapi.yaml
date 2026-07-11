@@ -2389,6 +2389,227 @@ paths:
         "401":
           description: Unauthorized
 
+  /capital-buckets:
+    get:
+      operationId: listCapitalBuckets
+      tags: [capital]
+      summary: List the user's active capital buckets
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Active buckets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CapitalBucket"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: upsertCapitalBucket
+      tags: [capital]
+      summary: Create or update a capital bucket
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertCapitalBucketRequest"
+      responses:
+        "201":
+          description: Bucket created/updated with allocation summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllocateBucketResponse"
+        "400":
+          description: Validation error
+        "401":
+          description: Unauthorized
+        "409":
+          description: Total allocation would exceed 100%
+
+  /capital-buckets/available:
+    get:
+      operationId: getAvailableCapital
+      tags: [capital]
+      summary: Get allocated and available capital for all active buckets
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: accountBalance
+          in: query
+          schema:
+            type: number
+          description: Override the balance from the latest telemetry frame.
+      responses:
+        "200":
+          description: Available capital per bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailableCapitalResponse"
+        "400":
+          description: No account balance available
+        "401":
+          description: Unauthorized
+
+  /capital-buckets/{bucketType}:
+    get:
+      operationId: getCapitalBucket
+      tags: [capital]
+      summary: Get a single capital bucket
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: bucketType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [core, growth, speculative]
+      responses:
+        "200":
+          description: Capital bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapitalBucket"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Bucket not found
+    put:
+      operationId: updateCapitalBucket
+      tags: [capital]
+      summary: Partially update a capital bucket
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: bucketType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [core, growth, speculative]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchCapitalBucketRequest"
+      responses:
+        "200":
+          description: Updated bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapitalBucket"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Bucket not found
+        "409":
+          description: Allocation would exceed 100%
+    delete:
+      operationId: deactivateCapitalBucket
+      tags: [capital]
+      summary: Deactivate a capital bucket
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: bucketType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [core, growth, speculative]
+      responses:
+        "200":
+          description: Deactivated
+        "401":
+          description: Unauthorized
+        "404":
+          description: Bucket not found
+
+  /capital-buckets/{bucketType}/risk-limit:
+    get:
+      operationId: getBucketRiskLimit
+      tags: [capital]
+      summary: Get effective risk limits for a bucket relative to its allocated capital
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: bucketType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [core, growth, speculative]
+        - name: accountBalance
+          in: query
+          schema:
+            type: number
+          description: Override the balance from the latest telemetry frame.
+      responses:
+        "200":
+          description: Bucket risk limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BucketRiskLimitResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Bucket not found
+
+  /capital-buckets/{bucketType}/symbol-check:
+    get:
+      operationId: checkBucketSymbol
+      tags: [capital]
+      summary: Check whether a symbol is permitted within a bucket
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: bucketType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [core, growth, speculative]
+        - name: symbol
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Symbol permission result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [symbol, bucketType, allowed]
+                properties:
+                  symbol:
+                    type: string
+                  bucketType:
+                    type: string
+                  allowed:
+                    type: boolean
+                  reason:
+                    type: ["string", "null"]
+        "400":
+          description: symbol query parameter required
+        "401":
+          description: Unauthorized
+        "404":
+          description: Bucket not found
+
   /trading-settings:
     get:
       operationId: getTradingSettings
@@ -9509,6 +9730,185 @@ components:
             $ref: "#/components/schemas/RiskViolation"
         effectiveLimits:
           $ref: "#/components/schemas/EffectiveRiskLimits"
+
+    CapitalBucket:
+      type: object
+      required: [id, userId, bucketType, allocationPct, riskProfileType, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        bucketType:
+          type: string
+          enum: [core, growth, speculative]
+        name:
+          type: ["string", "null"]
+          description: User-defined label. Defaults to bucketType when null.
+        allocationPct:
+          type: number
+          description: Percentage of total account balance allocated (0–100).
+        allocationAbs:
+          type: ["number", "null"]
+          description: Absolute dollar override. If set, used instead of allocationPct for calculations.
+        riskProfileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+        maxLeverage:
+          type: ["number", "null"]
+        allowedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+        blockedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    UpsertCapitalBucketRequest:
+      type: object
+      required: [bucketType, allocationPct]
+      properties:
+        bucketType:
+          type: string
+          enum: [core, growth, speculative]
+        name:
+          type: ["string", "null"]
+        allocationPct:
+          type: number
+          description: Percentage 0–100. Sum across all buckets must not exceed 100.
+        allocationAbs:
+          type: ["number", "null"]
+        riskProfileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+        maxLeverage:
+          type: ["number", "null"]
+        allowedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+        blockedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+
+    PatchCapitalBucketRequest:
+      type: object
+      description: All fields optional — only provided fields are updated.
+      properties:
+        name:
+          type: ["string", "null"]
+        allocationPct:
+          type: number
+        allocationAbs:
+          type: ["number", "null"]
+        riskProfileType:
+          type: string
+          enum: [preservation, balanced, aggressive_growth, hyper_growth, custom]
+        maxRiskPerTrade:
+          type: ["number", "null"]
+        maxPortfolioRisk:
+          type: ["number", "null"]
+        maxSimultaneousTrades:
+          type: ["integer", "null"]
+        maxDrawdownTolerance:
+          type: ["number", "null"]
+        maxLeverage:
+          type: ["number", "null"]
+        allowedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+        blockedSymbols:
+          type: ["array", "null"]
+          items:
+            type: string
+
+    AllocateBucketResponse:
+      type: object
+      required: [bucket, totalAllocatedPct, remainingPct]
+      properties:
+        bucket:
+          $ref: "#/components/schemas/CapitalBucket"
+        totalAllocatedPct:
+          type: number
+          description: Sum of allocationPct across all active buckets after this upsert.
+        remainingPct:
+          type: number
+          description: 100 − totalAllocatedPct.
+        warning:
+          type: ["string", "null"]
+
+    BucketAllocation:
+      type: object
+      required: [bucket, allocatedCapital, inUseCapital, availableCapital]
+      properties:
+        bucket:
+          $ref: "#/components/schemas/CapitalBucket"
+        allocatedCapital:
+          type: number
+          description: Absolute dollar amount allocated to this bucket.
+        inUseCapital:
+          type: number
+          description: Estimated capital currently deployed (from latest per-bucket telemetry).
+        availableCapital:
+          type: number
+          description: allocatedCapital − inUseCapital.
+
+    AvailableCapitalResponse:
+      type: object
+      required: [accountBalance, buckets]
+      properties:
+        accountBalance:
+          type: number
+        buckets:
+          type: array
+          items:
+            $ref: "#/components/schemas/BucketAllocation"
+
+    BucketRiskLimitResponse:
+      type: object
+      required: [bucket, allocatedCapital, limits, absoluteLimits]
+      properties:
+        bucket:
+          $ref: "#/components/schemas/CapitalBucket"
+        allocatedCapital:
+          type: number
+        limits:
+          $ref: "#/components/schemas/EffectiveRiskLimits"
+        absoluteLimits:
+          type: object
+          required: [maxRiskPerTrade_abs, maxPortfolioRisk_abs]
+          properties:
+            maxRiskPerTrade_abs:
+              type: ["number", "null"]
+              description: maxRiskPerTrade as an absolute dollar amount.
+            maxPortfolioRisk_abs:
+              type: ["number", "null"]
+              description: maxPortfolioRisk as an absolute dollar amount.
 
     BrokerVolumeConstraint:
       type: object

@@ -26,3 +26,4 @@
 - [Symbol normalization alias system](symbol-normalization.md) — alias enabled column, noise suffix additions, seed aliases, EA build-time symbol map embedding, recurring orval looseObject sed fix.
 - [Broker volume normalization](broker-volume-normalization.md) — constraint schema, normalizeVolume/validateVolume math, EA OnInit reporting, MQL5 embedding pattern.
 - [Risk Personality Profiles](risk-personality-profiles.md) — 5 profiles, DB schema, riskProfile lib, routes, QDE hard-ceiling gate design.
+- [Capital Buckets](capital-buckets.md) — core/growth/speculative buckets, allocation math, bucket-relative QDE gate, validateRiskAgainstLimits extraction.

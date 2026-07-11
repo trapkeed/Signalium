@@ -2661,6 +2661,256 @@ export const ValidateRiskResponse = zod.object({
 
 
 /**
+ * @summary List the user's active capital buckets
+ */
+export const ListCapitalBucketsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListCapitalBucketsResponse = zod.array(ListCapitalBucketsResponseItem)
+
+
+/**
+ * @summary Create or update a capital bucket
+ */
+export const UpsertCapitalBucketBody = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish(),
+  "allocationPct": zod.number().describe('Percentage 0–100. Sum across all buckets must not exceed 100.'),
+  "allocationAbs": zod.number().nullish(),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']).optional(),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish()
+})
+
+export const UpsertCapitalBucketResponse = zod.object({
+  "bucket": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "totalAllocatedPct": zod.number().describe('Sum of allocationPct across all active buckets after this upsert.'),
+  "remainingPct": zod.number().describe('100 − totalAllocatedPct.'),
+  "warning": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get allocated and available capital for all active buckets
+ */
+export const GetAvailableCapitalQueryParams = zod.object({
+  "accountBalance": zod.coerce.number().optional().describe('Override the balance from the latest telemetry frame.')
+})
+
+export const GetAvailableCapitalResponse = zod.object({
+  "accountBalance": zod.number(),
+  "buckets": zod.array(zod.object({
+  "bucket": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "allocatedCapital": zod.number().describe('Absolute dollar amount allocated to this bucket.'),
+  "inUseCapital": zod.number().describe('Estimated capital currently deployed (from latest per-bucket telemetry).'),
+  "availableCapital": zod.number().describe('allocatedCapital − inUseCapital.')
+}))
+})
+
+
+/**
+ * @summary Get a single capital bucket
+ */
+export const GetCapitalBucketParams = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative'])
+})
+
+export const GetCapitalBucketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Partially update a capital bucket
+ */
+export const UpdateCapitalBucketParams = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative'])
+})
+
+export const UpdateCapitalBucketBody = zod.object({
+  "name": zod.string().nullish(),
+  "allocationPct": zod.number().optional(),
+  "allocationAbs": zod.number().nullish(),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']).optional(),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish()
+}).describe('All fields optional — only provided fields are updated.')
+
+export const UpdateCapitalBucketResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Deactivate a capital bucket
+ */
+export const DeactivateCapitalBucketParams = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative'])
+})
+
+export const DeactivateCapitalBucketResponse = zod.unknown()
+
+
+/**
+ * @summary Get effective risk limits for a bucket relative to its allocated capital
+ */
+export const GetBucketRiskLimitParams = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative'])
+})
+
+export const GetBucketRiskLimitQueryParams = zod.object({
+  "accountBalance": zod.coerce.number().optional().describe('Override the balance from the latest telemetry frame.')
+})
+
+export const GetBucketRiskLimitResponse = zod.object({
+  "bucket": zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bucketType": zod.enum(['core', 'growth', 'speculative']),
+  "name": zod.string().nullish().describe('User-defined label. Defaults to bucketType when null.'),
+  "allocationPct": zod.number().describe('Percentage of total account balance allocated (0–100).'),
+  "allocationAbs": zod.number().nullish().describe('Absolute dollar override. If set, used instead of allocationPct for calculations.'),
+  "riskProfileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish(),
+  "maxLeverage": zod.number().nullish(),
+  "allowedSymbols": zod.array(zod.string()).nullish(),
+  "blockedSymbols": zod.array(zod.string()).nullish(),
+  "isActive": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "allocatedCapital": zod.number(),
+  "limits": zod.object({
+  "profileType": zod.enum(['preservation', 'balanced', 'aggressive_growth', 'hyper_growth', 'custom']),
+  "maxRiskPerTrade": zod.number().nullish(),
+  "maxPortfolioRisk": zod.number().nullish(),
+  "maxSimultaneousTrades": zod.number().nullish(),
+  "maxDrawdownTolerance": zod.number().nullish()
+}).describe('Resolved ceilings after applying user overrides over presets. null means unconstrained.'),
+  "absoluteLimits": zod.object({
+  "maxRiskPerTrade_abs": zod.number().nullable().describe('maxRiskPerTrade as an absolute dollar amount.'),
+  "maxPortfolioRisk_abs": zod.number().nullable().describe('maxPortfolioRisk as an absolute dollar amount.')
+})
+})
+
+
+/**
+ * @summary Check whether a symbol is permitted within a bucket
+ */
+export const CheckBucketSymbolParams = zod.object({
+  "bucketType": zod.enum(['core', 'growth', 'speculative'])
+})
+
+export const CheckBucketSymbolQueryParams = zod.object({
+  "symbol": zod.coerce.string()
+})
+
+export const CheckBucketSymbolResponse = zod.object({
+  "symbol": zod.string(),
+  "bucketType": zod.string(),
+  "allowed": zod.boolean(),
+  "reason": zod.string().nullish()
+})
+
+
+/**
  * @summary Get the current user's trading mode and risk preferences
  */
 export const GetTradingSettingsResponse = zod.object({

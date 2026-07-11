@@ -28,6 +28,7 @@ import type {
   AddUserSymbolBody,
   AdminStatus,
   AlertChannelSettings,
+  AllocateBucketResponse,
   Announcement,
   AnnouncementInput,
   AnnouncementUpdate,
@@ -36,12 +37,17 @@ import type {
   ApproveResearchLabDeploymentCandidate200,
   AuditChainVerification,
   AuditLogEntry,
+  AvailableCapitalResponse,
   Broker,
   BrokerState,
   BrokerStateRequest,
   BrokerTicket,
   BrokerVolumeConstraint,
+  BucketRiskLimitResponse,
   CancelAccountDeletion200,
+  CapitalBucket,
+  CheckBucketSymbol200,
+  CheckBucketSymbolParams,
   ComplianceRetentionPolicy,
   ConfirmAccountDeletion200,
   ConfirmAccountDeletionBody,
@@ -97,6 +103,8 @@ import type {
   FailurePattern,
   FeatureFlag,
   GetAccountDeletionStatus200,
+  GetAvailableCapitalParams,
+  GetBucketRiskLimitParams,
   GetGovernanceOverview200,
   GetGovernanceOverview403,
   GetOperationalAlerts200,
@@ -265,6 +273,7 @@ import type {
   OpenPosition,
   OperationalDashboard,
   Opportunity,
+  PatchCapitalBucketRequest,
   PatchOperationalAlertChannelsBody,
   PatchOperationalIncidentsId200,
   PatchQdeAdminReasoningValidationIdBody,
@@ -451,6 +460,7 @@ import type {
   UpdateUserSubscriptionStatusBody,
   UploadUrlRequest,
   UploadUrlResponse,
+  UpsertCapitalBucketRequest,
   UpsertProviderCapabilityBody,
   UpsertVolumeConstraints200,
   User,
@@ -8840,6 +8850,636 @@ export const useValidateRisk = <TError = ErrorType<void>,
       > => {
       return useMutation(getValidateRiskMutationOptions(options));
     }
+
+export const getListCapitalBucketsUrl = () => {
+
+
+
+
+  return `/api/capital-buckets`
+}
+
+/**
+ * @summary List the user's active capital buckets
+ */
+export const listCapitalBuckets = async ( options?: RequestInit): Promise<CapitalBucket[]> => {
+
+  return customFetch<CapitalBucket[]>(getListCapitalBucketsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCapitalBucketsQueryKey = () => {
+    return [
+    `/api/capital-buckets`
+    ] as const;
+    }
+
+
+export const getListCapitalBucketsQueryOptions = <TData = Awaited<ReturnType<typeof listCapitalBuckets>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCapitalBuckets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCapitalBucketsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCapitalBuckets>>> = ({ signal }) => listCapitalBuckets({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCapitalBuckets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCapitalBucketsQueryResult = NonNullable<Awaited<ReturnType<typeof listCapitalBuckets>>>
+export type ListCapitalBucketsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List the user's active capital buckets
+ */
+
+export function useListCapitalBuckets<TData = Awaited<ReturnType<typeof listCapitalBuckets>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCapitalBuckets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCapitalBucketsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpsertCapitalBucketUrl = () => {
+
+
+
+
+  return `/api/capital-buckets`
+}
+
+/**
+ * @summary Create or update a capital bucket
+ */
+export const upsertCapitalBucket = async (upsertCapitalBucketRequest: UpsertCapitalBucketRequest, options?: RequestInit): Promise<AllocateBucketResponse> => {
+
+  return customFetch<AllocateBucketResponse>(getUpsertCapitalBucketUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(upsertCapitalBucketRequest)
+  }
+);}
+
+
+
+
+
+export const getUpsertCapitalBucketMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertCapitalBucket>>, TError,{data: BodyType<UpsertCapitalBucketRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertCapitalBucket>>, TError,{data: BodyType<UpsertCapitalBucketRequest>}, TContext> => {
+
+const mutationKey = ['upsertCapitalBucket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertCapitalBucket>>, {data: BodyType<UpsertCapitalBucketRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertCapitalBucket(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertCapitalBucketMutationResult = NonNullable<Awaited<ReturnType<typeof upsertCapitalBucket>>>
+    export type UpsertCapitalBucketMutationBody = BodyType<UpsertCapitalBucketRequest>
+    export type UpsertCapitalBucketMutationError = ErrorType<void>
+
+    /**
+ * @summary Create or update a capital bucket
+ */
+export const useUpsertCapitalBucket = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertCapitalBucket>>, TError,{data: BodyType<UpsertCapitalBucketRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertCapitalBucket>>,
+        TError,
+        {data: BodyType<UpsertCapitalBucketRequest>},
+        TContext
+      > => {
+      return useMutation(getUpsertCapitalBucketMutationOptions(options));
+    }
+
+export const getGetAvailableCapitalUrl = (params?: GetAvailableCapitalParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/capital-buckets/available?${stringifiedParams}` : `/api/capital-buckets/available`
+}
+
+/**
+ * @summary Get allocated and available capital for all active buckets
+ */
+export const getAvailableCapital = async (params?: GetAvailableCapitalParams, options?: RequestInit): Promise<AvailableCapitalResponse> => {
+
+  return customFetch<AvailableCapitalResponse>(getGetAvailableCapitalUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAvailableCapitalQueryKey = (params?: GetAvailableCapitalParams,) => {
+    return [
+    `/api/capital-buckets/available`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAvailableCapitalQueryOptions = <TData = Awaited<ReturnType<typeof getAvailableCapital>>, TError = ErrorType<void>>(params?: GetAvailableCapitalParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAvailableCapital>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAvailableCapitalQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAvailableCapital>>> = ({ signal }) => getAvailableCapital(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAvailableCapital>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAvailableCapitalQueryResult = NonNullable<Awaited<ReturnType<typeof getAvailableCapital>>>
+export type GetAvailableCapitalQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get allocated and available capital for all active buckets
+ */
+
+export function useGetAvailableCapital<TData = Awaited<ReturnType<typeof getAvailableCapital>>, TError = ErrorType<void>>(
+ params?: GetAvailableCapitalParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAvailableCapital>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAvailableCapitalQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetCapitalBucketUrl = (bucketType: 'core' | 'growth' | 'speculative',) => {
+
+
+
+
+  return `/api/capital-buckets/${bucketType}`
+}
+
+/**
+ * @summary Get a single capital bucket
+ */
+export const getCapitalBucket = async (bucketType: 'core' | 'growth' | 'speculative', options?: RequestInit): Promise<CapitalBucket> => {
+
+  return customFetch<CapitalBucket>(getGetCapitalBucketUrl(bucketType),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCapitalBucketQueryKey = (bucketType: 'core' | 'growth' | 'speculative',) => {
+    return [
+    `/api/capital-buckets/${bucketType}`
+    ] as const;
+    }
+
+
+export const getGetCapitalBucketQueryOptions = <TData = Awaited<ReturnType<typeof getCapitalBucket>>, TError = ErrorType<void>>(bucketType: 'core' | 'growth' | 'speculative', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCapitalBucket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCapitalBucketQueryKey(bucketType);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCapitalBucket>>> = ({ signal }) => getCapitalBucket(bucketType, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: bucketType !== null && bucketType !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCapitalBucket>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCapitalBucketQueryResult = NonNullable<Awaited<ReturnType<typeof getCapitalBucket>>>
+export type GetCapitalBucketQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a single capital bucket
+ */
+
+export function useGetCapitalBucket<TData = Awaited<ReturnType<typeof getCapitalBucket>>, TError = ErrorType<void>>(
+ bucketType: 'core' | 'growth' | 'speculative', options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCapitalBucket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCapitalBucketQueryOptions(bucketType,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCapitalBucketUrl = (bucketType: 'core' | 'growth' | 'speculative',) => {
+
+
+
+
+  return `/api/capital-buckets/${bucketType}`
+}
+
+/**
+ * @summary Partially update a capital bucket
+ */
+export const updateCapitalBucket = async (bucketType: 'core' | 'growth' | 'speculative',
+    patchCapitalBucketRequest: PatchCapitalBucketRequest, options?: RequestInit): Promise<CapitalBucket> => {
+
+  return customFetch<CapitalBucket>(getUpdateCapitalBucketUrl(bucketType),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchCapitalBucketRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateCapitalBucketMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative';data: BodyType<PatchCapitalBucketRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative';data: BodyType<PatchCapitalBucketRequest>}, TContext> => {
+
+const mutationKey = ['updateCapitalBucket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCapitalBucket>>, {bucketType: 'core' | 'growth' | 'speculative';data: BodyType<PatchCapitalBucketRequest>}> = (props) => {
+          const {bucketType,data} = props ?? {};
+
+          return  updateCapitalBucket(bucketType,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCapitalBucketMutationResult = NonNullable<Awaited<ReturnType<typeof updateCapitalBucket>>>
+    export type UpdateCapitalBucketMutationBody = BodyType<PatchCapitalBucketRequest>
+    export type UpdateCapitalBucketMutationError = ErrorType<void>
+
+    /**
+ * @summary Partially update a capital bucket
+ */
+export const useUpdateCapitalBucket = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative';data: BodyType<PatchCapitalBucketRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCapitalBucket>>,
+        TError,
+        {bucketType: 'core' | 'growth' | 'speculative';data: BodyType<PatchCapitalBucketRequest>},
+        TContext
+      > => {
+      return useMutation(getUpdateCapitalBucketMutationOptions(options));
+    }
+
+export const getDeactivateCapitalBucketUrl = (bucketType: 'core' | 'growth' | 'speculative',) => {
+
+
+
+
+  return `/api/capital-buckets/${bucketType}`
+}
+
+/**
+ * @summary Deactivate a capital bucket
+ */
+export const deactivateCapitalBucket = async (bucketType: 'core' | 'growth' | 'speculative', options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeactivateCapitalBucketUrl(bucketType),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeactivateCapitalBucketMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative'}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative'}, TContext> => {
+
+const mutationKey = ['deactivateCapitalBucket'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateCapitalBucket>>, {bucketType: 'core' | 'growth' | 'speculative'}> = (props) => {
+          const {bucketType} = props ?? {};
+
+          return  deactivateCapitalBucket(bucketType,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateCapitalBucketMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateCapitalBucket>>>
+
+    export type DeactivateCapitalBucketMutationError = ErrorType<void>
+
+    /**
+ * @summary Deactivate a capital bucket
+ */
+export const useDeactivateCapitalBucket = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateCapitalBucket>>, TError,{bucketType: 'core' | 'growth' | 'speculative'}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateCapitalBucket>>,
+        TError,
+        {bucketType: 'core' | 'growth' | 'speculative'},
+        TContext
+      > => {
+      return useMutation(getDeactivateCapitalBucketMutationOptions(options));
+    }
+
+export const getGetBucketRiskLimitUrl = (bucketType: 'core' | 'growth' | 'speculative',
+    params?: GetBucketRiskLimitParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/capital-buckets/${bucketType}/risk-limit?${stringifiedParams}` : `/api/capital-buckets/${bucketType}/risk-limit`
+}
+
+/**
+ * @summary Get effective risk limits for a bucket relative to its allocated capital
+ */
+export const getBucketRiskLimit = async (bucketType: 'core' | 'growth' | 'speculative',
+    params?: GetBucketRiskLimitParams, options?: RequestInit): Promise<BucketRiskLimitResponse> => {
+
+  return customFetch<BucketRiskLimitResponse>(getGetBucketRiskLimitUrl(bucketType,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBucketRiskLimitQueryKey = (bucketType: 'core' | 'growth' | 'speculative',
+    params?: GetBucketRiskLimitParams,) => {
+    return [
+    `/api/capital-buckets/${bucketType}/risk-limit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetBucketRiskLimitQueryOptions = <TData = Awaited<ReturnType<typeof getBucketRiskLimit>>, TError = ErrorType<void>>(bucketType: 'core' | 'growth' | 'speculative',
+    params?: GetBucketRiskLimitParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBucketRiskLimit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBucketRiskLimitQueryKey(bucketType,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBucketRiskLimit>>> = ({ signal }) => getBucketRiskLimit(bucketType,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: bucketType !== null && bucketType !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBucketRiskLimit>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBucketRiskLimitQueryResult = NonNullable<Awaited<ReturnType<typeof getBucketRiskLimit>>>
+export type GetBucketRiskLimitQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get effective risk limits for a bucket relative to its allocated capital
+ */
+
+export function useGetBucketRiskLimit<TData = Awaited<ReturnType<typeof getBucketRiskLimit>>, TError = ErrorType<void>>(
+ bucketType: 'core' | 'growth' | 'speculative',
+    params?: GetBucketRiskLimitParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBucketRiskLimit>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBucketRiskLimitQueryOptions(bucketType,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCheckBucketSymbolUrl = (bucketType: 'core' | 'growth' | 'speculative',
+    params: CheckBucketSymbolParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/capital-buckets/${bucketType}/symbol-check?${stringifiedParams}` : `/api/capital-buckets/${bucketType}/symbol-check`
+}
+
+/**
+ * @summary Check whether a symbol is permitted within a bucket
+ */
+export const checkBucketSymbol = async (bucketType: 'core' | 'growth' | 'speculative',
+    params: CheckBucketSymbolParams, options?: RequestInit): Promise<CheckBucketSymbol200> => {
+
+  return customFetch<CheckBucketSymbol200>(getCheckBucketSymbolUrl(bucketType,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCheckBucketSymbolQueryKey = (bucketType: 'core' | 'growth' | 'speculative',
+    params?: CheckBucketSymbolParams,) => {
+    return [
+    `/api/capital-buckets/${bucketType}/symbol-check`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCheckBucketSymbolQueryOptions = <TData = Awaited<ReturnType<typeof checkBucketSymbol>>, TError = ErrorType<void>>(bucketType: 'core' | 'growth' | 'speculative',
+    params: CheckBucketSymbolParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkBucketSymbol>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCheckBucketSymbolQueryKey(bucketType,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof checkBucketSymbol>>> = ({ signal }) => checkBucketSymbol(bucketType,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: bucketType !== null && bucketType !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof checkBucketSymbol>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CheckBucketSymbolQueryResult = NonNullable<Awaited<ReturnType<typeof checkBucketSymbol>>>
+export type CheckBucketSymbolQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether a symbol is permitted within a bucket
+ */
+
+export function useCheckBucketSymbol<TData = Awaited<ReturnType<typeof checkBucketSymbol>>, TError = ErrorType<void>>(
+ bucketType: 'core' | 'growth' | 'speculative',
+    params: CheckBucketSymbolParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkBucketSymbol>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCheckBucketSymbolQueryOptions(bucketType,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetTradingSettingsUrl = () => {
 

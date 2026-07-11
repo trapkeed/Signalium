@@ -20,6 +20,8 @@ import { checkApiAccess, checkAutonomousAccess, checkSymbolLimit } from "../lib/
 import { logAudit } from "../lib/auditLog";
 import { isQdeActiveForUser } from "../lib/qdeSwitch";
 import { validateRiskFromTelemetry } from "../lib/riskProfile";
+import { validateRiskForBucket } from "../lib/capitalBuckets";
+import { BUCKET_TYPES, type BucketType } from "@workspace/db";
 import {
   syncPositions,
   parsePositionList,
@@ -66,6 +68,16 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
   const telemetry = parseTelemetryBody(req.body);
   if (!telemetry) return res.status(400).json({ error: "Invalid telemetry payload" });
 
+  // Optional bucket context — when the EA is reporting telemetry for a
+  // specific capital bucket, it tags the frame so the QDE gate can apply
+  // bucket-relative risk limits instead of whole-account limits.
+  const rawBucketType = (req.body as Record<string, unknown>).bucketType;
+  const bucketType: BucketType | undefined =
+    typeof rawBucketType === "string" &&
+    (BUCKET_TYPES as readonly string[]).includes(rawBucketType)
+      ? (rawBucketType as BucketType)
+      : undefined;
+
   const auth = req.eaAuth!;
 
   const apiAccess = await checkApiAccess(auth.userId);
@@ -96,6 +108,7 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
       commission: telemetry.commission ?? null,
       drawdown: telemetry.drawdown ?? null,
       tradeAgeSeconds: telemetry.tradeAgeSeconds ?? null,
+      bucketType: bucketType ?? null,
     }).returning();
 
     const autonomousAccess = await checkAutonomousAccess(auth.userId);
@@ -129,37 +142,47 @@ router.post("/telemetry", requireApiKeyAuth, async (req, res) => {
       return res.status(202).json({ telemetryId: row.id, action: null, message: "Telemetry recorded; trainer unavailable" });
     }
 
-    // ── Risk personality profile: hard-ceiling gate ────────────────────────
+    // ── Risk / capital-bucket ceiling gate ─────────────────────────────────
     // The QDE may not issue an ADD action when doing so would breach the
-    // user's effective risk ceilings (maxSimultaneousTrades, maxPortfolioRisk,
-    // maxDrawdownTolerance).  The QDE determines WHAT to trade; the profile
-    // determines the envelope within which it is permitted to act.
+    // user's effective risk ceilings.  When the EA tagged the telemetry frame
+    // with a bucketType, risk is assessed relative to that bucket's allocated
+    // capital and its own risk profile.  Otherwise the whole-account profile
+    // applies.  The QDE determines WHAT to trade; the profile/bucket envelope
+    // determines WHETHER it is permitted to act.
     // Per-trade risk (maxRiskPerTrade) is enforced by the EA before order
-    // submission via POST /risk-profile/validate — not here, because the lot
-    // size is not known at the telemetry-processing stage.
+    // submission via POST /risk-profile/validate — lot size is not known here.
     if (decision.action === "ADD") {
       try {
-        const riskCheck = await validateRiskFromTelemetry(auth.userId, {
-          openPositions: telemetry.openPositions,
-          drawdown: telemetry.drawdown ?? null,
-          balance: telemetry.balance,
-          equity: telemetry.equity,
-        });
+        const riskCheck = bucketType
+          ? await validateRiskForBucket(auth.userId, bucketType, {
+              openPositions: telemetry.openPositions,
+              floatingPnl: telemetry.floatingPnl,
+              drawdown: telemetry.drawdown ?? null,
+              balance: telemetry.balance,
+            })
+          : await validateRiskFromTelemetry(auth.userId, {
+              openPositions: telemetry.openPositions,
+              drawdown: telemetry.drawdown ?? null,
+              balance: telemetry.balance,
+              equity: telemetry.equity,
+            });
+
         if (!riskCheck.allowed) {
+          const context = bucketType ? `${bucketType} bucket` : "account";
           const reasons = riskCheck.violations.map((v) => v.message).join("; ");
           req.log.info(
-            { userId: auth.userId, violations: riskCheck.violations },
-            "QDE ADD blocked by risk profile ceiling",
+            { userId: auth.userId, bucketType, violations: riskCheck.violations },
+            "QDE ADD blocked by risk ceiling",
           );
           decision = {
             action: "HOLD" as const,
-            reasoning: `Risk profile ceiling reached — ADD suppressed. ${reasons}`,
+            reasoning: `Risk ceiling reached (${context}) — ADD suppressed. ${reasons}`,
           };
         }
       } catch (riskErr) {
         // Non-fatal: if the ceiling check fails (e.g. DB blip), log and allow
         // the original decision through rather than silently halting trading.
-        req.log.warn(riskErr, "Risk profile ceiling check failed; proceeding with trainer decision");
+        req.log.warn(riskErr, "Risk ceiling check failed; proceeding with trainer decision");
       }
     }
 

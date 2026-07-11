@@ -42,3 +42,4 @@ export * from "./runpod";
 export * from "./trainer-sync-status";
 export * from "./volume-constraints";
 export * from "./risk-profiles";
+export * from "./capital-buckets";

@@ -137,19 +137,17 @@ export function resolveEffectiveLimits(profile: RiskProfile): EffectiveRiskLimit
 }
 
 /**
- * Validate a risk proposal against the user's effective ceilings.
+ * Pure violations check: given already-resolved limits and a proposal, return
+ * the full ValidateRiskResult without any DB access.
  *
- * Only checks dimensions for which (a) a value is provided in the proposal
- * AND (b) a ceiling is defined in the effective limits.  Unknown or unconstrained
- * dimensions pass through without a violation.
+ * Extracted so capitalBuckets.ts can apply the same logic against bucket-level
+ * limits without duplicating the violations loop.  Called by validateRisk and
+ * validateRiskForBucket in capitalBuckets.ts.
  */
-export async function validateRisk(
-  userId: string,
+export function validateRiskAgainstLimits(
+  limits: EffectiveRiskLimits,
   proposal: RiskProposal,
-): Promise<ValidateRiskResult> {
-  const profile = await getRiskProfile(userId);
-  const limits = resolveEffectiveLimits(profile);
-
+): ValidateRiskResult {
   const violations: RiskViolation[] = [];
 
   if (
@@ -204,11 +202,22 @@ export async function validateRisk(
     });
   }
 
-  return {
-    allowed: violations.length === 0,
-    violations,
-    effectiveLimits: limits,
-  };
+  return { allowed: violations.length === 0, violations, effectiveLimits: limits };
+}
+
+/**
+ * Validate a risk proposal against the user's effective ceilings (DB-backed).
+ *
+ * Only checks dimensions for which (a) a value is provided in the proposal
+ * AND (b) a ceiling is defined in the effective limits.
+ */
+export async function validateRisk(
+  userId: string,
+  proposal: RiskProposal,
+): Promise<ValidateRiskResult> {
+  const profile = await getRiskProfile(userId);
+  const limits = resolveEffectiveLimits(profile);
+  return validateRiskAgainstLimits(limits, proposal);
 }
 
 /**

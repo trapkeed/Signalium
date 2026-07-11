@@ -54,6 +54,7 @@ import runpodRouter from "./runpod";
 import trainerControlRouter from "./trainer-control";
 import volumeConstraintsRouter from "./volume-constraints";
 import riskProfilesRouter from "./risk-profiles";
+import capitalBucketsRouter from "./capital-buckets";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -143,5 +144,7 @@ router.use("/trainer-control", trainerControlRouter);
 router.use("/volume-constraints", volumeConstraintsRouter);
 // Risk personality profiles — preset ceilings + user overrides + QDE hard-stop enforcement
 router.use("/risk-profile", riskProfilesRouter);
+// Capital buckets — per-bucket allocation, risk profiles, leverage limits, and symbol restrictions
+router.use("/capital-buckets", capitalBucketsRouter);
 
 export default router;

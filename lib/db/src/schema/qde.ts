@@ -26,6 +26,13 @@ export const positionTelemetryTable = pgTable("position_telemetry", {
   commission: doublePrecision("commission"),
   drawdown: doublePrecision("drawdown"),
   tradeAgeSeconds: integer("trade_age_seconds"),
+  /**
+   * Optional capital bucket context.  When the EA sends per-bucket telemetry
+   * frames (floatingPnl / openPositions scoped to a single bucket), it tags
+   * the frame with the relevant bucketType so the QDE gate can apply
+   * bucket-relative risk limits instead of whole-account limits.
+   */
+  bucketType: text("bucket_type"),
   receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("position_telemetry_user_idx").on(table.userId),

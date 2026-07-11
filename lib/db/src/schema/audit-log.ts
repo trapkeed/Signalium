@@ -161,6 +161,8 @@ export const auditLogTable = pgTable("audit_log", {
       "model_request.action_confirmed",
       // Risk Personality Profiles
       "trading.risk_profile_updated",
+      // Capital Buckets
+      "trading.capital_bucket_updated",
     ],
   }).notNull(),
   targetType: text("target_type").notNull(),

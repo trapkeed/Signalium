@@ -1167,6 +1167,189 @@ export interface ValidateRiskResponse {
   effectiveLimits: EffectiveRiskLimits;
 }
 
+export type CapitalBucketBucketType = typeof CapitalBucketBucketType[keyof typeof CapitalBucketBucketType];
+
+
+export const CapitalBucketBucketType = {
+  core: 'core',
+  growth: 'growth',
+  speculative: 'speculative',
+} as const;
+
+export type CapitalBucketRiskProfileType = typeof CapitalBucketRiskProfileType[keyof typeof CapitalBucketRiskProfileType];
+
+
+export const CapitalBucketRiskProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+export interface CapitalBucket {
+  id: number;
+  userId: string;
+  bucketType: CapitalBucketBucketType;
+  /**
+     * User-defined label. Defaults to bucketType when null.
+     * @nullable
+     */
+  name?: string | null;
+  /** Percentage of total account balance allocated (0–100). */
+  allocationPct: number;
+  /**
+     * Absolute dollar override. If set, used instead of allocationPct for calculations.
+     * @nullable
+     */
+  allocationAbs?: number | null;
+  riskProfileType: CapitalBucketRiskProfileType;
+  /** @nullable */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+  /** @nullable */
+  maxLeverage?: number | null;
+  /** @nullable */
+  allowedSymbols?: string[] | null;
+  /** @nullable */
+  blockedSymbols?: string[] | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UpsertCapitalBucketRequestBucketType = typeof UpsertCapitalBucketRequestBucketType[keyof typeof UpsertCapitalBucketRequestBucketType];
+
+
+export const UpsertCapitalBucketRequestBucketType = {
+  core: 'core',
+  growth: 'growth',
+  speculative: 'speculative',
+} as const;
+
+export type UpsertCapitalBucketRequestRiskProfileType = typeof UpsertCapitalBucketRequestRiskProfileType[keyof typeof UpsertCapitalBucketRequestRiskProfileType];
+
+
+export const UpsertCapitalBucketRequestRiskProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+export interface UpsertCapitalBucketRequest {
+  bucketType: UpsertCapitalBucketRequestBucketType;
+  /** @nullable */
+  name?: string | null;
+  /** Percentage 0–100. Sum across all buckets must not exceed 100. */
+  allocationPct: number;
+  /** @nullable */
+  allocationAbs?: number | null;
+  riskProfileType?: UpsertCapitalBucketRequestRiskProfileType;
+  /** @nullable */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+  /** @nullable */
+  maxLeverage?: number | null;
+  /** @nullable */
+  allowedSymbols?: string[] | null;
+  /** @nullable */
+  blockedSymbols?: string[] | null;
+}
+
+export type PatchCapitalBucketRequestRiskProfileType = typeof PatchCapitalBucketRequestRiskProfileType[keyof typeof PatchCapitalBucketRequestRiskProfileType];
+
+
+export const PatchCapitalBucketRequestRiskProfileType = {
+  preservation: 'preservation',
+  balanced: 'balanced',
+  aggressive_growth: 'aggressive_growth',
+  hyper_growth: 'hyper_growth',
+  custom: 'custom',
+} as const;
+
+/**
+ * All fields optional — only provided fields are updated.
+ */
+export interface PatchCapitalBucketRequest {
+  /** @nullable */
+  name?: string | null;
+  allocationPct?: number;
+  /** @nullable */
+  allocationAbs?: number | null;
+  riskProfileType?: PatchCapitalBucketRequestRiskProfileType;
+  /** @nullable */
+  maxRiskPerTrade?: number | null;
+  /** @nullable */
+  maxPortfolioRisk?: number | null;
+  /** @nullable */
+  maxSimultaneousTrades?: number | null;
+  /** @nullable */
+  maxDrawdownTolerance?: number | null;
+  /** @nullable */
+  maxLeverage?: number | null;
+  /** @nullable */
+  allowedSymbols?: string[] | null;
+  /** @nullable */
+  blockedSymbols?: string[] | null;
+}
+
+export interface AllocateBucketResponse {
+  bucket: CapitalBucket;
+  /** Sum of allocationPct across all active buckets after this upsert. */
+  totalAllocatedPct: number;
+  /** 100 − totalAllocatedPct. */
+  remainingPct: number;
+  /** @nullable */
+  warning?: string | null;
+}
+
+export interface BucketAllocation {
+  bucket: CapitalBucket;
+  /** Absolute dollar amount allocated to this bucket. */
+  allocatedCapital: number;
+  /** Estimated capital currently deployed (from latest per-bucket telemetry). */
+  inUseCapital: number;
+  /** allocatedCapital − inUseCapital. */
+  availableCapital: number;
+}
+
+export interface AvailableCapitalResponse {
+  accountBalance: number;
+  buckets: BucketAllocation[];
+}
+
+export type BucketRiskLimitResponseAbsoluteLimits = {
+  /**
+     * maxRiskPerTrade as an absolute dollar amount.
+     * @nullable
+     */
+  maxRiskPerTrade_abs: number | null;
+  /**
+     * maxPortfolioRisk as an absolute dollar amount.
+     * @nullable
+     */
+  maxPortfolioRisk_abs: number | null;
+};
+
+export interface BucketRiskLimitResponse {
+  bucket: CapitalBucket;
+  allocatedCapital: number;
+  limits: EffectiveRiskLimits;
+  absoluteLimits: BucketRiskLimitResponseAbsoluteLimits;
+}
+
 /**
  * How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.
  */
@@ -4125,6 +4308,32 @@ export type RemoveUserSymbol200 = {
 
 export type UpsertVolumeConstraints200 = {
   upserted: BrokerVolumeConstraint[];
+};
+
+export type GetAvailableCapitalParams = {
+/**
+ * Override the balance from the latest telemetry frame.
+ */
+accountBalance?: number;
+};
+
+export type GetBucketRiskLimitParams = {
+/**
+ * Override the balance from the latest telemetry frame.
+ */
+accountBalance?: number;
+};
+
+export type CheckBucketSymbolParams = {
+symbol: string;
+};
+
+export type CheckBucketSymbol200 = {
+  symbol: string;
+  bucketType: string;
+  allowed: boolean;
+  /** @nullable */
+  reason?: string | null;
 };
 
 export type UpdateTradingSettingsBodyTradingMode = typeof UpdateTradingSettingsBodyTradingMode[keyof typeof UpdateTradingSettingsBodyTradingMode];
