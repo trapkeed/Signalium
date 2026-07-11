@@ -16,7 +16,7 @@ variables on the server (fallback). Vault values always win if both are set.
 
 | Vault key | Env var fallback | Required? | What it is |
 | --- | --- | --- | --- |
-| `trainer.url` | `QDE_TRAINER_URL` | Yes, to enable any trainer integration | Base URL of the running signalium-trainer service, e.g. `https://trainer.yourdomain.com`. If unset, all trainer/inference/Research Lab calls fail closed (they error out — they never silently mock data). |
+| `trainer.url` | `QDE_TRAINER_URL` | Yes, to enable any trainer integration | Base URL of the running signalium-trainer service: `https://trainer.signaliumai.com`. If unset, all trainer/inference/Research Lab calls fail closed (they error out — they never silently mock data). |
 | `trainer.api_key` | `QDE_TRAINER_API_KEY` | Optional | Legacy shared API key, sent additively alongside the signed SSO token. Only needed if the trainer build you're running still checks for one. |
 | `trainer.timeout_ms` | — | Optional (has a default) | Request timeout for outbound calls to the trainer. |
 | `trainer.retry_count` | — | Optional (has a default) | Retry attempts for outbound trainer calls. |
@@ -73,8 +73,8 @@ these calls throw/error instead of silently returning fake data.
 
 ## 3. Inbound calls: Trainer → Signalium (this platform)
 
-Base URL the trainer should call: this platform's own public URL (e.g. your
-production domain or `$REPLIT_DEV_DOMAIN` in dev). Auth: `X-Api-Key` header
+Base URL the trainer should call: `https://signaliumai.com` (or
+`$REPLIT_DEV_DOMAIN` in dev). Auth: `X-Api-Key` header
 (via `requireApiKeyAuth`) issued from **Admin → API Keys**, except `/sso/jwks`
 which is intentionally public.
 
@@ -94,8 +94,8 @@ which is intentionally public.
 - **Platform → Trainer:** short-lived signed JWT (`ES256`), audience
   `signalium-trainer`, minted via `POST /sso/token` (human admin session) or
   `getServiceToken()` internally for machine-to-machine calls. The trainer
-  verifies these against `GET /sso/jwks` — no shared secret needs to be
-  copied anywhere.
+  verifies these by calling `GET https://signaliumai.com/api/sso/jwks` — no
+  shared secret needs to be copied anywhere.
 - **Trainer → Platform:** `X-Api-Key` header, issued and revocable from
   **Admin → API Keys**, checked by `requireApiKeyAuth` on every inbound
   ingest route.
@@ -104,15 +104,15 @@ which is intentionally public.
 
 ## 5. Quick verification checklist
 
-1. Set `trainer.url` (Admin → Secrets Vault) and confirm **System Settings**
-   shows it as "configured".
+1. Set `trainer.url` to `https://trainer.signaliumai.com` (Admin → Secrets
+   Vault) and confirm **System Settings** shows it as "configured".
 2. From the platform, hit the trainer's `/health` — the Ops/Platform Health
    admin page will show trainer reachability once this is set.
 3. Issue an API key for the trainer (Admin → API Keys) and confirm the
    trainer's own config has it set for its outbound calls to
    `/operational/*` and `/symbols/discovery`.
-4. Confirm the trainer can reach `GET /sso/jwks` on this platform's public
-   URL — this is required before any signed token from this platform will
-   verify on the trainer's side.
+4. Confirm the trainer can reach `GET https://signaliumai.com/api/sso/jwks`
+   — this is required before any signed token from this platform will verify
+   on the trainer's side.
 5. If using RunPod, set `RUNPOD_API_KEY` plus the `runpod.*` vault keys, then
    check **Admin → RunPod** for a successful connectivity test.
