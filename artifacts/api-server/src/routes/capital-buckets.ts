@@ -29,15 +29,21 @@ function parseBucketType(raw: string): BucketType | null {
   return (BUCKET_TYPES as readonly string[]).includes(raw) ? (raw as BucketType) : null;
 }
 
-/** Latest account balance from the user's most recent telemetry frame. */
-async function latestAccountBalance(userId: string): Promise<number | null> {
-  const [row] = await db
-    .select({ balance: positionTelemetryTable.balance })
-    .from(positionTelemetryTable)
-    .where(eq(positionTelemetryTable.userId, userId))
-    .orderBy(desc(positionTelemetryTable.receivedAt))
-    .limit(1);
-  return row?.balance ?? null;
+/** Latest account balance from the user's most recent telemetry frame.
+ *  Returns null on any DB error so callers can degrade gracefully. */
+async function latestAccountBalance(userId: string, log?: { warn: (o: unknown, msg: string) => void }): Promise<number | null> {
+  try {
+    const [row] = await db
+      .select({ balance: positionTelemetryTable.balance })
+      .from(positionTelemetryTable)
+      .where(eq(positionTelemetryTable.userId, userId))
+      .orderBy(desc(positionTelemetryTable.receivedAt))
+      .limit(1);
+    return row?.balance ?? null;
+  } catch (err) {
+    log?.warn({ err }, "latestAccountBalance: DB lookup failed — returning null");
+    return null;
+  }
 }
 
 function parseAccountBalance(queryVal: unknown, fallback: number | null): number | null {
@@ -73,7 +79,7 @@ router.get("/available", async (req, res) => {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   try {
-    const latest = await latestAccountBalance(userId);
+    const latest = await latestAccountBalance(userId, req.log);
     const accountBalance = parseAccountBalance(req.query.accountBalance, latest);
     if (!accountBalance) {
       return res.status(400).json({
@@ -220,65 +226,65 @@ router.put("/:bucketType", async (req, res) => {
 
   const body = req.body as Record<string, unknown>;
 
-  // Must have an existing active bucket to update.
-  const [existing] = await db
-    .select()
-    .from(capitalBucketsTable)
-    .where(
-      and(
-        eq(capitalBucketsTable.userId, userId),
-        eq(capitalBucketsTable.bucketType, bucketType),
-        eq(capitalBucketsTable.isActive, true),
-      ),
-    )
-    .limit(1);
-
-  if (!existing) {
-    return res.status(404).json({
-      error: `No active ${bucketType} bucket. Use POST /capital-buckets to create one.`,
-    });
-  }
-
-  // Build patch — only apply fields that were provided in the body.
-  const patch: Record<string, unknown> = { updatedAt: new Date() };
-
-  if (body.name !== undefined) patch.name = typeof body.name === "string" ? body.name.trim() || null : null;
-  if (body.allocationPct !== undefined) {
-    const n = Number(body.allocationPct);
-    if (!Number.isFinite(n) || n <= 0 || n > 100)
-      return res.status(400).json({ error: "allocationPct must be between 0 and 100" });
-    patch.allocationPct = n;
-  }
-  if (body.allocationAbs !== undefined)
-    patch.allocationAbs = body.allocationAbs !== null ? Number(body.allocationAbs) : null;
-  if (body.riskProfileType !== undefined) {
-    if (!(RISK_PROFILE_TYPES as readonly string[]).includes(String(body.riskProfileType)))
-      return res.status(400).json({ error: `riskProfileType must be one of: ${RISK_PROFILE_TYPES.join(", ")}` });
-    patch.riskProfileType = body.riskProfileType;
-  }
-  const overrideFields = ["maxRiskPerTrade", "maxPortfolioRisk", "maxDrawdownTolerance", "maxSimultaneousTrades", "maxLeverage"] as const;
-  for (const f of overrideFields) {
-    if (body[f] !== undefined)
-      patch[f] = body[f] !== null ? Number(body[f]) : null;
-  }
-  if (body.allowedSymbols !== undefined)
-    patch.allowedSymbols = Array.isArray(body.allowedSymbols) ? (body.allowedSymbols as string[]).map((s) => s.toUpperCase()) : null;
-  if (body.blockedSymbols !== undefined)
-    patch.blockedSymbols = Array.isArray(body.blockedSymbols) ? (body.blockedSymbols as string[]).map((s) => s.toUpperCase()) : null;
-
-  // If allocationPct is changing, validate total allocation.
-  if (patch.allocationPct !== undefined) {
-    const peers = await db
-      .select({ bucketType: capitalBucketsTable.bucketType, allocationPct: capitalBucketsTable.allocationPct })
-      .from(capitalBucketsTable)
-      .where(and(eq(capitalBucketsTable.userId, userId), eq(capitalBucketsTable.isActive, true)));
-    const peerTotal = peers.filter((p) => p.bucketType !== bucketType).reduce((s, p) => s + p.allocationPct, 0);
-    const newTotal = peerTotal + (patch.allocationPct as number);
-    if (newTotal > 100)
-      return res.status(409).json({ error: `Allocation would reach ${newTotal.toFixed(1)}%. Other buckets use ${peerTotal.toFixed(1)}%.` });
-  }
-
   try {
+    // Must have an existing active bucket to update.
+    const [existing] = await db
+      .select()
+      .from(capitalBucketsTable)
+      .where(
+        and(
+          eq(capitalBucketsTable.userId, userId),
+          eq(capitalBucketsTable.bucketType, bucketType),
+          eq(capitalBucketsTable.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({
+        error: `No active ${bucketType} bucket. Use POST /capital-buckets to create one.`,
+      });
+    }
+
+    // Build patch — only apply fields that were provided in the body.
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (body.name !== undefined) patch.name = typeof body.name === "string" ? body.name.trim() || null : null;
+    if (body.allocationPct !== undefined) {
+      const n = Number(body.allocationPct);
+      if (!Number.isFinite(n) || n <= 0 || n > 100)
+        return res.status(400).json({ error: "allocationPct must be between 0 and 100" });
+      patch.allocationPct = n;
+    }
+    if (body.allocationAbs !== undefined)
+      patch.allocationAbs = body.allocationAbs !== null ? Number(body.allocationAbs) : null;
+    if (body.riskProfileType !== undefined) {
+      if (!(RISK_PROFILE_TYPES as readonly string[]).includes(String(body.riskProfileType)))
+        return res.status(400).json({ error: `riskProfileType must be one of: ${RISK_PROFILE_TYPES.join(", ")}` });
+      patch.riskProfileType = body.riskProfileType;
+    }
+    const overrideFields = ["maxRiskPerTrade", "maxPortfolioRisk", "maxDrawdownTolerance", "maxSimultaneousTrades", "maxLeverage"] as const;
+    for (const f of overrideFields) {
+      if (body[f] !== undefined)
+        patch[f] = body[f] !== null ? Number(body[f]) : null;
+    }
+    if (body.allowedSymbols !== undefined)
+      patch.allowedSymbols = Array.isArray(body.allowedSymbols) ? (body.allowedSymbols as string[]).map((s) => s.toUpperCase()) : null;
+    if (body.blockedSymbols !== undefined)
+      patch.blockedSymbols = Array.isArray(body.blockedSymbols) ? (body.blockedSymbols as string[]).map((s) => s.toUpperCase()) : null;
+
+    // If allocationPct is changing, validate total allocation against peers.
+    if (patch.allocationPct !== undefined) {
+      const peers = await db
+        .select({ bucketType: capitalBucketsTable.bucketType, allocationPct: capitalBucketsTable.allocationPct })
+        .from(capitalBucketsTable)
+        .where(and(eq(capitalBucketsTable.userId, userId), eq(capitalBucketsTable.isActive, true)));
+      const peerTotal = peers.filter((p) => p.bucketType !== bucketType).reduce((s, p) => s + p.allocationPct, 0);
+      const newTotal = peerTotal + (patch.allocationPct as number);
+      if (newTotal > 100)
+        return res.status(409).json({ error: `Allocation would reach ${newTotal.toFixed(1)}%. Other buckets use ${peerTotal.toFixed(1)}%.` });
+    }
+
     const [updated] = await db
       .update(capitalBucketsTable)
       .set(patch as Partial<typeof capitalBucketsTable.$inferInsert>)
@@ -330,7 +336,7 @@ router.get("/:bucketType/risk-limit", async (req, res) => {
   if (!bucketType) return res.status(404).json({ error: "Unknown bucket type" });
 
   try {
-    const latest = await latestAccountBalance(userId);
+    const latest = await latestAccountBalance(userId, req.log);
     const accountBalance = parseAccountBalance(req.query.accountBalance, latest);
     if (!accountBalance) {
       return res.status(400).json({ error: "accountBalance query parameter required" });
