@@ -14,6 +14,15 @@ Scripts for building a self-contained release tarball for VPS deployment:
 - `scripts/deploy-check.sh` — pre-deploy verification (env, DB, PM2, ports, artifacts)
 - `docs/PRODUCTION_DEPLOYMENT.md` — release-artifact deploy guide (complements DEPLOYMENT_GUIDE.md)
 
+## Verified runtime behaviour (full boot test from release artifacts)
+
+- Server boots in ~3 s from `release/dist/server/index.mjs` with no workspace source present.
+- All background services start cleanly (EA WS, Admin WS, PlatformHealth, AlertDetectors, SecurityDetectors, jobQueue, backupService, auditRetention, DataGovernance, RunpodMonitor, DeploymentManager, MarketDataHealth).
+- `required_env_vars: ok`, `database: ok` in startup diagnostic.
+- Auth gating confirmed: `GET /api/users → 401`.
+- Migration runner (`node dist/server/migrate.mjs`) is a complete self-contained bundle.
+- `deploy-check.sh` passes 20/21 checks in dev (PM2 missing is expected; VPS will have it).
+
 ## Key design decisions
 
 **esbuild resolution:** esbuild is NOT hoisted to workspace root — only in `artifacts/api-server/node_modules`. `scripts/build-migrate.mjs` uses `createRequire(apiServerPkg)` to resolve it from there.

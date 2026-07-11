@@ -197,6 +197,7 @@ cat > "$RELEASE_DIR/package.json" <<'PKGJSON'
   },
   "dependencies": {
     "@google-cloud/storage": "^7.21.0",
+    "@swc/helpers": "^0.5.23",
     "nodemailer": "^9.0.3"
   }
 }
@@ -235,6 +236,9 @@ echo "Migrations complete."
 MIGSH
 chmod +x "$RELEASE_DIR/scripts/migrate.sh"
 
+cp "$WORKSPACE_ROOT/scripts/deploy-check.sh" "$RELEASE_DIR/scripts/deploy-check.sh"
+chmod +x "$RELEASE_DIR/scripts/deploy-check.sh"
+
 cat > "$RELEASE_DIR/scripts/seed-admin.sh" <<'SEEDSH'
 #!/usr/bin/env bash
 # Seed the super-admin account (first deploy only).
@@ -258,7 +262,7 @@ echo "   pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-adm
 SEEDSH
 chmod +x "$RELEASE_DIR/scripts/seed-admin.sh"
 
-ok "release/scripts/ written"
+ok "release/scripts/ written (migrate.sh, deploy-check.sh, seed-admin.sh)"
 
 # ---------------------------------------------------------------------------
 # Step 11 — Nginx config template

@@ -1,0 +1,21 @@
+{
+  "name": "signalium-platform",
+  "version": "1.0.0",
+  "description": "Signalium Platform — production build",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start":   "pm2 start ecosystem.config.cjs --env production",
+    "reload":  "pm2 reload ecosystem.config.cjs --env production",
+    "stop":    "pm2 stop signalium-api",
+    "migrate": "node dist/server/migrate.mjs",
+    "logs":    "pm2 logs signalium-api --lines 100"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^7.21.0",
+    "@swc/helpers": "^0.5.23",
+    "nodemailer": "^9.0.3"
+  }
+}
