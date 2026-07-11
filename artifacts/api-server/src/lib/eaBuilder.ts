@@ -171,6 +171,117 @@ string SignaliumNormaliseSymbol(string raw) {
 }
 
 /**
+ * Renders the volume normalisation section of the EA — rounding-policy
+ * defines, the volume-constraint cache struct, and the three public helpers
+ * (fetch, normalise, validate) that the EA calls.
+ *
+ * The rounding policy is embedded as an integer #define so the MQL5 compiler
+ * can inline the branch and the EA never needs a string comparison at runtime.
+ */
+function renderVolumeSectionMql5(): string {
+  return `
+// ─── Broker volume constraints (populated on OnInit, refreshed every 24h) ───
+// The EA reads SYMBOL_VOLUME_MIN / MAX / STEP from the broker terminal for
+// every active symbol and reports them to the platform.  These constants are
+// stored server-side (broker_volume_constraints table) and also cached here
+// locally so SignaliumNormaliseVolume / SignaliumValidateVolume can work
+// offline without a round-trip.
+
+// Rounding policy — controls how a raw volume is snapped to the nearest
+// valid step multiple before submission to the broker.
+//   SIGNALIUM_ROUND_DOWN    (0) — always round toward zero          [default]
+//   SIGNALIUM_ROUND_UP      (1) — always round away from zero
+//   SIGNALIUM_ROUND_NEAREST (2) — round to the nearest step
+#define SIGNALIUM_ROUND_DOWN    0
+#define SIGNALIUM_ROUND_UP      1
+#define SIGNALIUM_ROUND_NEAREST 2
+// Change this define in a custom build to override the platform default.
+#ifndef SIGNALIUM_VOLUME_ROUNDING
+  #define SIGNALIUM_VOLUME_ROUNDING SIGNALIUM_ROUND_DOWN
+#endif
+
+struct SignaliumVolumeConstraint {
+   string symbol;    // canonical symbol (e.g. "XAUUSD")
+   double volumeMin;
+   double volumeMax;
+   double volumeStep;
+};
+
+// In-process cache — filled by SignaliumFetchVolumeConstraints() on OnInit.
+SignaliumVolumeConstraint g_volumeConstraints[];
+int                       g_volumeConstraintCount = 0;
+
+// Returns the number of decimal places for a given step value so floating-
+// point artefacts (e.g. 0.30000000000000004) are eliminated after rounding.
+int SignaliumStepDecimals(double step) {
+   if (step <= 0) return 8;
+   string s    = DoubleToString(step, 8);
+   int    dot  = StringFind(s, ".");
+   if (dot < 0) return 0;
+   int decimals = 0;
+   for (int i = StringLen(s) - 1; i > dot; i--) {
+      if (StringGetCharacter(s, i) != '0') { decimals = i - dot; break; }
+   }
+   return decimals;
+}
+
+// Normalise a raw lot size to the nearest valid step multiple.
+// Uses the SIGNALIUM_VOLUME_ROUNDING policy embedded at build time.
+// Returns the raw volume unchanged if no constraint is cached for the symbol.
+double SignaliumNormaliseVolume(string symbol, double rawVolume) {
+   for (int i = 0; i < g_volumeConstraintCount; i++) {
+      if (g_volumeConstraints[i].symbol == symbol) {
+         double step = g_volumeConstraints[i].volumeStep;
+         if (step <= 0) return rawVolume;
+         double steps = rawVolume / step;
+         double normalised;
+         int policy = SIGNALIUM_VOLUME_ROUNDING;
+         if (policy == SIGNALIUM_ROUND_UP)
+            normalised = MathCeil(steps)  * step;
+         else if (policy == SIGNALIUM_ROUND_NEAREST)
+            normalised = MathRound(steps) * step;
+         else
+            normalised = MathFloor(steps) * step;  // ROUND_DOWN (default)
+         int dp = SignaliumStepDecimals(step);
+         return NormalizeDouble(normalised, dp);
+      }
+   }
+   return rawVolume; // no constraint cached — returned as-is
+}
+
+// Validate a (pre-normalised) volume against broker min/max.
+// Returns true if the volume is within the broker's permitted range.
+// Call SignaliumNormaliseVolume() first, then pass the result here.
+bool SignaliumValidateVolume(string symbol, double normalisedVolume) {
+   for (int i = 0; i < g_volumeConstraintCount; i++) {
+      if (g_volumeConstraints[i].symbol == symbol) {
+         if (normalisedVolume < g_volumeConstraints[i].volumeMin) return false;
+         if (normalisedVolume > g_volumeConstraints[i].volumeMax) return false;
+         return true;
+      }
+   }
+   return true; // no constraint cached — not rejected
+}
+
+// Retrieve broker volume constraints (POST /api/volume-constraints, API-key
+// auth).  Called once in OnInit; the cached values are used by every
+// SignaliumNormaliseVolume / SignaliumValidateVolume call thereafter.
+// Also called on the 24h discovery refresh to pick up any broker-side changes.
+void SignaliumFetchVolumeConstraints() {
+   // For each symbol discovered via SymbolsTotal()/SymbolName():
+   //   double vMin  = SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
+   //   double vMax  = SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX);
+   //   double vStep = SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP);
+   // Build a JSON array and POST to /api/volume-constraints (x-api-key auth):
+   //   [ { "symbol": "XAUUSD", "volumeMin": 0.01, "volumeMax": 500.0,
+   //       "volumeStep": 0.01 }, ... ]
+   // On success the platform upserts the constraints server-side; also cache
+   // them locally in g_volumeConstraints[] for offline use.
+}
+`;
+}
+
+/**
  * Generates the MQL5 source for the user's EA. This is the human-readable
  * template with embedded metadata (as commented constants, never the raw
  * API key) and stub implementations of the required capabilities.
@@ -197,6 +308,7 @@ export function generateMql5Source(metadata: EaMetadata, credentials: EaEmbedded
 #define SIGNALIUM_GENERATED_AT       "${metadata.generationTimestamp}"
 #define SIGNALIUM_PLATFORM_VERSION   "${metadata.platformVersion}"
 ${symbolMap ? renderSymbolMapMql5(symbolMap) : "// Symbol map not available at build time — resolved entirely via 24h discovery scan."}
+${renderVolumeSectionMql5()}
 // ─── QDE loop (S14): EA <-> Platform <-> Trainer, every 30 seconds ─────────
 // Primary channel: WebSocket to wss://<host>/ws/ea?apiKey=<key>&hardwareId=<id>
 //   - On connect, send {"type":"telemetry", ...} frames every 30s (see below).
@@ -219,6 +331,7 @@ ${symbolMap ? renderSymbolMapMql5(symbolMap) : "// Symbol map not available at b
 // ─── Lifecycle ───────────────────────────────────────────────────────────
 int OnInit() {
    SignaliumVerifyBuild();
+   SignaliumFetchVolumeConstraints(); // reads SYMBOL_VOLUME_MIN/MAX/STEP from broker, reports to platform
    SignaliumConnectQdeSocket();
    EventSetTimer(30); // drives the 30s QDE telemetry cadence via OnTimer()
    return(INIT_SUCCEEDED);
@@ -261,6 +374,9 @@ void SignaliumRefreshSymbolDiscoveryIfDue() {
    // Conflicts (a raw symbol resolving differently than last time) are
    // logged server-side for admin review; this EA always trusts whatever
    // mapping the server returns, even if it differs from its local cache.
+   // Also calls SignaliumFetchVolumeConstraints() to refresh SYMBOL_VOLUME_MIN/
+   // MAX/STEP in case the broker updated its constraints since OnInit.
+   SignaliumFetchVolumeConstraints();
 }
 
 void SignaliumStreamSymbolTicks() {

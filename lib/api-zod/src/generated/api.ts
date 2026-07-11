@@ -2445,6 +2445,96 @@ export const RemoveUserSymbolResponse = zod.object({
 
 
 /**
+ * @summary EA reports broker volume constraints on init (API-key auth)
+ */
+export const UpsertVolumeConstraintsBodyItem = zod.object({
+  "symbol": zod.string().describe('Raw or canonical symbol reported by the broker terminal.'),
+  "volumeMin": zod.number(),
+  "volumeMax": zod.number(),
+  "volumeStep": zod.number(),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST']).optional().describe('Optional per-symbol override. Defaults to ROUND_DOWN.')
+})
+export const UpsertVolumeConstraintsBody = zod.array(UpsertVolumeConstraintsBodyItem)
+
+export const UpsertVolumeConstraintsResponse = zod.object({
+  "upserted": zod.array(zod.object({
+  "id": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "canonicalSymbol": zod.string().describe('Canonical symbol (e.g. XAUUSD, EURUSD). Always upper-case.'),
+  "volumeMin": zod.number().describe('SYMBOL_VOLUME_MIN — minimum broker-accepted lot size.'),
+  "volumeMax": zod.number().describe('SYMBOL_VOLUME_MAX — maximum broker-accepted lot size.'),
+  "volumeStep": zod.number().describe('SYMBOL_VOLUME_STEP — lot-size granularity increment.'),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST']).describe('How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.'),
+  "updatedAt": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary List all volume constraints for the current user's EA registrations
+ */
+export const ListVolumeConstraintsResponseItem = zod.object({
+  "id": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "canonicalSymbol": zod.string().describe('Canonical symbol (e.g. XAUUSD, EURUSD). Always upper-case.'),
+  "volumeMin": zod.number().describe('SYMBOL_VOLUME_MIN — minimum broker-accepted lot size.'),
+  "volumeMax": zod.number().describe('SYMBOL_VOLUME_MAX — maximum broker-accepted lot size.'),
+  "volumeStep": zod.number().describe('SYMBOL_VOLUME_STEP — lot-size granularity increment.'),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST']).describe('How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.'),
+  "updatedAt": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListVolumeConstraintsResponse = zod.array(ListVolumeConstraintsResponseItem)
+
+
+/**
+ * @summary Normalize and validate a raw volume against broker constraints
+ */
+export const NormalizeVolumeBody = zod.object({
+  "symbol": zod.string(),
+  "rawVolume": zod.number().describe('The raw lot size to normalize.'),
+  "eaRegistrationId": zod.number(),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST']).optional().describe('Override the stored default rounding policy for this call.')
+})
+
+export const NormalizeVolumeResponse = zod.object({
+  "symbol": zod.string(),
+  "rawVolume": zod.number(),
+  "normalizedVolume": zod.number(),
+  "ok": zod.boolean().describe('True when the normalized volume passes broker min\/max validation.'),
+  "error": zod.string().nullish().describe('Rejection reason when ok is false.'),
+  "constraints": zod.object({
+  "volumeMin": zod.number(),
+  "volumeMax": zod.number(),
+  "volumeStep": zod.number(),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST'])
+}).optional()
+})
+
+
+/**
+ * @summary Get volume constraints for a specific symbol across the user's EA registrations
+ */
+export const GetVolumeConstraintsForSymbolParams = zod.object({
+  "symbol": zod.coerce.string()
+})
+
+export const GetVolumeConstraintsForSymbolResponseItem = zod.object({
+  "id": zod.number(),
+  "eaRegistrationId": zod.number(),
+  "canonicalSymbol": zod.string().describe('Canonical symbol (e.g. XAUUSD, EURUSD). Always upper-case.'),
+  "volumeMin": zod.number().describe('SYMBOL_VOLUME_MIN — minimum broker-accepted lot size.'),
+  "volumeMax": zod.number().describe('SYMBOL_VOLUME_MAX — maximum broker-accepted lot size.'),
+  "volumeStep": zod.number().describe('SYMBOL_VOLUME_STEP — lot-size granularity increment.'),
+  "roundingPolicy": zod.enum(['ROUND_DOWN', 'ROUND_UP', 'ROUND_NEAREST']).describe('How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.'),
+  "updatedAt": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetVolumeConstraintsForSymbolResponse = zod.array(GetVolumeConstraintsForSymbolResponseItem)
+
+
+/**
  * @summary Get the current user's trading mode and risk preferences
  */
 export const GetTradingSettingsResponse = zod.object({

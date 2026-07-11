@@ -1019,6 +1019,108 @@ export interface Broker {
   createdAt: string;
 }
 
+/**
+ * How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.
+ */
+export type BrokerVolumeConstraintRoundingPolicy = typeof BrokerVolumeConstraintRoundingPolicy[keyof typeof BrokerVolumeConstraintRoundingPolicy];
+
+
+export const BrokerVolumeConstraintRoundingPolicy = {
+  ROUND_DOWN: 'ROUND_DOWN',
+  ROUND_UP: 'ROUND_UP',
+  ROUND_NEAREST: 'ROUND_NEAREST',
+} as const;
+
+export interface BrokerVolumeConstraint {
+  id: number;
+  eaRegistrationId: number;
+  /** Canonical symbol (e.g. XAUUSD, EURUSD). Always upper-case. */
+  canonicalSymbol: string;
+  /** SYMBOL_VOLUME_MIN — minimum broker-accepted lot size. */
+  volumeMin: number;
+  /** SYMBOL_VOLUME_MAX — maximum broker-accepted lot size. */
+  volumeMax: number;
+  /** SYMBOL_VOLUME_STEP — lot-size granularity increment. */
+  volumeStep: number;
+  /** How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN. */
+  roundingPolicy: BrokerVolumeConstraintRoundingPolicy;
+  updatedAt: string;
+  createdAt: string;
+}
+
+/**
+ * Optional per-symbol override. Defaults to ROUND_DOWN.
+ */
+export type VolumeConstraintInputRoundingPolicy = typeof VolumeConstraintInputRoundingPolicy[keyof typeof VolumeConstraintInputRoundingPolicy];
+
+
+export const VolumeConstraintInputRoundingPolicy = {
+  ROUND_DOWN: 'ROUND_DOWN',
+  ROUND_UP: 'ROUND_UP',
+  ROUND_NEAREST: 'ROUND_NEAREST',
+} as const;
+
+export interface VolumeConstraintInput {
+  /** Raw or canonical symbol reported by the broker terminal. */
+  symbol: string;
+  volumeMin: number;
+  volumeMax: number;
+  volumeStep: number;
+  /** Optional per-symbol override. Defaults to ROUND_DOWN. */
+  roundingPolicy?: VolumeConstraintInputRoundingPolicy;
+}
+
+/**
+ * Override the stored default rounding policy for this call.
+ */
+export type NormalizeVolumeRequestRoundingPolicy = typeof NormalizeVolumeRequestRoundingPolicy[keyof typeof NormalizeVolumeRequestRoundingPolicy];
+
+
+export const NormalizeVolumeRequestRoundingPolicy = {
+  ROUND_DOWN: 'ROUND_DOWN',
+  ROUND_UP: 'ROUND_UP',
+  ROUND_NEAREST: 'ROUND_NEAREST',
+} as const;
+
+export interface NormalizeVolumeRequest {
+  symbol: string;
+  /** The raw lot size to normalize. */
+  rawVolume: number;
+  eaRegistrationId: number;
+  /** Override the stored default rounding policy for this call. */
+  roundingPolicy?: NormalizeVolumeRequestRoundingPolicy;
+}
+
+export type NormalizeVolumeResponseConstraintsRoundingPolicy = typeof NormalizeVolumeResponseConstraintsRoundingPolicy[keyof typeof NormalizeVolumeResponseConstraintsRoundingPolicy];
+
+
+export const NormalizeVolumeResponseConstraintsRoundingPolicy = {
+  ROUND_DOWN: 'ROUND_DOWN',
+  ROUND_UP: 'ROUND_UP',
+  ROUND_NEAREST: 'ROUND_NEAREST',
+} as const;
+
+export type NormalizeVolumeResponseConstraints = {
+  volumeMin: number;
+  volumeMax: number;
+  volumeStep: number;
+  roundingPolicy: NormalizeVolumeResponseConstraintsRoundingPolicy;
+};
+
+export interface NormalizeVolumeResponse {
+  symbol: string;
+  rawVolume: number;
+  normalizedVolume: number;
+  /** True when the normalized volume passes broker min/max validation. */
+  ok: boolean;
+  /**
+     * Rejection reason when ok is false.
+     * @nullable
+     */
+  error?: string | null;
+  constraints?: NormalizeVolumeResponseConstraints;
+}
+
 export interface DataProvider {
   id: number;
   name: string;
@@ -3871,6 +3973,10 @@ export type AddUserSymbolBody = {
 export type RemoveUserSymbol200 = {
   id: number;
   symbolId: number;
+};
+
+export type UpsertVolumeConstraints200 = {
+  upserted: BrokerVolumeConstraint[];
 };
 
 export type UpdateTradingSettingsBodyTradingMode = typeof UpdateTradingSettingsBodyTradingMode[keyof typeof UpdateTradingSettingsBodyTradingMode];

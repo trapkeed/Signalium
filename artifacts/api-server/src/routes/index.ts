@@ -52,6 +52,7 @@ import adminSecretsRouter from "./admin-secrets";
 import authRouter from "./auth";
 import runpodRouter from "./runpod";
 import trainerControlRouter from "./trainer-control";
+import volumeConstraintsRouter from "./volume-constraints";
 import { blockWhenLocked } from "../middlewares/blockWhenLocked";
 
 const router: IRouter = Router();
@@ -137,5 +138,7 @@ router.use("/runpod", runpodRouter);
 // tests, plus read-only inspection views; deploy/rollback reuse the
 // existing /qde/admin/deployments and /research-lab endpoints.
 router.use("/trainer-control", trainerControlRouter);
+// Broker volume constraints — EA init reporting + user-facing normalise/validate
+router.use("/volume-constraints", volumeConstraintsRouter);
 
 export default router;

@@ -2190,6 +2190,110 @@ paths:
         "404":
           description: Symbol not in monitored set
 
+  /volume-constraints:
+    post:
+      operationId: upsertVolumeConstraints
+      tags: [volume]
+      summary: EA reports broker volume constraints on init (API-key auth)
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/VolumeConstraintInput"
+      responses:
+        "200":
+          description: Constraints upserted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [upserted]
+                properties:
+                  upserted:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BrokerVolumeConstraint"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+    get:
+      operationId: listVolumeConstraints
+      tags: [volume]
+      summary: List all volume constraints for the current user's EA registrations
+      security:
+        - sessionAuth: []
+      responses:
+        "200":
+          description: Volume constraints list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokerVolumeConstraint"
+        "401":
+          description: Unauthorized
+
+  /volume-constraints/normalize:
+    post:
+      operationId: normalizeVolume
+      tags: [volume]
+      summary: Normalize and validate a raw volume against broker constraints
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NormalizeVolumeRequest"
+      responses:
+        "200":
+          description: Normalized volume result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizeVolumeResponse"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: EA registration not owned by this user
+        "404":
+          description: No constraints found for symbol
+
+  /volume-constraints/{symbol}:
+    get:
+      operationId: getVolumeConstraintsForSymbol
+      tags: [volume]
+      summary: Get volume constraints for a specific symbol across the user's EA registrations
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Volume constraints for the symbol
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokerVolumeConstraint"
+        "401":
+          description: Unauthorized
+
   /trading-settings:
     get:
       operationId: getTradingSettings
@@ -9169,6 +9273,99 @@ components:
           type: boolean
         createdAt:
           type: string
+
+    BrokerVolumeConstraint:
+      type: object
+      required: [id, eaRegistrationId, canonicalSymbol, volumeMin, volumeMax, volumeStep, roundingPolicy, updatedAt, createdAt]
+      properties:
+        id:
+          type: integer
+        eaRegistrationId:
+          type: integer
+        canonicalSymbol:
+          type: string
+          description: Canonical symbol (e.g. XAUUSD, EURUSD). Always upper-case.
+        volumeMin:
+          type: number
+          description: SYMBOL_VOLUME_MIN — minimum broker-accepted lot size.
+        volumeMax:
+          type: number
+          description: SYMBOL_VOLUME_MAX — maximum broker-accepted lot size.
+        volumeStep:
+          type: number
+          description: SYMBOL_VOLUME_STEP — lot-size granularity increment.
+        roundingPolicy:
+          type: string
+          enum: [ROUND_DOWN, ROUND_UP, ROUND_NEAREST]
+          description: How raw volumes are snapped to the nearest step multiple. Default ROUND_DOWN.
+        updatedAt:
+          type: string
+        createdAt:
+          type: string
+
+    VolumeConstraintInput:
+      type: object
+      required: [symbol, volumeMin, volumeMax, volumeStep]
+      properties:
+        symbol:
+          type: string
+          description: Raw or canonical symbol reported by the broker terminal.
+        volumeMin:
+          type: number
+        volumeMax:
+          type: number
+        volumeStep:
+          type: number
+        roundingPolicy:
+          type: string
+          enum: [ROUND_DOWN, ROUND_UP, ROUND_NEAREST]
+          description: Optional per-symbol override. Defaults to ROUND_DOWN.
+
+    NormalizeVolumeRequest:
+      type: object
+      required: [symbol, rawVolume, eaRegistrationId]
+      properties:
+        symbol:
+          type: string
+        rawVolume:
+          type: number
+          description: The raw lot size to normalize.
+        eaRegistrationId:
+          type: integer
+        roundingPolicy:
+          type: string
+          enum: [ROUND_DOWN, ROUND_UP, ROUND_NEAREST]
+          description: Override the stored default rounding policy for this call.
+
+    NormalizeVolumeResponse:
+      type: object
+      required: [symbol, rawVolume, normalizedVolume, ok]
+      properties:
+        symbol:
+          type: string
+        rawVolume:
+          type: number
+        normalizedVolume:
+          type: number
+        ok:
+          type: boolean
+          description: True when the normalized volume passes broker min/max validation.
+        error:
+          type: ["string", "null"]
+          description: Rejection reason when ok is false.
+        constraints:
+          type: object
+          required: [volumeMin, volumeMax, volumeStep, roundingPolicy]
+          properties:
+            volumeMin:
+              type: number
+            volumeMax:
+              type: number
+            volumeStep:
+              type: number
+            roundingPolicy:
+              type: string
+              enum: [ROUND_DOWN, ROUND_UP, ROUND_NEAREST]
 
     DataProvider:
       type: object

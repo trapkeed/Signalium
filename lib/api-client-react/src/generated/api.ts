@@ -40,6 +40,7 @@ import type {
   BrokerState,
   BrokerStateRequest,
   BrokerTicket,
+  BrokerVolumeConstraint,
   CancelAccountDeletion200,
   ComplianceRetentionPolicy,
   ConfirmAccountDeletion200,
@@ -256,6 +257,8 @@ import type {
   MediaAssetInput,
   NormalizeSymbol422,
   NormalizeSymbolBody,
+  NormalizeVolumeRequest,
+  NormalizeVolumeResponse,
   Notification,
   OnboardingChecklist,
   OpenPosition,
@@ -445,13 +448,15 @@ import type {
   UploadUrlRequest,
   UploadUrlResponse,
   UpsertProviderCapabilityBody,
+  UpsertVolumeConstraints200,
   User,
   UserSupportView,
   UserSymbol,
   UserTradingSettings,
   UserUpdate,
   VerifyApiKey200,
-  VerifyApiKeyBody
+  VerifyApiKeyBody,
+  VolumeConstraintInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -8160,6 +8165,302 @@ export const useRemoveUserSymbol = <TError = ErrorType<void>,
       > => {
       return useMutation(getRemoveUserSymbolMutationOptions(options));
     }
+
+export const getUpsertVolumeConstraintsUrl = () => {
+
+
+
+
+  return `/api/volume-constraints`
+}
+
+/**
+ * @summary EA reports broker volume constraints on init (API-key auth)
+ */
+export const upsertVolumeConstraints = async (volumeConstraintInput: VolumeConstraintInput[], options?: RequestInit): Promise<UpsertVolumeConstraints200> => {
+
+  return customFetch<UpsertVolumeConstraints200>(getUpsertVolumeConstraintsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(volumeConstraintInput)
+  }
+);}
+
+
+
+
+
+export const getUpsertVolumeConstraintsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertVolumeConstraints>>, TError,{data: BodyType<VolumeConstraintInput[]>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertVolumeConstraints>>, TError,{data: BodyType<VolumeConstraintInput[]>}, TContext> => {
+
+const mutationKey = ['upsertVolumeConstraints'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertVolumeConstraints>>, {data: BodyType<VolumeConstraintInput[]>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertVolumeConstraints(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertVolumeConstraintsMutationResult = NonNullable<Awaited<ReturnType<typeof upsertVolumeConstraints>>>
+    export type UpsertVolumeConstraintsMutationBody = BodyType<VolumeConstraintInput[]>
+    export type UpsertVolumeConstraintsMutationError = ErrorType<void>
+
+    /**
+ * @summary EA reports broker volume constraints on init (API-key auth)
+ */
+export const useUpsertVolumeConstraints = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertVolumeConstraints>>, TError,{data: BodyType<VolumeConstraintInput[]>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertVolumeConstraints>>,
+        TError,
+        {data: BodyType<VolumeConstraintInput[]>},
+        TContext
+      > => {
+      return useMutation(getUpsertVolumeConstraintsMutationOptions(options));
+    }
+
+export const getListVolumeConstraintsUrl = () => {
+
+
+
+
+  return `/api/volume-constraints`
+}
+
+/**
+ * @summary List all volume constraints for the current user's EA registrations
+ */
+export const listVolumeConstraints = async ( options?: RequestInit): Promise<BrokerVolumeConstraint[]> => {
+
+  return customFetch<BrokerVolumeConstraint[]>(getListVolumeConstraintsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListVolumeConstraintsQueryKey = () => {
+    return [
+    `/api/volume-constraints`
+    ] as const;
+    }
+
+
+export const getListVolumeConstraintsQueryOptions = <TData = Awaited<ReturnType<typeof listVolumeConstraints>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVolumeConstraints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVolumeConstraintsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVolumeConstraints>>> = ({ signal }) => listVolumeConstraints({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listVolumeConstraints>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListVolumeConstraintsQueryResult = NonNullable<Awaited<ReturnType<typeof listVolumeConstraints>>>
+export type ListVolumeConstraintsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List all volume constraints for the current user's EA registrations
+ */
+
+export function useListVolumeConstraints<TData = Awaited<ReturnType<typeof listVolumeConstraints>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVolumeConstraints>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListVolumeConstraintsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getNormalizeVolumeUrl = () => {
+
+
+
+
+  return `/api/volume-constraints/normalize`
+}
+
+/**
+ * @summary Normalize and validate a raw volume against broker constraints
+ */
+export const normalizeVolume = async (normalizeVolumeRequest: NormalizeVolumeRequest, options?: RequestInit): Promise<NormalizeVolumeResponse> => {
+
+  return customFetch<NormalizeVolumeResponse>(getNormalizeVolumeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(normalizeVolumeRequest)
+  }
+);}
+
+
+
+
+
+export const getNormalizeVolumeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof normalizeVolume>>, TError,{data: BodyType<NormalizeVolumeRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof normalizeVolume>>, TError,{data: BodyType<NormalizeVolumeRequest>}, TContext> => {
+
+const mutationKey = ['normalizeVolume'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof normalizeVolume>>, {data: BodyType<NormalizeVolumeRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  normalizeVolume(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NormalizeVolumeMutationResult = NonNullable<Awaited<ReturnType<typeof normalizeVolume>>>
+    export type NormalizeVolumeMutationBody = BodyType<NormalizeVolumeRequest>
+    export type NormalizeVolumeMutationError = ErrorType<void>
+
+    /**
+ * @summary Normalize and validate a raw volume against broker constraints
+ */
+export const useNormalizeVolume = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof normalizeVolume>>, TError,{data: BodyType<NormalizeVolumeRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof normalizeVolume>>,
+        TError,
+        {data: BodyType<NormalizeVolumeRequest>},
+        TContext
+      > => {
+      return useMutation(getNormalizeVolumeMutationOptions(options));
+    }
+
+export const getGetVolumeConstraintsForSymbolUrl = (symbol: string,) => {
+
+
+
+
+  return `/api/volume-constraints/${symbol}`
+}
+
+/**
+ * @summary Get volume constraints for a specific symbol across the user's EA registrations
+ */
+export const getVolumeConstraintsForSymbol = async (symbol: string, options?: RequestInit): Promise<BrokerVolumeConstraint[]> => {
+
+  return customFetch<BrokerVolumeConstraint[]>(getGetVolumeConstraintsForSymbolUrl(symbol),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolumeConstraintsForSymbolQueryKey = (symbol: string,) => {
+    return [
+    `/api/volume-constraints/${symbol}`
+    ] as const;
+    }
+
+
+export const getGetVolumeConstraintsForSymbolQueryOptions = <TData = Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>, TError = ErrorType<void>>(symbol: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolumeConstraintsForSymbolQueryKey(symbol);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>> = ({ signal }) => getVolumeConstraintsForSymbol(symbol, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: symbol !== null && symbol !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolumeConstraintsForSymbolQueryResult = NonNullable<Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>>
+export type GetVolumeConstraintsForSymbolQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get volume constraints for a specific symbol across the user's EA registrations
+ */
+
+export function useGetVolumeConstraintsForSymbol<TData = Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>, TError = ErrorType<void>>(
+ symbol: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolumeConstraintsForSymbol>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolumeConstraintsForSymbolQueryOptions(symbol,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetTradingSettingsUrl = () => {
 
