@@ -27,3 +27,4 @@
 - [Broker volume normalization](broker-volume-normalization.md) — constraint schema, normalizeVolume/validateVolume math, EA OnInit reporting, MQL5 embedding pattern.
 - [Risk Personality Profiles](risk-personality-profiles.md) — 5 profiles, DB schema, riskProfile lib, routes, QDE hard-ceiling gate design.
 - [Capital Buckets](capital-buckets.md) — core/growth/speculative buckets, allocation math, bucket-relative QDE gate, validateRiskAgainstLimits extraction.
+- [Production Release Pipeline](production-release-pipeline.md) — build scripts, PM2 config, VPS tarball deploy; esbuild resolution and migration path alignment sharp edges.
