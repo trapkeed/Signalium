@@ -1,187 +1,195 @@
 # Signalium Platform — Production Deployment Guide
 
-**Target server:** `root@198.177.123.71`
+**Server:** `root@198.177.123.71`
 **Deploy path:** `/var/www/signalium`
 **Live URL:** `https://signaliumai.com`
 **Trainer URL:** `https://trainer.signaliumai.com`
+**Database:** `signalium` · **DB user:** `signalium_user`
 
-This guide covers deploying Signalium from a pre-built release tarball onto a
-Ubuntu VPS that is already running other websites. Nothing in these steps
-touches your other three sites, their Nginx vhosts, or their databases.
+This guide deploys Signalium from a pre-built release tarball. The VPS already
+runs three other websites — nothing in these steps touches them.
 
 ---
 
 ## Table of contents
 
 1. [Overview](#overview)
-2. [Prerequisites (one-time VPS setup)](#prerequisites-one-time-vps-setup)
-3. [**Replacing the old Signalium site**](#replacing-the-old-signalium-site) ← start here
-4. [Build and transfer the release tarball](#step-1--build-the-release-tarball-on-your-dev-machine)
-5. [Deploy on the server (Steps 2–9)](#step-2--transfer-to-the-server)
-6. [Configure Nginx + HTTPS (Steps 10–11)](#step-10--configure-nginx)
-7. [Updating an existing deployment](#updating-an-existing-deployment-zero-downtime)
-8. [Rollback](#rollback)
-9. [Troubleshooting](#troubleshooting)
+2. [Prerequisites (one-time)](#prerequisites-one-time)
+3. [Replacing the old Signalium site](#replacing-the-old-signalium-site) ← **do this first**
+4. [Step 1 — Build the release tarball](#step-1--build-the-release-tarball)
+5. [Step 2 — Transfer to the server](#step-2--transfer-to-the-server)
+   - [Option A — FileZilla (SFTP)](#option-a--filezilla-sftp)
+   - [Option B — GitHub Actions (automated)](#option-b--github-actions-automated)
+   - [Option C — SCP (command line)](#option-c--scp-command-line)
+6. [Steps 3–9 — Extract, configure, and start](#step-3--extract-on-the-server)
+7. [Steps 10–11 — Nginx + HTTPS](#step-10--configure-nginx)
+8. [Updating an existing deployment](#updating-an-existing-deployment)
+9. [Rollback](#rollback)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Overview
 
 ```
-Your machine                           VPS (198.177.123.71)
-────────────────                       ──────────────────────────────
-                                       [R1] Stop + delete old PM2 process
+Replit (this workspace)                VPS (198.177.123.71)
+───────────────────────                ─────────────────────────────
+                                       [R0] Find PM2 process name
+                                       [R1] Stop + delete PM2 process
                                        [R2] Remove old Nginx vhost
-                                       [R3] Drop old database permanently
-                                       [R4] Delete old site files
+                                       [R3] Save DB credentials, drop DB
+                                       [R4] Delete old source files
                                        [R5] Create fresh database
-                                            ↓
-1. Build release   ──► .tar.gz ──scp──►  2. Extract to /var/www/signalium
-                                         3. npm install --omit=dev
-                                         4. Create .env
-                                         5. Deploy-check
-                                         6. Run DB migrations
-                                         7. PM2 start
-                                         8. Nginx config + HTTPS
+                                                ↓
+Step 1. Build release tarball
+Step 2. Transfer  ──────────────────►  Step 3. Extract
+  FileZilla  ─ drag .tar.gz via SFTP   Step 4. npm install --omit=dev
+  GitHub Actions  ─ auto on git push   Step 5. Create .env
+  scp  ─ command line                  Step 6. deploy-check
+                                       Step 7. DB migrations
+                                       Step 8. Seed super-admin
+                                       Step 9. PM2 start
+                                       Step 10. Nginx config
+                                       Step 11. HTTPS (Let's Encrypt)
 ```
 
 ---
 
-## Prerequisites (one-time VPS setup)
+## Prerequisites (one-time)
 
-SSH into the server:
+SSH in and install Node.js 20 + PM2 if not already present:
 
 ```bash
 ssh root@198.177.123.71
-```
 
-Install Node.js 20, PM2, and verify Nginx:
+node -v          # must be v20 or higher
+pm2 -v           # must exist
 
-```bash
-# Node.js 20 (skip if already installed — check with: node -v)
+# Install Node.js 20 if missing
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 
-# PM2
+# Install PM2 if missing
 npm install -g pm2
-
-# Nginx (usually already present)
-apt-get install -y nginx
-
-# Confirm
-node -v    # must be v20.x or higher
-pm2 -v
-nginx -v
 ```
 
 ---
 
 ## Replacing the old Signalium site
 
-> **⚠ This permanently and irreversibly destroys the old site's data and files.
-> There is no undo. Your other three websites are not affected — these steps
-> only touch the Signalium PM2 process, its Nginx vhost, its PostgreSQL
-> database, and its files directory.**
+> **⚠ Permanently destroys the old site's data and files. No undo.**
+> Your other three websites, their databases, and their Nginx vhosts are
+> not touched.
 
-Take a final backup before you start, in case you need to recover anything:
+Take a final backup before you start:
 
 ```bash
 ssh root@198.177.123.71
-
-# Backup the old database (adjust the database name if yours is different)
 pg_dump -U postgres signalium > ~/signalium_FINAL_BACKUP_$(date +%Y%m%d).sql
-echo "Backup saved to: ~/signalium_FINAL_BACKUP_$(date +%Y%m%d).sql"
+ls -lh ~/signalium_FINAL_BACKUP_*.sql      # confirm the file was written
+```
+
+---
+
+### R0 — Find the old PM2 process name
+
+```bash
+pm2 list
+```
+
+Look at the **name** column. It may be `signalium-api`, `api-server`,
+`signalium`, or something else depending on how the old site was started.
+**Note the exact name** — you need it for R1.
+
+Example output:
+
+```
+┌────┬───────────────┬─────────┬──────┬───────────┐
+│ id │ name          │ mode    │ pid  │ status    │
+├────┼───────────────┼─────────┼──────┼───────────┤
+│  0 │ signalium-api │ fork    │ 1234 │ online    │
+│  1 │ other-site    │ cluster │ 5678 │ online    │
+└────┴───────────────┴─────────┴──────┴───────────┘
 ```
 
 ---
 
 ### R1 — Stop and remove the old PM2 process
 
-```bash
-# List running processes so you can see the exact name
-pm2 list
-```
-
-Stop and delete the Signalium process (use the exact name shown in pm2 list):
+Replace `signalium-api` with the name you found in R0:
 
 ```bash
-pm2 stop  signalium-api
+pm2 stop   signalium-api
 pm2 delete signalium-api
-
-# Save the updated process list so PM2 doesn't restart the old site on reboot
-pm2 save --force
+pm2 save --force          # update the saved process list so it won't restart on reboot
 ```
 
-> Your other PM2 processes keep running — `pm2 stop` only stops the named
-> process.
+Your other PM2 processes keep running — only the named process is affected.
 
 ---
 
 ### R2 — Remove the old Nginx vhost
 
-Find the Signalium vhost config file:
-
 ```bash
+# Find the config file(s) for signaliumai.com
 grep -rl "signaliumai.com" /etc/nginx/sites-enabled/
 grep -rl "signaliumai.com" /etc/nginx/sites-available/
 ```
 
-Confirm the output shows only the Signalium config files, then delete them:
+Confirm the output shows only Signalium config files, then delete them:
 
 ```bash
-# Disable the site (remove the symlink from sites-enabled)
-rm /etc/nginx/sites-enabled/signalium
+rm /etc/nginx/sites-enabled/signalium    # the symlink
+rm /etc/nginx/sites-available/signalium  # the source file (if it exists)
 
-# Remove the source file from sites-available
-rm /etc/nginx/sites-available/signalium
+nginx -t && systemctl reload nginx       # verify syntax, then reload gracefully
 ```
 
-Test and reload Nginx — your other sites stay up during this reload:
-
-```bash
-nginx -t && systemctl reload nginx
-```
+> `systemctl reload nginx` is graceful — your other sites stay live.
 
 ---
 
-### R3 — Drop the old database permanently
+### R3 — Save old credentials, then drop the database
 
-> **⚠ The next commands permanently delete all data. This cannot be undone.**
+**Before deleting, read the old `.env` so you have the credentials:**
+
+```bash
+cat /var/www/signalium/.env 2>/dev/null || \
+  find /var/www/signalium -name ".env" -maxdepth 3 2>/dev/null | xargs cat
+```
+
+Note the existing `DATABASE_URL` (database name, user, password) in case they
+differ from the new setup. Also check the existing `SESSION_SECRET` and
+`SECRETS_ENCRYPTION_KEY` if you want to reuse them.
+
+> **⚠ The next commands permanently delete all data.**
 
 ```bash
 sudo -u postgres psql -c "DROP DATABASE IF EXISTS signalium;"
 sudo -u postgres psql -c "DROP USER IF EXISTS signalium_user;"
+
+# Confirm both are gone
+sudo -u postgres psql -c "\l"  | grep signalium    # should return nothing
+sudo -u postgres psql -c "\du" | grep signalium    # should return nothing
 ```
 
-If `DROP DATABASE` fails with **"being accessed by other users"**, the old
-Node.js process is still running. Go back to R1, wait 5 seconds, then retry.
-
-Confirm the database is gone:
-
-```bash
-sudo -u postgres psql -c "\l" | grep signalium
-# Should return nothing
-```
+If `DROP DATABASE` fails with **"being accessed by other users"** the old
+Node.js process is still running — repeat R1, wait 5 seconds, then retry.
 
 ---
 
-### R4 — Delete the old site files
+### R4 — Delete the old source files
 
-Find where the old files are (the path shown by PM2 before you deleted it, or
-check your previous Nginx config):
-
-```bash
-# Common locations — check which one exists
-ls /var/www/signalium 2>/dev/null && echo "Found at /var/www/signalium"
-ls /var/www/html      2>/dev/null | grep -i signal
-```
-
-Delete the old directory:
+The current `/var/www/signalium` is the full monorepo workspace source
+(`pnpm-workspace.yaml`, `artifacts/`, `node_modules/`, etc.). Confirm what
+you're about to delete, then remove it:
 
 ```bash
-# Replace with your actual old path if different
+ls /var/www/signalium    # you should see: artifacts  pnpm-workspace.yaml  node_modules  ...
 rm -rf /var/www/signalium
-echo "Old files deleted."
+
+# Confirm it's gone
+ls /var/www/signalium 2>/dev/null || echo "Deleted successfully."
 ```
 
 ---
@@ -194,45 +202,209 @@ CREATE USER signalium_user WITH PASSWORD 'YOUR_DB_PASSWORD';
 CREATE DATABASE signalium OWNER signalium_user;
 GRANT ALL PRIVILEGES ON DATABASE signalium TO signalium_user;
 SQL
-```
 
-Confirm it was created:
-
-```bash
+# Confirm
 sudo -u postgres psql -c "\l" | grep signalium
-# Should show:  signalium | signalium_user | UTF8 ...
+# Expected:  signalium | signalium_user | UTF8 ...
 ```
 
-Your `DATABASE_URL` for the new `.env` will be:
+Your `DATABASE_URL` for the new `.env`:
 
 ```
 postgresql://signalium_user:YOUR_DB_PASSWORD@localhost:5432/signalium
 ```
 
-> Replace `YOUR_DB_PASSWORD` with your real password. Keep it only in the
-> `.env` file on the server — never commit the real password to source control.
+> Keep the real password only in the `.env` file on the server —
+> never commit it to source control.
 
-The old site is now completely gone. Continue with Step 1 below to deploy the
-new release onto the clean server.
+The old site is gone. Continue with Step 1 below.
 
 ---
 
-## Step 1 — Build the release tarball (on your dev machine)
+## Step 1 — Build the release tarball
+
+Run these commands in this Replit workspace (or on your local machine if
+you have the repo checked out locally):
 
 ```bash
-# From the workspace root
 ./scripts/build-release.sh
 ./scripts/package-release.sh
 ```
 
-This produces `signalium-platform-release.tar.gz` in the workspace root.
+This produces `signalium-platform-release.tar.gz` (or
+`signalium-platform-release-<VERSION>.tar.gz`) in the workspace root.
+
+What gets built:
+
+| Output | Contents |
+|--------|----------|
+| `dist/public/` | Frontend SPA (HTML, CSS, JS, images) |
+| `dist/server/index.mjs` | Bundled Node.js backend (~6.7 MB) |
+| `dist/server/migrate.mjs` | Self-contained database migration runner |
+| `dist/drizzle/` | SQL migration files |
 
 ---
 
 ## Step 2 — Transfer to the server
 
+Choose the method that fits your workflow. All three put the tarball at
+`/root/` on the server, which is where Steps 3–9 expect it.
+
+---
+
+### Option A — FileZilla (SFTP)
+
+FileZilla is a free desktop app — no command line needed for the transfer.
+
+**Connect:**
+
+1. Open FileZilla → **File → Site Manager → New Site**
+2. Fill in:
+
+   | Field | Value |
+   |-------|-------|
+   | Protocol | **SFTP – SSH File Transfer Protocol** |
+   | Host | `198.177.123.71` |
+   | Port | `22` |
+   | Logon Type | **Normal** |
+   | User | `root` |
+   | Password | your root SSH password |
+
+3. Click **Connect**.
+
+**Transfer the tarball:**
+
+4. In the **Local site** pane (left), navigate to the folder containing
+   `signalium-platform-release.tar.gz`.
+5. In the **Remote site** pane (right), navigate to `/root/`.
+6. Drag the `.tar.gz` file from the left pane to the right pane.
+   Wait for the transfer to complete (shown in the transfer queue at the bottom).
+
+**Then SSH in to complete the deployment** (Steps 3–9):
+
+```bash
+ssh root@198.177.123.71
+```
+
+---
+
+### Option B — GitHub Actions (automated)
+
+Set this up once and every push to `main` will build and deploy automatically.
+
+**One-time server setup — create a deploy SSH key:**
+
+```bash
+ssh root@198.177.123.71
+
+# Generate a dedicated deploy key (no passphrase)
+ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/github_deploy -N ""
+
+# Authorise it for SSH login
+cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+
+# Print the private key — copy this entire block into GitHub
+cat ~/.ssh/github_deploy
+```
+
+**Add secrets to your GitHub repository** (Settings → Secrets → Actions):
+
+| Secret name | Value |
+|-------------|-------|
+| `DEPLOY_SSH_KEY` | The private key printed above (entire `-----BEGIN...-----END` block) |
+| `DEPLOY_HOST` | `198.177.123.71` |
+| `DEPLOY_USER` | `root` |
+
+**Create the workflow file** in your repo at `.github/workflows/deploy.yml`:
+
+```yaml
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Build release
+        run: ./scripts/build-release.sh
+        env:
+          PORT: 3000
+          BASE_PATH: /
+
+      - name: Package release
+        run: VERSION=${{ github.sha }} ./scripts/package-release.sh
+
+      - name: Transfer to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "signalium-platform-release-*.tar.gz"
+          target: "/root/"
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+
+            mkdir -p /tmp/signalium-new
+            tar xzf ~/signalium-platform-release-*.tar.gz \
+              --strip-components=1 -C /tmp/signalium-new/
+
+            rsync -av --delete \
+              --exclude='.env' \
+              --exclude='logs/' \
+              --exclude='node_modules/' \
+              /tmp/signalium-new/ \
+              /var/www/signalium/
+
+            cd /var/www/signalium
+            npm install --omit=dev
+            set -a; source .env; set +a
+            ./scripts/migrate.sh
+            ./scripts/deploy-check.sh
+            pm2 reload ecosystem.config.cjs --env production
+
+            rm -f ~/signalium-platform-release-*.tar.gz
+            rm -rf /tmp/signalium-new
+```
+
+> **First deploy:** GitHub Actions handles updates, but the very first deploy
+> still needs `.env` on the server (Step 5) and Nginx configured (Step 10).
+> Run Steps 3–11 manually once, then every push to `main` auto-deploys from
+> Step 3 onward.
+
+---
+
+### Option C — SCP (command line)
+
 ```bash
 scp signalium-platform-release*.tar.gz root@198.177.123.71:/root/
+```
+
+Then SSH in:
+
+```bash
+ssh root@198.177.123.71
 ```
 
 ---
@@ -240,14 +412,13 @@ scp signalium-platform-release*.tar.gz root@198.177.123.71:/root/
 ## Step 3 — Extract on the server
 
 ```bash
-ssh root@198.177.123.71
-
 mkdir -p /var/www/signalium
-tar xzf ~/signalium-platform-release*.tar.gz --strip-components=1 -C /var/www/signalium
+tar xzf ~/signalium-platform-release*.tar.gz \
+  --strip-components=1 -C /var/www/signalium
 cd /var/www/signalium
 ```
 
-`--strip-components=1` drops the top-level folder in the archive so all files
+`--strip-components=1` drops the top-level folder in the archive so files
 land directly in `/var/www/signalium/`.
 
 ---
@@ -264,7 +435,7 @@ Installs the three packages the backend bundle externalises:
 | Package | Why external |
 |---------|-------------|
 | `@google-cloud/storage` | Native gRPC bindings |
-| `@swc/helpers` | Required by fontkit/pdfkit with no fallback guard |
+| `@swc/helpers` | Required by fontkit/pdfkit — no fallback guard |
 | `nodemailer` | Dynamic transport resolution |
 
 ~30 seconds, ~90 packages, ~16 MB.
@@ -278,7 +449,7 @@ cp .env.example .env
 nano .env
 ```
 
-Fill in every value. Required variables for this deployment:
+Required variables for this server:
 
 | Variable | Value |
 |----------|-------|
@@ -311,11 +482,8 @@ set -a; source .env; set +a
 ./scripts/deploy-check.sh
 ```
 
-Expected: **all checks pass** (PM2 present, env vars set, database reachable,
-build artifacts present, port 3000 free).
-
-Fix any `[FAIL]` lines before continuing. `[WARN]` lines for unconfigured
-optional services (Stripe, SMTP, etc.) are non-blocking.
+All checks must pass before continuing. Fix any `[FAIL]` lines.
+`[WARN]` lines for optional unconfigured services are non-blocking.
 
 ---
 
@@ -327,34 +495,34 @@ set -a; source .env; set +a
 ./scripts/migrate.sh
 ```
 
-On a fresh database this creates every table, enum, and index from scratch.
-On future updates it only applies new migration files. Always safe to re-run.
+On a fresh database (as created in R5) this creates every table, enum, and
+index from scratch. On future updates it only applies new migration files.
+Always safe to re-run.
 
 ---
 
 ## Step 8 — Seed the super-admin account (first deploy only)
 
-The seeder uses TypeScript source and must run from your development machine:
+The seeder uses TypeScript source and must run from the Replit workspace (or
+local machine), pointed at the production database:
 
 ```bash
-# Run on your dev machine, pointed at the production DB
 DATABASE_URL="postgresql://signalium_user:YOUR_DB_PASSWORD@198.177.123.71:5432/signalium" \
 SUPER_ADMIN_EMAIL="admin@signaliumai.com" \
 SUPER_ADMIN_PASSWORD="<choose-a-strong-password>" \
 pnpm --filter @workspace/api-server exec tsx src/scripts/seed-super-admin.ts
 ```
 
-> If the VPS firewall blocks direct PostgreSQL access from your machine, use
-> an SSH tunnel instead:
+> If the VPS firewall blocks direct PostgreSQL access, use an SSH tunnel:
 > ```bash
-> # In a separate terminal — keeps the tunnel open
+> # Terminal 1 — keep open
 > ssh -L 5433:localhost:5432 root@198.177.123.71
 >
-> # Then use localhost:5433 in DATABASE_URL
+> # Terminal 2 — use localhost:5433
 > DATABASE_URL="postgresql://signalium_user:YOUR_DB_PASSWORD@localhost:5433/signalium" ...
 > ```
 
-The script is idempotent — re-running updates the password without duplicating.
+The script is idempotent — re-running updates the password, no duplicate created.
 
 ---
 
@@ -365,18 +533,18 @@ cd /var/www/signalium
 set -a; source .env; set +a
 
 pm2 start ecosystem.config.cjs --env production
-pm2 save       # persist process list across reboots
+pm2 save       # persist across reboots
 pm2 startup    # run the printed command to enable PM2 on boot
 ```
 
-Verify it started cleanly:
+Verify:
 
 ```bash
 pm2 status
 pm2 logs signalium-api --lines 50 --nostream
 ```
 
-A healthy startup ends with:
+Healthy startup ends with:
 
 ```
 Server listening  port=3000
@@ -393,7 +561,7 @@ pgBroadcast: LISTEN connection established
 nano /etc/nginx/sites-available/signalium
 ```
 
-Paste and save:
+Paste:
 
 ```nginx
 server {
@@ -438,7 +606,7 @@ server {
         proxy_read_timeout 3600s;
     }
 
-    # SPA fallback — all non-asset routes serve index.html
+    # SPA fallback — non-asset routes serve index.html
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -459,8 +627,6 @@ nginx -t          # must say "syntax is ok"
 systemctl reload nginx
 ```
 
-> `systemctl reload nginx` is graceful — your other sites stay live.
-
 ---
 
 ## Step 11 — Enable HTTPS (Let's Encrypt)
@@ -468,36 +634,26 @@ systemctl reload nginx
 ```bash
 apt-get install -y certbot python3-certbot-nginx
 certbot --nginx -d signaliumai.com -d www.signaliumai.com
+certbot renew --dry-run    # verify auto-renewal works
 ```
 
-Certbot edits only the Signalium Nginx config and sets up auto-renewal.
-Test renewal:
-
-```bash
-certbot renew --dry-run
-```
+Your other sites' certificates are unaffected.
 
 ---
 
-## Updating an existing deployment (zero downtime)
+## Updating an existing deployment
 
-Use this for all future code updates — no need to touch the database or Nginx.
+Use for all future code updates — no need to touch the database or Nginx.
+
+**Build and transfer** (same as Steps 1–2 above), then on the server:
 
 ```bash
-# 1. Build + package on your dev machine
-./scripts/build-release.sh
-./scripts/package-release.sh
-
-# 2. Transfer
-scp signalium-platform-release*.tar.gz root@198.177.123.71:/root/
-
-# 3. SSH in and apply
 ssh root@198.177.123.71
 
 mkdir -p /tmp/signalium-new
-tar xzf ~/signalium-platform-release*.tar.gz --strip-components=1 -C /tmp/signalium-new/
+tar xzf ~/signalium-platform-release*.tar.gz \
+  --strip-components=1 -C /tmp/signalium-new/
 
-# Sync — preserves .env and logs/ on the server
 rsync -av --delete \
   --exclude='.env' \
   --exclude='logs/' \
@@ -511,7 +667,7 @@ set -a; source .env; set +a
 ./scripts/migrate.sh
 ./scripts/deploy-check.sh
 
-# Zero-downtime reload
+# Zero-downtime reload — SIGINT to old process, start new, Nginx buffers the gap
 pm2 reload ecosystem.config.cjs --env production
 pm2 logs signalium-api --lines 30 --nostream
 
@@ -520,14 +676,19 @@ rm ~/signalium-platform-release*.tar.gz
 rm -rf /tmp/signalium-new
 ```
 
+> If you set up GitHub Actions (Option B), pushing to `main` does all of
+> the above automatically after the first manual deploy.
+
 ---
 
 ## Rollback
 
 ```bash
-# Re-extract a previous tarball you kept
+ssh root@198.177.123.71
+
 mkdir -p /tmp/signalium-prev
-tar xzf ~/signalium-platform-release-PREVIOUS.tar.gz --strip-components=1 -C /tmp/signalium-prev/
+tar xzf ~/signalium-platform-release-PREVIOUS.tar.gz \
+  --strip-components=1 -C /tmp/signalium-prev/
 
 rsync -av --delete \
   --exclude='.env' --exclude='logs/' --exclude='node_modules/' \
@@ -539,9 +700,8 @@ set -a; source .env; set +a
 pm2 reload ecosystem.config.cjs --env production
 ```
 
-> **Database rollbacks:** If the update ran new migrations, rolling back code
-> alone may cause schema errors. Always take a `pg_dump` backup before
-> deploying.
+> Always take a `pg_dump` backup before deploying — if new migrations ran,
+> rolling back code alone may cause schema errors.
 
 ---
 
@@ -552,15 +712,17 @@ pm2 reload ecosystem.config.cjs --env production
 | `pm2 start` exits immediately | Missing env var or DB unreachable | `pm2 logs signalium-api`; run `./scripts/deploy-check.sh` |
 | `502 Bad Gateway` | Backend not running | `pm2 status`, `pm2 logs signalium-api` |
 | `404` on all `/api/` routes | Nginx `proxy_pass` port mismatch | Confirm `PORT=3000` in `.env` matches `proxy_pass http://127.0.0.1:3000` |
-| Blank page, no API data | CORS or wrong app URL | Check `ALLOWED_ORIGINS=https://signaliumai.com` and `PUBLIC_APP_URL` in `.env` |
+| Blank page, no API data | CORS or wrong app URL | Check `ALLOWED_ORIGINS=https://signaliumai.com` in `.env` |
 | `ECONNREFUSED` in logs | Wrong `DATABASE_URL` or Postgres down | `./scripts/deploy-check.sh`, `systemctl status postgresql` |
 | `Cannot find package '@swc/helpers'` | `npm install --omit=dev` not run | `cd /var/www/signalium && npm install --omit=dev` |
-| Migrations fail — `already exists` | Schema applied by `push`, not tracked | Back up DB, drop and recreate, re-run `./scripts/migrate.sh` |
+| Migrations fail — `already exists` | Schema applied without migration tracking | Back up DB, drop and recreate, re-run `./scripts/migrate.sh` |
 | `DROP DATABASE` — "being accessed" | Old Node.js process still alive | Repeat R1, wait 5 s, retry DROP |
 | Other sites down after Nginx reload | Nginx config syntax error | Always run `nginx -t` before `systemctl reload nginx` |
-| WebSocket disconnects immediately | Nginx missing `Upgrade`/`Connection` headers | Check `/ws/ea` and `/api/ws/` location blocks in Nginx config |
+| WebSocket disconnects immediately | Nginx missing `Upgrade`/`Connection` headers | Check `/ws/ea` and `/api/ws/` blocks in Nginx config |
+| GitHub Actions deploy fails | SSH key not authorised on server | Confirm `~/.ssh/github_deploy.pub` is in `~/.ssh/authorized_keys` |
+| FileZilla "Permission denied" | Wrong credentials or key auth required | Use password auth, or add your public key to `~/.ssh/authorized_keys` |
 
-Check startup logs at any time:
+Check startup logs:
 
 ```bash
 pm2 logs signalium-api --lines 100 --nostream
