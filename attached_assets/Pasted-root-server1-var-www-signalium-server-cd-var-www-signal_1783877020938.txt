@@ -1,0 +1,97 @@
+root@server1:/var/www/signalium/server# cd /var/www/signalium
+
+# 1. Create the dist/server symlink so PM2 finds the script
+mkdir -p dist
+ln -sf /var/www/signalium/server /var/www/signalium/dist/server
+
+# 2. Create logs/ at the root (ecosystem.config.cjs writes there)
+mkdir -p logs
+
+# 3. Source the .env so PM2 inherits all the secrets, then restart
+set -a && source /var/www/signalium/server/.env && set +a
+pm2 restart signalium-api
+
+# 4. Check status
+pm2 status
+pm2 logs signalium-api --lines 20 --nostream
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [signalium-api](ids: [ 6 ])
+[PM2] [signalium-api](6) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 3  │ 123scrapper-api    │ fork     │ 1    │ online    │ 0%       │ 183.1mb  │
+│ 2  │ motocheck-api      │ fork     │ 1    │ online    │ 0%       │ 171.1mb  │
+│ 6  │ signalium-api      │ fork     │ 58   │ online    │ 0%       │ 12.1mb   │
+│ 10 │ signalium-qde      │ fork     │ 413  │ online    │ 0%       │ 10.6mb   │
+│ 11 │ signalium-researc… │ fork     │ 462  │ online    │ 0%       │ 69.3mb   │
+│ 7  │ signalium-trainer… │ fork     │ 13   │ online    │ 0%       │ 70.0mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+Module
+┌────┬────────────────────┬──────────┬──────────┬──────────┐
+│ id │ name               │ status   │ cpu      │ mem      │
+├────┼────────────────────┼──────────┼──────────┼──────────┤
+│ 0  │ pm2-logrotate      │ online   │ 0%       │ 36.0mb   │
+└────┴────────────────────┴──────────┴──────────┴──────────┘
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 3  │ 123scrapper-api    │ fork     │ 1    │ online    │ 0%       │ 183.1mb  │
+│ 2  │ motocheck-api      │ fork     │ 1    │ online    │ 0%       │ 171.1mb  │
+│ 6  │ signalium-api      │ fork     │ 58   │ online    │ 0%       │ 73.1mb   │
+│ 10 │ signalium-qde      │ fork     │ 413  │ online    │ 0%       │ 10.6mb   │
+│ 11 │ signalium-researc… │ fork     │ 462  │ online    │ 0%       │ 69.3mb   │
+│ 7  │ signalium-trainer… │ fork     │ 13   │ online    │ 0%       │ 70.0mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+Module
+┌────┬────────────────────┬──────────┬──────────┬──────────┐
+│ id │ name               │ status   │ cpu      │ mem      │
+├────┼────────────────────┼──────────┼──────────┼──────────┤
+│ 0  │ pm2-logrotate      │ online   │ 0%       │ 36.0mb   │
+└────┴────────────────────┴──────────┴──────────┴──────────┘
+[TAILING] Tailing last 20 lines for [signalium-api] process (change the value with --lines option)
+/var/www/signalium/server/logs/out.log last 20 lines:
+6|signaliu | 2026-07-12 16:59:10 +00:00: [16:59:09.660] INFO (185974): request completed
+6|signaliu | 2026-07-12 16:59:10 +00:00:     req: {
+6|signaliu | 2026-07-12 16:59:10 +00:00:       "id": 577,
+6|signaliu | 2026-07-12 16:59:10 +00:00:       "method": "GET",
+6|signaliu | 2026-07-12 16:59:10 +00:00:       "url": "/api/account/security-status"
+6|signaliu | 2026-07-12 16:59:10 +00:00:     }
+6|signaliu | 2026-07-12 16:59:10 +00:00:     res: {
+6|signaliu | 2026-07-12 16:59:10 +00:00:       "statusCode": 304
+6|signaliu | 2026-07-12 16:59:10 +00:00:     }
+6|signaliu | 2026-07-12 16:59:10 +00:00:     responseTime: 5
+6|signaliu | 2026-07-12 17:00:10 +00:00: [17:00:09.689] INFO (185974): request completed
+6|signaliu | 2026-07-12 17:00:10 +00:00:     req: {
+6|signaliu | 2026-07-12 17:00:10 +00:00:       "id": 578,
+6|signaliu | 2026-07-12 17:00:10 +00:00:       "method": "GET",
+6|signaliu | 2026-07-12 17:00:10 +00:00:       "url": "/api/account/security-status"
+6|signaliu | 2026-07-12 17:00:10 +00:00:     }
+6|signaliu | 2026-07-12 17:00:10 +00:00:     res: {
+6|signaliu | 2026-07-12 17:00:10 +00:00:       "statusCode": 304
+6|signaliu | 2026-07-12 17:00:10 +00:00:     }
+6|signaliu | 2026-07-12 17:00:10 +00:00:     responseTime: 18
+
+/var/www/signalium/server/logs/error.log last 20 lines:
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at Function._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at Function._load (node:internal/modules/cjs/loader:1038:27)
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at MessagePort.<anonymous> (node:internal/main/worker_thread:192:26)
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at [nodejs.internal.kHybridDispatch] (node:internal/event_target:831:20)
+6|signaliu | 2026-07-12 17:07:06 +00:00:     at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28) {
+6|signaliu | 2026-07-12 17:07:06 +00:00:   code: 'MODULE_NOT_FOUND',
+6|signaliu | 2026-07-12 17:07:06 +00:00:   requireStack: []
+6|signaliu | 2026-07-12 17:07:06 +00:00: }
+6|signaliu | 2026-07-12 17:07:08 +00:00: fatal: not a git repository (or any of the parent directories): .git
+6|signaliu | 2026-07-12 17:07:08 +00:00: Error: Cannot find module '/home/runner/workspace/artifacts/api-server/dist/thread-stream-worker.mjs'
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at Function._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at Function._load (node:internal/modules/cjs/loader:1038:27)
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at MessagePort.<anonymous> (node:internal/main/worker_thread:192:26)
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at [nodejs.internal.kHybridDispatch] (node:internal/event_target:831:20)
+6|signaliu | 2026-07-12 17:07:08 +00:00:     at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28) {
+6|signaliu | 2026-07-12 17:07:08 +00:00:   code: 'MODULE_NOT_FOUND',
+6|signaliu | 2026-07-12 17:07:08 +00:00:   requireStack: []
+6|signaliu | 2026-07-12 17:07:08 +00:00: }
+
+root@server1:/var/www/signalium#
