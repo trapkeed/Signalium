@@ -18,3 +18,9 @@ id = "tRnSLye7b9Qt8WvwydLvW"
 uri = "file://docs/PRODUCTION_DEPLOYMENT.md"
 type = "text"
 title = "Production Deployment Guide"
+
+[[outputs]]
+id = "SKtYq80CA6n65dPxKduEZ"
+uri = "file://signalium-platform-release.tar.gz"
+type = "unspecified"
+title = "signalium-platform-release.tar.gz"

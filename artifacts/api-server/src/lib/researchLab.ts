@@ -52,9 +52,13 @@ async function labFetch<T>(path: string, opts?: RequestInit): Promise<T> {
     // never has to trust an unauthenticated caller (and never needs its own
     // administrator auth or password store).
     const serviceToken = await getServiceToken();
+    // Send the shared secret the trainer backend validates as RESEARCH_LAB_ADMIN_TOKEN.
+    // Vault key `trainer.api_key` takes priority over the env var.
+    const trainerApiKey = await resolveManagedConfig("trainer.api_key", "RESEARCH_LAB_ADMIN_TOKEN");
+    const trainerApiKeyHeader: Record<string, string> = trainerApiKey ? { "X-Trainer-Api-Key": trainerApiKey } : {};
     const res = await fetch(url, {
       ...opts,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}`, ...(opts?.headers ?? {}) },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceToken}`, ...trainerApiKeyHeader, ...(opts?.headers ?? {}) },
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {

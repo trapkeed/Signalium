@@ -172,8 +172,9 @@ export async function checkTrainerReachability(): Promise<{ configured: boolean;
   const started = Date.now();
   try {
     const serviceToken = await getServiceToken();
+    const apiKeyHeader = await getTrainerApiKeyHeader();
     const res = await fetch(`${trainerUrl.replace(/\/$/, "")}/health`, {
-      headers: { Authorization: `Bearer ${serviceToken}` },
+      headers: { Authorization: `Bearer ${serviceToken}`, ...apiKeyHeader },
       signal: AbortSignal.timeout(5000),
     });
     const latencyMs = Date.now() - started;
@@ -242,6 +243,19 @@ function buildSigningHeaders(): Record<string, string> {
   };
 }
 
+/**
+ * Reads the shared trainer API key from the vault (`trainer.api_key`) or the
+ * RESEARCH_LAB_ADMIN_TOKEN env var and returns it as an X-Trainer-Api-Key
+ * header object (or an empty object when no key is configured).
+ *
+ * The trainer backend validates this against its own RESEARCH_LAB_ADMIN_TOKEN
+ * env var. Without it every outbound request returns 503.
+ */
+async function getTrainerApiKeyHeader(): Promise<Record<string, string>> {
+  const key = await resolveManagedConfig("trainer.api_key", "RESEARCH_LAB_ADMIN_TOKEN");
+  return key ? { "X-Trainer-Api-Key": key } : {};
+}
+
 async function runInference(request: InferenceRequest): Promise<InferenceResponse> {
   const trainerUrl = await resolveTrainerUrl();
   if (trainerUrl) {
@@ -254,12 +268,13 @@ async function callExternalInference(baseUrl: string, request: InferenceRequest)
   const endpoint = `${baseUrl.replace(/\/$/, "")}/qde/${request.type}`;
   // S24C: attach a signed SSO service token — Trainer verifies it against
   // Signalium's JWKS instead of trusting an unauthenticated caller.
-  const serviceToken = await getServiceToken();
+  const [serviceToken, apiKeyHeader] = await Promise.all([getServiceToken(), getTrainerApiKeyHeader()]);
   const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${serviceToken}`,
+      ...apiKeyHeader,
       ...buildSigningHeaders(),
     },
     body: JSON.stringify(request),
@@ -395,12 +410,13 @@ async function runTrainer(t: TelemetrySnapshot): Promise<TrainerDecision> {
 }
 
 async function callExternalTrainer(url: string, telemetry: TelemetrySnapshot): Promise<TrainerDecision> {
-  const serviceToken = await getServiceToken();
+  const [serviceToken, apiKeyHeader] = await Promise.all([getServiceToken(), getTrainerApiKeyHeader()]);
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${serviceToken}`,
+      ...apiKeyHeader,
       ...buildSigningHeaders(),
     },
     body: JSON.stringify(telemetry),
