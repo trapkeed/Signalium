@@ -1,0 +1,45 @@
+root@server1:/var/www/signalium# # See what port the Research Lab script starts on
+cat /opt/signalium-trainer/deploy/scripts/start-research-lab.sh
+
+# Check if it's crashing
+pm2 logs 11 --err --lines 30 --nostream
+#!/usr/bin/env bash
+set -euo pipefail
+cd /opt/signalium-trainer
+set -a; source .env; set +a
+source .venv/bin/activate
+exec uvicorn trainer.research_lab.research_lab_server:app --port 8002 --host 127.0.0.1 --workers 1
+[TAILING] Tailing last 30 lines for [11] process (change the value with --lines option)
+/root/.pm2/logs/signalium-research-lab-error.log last 30 lines:
+11|signali | INFO:     Waiting for application startup.
+11|signali | INFO:     Application startup complete.
+11|signali | INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+11|signali | INFO:     Shutting down
+11|signali | INFO:     Waiting for application shutdown.
+11|signali | INFO:     Application shutdown complete.
+11|signali | INFO:     Finished server process [183430]
+11|signali | 2026-07-12 09:48:23.149 | INFO     | trainer.research_lab.rl_database:__init__:723 - ResearchLabDatabase: opened data/research_lab.db
+11|signali | INFO:     Started server process [183697]
+11|signali | INFO:     Waiting for application startup.
+11|signali | INFO:     Application startup complete.
+11|signali | INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+11|signali | INFO:     Shutting down
+11|signali | INFO:     Waiting for application shutdown.
+11|signali | INFO:     Application shutdown complete.
+11|signali | INFO:     Finished server process [183697]
+11|signali | 2026-07-12 09:51:28.362 | INFO     | trainer.research_lab.rl_database:__init__:723 - ResearchLabDatabase: opened data/research_lab.db
+11|signali | INFO:     Started server process [183894]
+11|signali | INFO:     Waiting for application startup.
+11|signali | INFO:     Application startup complete.
+11|signali | INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+11|signali | INFO:     Shutting down
+11|signali | INFO:     Waiting for application shutdown.
+11|signali | INFO:     Application shutdown complete.
+11|signali | INFO:     Finished server process [183894]
+11|signali | 2026-07-12 10:30:33.646 | INFO     | trainer.research_lab.rl_database:__init__:723 - ResearchLabDatabase: opened data/research_lab.db
+11|signali | INFO:     Started server process [185760]
+11|signali | INFO:     Waiting for application startup.
+11|signali | INFO:     Application startup complete.
+11|signali | INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+
+root@server1:/var/www/signalium#
