@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { rm, readFile, writeFile } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -118,6 +118,41 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  // ---------------------------------------------------------------------------
+  // Patch pino worker path references in the main bundle.
+  //
+  // esbuild-plugin-pino embeds the absolute outdir path (the build-machine's
+  // filesystem path) directly into index.mjs when outdir is absolute:
+  //
+  //   const outputDir = "/home/runner/workspace/artifacts/api-server/dist";
+  //
+  // On the VPS this path does not exist, so every pino worker thread crashes
+  // with MODULE_NOT_FOUND and all async log transport is silently dead.
+  //
+  // The fix: replace the hardcoded absolute outputDir string with __dirname,
+  // which is set correctly at runtime by the banner above using import.meta.url.
+  // Since all worker .mjs files land in the same directory as index.mjs,
+  // __dirname always resolves to the correct location regardless of where the
+  // bundle is deployed.
+  // ---------------------------------------------------------------------------
+  const bundlePath = path.join(distDir, "index.mjs");
+  const bundleSource = await readFile(bundlePath, "utf8");
+  // Match the hardcoded absolute outputDir injected by esbuild-plugin-pino.
+  // Pattern: const outputDir = "/absolute/path/to/dist";
+  const patched = bundleSource.replace(
+    /const outputDir = "\/[^"]+";/g,
+    "const outputDir = __dirname;"
+  );
+  if (patched === bundleSource) {
+    console.warn(
+      "[build] WARNING: pino outputDir patch pattern not found in index.mjs — " +
+      "the bundle may still contain a hardcoded absolute path."
+    );
+  } else {
+    await writeFile(bundlePath, patched, "utf8");
+    console.log("[build] Patched pino worker outputDir → __dirname in index.mjs");
+  }
 }
 
 buildAll().catch((err) => {
