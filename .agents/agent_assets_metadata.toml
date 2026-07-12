@@ -24,3 +24,9 @@ id = "SKtYq80CA6n65dPxKduEZ"
 uri = "file://signalium-platform-release.tar.gz"
 type = "unspecified"
 title = "signalium-platform-release.tar.gz"
+
+[[outputs]]
+id = "-AzFEbjJSNvRXyHrRzjXp"
+uri = "file://signalium-platform-release.zip"
+type = "unspecified"
+title = "signalium-platform-release.zip"
