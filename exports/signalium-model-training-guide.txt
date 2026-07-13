@@ -1,0 +1,503 @@
+================================================================
+SIGNALIUM MODEL TRAINING GUIDE
+================================================================
+VERSION: 1.0  |  Date: 2026-07-12
+
+----------------------------------------------------------------
+TABLE OF CONTENTS
+----------------------------------------------------------------
+1.  Architecture Overview
+2.  What the Model Decides
+3.  Input Data — TelemetrySnapshot
+4.  Output Format — TrainerDecision
+5.  Inference Request Types
+6.  Decision Logic & Thresholds
+7.  Risk & Size Signals
+8.  Training Data Sources
+9.  Step-by-Step Training Workflow
+10. Connecting a New Model Version
+11. Validating a Trained Model
+12. Promoting to Production
+13. Rollback Procedure
+14. Heuristic Baseline (fallback reference)
+
+================================================================
+1. ARCHITECTURE OVERVIEW
+================================================================
+
+Signalium Platform (Node.js)
+    │
+    │  POST /inference        (single-position decisions)
+    │  POST /trainer          (portfolio-wide decisions)
+    ▼
+signalium-trainer API   →  http://localhost:3001
+    │
+    │  internal calls
+    ▼
+Research Lab (FastAPI)  →  http://localhost:8002
+    │
+    │  reads/writes
+    ▼
+data/research_lab.db    (SQLite — experiments, runs, reports)
+
+The platform NEVER implements model logic itself.
+When the trainer is offline it falls back to hard-coded
+heuristics (documented in Section 14). Any model you train
+must be slot-compatible: same input shape, same output enum.
+
+================================================================
+2. WHAT THE MODEL DECIDES
+================================================================
+
+The model makes ONE of 7 decisions per position evaluation:
+
+┌──────────────┬────────────────────────────────────────────────┐
+│ Action       │ Meaning                                        │
+├──────────────┼────────────────────────────────────────────────┤
+│ HOLD         │ Position is healthy — do nothing               │
+│ ADD          │ Add to the position — strong conviction        │
+│ REDUCE       │ Partial close — drawdown elevated              │
+│ CLOSE        │ Full exit — risk limit breached                │
+│ TRAIL        │ Move stop-loss up to protect profit            │
+│ LOCK_PROFIT  │ Hard lock at current profit level              │
+│ BREAKEVEN    │ Move stop to entry — protect from loss         │
+└──────────────┴────────────────────────────────────────────────┘
+
+Every decision must come with a "reasoning" string — a short
+plain-English explanation the platform logs and shows to admins.
+The platform rejects any response that omits "action".
+
+================================================================
+3. INPUT DATA — TelemetrySnapshot
+================================================================
+
+The platform sends this JSON object with every inference call:
+
+{
+  "floatingPnl":       <float>  // Unrealised P&L in account currency
+  "marginUtilization": <float>  // 0.0–1.0 (e.g. 0.65 = 65% margin used)
+  "drawdown":          <float>  // Max drawdown % from peak (positive = loss)
+  "tradeAgeSeconds":   <int>    // Seconds since position was opened
+  "entryPrice":        <float>  // Price at which position was opened
+  "currentPrice":      <float>  // Current market price
+  "spread":            <float>  // Current bid-ask spread in pips
+}
+
+All fields are optional — some may be null.
+Design the model to be null-tolerant on every field.
+
+Additional context sent via InferenceRequest wrapper:
+
+  "type":   "inference" | "review-position" |
+            "review-portfolio" | "manual-analysis"
+  "symbol": "EURUSD" | "XAUUSD" | ...  (broker-normalised)
+
+For portfolio review, the platform sends an ARRAY of positions:
+  "positions": [
+    { "symbol": "EURUSD", "drawdown": 3.2, "entryPrice": 1.0850, ... },
+    { "symbol": "GBPUSD", "drawdown": 0.5, ... },
+    ...
+  ]
+
+================================================================
+4. OUTPUT FORMAT — TrainerDecision
+================================================================
+
+Your model must return this JSON:
+
+{
+  "action":    "HOLD" | "ADD" | "REDUCE" | "CLOSE" |
+               "TRAIL" | "LOCK_PROFIT" | "BREAKEVEN",
+  "reasoning": "Plain-English explanation, 1–3 sentences."
+}
+
+Extended fields accepted but not required:
+
+{
+  "action":         "HOLD",
+  "reasoning":      "...",
+  "confidence":     0.87,          // 0.0–1.0
+  "risk_signal":    "LOW",         // LOW | MEDIUM | HIGH | EXTREME
+  "size_signal":    "NORMAL",      // MINIMAL | NORMAL | AGGRESSIVE
+  "entry_urgency":  "CONDITIONAL", // IMMEDIATE | CONDITIONAL | WAIT
+  "exit_horizon":   "INTRADAY",    // SCALP | INTRADAY | SWING | HOLD
+  "model_version":  "v2.3.1"       // tag for audit trail
+}
+
+The platform validates that "action" is one of the 7 enum values.
+Any other value causes a fallback to heuristics.
+
+================================================================
+5. INFERENCE REQUEST TYPES
+================================================================
+
+The platform sends one of 4 request types.
+Your model should handle all of them:
+
+┌────────────────────┬────────────────────────────────────────┐
+│ Type               │ What the platform expects back         │
+├────────────────────┼────────────────────────────────────────┤
+│ inference          │ Single TrainerDecision (action+reason) │
+│ review-position    │ Single TrainerDecision for one symbol  │
+│ review-portfolio   │ Array of decisions, one per position   │
+│ manual-analysis    │ Single TrainerDecision (admin-trigger) │
+└────────────────────┴────────────────────────────────────────┘
+
+For "review-portfolio" the response should be:
+{
+  "action": "HOLD",           // overall portfolio action
+  "reasoning": "...",
+  "positions": [
+    { "symbol": "EURUSD", "action": "HOLD",   "reasoning": "..." },
+    { "symbol": "XAUUSD", "action": "REDUCE", "reasoning": "..." }
+  ]
+}
+
+================================================================
+6. DECISION LOGIC & THRESHOLDS
+================================================================
+
+The built-in heuristic baseline (your training target to beat):
+
+┌─────────────────────────────┬──────────────┐
+│ Condition                   │ Action       │
+├─────────────────────────────┼──────────────┤
+│ No open positions           │ HOLD         │
+│ drawdown ≥ 15%              │ CLOSE        │
+│ marginUtilization ≥ 0.80    │ CLOSE        │
+│ drawdown ≥ 8%               │ REDUCE       │
+│ floatingPnl% ≥ 5%           │ LOCK_PROFIT  │
+│ floatingPnl% ≥ 2%           │ TRAIL        │
+│ floatingPnl% ≥ 0.5%         │ BREAKEVEN    │
+│ position healthy & momentum │ ADD          │
+│ everything else             │ HOLD         │
+└─────────────────────────────┴──────────────┘
+
+Your model should learn WHEN to deviate from these thresholds
+based on symbol, session, spread, and trade age context.
+
+Key relationships to learn:
+
+- High spread → penalise ADD, favour HOLD or CLOSE
+- Old position (tradeAgeSeconds > 14400) + no profit → CLOSE
+- Low drawdown + strong positive PnL momentum → TRAIL or LOCK
+- High margin utilisation even with profit → REDUCE
+- Young position (< 300s) → bias toward HOLD unless extreme
+
+================================================================
+7. RISK & SIZE SIGNALS
+================================================================
+
+These are OPTIONAL outputs but the platform uses them
+to gate trade sizing in the QDE engine.
+
+RISK_SIGNAL:
+  LOW      → normal sizing allowed
+  MEDIUM   → sizing capped at 75% of normal
+  HIGH     → sizing capped at 50%, alert triggered
+  EXTREME  → sizing blocked, position review required
+
+SIZE_SIGNAL:
+  MINIMAL    → use smallest allowed lot size
+  NORMAL     → use standard lot size for account tier
+  AGGRESSIVE → use maximum allowed lot size (requires LOW risk)
+
+Signalium IGNORES size_signal = AGGRESSIVE when
+risk_signal = HIGH or EXTREME. Train accordingly.
+
+ENTRY_URGENCY (for ADD decisions):
+  IMMEDIATE   → execute at market
+  CONDITIONAL → execute only if spread < threshold
+  WAIT        → set limit order, do not market-execute
+
+EXIT_HORIZON (guides stop placement):
+  SCALP      → seconds to minutes
+  INTRADAY   → hours, close before daily rollover
+  SWING      → days, hold through pullbacks
+  HOLD       → open-ended, trend-following
+
+================================================================
+8. TRAINING DATA SOURCES
+================================================================
+
+All training data flows through the Research Lab at:
+  http://localhost:8002
+
+Primary data sources:
+
+A) TRADE TELEMETRY STREAM
+   Every live trade sends TelemetrySnapshot records to the
+   platform. These are stored in the Signalium database and
+   accessible via the Research Lab API.
+
+   Fields recorded per trade:
+   - symbol, broker, account_id
+   - entry_price, current_price, spread
+   - floating_pnl, drawdown, margin_utilization
+   - trade_age_seconds
+   - trainer_action (what the model decided)
+   - outcome (what actually happened: profit, loss, BE)
+   - r_multiple (actual outcome / initial risk)
+
+B) EXPERIMENT RECORDS
+   GET http://localhost:8002/experiments
+   Each experiment logs: config, model version, dataset
+   period, hyperparameters, and evaluation metrics.
+
+C) VALIDATION REPORTS
+   GET http://localhost:8002/validation/reports
+   Automated backtests run by the platform after each
+   training run, before the model is eligible for deployment.
+
+D) HISTORICAL CANDLES (from broker)
+   The platform collects OHLCV data per symbol from
+   connected brokers. Ask the Signalium admin for a
+   database export or direct query access.
+
+Target variable for supervised training:
+  Given TelemetrySnapshot at time T,
+  predict the action that maximises R-multiple over
+  the next N minutes (configurable, default: 60 min).
+
+================================================================
+9. STEP-BY-STEP TRAINING WORKFLOW
+================================================================
+
+STEP 1 — Define an Experiment
+──────────────────────────────
+POST http://localhost:8002/experiments
+Headers: X-Trainer-Api-Key: <your key>
+Body:
+{
+  "name": "v3-drawdown-aware-v1",
+  "description": "Adding spread and trade-age features",
+  "config": {
+    "model_type": "gradient_boosted_tree",
+    "features": ["drawdown","floatingPnl","marginUtilization",
+                 "tradeAgeSeconds","spread"],
+    "target": "optimal_action",
+    "dataset_start": "2025-01-01",
+    "dataset_end":   "2026-06-30",
+    "train_split": 0.80,
+    "val_split":   0.10,
+    "test_split":  0.10
+  }
+}
+
+STEP 2 — Start a Training Run
+──────────────────────────────
+POST http://localhost:8002/training/runs
+Body:
+{
+  "experiment_id": "<id from step 1>",
+  "hyperparameters": {
+    "learning_rate": 0.05,
+    "max_depth": 6,
+    "n_estimators": 500,
+    "early_stopping_rounds": 20
+  }
+}
+
+STEP 3 — Monitor Progress
+──────────────────────────
+GET http://localhost:8002/training/runs/{run_id}
+Polls: status, epoch, train_loss, val_loss, elapsed_time
+
+GET http://localhost:8002/training/resource-usage
+Shows: GPU/CPU utilisation, memory, estimated completion
+
+STEP 4 — Review Validation Report
+───────────────────────────────────
+Once status = "complete", a validation report is auto-generated:
+GET http://localhost:8002/validation/reports?run_id={run_id}
+
+Key metrics to check:
+  accuracy          → target ≥ 0.72 vs heuristic baseline
+  precision_close   → must be high — false CLOSE is very costly
+  recall_hold       → should be high — biased toward inaction
+  r_multiple_mean   → target ≥ 1.3 (1.3:1 reward/risk average)
+  max_drawdown_test → must be lower than heuristic baseline
+  sharpe_ratio      → target ≥ 1.5
+
+STEP 5 — Drift & Robustness Check
+───────────────────────────────────
+GET http://localhost:8002/validation/drift
+Checks feature distribution between training data and live data.
+Reject the model if drift score > 0.15 on any feature.
+
+GET http://localhost:8002/validation/robustness
+Stress-tests the model under:
+  - extreme spread (5x normal)
+  - missing fields (null telemetry)
+  - rapid drawdown acceleration
+  - high margin utilisation bursts
+
+STEP 6 — Shadow Testing
+────────────────────────
+Before replacing the live model, run in shadow mode:
+
+POST http://localhost:8002/shadow-testing/deployments
+Body:
+{
+  "run_id": "<your training run id>",
+  "shadow_duration_hours": 72,
+  "symbols": ["EURUSD","XAUUSD","GBPUSD"]
+}
+
+Shadow mode: the NEW model receives live telemetry and
+makes decisions, but ONLY the OLD model's decisions execute.
+Both sets of decisions are logged and compared.
+
+GET http://localhost:8002/shadow-testing/deployments/{id}/comparison
+Shows: agreement rate, divergence points, outcome comparison
+
+Minimum bar for promotion:
+  agreement_rate   ≥ 0.78  (agree with live model 78% of time)
+  new_model_wins   ≥ 0.55  (new model outperforms on divergences)
+
+================================================================
+10. CONNECTING A NEW MODEL VERSION
+================================================================
+
+When your training run is complete and validation passes,
+register it as a deployment candidate:
+
+GET http://localhost:8002/deployment-candidates
+  Lists all candidates eligible for promotion.
+
+The Signalium admin panel (Admin → Research Lab → Deployment
+Candidates) will show your candidate automatically once
+registered by the Research Lab backend.
+
+To promote it via the API (or platform UI):
+POST http://localhost:8002/deployment-candidates/{id}/approve
+
+What happens after approval:
+1. Platform notifies signalium-trainer to hot-swap the model
+2. New model starts receiving live inference requests
+3. Deployment is logged to the Signalium audit trail
+4. Old model version is archived (not deleted)
+
+To update the trainer URL if you move to a new server:
+  Admin → Managed Secrets → trainer.url = http://new-host:port
+
+================================================================
+11. VALIDATING A TRAINED MODEL
+================================================================
+
+Before promoting, manually test the model endpoint:
+
+# Single inference test
+curl -X POST http://localhost:3001/inference \
+  -H 'Content-Type: application/json' \
+  -H 'X-Trainer-Api-Key: <your key>' \
+  -d '{
+    "type": "inference",
+    "symbol": "EURUSD",
+    "telemetry": {
+      "floatingPnl": -45.20,
+      "marginUtilization": 0.42,
+      "drawdown": 3.8,
+      "tradeAgeSeconds": 3600,
+      "entryPrice": 1.0850,
+      "currentPrice": 1.0812,
+      "spread": 1.2
+    }
+  }'
+
+Expected response shape:
+{
+  "action": "HOLD",
+  "reasoning": "Drawdown within acceptable range...",
+  "risk_signal": "MEDIUM",
+  "size_signal": "NORMAL"
+}
+
+Sanity checks before promoting any model:
+  ✓ drawdown ≥ 15 always returns CLOSE
+  ✓ null telemetry always returns HOLD (never crashes)
+  ✓ invalid symbol returns a valid action (not a 500 error)
+  ✓ response time < 500ms under normal load
+  ✓ response time < 2000ms under stress (10 req/s)
+  ✓ Content-Type: application/json on every response
+
+================================================================
+12. PROMOTING TO PRODUCTION
+================================================================
+
+Via the Admin Panel:
+  Admin → Research Lab → Deployment Candidates
+  Click Approve on the validated candidate.
+
+Via the API:
+  POST http://localhost:8002/deployment-candidates/{id}/approve
+  Headers: X-Trainer-Api-Key: <your key>
+
+Via psql (emergency):
+  Do NOT modify model config directly in the database.
+  Always go through the approval API.
+
+After promotion:
+  Monitor Admin → Trainer Sync Status for 30 minutes.
+  Watch: latency, error rate, decision distribution.
+  Healthy baseline:
+    latency      < 400ms
+    error rate   < 0.1%
+    CLOSE rate   < 5% of all decisions (red flag if higher)
+    HOLD rate    50–80% of all decisions (expected normal)
+
+================================================================
+13. ROLLBACK PROCEDURE
+================================================================
+
+If a promoted model causes issues:
+
+Via Admin Panel:
+  Admin → Research Lab → Deployment Candidates
+  Find the current candidate → click Rollback
+
+Via API:
+  POST http://localhost:8002/deployment-candidates/{id}/rollback
+
+Emergency (trainer offline):
+  The platform automatically falls back to built-in
+  heuristics (Section 14) when the trainer is unreachable.
+  No manual action needed — it is fail-safe by design.
+  Circuit breaker resets after 60 seconds.
+
+After rollback:
+  The previous model version is restored automatically.
+  File a validation report on what went wrong before
+  attempting another training run.
+
+================================================================
+14. HEURISTIC BASELINE (built-in fallback reference)
+================================================================
+
+When the trainer is offline, this is what runs.
+Use it as your performance floor — your model must beat it.
+
+Input: TelemetrySnapshot
+Output: TrainerDecision
+
+Logic (in priority order):
+  1. If no positions:              → HOLD
+  2. If drawdown ≥ 15%:           → CLOSE  (capital preservation)
+  3. If marginUtilization ≥ 0.8:  → CLOSE  (margin safety)
+  4. If drawdown ≥ 8%:            → REDUCE (reduce exposure)
+  5. If floatingPnl% ≥ 5%:        → LOCK_PROFIT
+  6. If floatingPnl% ≥ 2%:        → TRAIL  (move stop up)
+  7. If floatingPnl% ≥ 0.5%:      → BREAKEVEN
+  8. If strong momentum + low risk → ADD
+  9. Default:                     → HOLD
+
+risk_signal mapping (heuristic):
+  drawdown ≥ 10% → HIGH
+  otherwise      → MEDIUM
+
+size_signal:    always NORMAL (heuristic has no size logic)
+entry_urgency:  IMMEDIATE if ADD, CONDITIONAL otherwise
+
+================================================================
+END OF TRAINING GUIDE
+================================================================

@@ -30,3 +30,9 @@ id = "-AzFEbjJSNvRXyHrRzjXp"
 uri = "file://signalium-platform-release.zip"
 type = "unspecified"
 title = "signalium-platform-release.zip"
+
+[[outputs]]
+id = "LdEBhrvPgg7eLti7BYoFl"
+uri = "file://exports/signalium-model-training-guide.txt"
+type = "text"
+title = "Signalium Model Training Guide"
