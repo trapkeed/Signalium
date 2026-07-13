@@ -69,7 +69,10 @@ export const SETTINGS_DEFINITIONS: SettingsDefinition[] = [
 
   // ─── Market data ──────────────────────────────────────────────────────
   { key: "market_data.tiingo_api_key", category: "market_data", description: "Tiingo market data API key.", source: "vault", managePath: "/admin/data-providers" },
-  { key: "market_data.oanda_api_key", category: "market_data", description: "OANDA API key.", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.oanda_api_key", category: "market_data", description: "OANDA API personal access token.", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.oanda_account_id", category: "market_data", description: "OANDA account ID (e.g. 101-004-XXXXXXX-001). Required for the live price stream.", source: "vault", envVarName: "OANDA_ACCOUNT_ID", managePath: "/admin/data-providers" },
+  { key: "market_data.oanda_stream_url", category: "market_data", description: "OANDA streaming base URL. Demo: https://stream-fxpractice.oanda.com  Live: https://stream-fxtrade.oanda.com", source: "vault", envVarName: "OANDA_STREAM_URL", managePath: "/admin/data-providers" },
+  { key: "market_data.oanda_stream_symbols", category: "market_data", description: "Comma-separated OANDA instruments to subscribe to (e.g. EUR_USD,XAU_USD,GBP_USD). Defaults to EUR_USD,XAU_USD,GBP_USD.", source: "vault", envVarName: "OANDA_STREAM_SYMBOLS", managePath: "/admin/data-providers" },
   { key: "market_data.twelvedata_api_key", category: "market_data", description: "Twelve Data API key.", source: "vault", managePath: "/admin/data-providers" },
   { key: "market_data.polygon_api_key", category: "market_data", description: "Polygon.io API key.", source: "vault", managePath: "/admin/data-providers" },
   { key: "market_data.finnhub_api_key", category: "market_data", description: "Finnhub API key.", source: "vault", managePath: "/admin/data-providers" },

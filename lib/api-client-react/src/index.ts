@@ -2,5 +2,4 @@ export * from "./generated/api";
 export * from "./generated/api.schemas";
 export { setBaseUrl, setAuthTokenGetter, customFetch, ApiError, ResponseParseError } from "./custom-fetch";
 export type { AuthTokenGetter, CustomFetchOptions } from "./custom-fetch";
-export * from './generated/api';
-export * from './generated/api.schemas';
+export * from "./oanda-stream-hooks";

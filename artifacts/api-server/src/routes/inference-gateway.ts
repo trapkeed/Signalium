@@ -47,6 +47,7 @@ import { logAudit } from "../lib/auditLog";
 import { captureQdeDecision, emitTradeEvent, finaliseExitedTrade, finaliseExitedTradeSafe } from "../lib/tradeLifecycle";
 import { deploymentManager } from "../lib/deploymentManager";
 import { getActiveProvider } from "../lib/marketData/registry";
+import { getOandaStreamPrice } from "../lib/marketData/oandaStream";
 import { isQdeActiveForUser } from "../lib/qdeSwitch";
 
 const router = Router();
@@ -114,6 +115,15 @@ router.post("/inference", async (req, res) => {
   // S21B: resolve active deployment for version pinning and traceability
   const activeMeta = deploymentManager.getActiveMeta();
 
+  // OANDA stream price hydration: if telemetry has no currentPrice (EA
+  // offline or no open position), supplement from the live OANDA stream cache.
+  // This gives the trainer a real market price even when the EA is disconnected.
+  let oandaCurrentPrice: number | null = null;
+  if (!latestTelemetry?.currentPrice) {
+    const streamPrice = getOandaStreamPrice(symbol);
+    if (streamPrice) oandaCurrentPrice = streamPrice.mid;
+  }
+
   const request: InferenceRequest = {
     type: "inference",
     symbol,
@@ -128,14 +138,34 @@ router.post("/inference", async (req, res) => {
           openPositions: latestTelemetry.openPositions,
           floatingPnl: Number(latestTelemetry.floatingPnl),
           entryPrice: latestTelemetry.entryPrice ? Number(latestTelemetry.entryPrice) : null,
-          currentPrice: latestTelemetry.currentPrice ? Number(latestTelemetry.currentPrice) : null,
+          currentPrice: latestTelemetry.currentPrice
+            ? Number(latestTelemetry.currentPrice)
+            : oandaCurrentPrice,
           spread: latestTelemetry.spread ? Number(latestTelemetry.spread) : null,
           drawdown: latestTelemetry.drawdown ? Number(latestTelemetry.drawdown) : null,
           tradeAgeSeconds: latestTelemetry.tradeAgeSeconds,
           swap: latestTelemetry.swap ? Number(latestTelemetry.swap) : null,
           commission: latestTelemetry.commission ? Number(latestTelemetry.commission) : null,
         }
-      : null,
+      : oandaCurrentPrice
+        ? {
+            // No EA telemetry at all — provide a minimal snapshot from the stream
+            // so the trainer at least has a live price to reason about.
+            balance: 0,
+            equity: 0,
+            margin: 0,
+            freeMargin: 0,
+            openPositions: 0,
+            floatingPnl: 0,
+            entryPrice: null,
+            currentPrice: oandaCurrentPrice,
+            spread: null,
+            drawdown: null,
+            tradeAgeSeconds: null,
+            swap: null,
+            commission: null,
+          }
+        : null,
   };
 
   try {

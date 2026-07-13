@@ -16,6 +16,7 @@ import { startAccountDeletionSweep } from "./lib/dataGovernance";
 import { runStartupDiagnostics } from "./lib/productionReadiness";
 import { seedMarketDataProviders } from "./lib/marketData/seed";
 import { startMarketDataHealthSweep } from "./lib/marketData/health";
+import { oandaStream } from "./lib/marketData/oandaStream";
 import { startRunpodMonitor } from "./lib/runpod/monitor";
 import { startCommandRetrySweep } from "./lib/commandRetry";
 
@@ -50,6 +51,11 @@ const server = app.listen(port, (err) => {
     .catch((seedErr) => {
       logger.error({ err: seedErr }, "Failed to seed market data providers");
     });
+
+  // Start OANDA live price stream (no-op if API key / account ID not yet configured)
+  oandaStream.start().catch((err) => {
+    logger.warn({ err }, "OandaStream: failed to start — will retry on next vault update");
+  });
 
   startRunpodMonitor(60_000); // poll active RunPod pods every minute
 
@@ -98,6 +104,14 @@ startAccountDeletionSweep(60 * 60 * 1_000);
 // (display-only, for the admin deployment dashboard's rollback reference).
 recordBackendDeploymentIfChanged().catch((err) => {
   logger.warn({ err }, "Failed to record backend service deployment version");
+});
+
+// Graceful shutdown — stop the OANDA stream before process exits
+process.once("SIGTERM", () => {
+  oandaStream.stop();
+});
+process.once("SIGINT", () => {
+  oandaStream.stop();
 });
 
 // S21B: Initialize deployment manager from DB, then start background polling

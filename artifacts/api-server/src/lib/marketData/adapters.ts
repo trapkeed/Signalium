@@ -1,6 +1,6 @@
 /**
- * Concrete market-data adapters. OANDA (live) and Tiingo (historical) are
- * real implementations; everything else is a placeholder satisfying the
+ * Concrete market-data adapters. OANDA (live, streaming) and Tiingo (historical)
+ * are real implementations; everything else is a placeholder satisfying the
  * same interface so it shows up in the registry as "not connected" until a
  * real adapter is written for it.
  *
@@ -9,9 +9,14 @@
  * `provider_credentials` table (that table remains available for ad-hoc
  * provider config, but the two shipped adapters use the same vault pattern
  * as every other admin-configurable secret in this codebase).
+ *
+ * OANDA now also implements `fetchPrice()` which reads from the in-process
+ * streaming cache (oandaStream.ts). The stream itself is started at server
+ * boot in index.ts.
  */
 import { resolveManagedConfig } from "../secretsVault";
-import type { HealthCheckResult, MarketDataAdapter } from "./types";
+import { oandaStream } from "./oandaStream";
+import type { HealthCheckResult, LivePrice, MarketDataAdapter } from "./types";
 
 const PROBE_TIMEOUT_MS = 5_000;
 
@@ -36,16 +41,29 @@ async function timedFetch(url: string, init: RequestInit): Promise<HealthCheckRe
 const oandaAdapter: MarketDataAdapter = {
   slug: "oanda",
   name: "OANDA",
+
   async isConfigured() {
-    return (await resolveManagedConfig("market_data.oanda_api_key", "OANDA_API_KEY")) !== null;
+    const [apiKey, accountId] = await Promise.all([
+      resolveManagedConfig("market_data.oanda_api_key", "OANDA_API_KEY"),
+      resolveManagedConfig("market_data.oanda_account_id", "OANDA_ACCOUNT_ID"),
+    ]);
+    return apiKey !== null && accountId !== null;
   },
+
   async checkHealth() {
     const apiKey = await resolveManagedConfig("market_data.oanda_api_key", "OANDA_API_KEY");
-    if (!apiKey) return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.oanda_api_key / OANDA_API_KEY)" };
+    if (!apiKey) {
+      return { reachable: false, latencyMs: null, errorMessage: "No API key configured (market_data.oanda_api_key / OANDA_API_KEY)" };
+    }
     const baseUrl =
-      (await resolveManagedConfig("market_data.oanda_api_base_url", "OANDA_API_BASE_URL")) ?? "https://api-fxpractice.oanda.com";
+      (await resolveManagedConfig("market_data.oanda_api_base_url", "OANDA_API_BASE_URL")) ??
+      "https://api-fxpractice.oanda.com";
     // Lightweight authenticated ping — lists accounts, doesn't touch pricing/orders.
     return timedFetch(`${baseUrl}/v3/accounts`, { headers: { Authorization: `Bearer ${apiKey}` } });
+  },
+
+  async fetchPrice(instrument: string): Promise<LivePrice | null> {
+    return oandaStream.getPrice(instrument);
   },
 };
 

@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import { getActiveProvider } from "../lib/marketData/registry";
+import { oandaStream } from "../lib/marketData/oandaStream";
 
 const router = Router();
 
@@ -44,6 +45,18 @@ router.get("/", async (req, res) => {
     req.log.error(err, "Failed to list data providers");
     return res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// ─── OANDA stream status ──────────────────────────────────────────────────────
+
+/**
+ * GET /data-providers/oanda/stream-status
+ * Returns the live OANDA streaming worker status: connection state, subscribed
+ * symbols, per-symbol cached prices, tick count, and last heartbeat time.
+ * Admin-only. Polled every 10 s by the admin data-providers UI.
+ */
+router.get("/oanda/stream-status", requireAdmin, (_req, res) => {
+  return res.json(oandaStream.getStatus());
 });
 
 // ─── Admin ──────────────────────────────────────────────────────────────────

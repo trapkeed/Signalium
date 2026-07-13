@@ -19,6 +19,7 @@ import {
   useUpdateProviderPriority,
   useListSymbols,
   useGetProviderAdapterInfo,
+  useGetOandaStreamStatus,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,6 +40,11 @@ import {
   ChevronRight,
   ArrowUp,
   ArrowDown,
+  Radio,
+  Signal,
+  SignalHigh,
+  SignalLow,
+  SignalZero,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +184,7 @@ function ProviderRow({
                 {!adapterInfo.hasAdapter ? "not connected" : adapterInfo.isConfigured ? "configured" : "no api key"}
               </Badge>
             )}
+            {provider.slug === "oanda" && <OandaStreamBadge />}
           </div>
         </td>
         <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{provider.apiEndpoint ?? "—"}</td>
@@ -218,9 +225,29 @@ function ProviderRow({
   );
 }
 
+// ─── OANDA stream badge (inline in row) ──────────────────────────────────────
+
+function OandaStreamBadge() {
+  const { data } = useGetOandaStreamStatus({ refetchInterval: 10_000 });
+  if (!data) return null;
+  const state = data.state;
+  if (state === "off") return null;
+  const color =
+    state === "connected" ? "text-green-500" :
+    state === "reconnecting" ? "text-yellow-500" :
+    "text-destructive";
+  return (
+    <span className={`flex items-center gap-0.5 font-mono text-[10px] ${color}`}>
+      <Radio className="w-2.5 h-2.5" />
+      stream
+    </span>
+  );
+}
+
 // ─── Provider detail (expandable) ─────────────────────────────────────────────
 
 function ProviderDetail({ provider }: { provider: DataProvider }) {
+  const isOanda = provider.slug === "oanda";
   return (
     <Tabs defaultValue="credentials">
       <TabsList className="h-auto flex-wrap gap-1">
@@ -236,12 +263,162 @@ function ProviderDetail({ provider }: { provider: DataProvider }) {
         <TabsTrigger value="mappings" className="text-xs font-mono gap-1">
           <GitBranch className="w-3 h-3" /> Symbol Mappings
         </TabsTrigger>
+        {isOanda && (
+          <TabsTrigger value="stream" className="text-xs font-mono gap-1">
+            <Radio className="w-3 h-3" /> Stream
+          </TabsTrigger>
+        )}
       </TabsList>
       <TabsContent value="credentials" className="mt-3"><CredentialsPanel providerId={provider.id} /></TabsContent>
       <TabsContent value="capabilities" className="mt-3"><CapabilitiesPanel providerId={provider.id} /></TabsContent>
       <TabsContent value="status" className="mt-3"><StatusPanel providerId={provider.id} apiEndpoint={provider.apiEndpoint ?? null} /></TabsContent>
       <TabsContent value="mappings" className="mt-3"><SymbolMappingsPanel providerId={provider.id} /></TabsContent>
+      {isOanda && (
+        <TabsContent value="stream" className="mt-3"><OandaStreamPanel /></TabsContent>
+      )}
     </Tabs>
+  );
+}
+
+// ─── OANDA streaming status panel ─────────────────────────────────────────────
+
+function OandaStreamPanel() {
+  const { data, isLoading, error } = useGetOandaStreamStatus({ refetchInterval: 10_000 });
+
+  if (isLoading) {
+    return <p className="text-xs font-mono text-muted-foreground">Loading stream status…</p>;
+  }
+
+  if (error || !data) {
+    return (
+      <p className="text-xs font-mono text-destructive">
+        Failed to load stream status. Ensure the API key and account ID are set in Admin → Managed Secrets.
+      </p>
+    );
+  }
+
+  const { state, subscribedSymbols, tickCount, lastHeartbeatAt, lastTickAt, prices, errorMessage } = data;
+
+  const stateColor =
+    state === "connected" ? "text-green-500" :
+    state === "reconnecting" ? "text-yellow-500" :
+    state === "disconnected" ? "text-destructive" :
+    "text-muted-foreground";
+
+  const StateIcon =
+    state === "connected" ? SignalHigh :
+    state === "reconnecting" ? SignalLow :
+    state === "disconnected" ? SignalZero :
+    Signal;
+
+  function ageLabel(iso: string | null): string {
+    if (!iso) return "—";
+    const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (secs < 60) return `${secs}s ago`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+    return `${Math.floor(secs / 3600)}h ago`;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Connection state header */}
+      <div className="flex items-center gap-4 bg-secondary/20 rounded-sm px-4 py-3">
+        <span className={`flex items-center gap-1.5 font-mono text-sm font-medium ${stateColor}`}>
+          <StateIcon className="w-4 h-4" />
+          {state.toUpperCase()}
+        </span>
+        <span className="text-xs font-mono text-muted-foreground">
+          {tickCount.toLocaleString()} ticks received
+        </span>
+        {lastTickAt && (
+          <span className="text-xs font-mono text-muted-foreground">
+            last tick: {ageLabel(lastTickAt)}
+          </span>
+        )}
+        {lastHeartbeatAt && (
+          <span className="text-xs font-mono text-muted-foreground">
+            heartbeat: {ageLabel(lastHeartbeatAt)}
+          </span>
+        )}
+      </div>
+
+      {/* Error message */}
+      {errorMessage && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-sm px-3 py-2">
+          <p className="text-xs font-mono text-destructive">{errorMessage}</p>
+        </div>
+      )}
+
+      {/* Configuration hint when off */}
+      {state === "off" && (
+        <div className="bg-secondary/20 rounded-sm px-4 py-3">
+          <p className="text-xs font-mono text-muted-foreground">
+            Stream is idle. Set <code className="bg-secondary px-1 rounded">market_data.oanda_api_key</code> and{" "}
+            <code className="bg-secondary px-1 rounded">market_data.oanda_account_id</code> in{" "}
+            <strong>Admin → Managed Secrets</strong>, then restart the API server.
+          </p>
+          <p className="text-xs font-mono text-muted-foreground mt-1">
+            Optionally set <code className="bg-secondary px-1 rounded">market_data.oanda_stream_symbols</code> (comma-separated, e.g.{" "}
+            <code className="bg-secondary px-1 rounded">EUR_USD,XAU_USD,GBP_USD</code>).
+          </p>
+        </div>
+      )}
+
+      {/* Subscribed symbols */}
+      {subscribedSymbols.length > 0 && (
+        <div>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
+            Subscribed Instruments
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {subscribedSymbols.map((sym) => (
+              <Badge key={sym} variant="secondary" className="font-mono text-[10px] px-2 py-0.5">
+                {sym}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Live price table */}
+      {Object.keys(prices).length > 0 && (
+        <div>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
+            Cached Prices
+          </p>
+          <div className="border border-border rounded-sm overflow-hidden">
+            <table className="w-full text-xs font-mono">
+              <thead>
+                <tr className="border-b border-border bg-secondary/30">
+                  {["Instrument", "Bid", "Mid", "Ask", "Updated"].map((h) => (
+                    <th key={h} className="text-left px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(prices)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([instrument, price]) => (
+                    <tr key={instrument} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                      <td className="px-3 py-2 font-medium">{instrument}</td>
+                      <td className="px-3 py-2 text-blue-500">{price.bid.toFixed(5)}</td>
+                      <td className="px-3 py-2 text-foreground">{price.mid.toFixed(5)}</td>
+                      <td className="px-3 py-2 text-green-500">{price.ask.toFixed(5)}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{ageLabel(price.timestamp)}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] font-mono text-muted-foreground">
+        Auto-refreshes every 10 seconds · Stream URL: stream-fxpractice.oanda.com (demo)
+      </p>
+    </div>
   );
 }
 
@@ -531,9 +708,9 @@ export default function AdminDataProviders() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-xs text-muted-foreground font-mono">Loading…</td></tr>
               ) : sorted.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground font-mono text-xs">No data providers yet</td></tr>
+                <tr><td colSpan={6} className="px-4 py-6 text-center text-xs text-muted-foreground font-mono">No data providers configured.</td></tr>
               ) : (
                 sorted.map((p, i) => (
                   <ProviderRow
