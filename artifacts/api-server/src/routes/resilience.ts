@@ -22,9 +22,14 @@ router.use(requireAdmin);
 
 // ─── Backups ────────────────────────────────────────────────────────────────
 
-router.get("/backups", async (_req, res) => {
-  const backups = await listBackups();
-  res.json({ backups });
+router.get("/backups", async (req, res) => {
+  try {
+    const backups = await listBackups();
+    res.json({ backups });
+  } catch (err) {
+    req.log.error(err, "Failed to list backups");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/backups/run", async (req, res) => {
@@ -33,7 +38,7 @@ router.post("/backups/run", async (req, res) => {
     const backupId = await runBackup(userId ?? "unknown", "manual");
     res.json({ backupId });
   } catch (err) {
-    logger.error({ err }, "Manual backup trigger failed");
+    req.log.error(err, "Manual backup trigger failed");
     res.status(500).json({ error: "Backup failed — see server logs" });
   }
 });
@@ -45,9 +50,14 @@ router.post("/backups/:id/validate", async (req, res) => {
     res.status(400).json({ error: "Invalid backup id" });
     return;
   }
-  const result = await validateBackup(backupId);
-  if (userId) await logAudit(userId, "backup.validated", "backup_record", String(backupId), result);
-  res.json(result);
+  try {
+    const result = await validateBackup(backupId);
+    if (userId) await logAudit(userId, "backup.validated", "backup_record", String(backupId), result);
+    res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to validate backup");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/backups/:id/restore-plan", async (req, res) => {
@@ -61,20 +71,31 @@ router.get("/backups/:id/restore-plan", async (req, res) => {
     const plan = await buildRestorePlan(backupId, userId ?? "unknown");
     res.json(plan);
   } catch (err) {
+    req.log.error(err, "Failed to build restore plan");
     res.status(404).json({ error: err instanceof Error ? err.message : "Backup not found" });
   }
 });
 
 // ─── Job Queue ──────────────────────────────────────────────────────────────
 
-router.get("/queue/stats", async (_req, res) => {
-  const stats = await getQueueStats();
-  res.json({ stats });
+router.get("/queue/stats", async (req, res) => {
+  try {
+    const stats = await getQueueStats();
+    res.json({ stats });
+  } catch (err) {
+    req.log.error(err, "Failed to get queue stats");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-router.get("/queue/dead-letter", async (_req, res) => {
-  const jobs = await listDeadLetterJobs();
-  res.json({ jobs });
+router.get("/queue/dead-letter", async (req, res) => {
+  try {
+    const jobs = await listDeadLetterJobs();
+    res.json({ jobs });
+  } catch (err) {
+    req.log.error(err, "Failed to list dead-letter jobs");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/queue/:id/requeue", async (req, res) => {
@@ -84,13 +105,18 @@ router.post("/queue/:id/requeue", async (req, res) => {
     res.status(400).json({ error: "Invalid job id" });
     return;
   }
-  const requeued = await requeueJob(jobId);
-  if (!requeued) {
-    res.status(404).json({ error: "Job not found" });
-    return;
+  try {
+    const requeued = await requeueJob(jobId);
+    if (!requeued) {
+      res.status(404).json({ error: "Job not found" });
+      return;
+    }
+    if (userId) await logAudit(userId, "job_queue.requeued", "job_queue", String(jobId));
+    res.json({ requeued: true });
+  } catch (err) {
+    req.log.error(err, "Failed to requeue job");
+    res.status(500).json({ error: "Internal server error" });
   }
-  if (userId) await logAudit(userId, "job_queue.requeued", "job_queue", String(jobId));
-  res.json({ requeued: true });
 });
 
 // ─── Circuit Breakers ───────────────────────────────────────────────────────
@@ -101,9 +127,14 @@ router.get("/circuit-breakers", (_req, res) => {
 
 // ─── Secret / Key Rotation ──────────────────────────────────────────────────
 
-router.get("/secret-rotation", async (_req, res) => {
-  const statuses = await getRotationStatuses();
-  res.json({ secrets: statuses });
+router.get("/secret-rotation", async (req, res) => {
+  try {
+    const statuses = await getRotationStatuses();
+    res.json({ secrets: statuses });
+  } catch (err) {
+    req.log.error(err, "Failed to get rotation statuses");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/secret-rotation/:secretName/mark-rotated", async (req, res) => {
@@ -116,15 +147,21 @@ router.post("/secret-rotation/:secretName/mark-rotated", async (req, res) => {
     await markSecretRotated(req.params.secretName, userId);
     res.json({ marked: true });
   } catch (err) {
+    req.log.error(err, "Failed to mark secret rotated");
     res.status(404).json({ error: err instanceof Error ? err.message : "Unknown secret" });
   }
 });
 
 // ─── Audit Log Retention ────────────────────────────────────────────────────
 
-router.get("/audit-retention", async (_req, res) => {
-  const info = await getAuditLogRetentionInfo();
-  res.json(info);
+router.get("/audit-retention", async (req, res) => {
+  try {
+    const info = await getAuditLogRetentionInfo();
+    res.json(info);
+  } catch (err) {
+    req.log.error(err, "Failed to get audit retention info");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ─── Configuration Export / Restore ────────────────────────────────────────
@@ -135,9 +172,14 @@ router.get("/audit-retention", async (_req, res) => {
 
 router.get("/config-export", async (req, res) => {
   const { userId } = getAuth(req);
-  const snapshot = await exportConfig();
-  if (userId) await logAudit(userId, "config.exported", "config_snapshot", String(Date.now()));
-  res.json(snapshot);
+  try {
+    const snapshot = await exportConfig();
+    if (userId) await logAudit(userId, "config.exported", "config_snapshot", String(Date.now()));
+    res.json(snapshot);
+  } catch (err) {
+    req.log.error(err, "Config export failed");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/config-import", async (req, res) => {
@@ -151,7 +193,7 @@ router.post("/config-import", async (req, res) => {
     await logAudit(userId, "config.imported", "config_snapshot", String(Date.now()), { tables: result.tables });
     res.json(result);
   } catch (err) {
-    logger.error({ err }, "Config import failed");
+    req.log.error(err, "Config import failed");
     res.status(400).json({ error: err instanceof Error ? err.message : "Invalid config snapshot" });
   }
 });

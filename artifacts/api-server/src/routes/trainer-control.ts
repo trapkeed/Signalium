@@ -47,8 +47,14 @@ async function proxy<T>(res: import("express").Response, fn: () => Promise<T>): 
   }
 }
 
-router.get("/status", async (_req, res) => {
-  res.json({ configured: await researchLab.isResearchLabConfigured() });
+router.get("/status", async (req, res) => {
+  try {
+    const configured = await researchLab.isResearchLabConfigured();
+    res.json({ configured });
+  } catch (err) {
+    req.log.error(err, "Failed to check trainer status");
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ─── Control actions ──────────────────────────────────────────────────────────

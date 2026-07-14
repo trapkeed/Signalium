@@ -59,10 +59,10 @@ const server = app.listen(port, (err) => {
 
   startRunpodMonitor(60_000); // poll active RunPod pods every minute
 
-// C8: Automated command retry sweep — re-queues delivered actions that have
-// not been acknowledged within the TTL, increments retry_count, and marks
-// exhausted commands as failed. Runs every 60 seconds.
-startCommandRetrySweep(60_000);
+  // C8: Automated command retry sweep — re-queues delivered actions that have
+  // not been acknowledged within the TTL, increments retry_count, and marks
+  // exhausted commands as failed. Runs every 60 seconds.
+  startCommandRetrySweep(60_000);
 
   // S30: post-listen startup diagnostics — logs a dependency readiness
   // report and, in production, exits if a required env var is missing.
