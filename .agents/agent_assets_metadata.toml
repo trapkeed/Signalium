@@ -60,3 +60,9 @@ id = "rSpimSVoVIIQVRQd1EDsT"
 uri = "file://exports/drizzle.zip"
 type = "unspecified"
 title = "drizzle.zip — SQL migration files (28 KB)"
+
+[[outputs]]
+id = "GidIVeg_9GF8Lc8WoPV9e"
+uri = "file://exports/signalium-dist.zip"
+type = "unspecified"
+title = "signalium-dist.zip — server + public + drizzle (4.2 MB)"
