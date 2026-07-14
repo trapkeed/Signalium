@@ -42,3 +42,21 @@ id = "UDwHypmYfe1eerYcqfztN"
 uri = "file://exports/Signalium-Platform-Complete-Guide.pdf"
 type = "pdf"
 title = "Signalium Platform Complete Guide"
+
+[[outputs]]
+id = "J3wGmPd2L5RXagtr_GAsH"
+uri = "file://exports/server.zip"
+type = "unspecified"
+title = "server.zip — compiled Node.js backend (3.4 MB)"
+
+[[outputs]]
+id = "HDV7RzBAUMiEeNYCNawDT"
+uri = "file://exports/public.zip"
+type = "unspecified"
+title = "public.zip — compiled frontend SPA (832 KB)"
+
+[[outputs]]
+id = "rSpimSVoVIIQVRQd1EDsT"
+uri = "file://exports/drizzle.zip"
+type = "unspecified"
+title = "drizzle.zip — SQL migration files (28 KB)"
