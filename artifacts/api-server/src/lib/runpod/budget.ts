@@ -56,7 +56,7 @@ async function setVaultConfig(key: string, value: string, updatedBy: string): Pr
 }
 
 export async function setBudgetConfig(
-  input: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null },
+  input: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null; gpuPricingJson?: Record<string, number> },
   updatedBy: string,
 ): Promise<RunpodBudgetConfig> {
   const writes: Promise<void>[] = [];
@@ -64,6 +64,9 @@ export async function setBudgetConfig(
   if (input.maxActivePods !== undefined) writes.push(setVaultConfig("runpod.max_active_pods", String(input.maxActivePods), updatedBy));
   if (input.autoShutdownIdleMinutes !== undefined) {
     writes.push(setVaultConfig("runpod.auto_shutdown_idle_minutes", input.autoShutdownIdleMinutes === null ? "" : String(input.autoShutdownIdleMinutes), updatedBy));
+  }
+  if (input.gpuPricingJson !== undefined) {
+    writes.push(setVaultConfig("runpod.gpu_pricing_json", JSON.stringify(input.gpuPricingJson), updatedBy));
   }
   await Promise.all(writes);
   return getBudgetConfig();

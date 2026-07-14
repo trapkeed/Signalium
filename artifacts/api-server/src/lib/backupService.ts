@@ -165,7 +165,7 @@ export async function buildRestorePlan(backupId: number, actorUserId: string) {
       "4. Restore: pg_restore --clean --if-exists --no-owner -d \"$DATABASE_URL\" restore.dump",
       "5. Run `pnpm --filter @workspace/db run push` if the target schema predates this backup, to reconcile any schema drift.",
       "6. Verify: check row counts on a few core tables, then run the app's /ready endpoint against the restored database.",
-      "7. For point-in-time (not just latest-backup) restores on Replit's managed Postgres, use the Database pane's PITR restore instead of this dump — see DISASTER_RECOVERY.md.",
+      "7. For point-in-time (not just latest-backup) restores, use your database provider's PITR feature instead of this dump — see DISASTER_RECOVERY.md.",
     ],
   };
 }

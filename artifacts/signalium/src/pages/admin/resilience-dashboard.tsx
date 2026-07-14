@@ -75,7 +75,7 @@ function BackupsSection() {
       }
     >
       <p className="text-xs text-muted-foreground mb-3">
-        Complements Replit's built-in point-in-time restore with portable, checksummed pg_dump snapshots in object storage. See the DR runbook for full restore steps.
+        Portable, checksummed pg_dump snapshots stored in object storage — complements your database provider's point-in-time restore with an independent backup you control. See the DR runbook for full restore steps.
       </p>
       {isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
       <div className="space-y-1.5">

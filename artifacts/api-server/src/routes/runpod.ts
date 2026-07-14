@@ -41,20 +41,20 @@ router.get("/config", async (req, res) => {
 
 router.put("/budget", async (req, res) => {
   const { userId } = getAuth(req);
-  const { maxHourlyCostUsd, maxActivePods, autoShutdownIdleMinutes } = req.body as {
+  const { maxHourlyCostUsd, maxActivePods, autoShutdownIdleMinutes, gpuPricingJson } = req.body as {
     maxHourlyCostUsd?: number;
     maxActivePods?: number;
     autoShutdownIdleMinutes?: number | null;
+    gpuPricingJson?: Record<string, number>;
   };
 
   try {
-    const patch: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null } = {};
+    const patch: { maxHourlyCostUsd?: number; maxActivePods?: number; autoShutdownIdleMinutes?: number | null; gpuPricingJson?: Record<string, number> } = {};
     if (maxHourlyCostUsd !== undefined) patch.maxHourlyCostUsd = maxHourlyCostUsd;
     if (maxActivePods !== undefined) patch.maxActivePods = maxActivePods;
     if ("autoShutdownIdleMinutes" in req.body) patch.autoShutdownIdleMinutes = autoShutdownIdleMinutes ?? null;
+    if (gpuPricingJson !== undefined && typeof gpuPricingJson === "object") patch.gpuPricingJson = gpuPricingJson;
 
-    // Budget caps are stored in the encrypted admin-secrets vault (same
-    // store as the RunPod API key / GPU pricing), not a plain DB table.
     const result = await setBudgetConfig(patch, userId!);
 
     await logAudit(userId!, "runpod_budget.updated", "runpod_budget_config", "global", patch);
@@ -109,7 +109,7 @@ router.post("/pods", async (req, res) => {
     const candidateCost = await resolveTrustedGpuCost(gpuType);
     if (candidateCost === null) {
       return res.status(422).json({
-        error: `No hourly price configured for GPU type "${gpuType}" — set runpod.gpu_pricing_json in Admin \u2192 Managed Secrets before launching this GPU type.`,
+        error: `No hourly price configured for GPU type "${gpuType}" — add it in Admin \u2192 RunPod \u2192 GPU Pricing before launching this GPU type.`,
       });
     }
     const budgetCheck = await checkBudgetForLaunch(candidateCost);

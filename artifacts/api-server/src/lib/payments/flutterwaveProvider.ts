@@ -23,7 +23,7 @@ export const flutterwaveProvider: PaymentProvider = {
 
   connectivityNote() {
     if (!this.isConfigured({})) {
-      return "Flutterwave has no Replit connector; an admin must supply FLUTTERWAVE_SECRET_KEY and FLUTTERWAVE_WEBHOOK_HASH as secrets before this provider can accept payments.";
+      return "Flutterwave is not connected; an admin must supply FLUTTERWAVE_SECRET_KEY and FLUTTERWAVE_WEBHOOK_HASH as environment secrets before this provider can accept payments.";
     }
     return null;
   },
