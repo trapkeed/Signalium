@@ -20,12 +20,13 @@ import {
   useListSymbols,
   useGetProviderAdapterInfo,
   useGetOandaStreamStatus,
+  useGetOandaConfig,
+  useSetOandaConfig,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Database,
   Plus,
-  Pencil,
   Trash2,
   CheckCircle2,
   XCircle,
@@ -45,6 +46,11 @@ import {
   SignalHigh,
   SignalLow,
   SignalZero,
+  Save,
+  Settings2,
+  Eye,
+  EyeOff,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -249,8 +255,13 @@ function OandaStreamBadge() {
 function ProviderDetail({ provider }: { provider: DataProvider }) {
   const isOanda = provider.slug === "oanda";
   return (
-    <Tabs defaultValue="credentials">
+    <Tabs defaultValue={isOanda ? "oanda-config" : "credentials"}>
       <TabsList className="h-auto flex-wrap gap-1">
+        {isOanda && (
+          <TabsTrigger value="oanda-config" className="text-xs font-mono gap-1">
+            <Settings2 className="w-3 h-3" /> OANDA Config
+          </TabsTrigger>
+        )}
         <TabsTrigger value="credentials" className="text-xs font-mono gap-1">
           <Key className="w-3 h-3" /> Credentials
         </TabsTrigger>
@@ -269,6 +280,9 @@ function ProviderDetail({ provider }: { provider: DataProvider }) {
           </TabsTrigger>
         )}
       </TabsList>
+      {isOanda && (
+        <TabsContent value="oanda-config" className="mt-3"><OandaConfigPanel /></TabsContent>
+      )}
       <TabsContent value="credentials" className="mt-3"><CredentialsPanel providerId={provider.id} /></TabsContent>
       <TabsContent value="capabilities" className="mt-3"><CapabilitiesPanel providerId={provider.id} /></TabsContent>
       <TabsContent value="status" className="mt-3"><StatusPanel providerId={provider.id} apiEndpoint={provider.apiEndpoint ?? null} /></TabsContent>
@@ -277,6 +291,129 @@ function ProviderDetail({ provider }: { provider: DataProvider }) {
         <TabsContent value="stream" className="mt-3"><OandaStreamPanel /></TabsContent>
       )}
     </Tabs>
+  );
+}
+
+// ─── OANDA config panel ───────────────────────────────────────────────────────
+
+function OandaConfigPanel() {
+  const { toast } = useToast();
+  const { data: config, isLoading } = useGetOandaConfig();
+  const save = useSetOandaConfig();
+
+  // Local state: one entry per field key
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+
+  function setValue(key: string, val: string) {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function toggleShow(key: string) {
+    setShowKey((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  async function handleSave() {
+    const fields = Object.entries(values)
+      .filter(([, v]) => v.trim().length > 0)
+      .map(([key, value]) => ({ key, value }));
+
+    if (fields.length === 0) {
+      toast({ title: "Nothing to save", description: "Enter at least one value.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await save.mutateAsync({ fields });
+      setValues({});
+      toast({ title: "OANDA config saved", description: "Restart the server for stream changes to take effect." });
+    } catch (err: any) {
+      toast({ title: "Failed to save", description: err?.message, variant: "destructive" });
+    }
+  }
+
+  if (isLoading) {
+    return <p className="text-xs font-mono text-muted-foreground">Loading config…</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="bg-secondary/20 rounded-sm px-4 py-3">
+        <p className="text-xs font-mono text-muted-foreground">
+          Set your OANDA credentials here. The <strong>API Key</strong> and <strong>Account ID</strong> are required to
+          activate the live price stream. Stream URL and Symbols are optional — defaults shown as placeholder text.
+          After saving, restart the server for stream changes to take effect.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {(config ?? []).map((field) => {
+          const currentVal = values[field.key] ?? "";
+          const isVisible = showKey[field.key] ?? false;
+          const isSensitive = field.key === "market_data.oanda_api_key";
+
+          return (
+            <div key={field.key} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-mono font-medium">
+                  {field.label}
+                  {!field.optional && <span className="text-destructive ml-0.5">*</span>}
+                </Label>
+                {field.configured ? (
+                  <span className="flex items-center gap-1 text-[10px] font-mono text-green-500">
+                    <CheckCircle2 className="w-3 h-3" /> configured
+                    {field.maskedValue && (
+                      <span className="text-muted-foreground ml-1">{field.maskedValue}</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+                    <XCircle className="w-3 h-3" /> not set
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] font-mono text-muted-foreground">{field.description}</p>
+              <div className="relative flex items-center">
+                <Input
+                  type={isSensitive && !isVisible ? "password" : "text"}
+                  value={currentVal}
+                  onChange={(e) => setValue(field.key, e.target.value)}
+                  placeholder={
+                    field.configured
+                      ? "Enter new value to update…"
+                      : (field.defaultValue ?? `Enter ${field.label}…`)
+                  }
+                  className="rounded-sm font-mono text-xs h-8 pr-8"
+                />
+                {isSensitive && (
+                  <button
+                    type="button"
+                    onClick={() => toggleShow(field.key)}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground"
+                  >
+                    {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button
+          onClick={handleSave}
+          disabled={save.isPending || Object.values(values).every((v) => !v.trim())}
+          className="rounded-sm font-mono text-xs gap-1.5 h-8"
+        >
+          <Save className="w-3.5 h-3.5" />
+          {save.isPending ? "Saving…" : "Save Changes"}
+        </Button>
+        <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+          <Lock className="w-3 h-3" /> Values are encrypted at rest
+        </span>
+      </div>
+    </div>
   );
 }
 

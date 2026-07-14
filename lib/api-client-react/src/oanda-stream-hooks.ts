@@ -1,10 +1,12 @@
 /**
- * Custom (non-orval) hooks for the OANDA streaming status endpoint.
- * These are hand-written because the endpoint was added after the last
+ * Custom (non-orval) hooks for OANDA-specific endpoints.
+ * These are hand-written because the endpoints were added after the last
  * orval code-generation run.
  */
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "./custom-fetch";
+
+// ─── Stream Status ────────────────────────────────────────────────────────────
 
 export type OandaStreamState = "connected" | "reconnecting" | "disconnected" | "off";
 
@@ -42,5 +44,56 @@ export function useGetOandaStreamStatus(options?: {
     refetchInterval: options?.refetchInterval ?? 10_000,
     enabled: options?.enabled ?? true,
     staleTime: 5_000,
+  });
+}
+
+// ─── OANDA Config ─────────────────────────────────────────────────────────────
+
+export interface OandaConfigField {
+  key: string;
+  label: string;
+  description: string;
+  configured: boolean;
+  maskedValue: string | null;
+  optional: boolean;
+  defaultValue?: string;
+}
+
+export type OandaConfigStatus = OandaConfigField[];
+
+export const getOandaConfigUrl = () => `/api/data-providers/oanda/config`;
+export const getOandaConfigQueryKey = () => ["oanda-config"] as const;
+
+export const getOandaConfig = (options?: RequestInit): Promise<OandaConfigStatus> =>
+  customFetch<OandaConfigStatus>(getOandaConfigUrl(), { method: "GET", ...options });
+
+export function useGetOandaConfig() {
+  return useQuery({
+    queryKey: getOandaConfigQueryKey(),
+    queryFn: ({ signal }) => getOandaConfig({ signal }),
+    staleTime: 30_000,
+  });
+}
+
+export interface OandaConfigUpdate {
+  fields: { key: string; value: string }[];
+}
+
+export const setOandaConfig = (data: OandaConfigUpdate, options?: RequestInit): Promise<{ saved: string[] }> =>
+  customFetch<{ saved: string[] }>(getOandaConfigUrl(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    ...options,
+  });
+
+export function useSetOandaConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: OandaConfigUpdate) => setOandaConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getOandaConfigQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getOandaStreamStatusQueryKey() });
+    },
   });
 }

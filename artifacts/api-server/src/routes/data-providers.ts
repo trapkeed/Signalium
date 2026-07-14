@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { getAuth } from "../lib/auth";
-import { db, dataProvidersTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, dataProvidersTable, adminSecretsTable } from "@workspace/db";
+import { eq, desc, inArray } from "drizzle-orm";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { logAudit } from "../lib/auditLog";
 import { getActiveProvider } from "../lib/marketData/registry";
 import { oandaStream } from "../lib/marketData/oandaStream";
+import { encryptSecret, decryptSecret, maskSecret } from "../lib/secretsVault";
 
 const router = Router();
 
@@ -43,6 +44,133 @@ router.get("/", async (req, res) => {
     return res.json(providers);
   } catch (err) {
     req.log.error(err, "Failed to list data providers");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─── OANDA config ─────────────────────────────────────────────────────────────
+
+const OANDA_CONFIG_KEYS = [
+  {
+    key: "market_data.oanda_api_key",
+    label: "API Key",
+    description: "Personal access token from OANDA (My Account → API Access → Generate).",
+    optional: false,
+  },
+  {
+    key: "market_data.oanda_account_id",
+    label: "Account ID",
+    description: "Your OANDA account ID — format 101-004-XXXXXXX-001. Found under Account Summary or in the URL after login.",
+    optional: false,
+  },
+  {
+    key: "market_data.oanda_stream_url",
+    label: "Stream URL",
+    description: "OANDA streaming base URL. Leave blank to use the demo default.",
+    optional: true,
+    defaultValue: "https://stream-fxpractice.oanda.com",
+  },
+  {
+    key: "market_data.oanda_stream_symbols",
+    label: "Symbols",
+    description: "Comma-separated instruments to subscribe to. Leave blank for the default set.",
+    optional: true,
+    defaultValue: "EUR_USD,XAU_USD,GBP_USD",
+  },
+] as const;
+
+/**
+ * GET /data-providers/oanda/config
+ * Returns the configuration status of all 4 OANDA vault keys — whether each
+ * is set, and a masked preview of the value. Never reveals plaintext.
+ */
+router.get("/oanda/config", requireAdmin, async (req, res) => {
+  try {
+    const keys = OANDA_CONFIG_KEYS.map((k) => k.key);
+    const rows = await db
+      .select()
+      .from(adminSecretsTable)
+      .where(inArray(adminSecretsTable.key, keys));
+
+    const rowByKey = new Map(rows.map((r) => [r.key, r]));
+
+    const result = OANDA_CONFIG_KEYS.map((def) => {
+      const row = rowByKey.get(def.key);
+      const configured = !!row && row.isActive;
+      let maskedValue: string | null = null;
+      if (row) {
+        try { maskedValue = maskSecret(decryptSecret(row.encryptedValue)); } catch { maskedValue = "••••••••"; }
+      }
+      return {
+        key: def.key,
+        label: def.label,
+        description: def.description,
+        optional: def.optional,
+        defaultValue: (def as any).defaultValue ?? null,
+        configured,
+        maskedValue,
+      };
+    });
+
+    return res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to read OANDA config");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * PUT /data-providers/oanda/config
+ * Upserts one or more OANDA vault keys. Only keys in the OANDA_CONFIG_KEYS
+ * allowlist are accepted. Empty-string values are ignored (use DELETE via
+ * Admin → Managed Secrets to remove a key).
+ */
+router.put("/oanda/config", requireAdmin, async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { fields } = req.body as { fields?: { key: string; value: string }[] };
+  if (!Array.isArray(fields) || fields.length === 0) {
+    return res.status(400).json({ error: "'fields' array is required" });
+  }
+
+  const allowedKeys = new Set<string>(OANDA_CONFIG_KEYS.map((k) => k.key));
+  const saved: string[] = [];
+
+  try {
+    for (const { key, value } of fields) {
+      if (!allowedKeys.has(key)) continue;
+      if (!value || !value.trim()) continue;
+
+      const encryptedValue = encryptSecret(value.trim());
+      const existing = await db
+        .select({ id: adminSecretsTable.id })
+        .from(adminSecretsTable)
+        .where(eq(adminSecretsTable.key, key))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db.update(adminSecretsTable)
+          .set({ encryptedValue, isActive: true, updatedBy: userId, updatedAt: new Date() })
+          .where(eq(adminSecretsTable.key, key));
+      } else {
+        const def = OANDA_CONFIG_KEYS.find((k) => k.key === key)!;
+        await db.insert(adminSecretsTable).values({
+          key,
+          encryptedValue,
+          category: "market_data",
+          description: def.description,
+          updatedBy: userId,
+        });
+      }
+
+      await logAudit(userId, "admin_secret.updated", "admin_secret", key, { key, category: "market_data" });
+      saved.push(key);
+    }
+
+    return res.json({ saved });
+  } catch (err) {
+    req.log.error(err, "Failed to save OANDA config");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
