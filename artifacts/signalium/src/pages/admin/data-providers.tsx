@@ -6,7 +6,6 @@ import {
   useDeleteDataProvider,
   useListProviderCredentials,
   useCreateProviderCredential,
-  useUpdateProviderCredential,
   useDeleteProviderCredential,
   useListProviderCapabilities,
   useUpsertProviderCapability,
@@ -20,8 +19,8 @@ import {
   useListSymbols,
   useGetProviderAdapterInfo,
   useGetOandaStreamStatus,
-  useGetOandaConfig,
-  useSetOandaConfig,
+  useGetProviderConfig,
+  useSetProviderConfig,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -51,6 +50,7 @@ import {
   Eye,
   EyeOff,
   Lock,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,10 +68,27 @@ import {
 } from "@/components/ui/dialog";
 import type { DataProvider } from "@workspace/api-client-react";
 
-const CAPABILITY_TYPES = ["live", "historical", "calendar", "news", "sentiment"] as const;
-const TIMEFRAMES = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"];
+// Providers that have a config definition on the backend
+const CONFIGURABLE_SLUGS = new Set([
+  "oanda", "tiingo", "polygon", "twelvedata",
+  "finnhub", "alphavantage", "dxfeed", "interactive_brokers",
+]);
 
-// ─── Providers list ───────────────────────────────────────────────────────────
+// Docs URLs per slug (shown as a link in the config panel)
+const DOCS_URLS: Record<string, string> = {
+  oanda: "https://developer.oanda.com/rest-live-v20/introduction/",
+  tiingo: "https://api.tiingo.com/",
+  polygon: "https://polygon.io/dashboard/api-keys",
+  twelvedata: "https://twelvedata.com/account/api-keys",
+  finnhub: "https://finnhub.io/dashboard",
+  alphavantage: "https://www.alphavantage.co/support/#api-key",
+  dxfeed: "https://kb.dxfeed.com/en/data-access/",
+  interactive_brokers: "https://interactivebrokers.github.io/tws-api/",
+};
+
+const CAPABILITY_TYPES = ["live", "historical", "calendar", "news", "sentiment"] as const;
+
+// ─── Add provider dialog ──────────────────────────────────────────────────────
 
 function AddDataProviderDialog() {
   const { toast } = useToast();
@@ -79,21 +96,14 @@ function AddDataProviderDialog() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [apiEndpoint, setApiEndpoint] = useState("");
-  const [priority, setPriority] = useState("0");
   const createProvider = useCreateDataProvider();
 
   async function handleSubmit() {
     if (!name || !slug) return;
     try {
-      await createProvider.mutateAsync({
-        data: {
-          name,
-          slug,
-          apiEndpoint: apiEndpoint || undefined,
-        },
-      });
+      await createProvider.mutateAsync({ data: { name, slug, apiEndpoint: apiEndpoint || undefined } });
       toast({ title: "Data provider created" });
-      setName(""); setSlug(""); setApiEndpoint(""); setPriority("0");
+      setName(""); setSlug(""); setApiEndpoint("");
       setOpen(false);
     } catch (err: any) {
       toast({ title: "Failed to create data provider", description: err?.message, variant: "destructive" });
@@ -116,7 +126,6 @@ function AddDataProviderDialog() {
             { id: "dp-name", label: "Name", val: name, set: setName, placeholder: "OANDA" },
             { id: "dp-slug", label: "Slug", val: slug, set: (v: string) => setSlug(v.toLowerCase()), placeholder: "oanda" },
             { id: "dp-endpoint", label: "API Endpoint (optional)", val: apiEndpoint, set: setApiEndpoint, placeholder: "https://api-fxtrade.oanda.com" },
-            { id: "dp-priority", label: "Priority (lower = higher)", val: priority, set: setPriority, placeholder: "0" },
           ].map(({ id, label, val, set, placeholder }) => (
             <div key={id} className="flex flex-col gap-1.5">
               <Label htmlFor={id} className="text-xs font-mono text-muted-foreground">{label}</Label>
@@ -133,12 +142,23 @@ function AddDataProviderDialog() {
   );
 }
 
+// ─── OANDA stream inline badge ────────────────────────────────────────────────
+
+function OandaStreamBadge() {
+  const { data } = useGetOandaStreamStatus({ refetchInterval: 15_000 });
+  if (!data || data.state === "off") return null;
+  const color = data.state === "connected" ? "text-green-500" : data.state === "reconnecting" ? "text-yellow-500" : "text-destructive";
+  return (
+    <span className={`flex items-center gap-0.5 font-mono text-[10px] ${color}`}>
+      <Radio className="w-2.5 h-2.5" /> stream
+    </span>
+  );
+}
+
+// ─── Provider row ─────────────────────────────────────────────────────────────
+
 function ProviderRow({
-  provider,
-  canMoveUp,
-  canMoveDown,
-  onMoveUp,
-  onMoveDown,
+  provider, canMoveUp, canMoveDown, onMoveUp, onMoveDown,
 }: {
   provider: DataProvider;
   canMoveUp: boolean;
@@ -187,7 +207,7 @@ function ProviderRow({
                 variant={adapterInfo.hasAdapter ? (adapterInfo.isConfigured ? "default" : "secondary") : "secondary"}
                 className="text-[10px] px-1.5 py-0 font-mono"
               >
-                {!adapterInfo.hasAdapter ? "not connected" : adapterInfo.isConfigured ? "configured" : "no api key"}
+                {!adapterInfo.hasAdapter ? "no adapter" : adapterInfo.isConfigured ? "configured" : "no credentials"}
               </Badge>
             )}
             {provider.slug === "oanda" && <OandaStreamBadge />}
@@ -207,11 +227,9 @@ function ProviderRow({
         </td>
         <td className="px-4 py-3">
           <button onClick={handleToggle} className="flex items-center gap-1 text-xs font-mono">
-            {provider.isActive ? (
-              <span className="flex items-center gap-1 text-primary"><CheckCircle2 className="w-3 h-3" /> active</span>
-            ) : (
-              <span className="flex items-center gap-1 text-muted-foreground"><XCircle className="w-3 h-3" /> inactive</span>
-            )}
+            {provider.isActive
+              ? <span className="flex items-center gap-1 text-primary"><CheckCircle2 className="w-3 h-3" /> active</span>
+              : <span className="flex items-center gap-1 text-muted-foreground"><XCircle className="w-3 h-3" /> inactive</span>}
           </button>
         </td>
         <td className="px-4 py-3 text-right">
@@ -231,35 +249,17 @@ function ProviderRow({
   );
 }
 
-// ─── OANDA stream badge (inline in row) ──────────────────────────────────────
-
-function OandaStreamBadge() {
-  const { data } = useGetOandaStreamStatus({ refetchInterval: 10_000 });
-  if (!data) return null;
-  const state = data.state;
-  if (state === "off") return null;
-  const color =
-    state === "connected" ? "text-green-500" :
-    state === "reconnecting" ? "text-yellow-500" :
-    "text-destructive";
-  return (
-    <span className={`flex items-center gap-0.5 font-mono text-[10px] ${color}`}>
-      <Radio className="w-2.5 h-2.5" />
-      stream
-    </span>
-  );
-}
-
-// ─── Provider detail (expandable) ─────────────────────────────────────────────
+// ─── Provider detail tabs ─────────────────────────────────────────────────────
 
 function ProviderDetail({ provider }: { provider: DataProvider }) {
+  const isConfigurable = CONFIGURABLE_SLUGS.has(provider.slug);
   const isOanda = provider.slug === "oanda";
   return (
-    <Tabs defaultValue={isOanda ? "oanda-config" : "credentials"}>
+    <Tabs defaultValue={isConfigurable ? "config" : "credentials"}>
       <TabsList className="h-auto flex-wrap gap-1">
-        {isOanda && (
-          <TabsTrigger value="oanda-config" className="text-xs font-mono gap-1">
-            <Settings2 className="w-3 h-3" /> OANDA Config
+        {isConfigurable && (
+          <TabsTrigger value="config" className="text-xs font-mono gap-1">
+            <Settings2 className="w-3 h-3" /> Config
           </TabsTrigger>
         )}
         <TabsTrigger value="credentials" className="text-xs font-mono gap-1">
@@ -276,12 +276,15 @@ function ProviderDetail({ provider }: { provider: DataProvider }) {
         </TabsTrigger>
         {isOanda && (
           <TabsTrigger value="stream" className="text-xs font-mono gap-1">
-            <Radio className="w-3 h-3" /> Stream
+            <Radio className="w-3 h-3" /> Live Stream
           </TabsTrigger>
         )}
       </TabsList>
-      {isOanda && (
-        <TabsContent value="oanda-config" className="mt-3"><OandaConfigPanel /></TabsContent>
+
+      {isConfigurable && (
+        <TabsContent value="config" className="mt-3">
+          <ProviderConfigPanel slug={provider.slug} />
+        </TabsContent>
       )}
       <TabsContent value="credentials" className="mt-3"><CredentialsPanel providerId={provider.id} /></TabsContent>
       <TabsContent value="capabilities" className="mt-3"><CapabilitiesPanel providerId={provider.id} /></TabsContent>
@@ -294,161 +297,195 @@ function ProviderDetail({ provider }: { provider: DataProvider }) {
   );
 }
 
-// ─── OANDA config panel ───────────────────────────────────────────────────────
+// ─── Generic provider config panel ───────────────────────────────────────────
 
-function OandaConfigPanel() {
+function ProviderConfigPanel({ slug }: { slug: string }) {
   const { toast } = useToast();
-  const { data: config, isLoading } = useGetOandaConfig();
-  const save = useSetOandaConfig();
-
-  // Local state: one entry per field key
+  const { data: config, isLoading } = useGetProviderConfig(slug);
+  const save = useSetProviderConfig(slug);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [showField, setShowField] = useState<Record<string, boolean>>({});
 
   function setValue(key: string, val: string) {
     setValues((prev) => ({ ...prev, [key]: val }));
   }
-
   function toggleShow(key: string) {
-    setShowKey((prev) => ({ ...prev, [key]: !prev[key] }));
+    setShowField((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
   async function handleSave() {
     const fields = Object.entries(values)
       .filter(([, v]) => v.trim().length > 0)
       .map(([key, value]) => ({ key, value }));
-
     if (fields.length === 0) {
       toast({ title: "Nothing to save", description: "Enter at least one value.", variant: "destructive" });
       return;
     }
-
     try {
-      await save.mutateAsync({ fields });
+      const result = await save.mutateAsync({ fields });
       setValues({});
-      toast({ title: "OANDA config saved", description: "Restart the server for stream changes to take effect." });
+      toast({
+        title: `${result.saved.length} field${result.saved.length !== 1 ? "s" : ""} saved`,
+        description: slug === "oanda" ? "Restart the server to activate the stream." : undefined,
+      });
     } catch (err: any) {
       toast({ title: "Failed to save", description: err?.message, variant: "destructive" });
     }
   }
 
-  if (isLoading) {
-    return <p className="text-xs font-mono text-muted-foreground">Loading config…</p>;
+  const docsUrl = DOCS_URLS[slug];
+  const hasChanges = Object.values(values).some((v) => v.trim().length > 0);
+
+  if (isLoading) return <p className="text-xs font-mono text-muted-foreground">Loading config…</p>;
+
+  if (!config || config.length === 0) {
+    return <p className="text-xs font-mono text-muted-foreground">No configurable fields for this provider.</p>;
   }
+
+  const requiredFields = config.filter((f) => !f.optional);
+  const optionalFields = config.filter((f) => f.optional);
+  const allRequiredConfigured = requiredFields.every((f) => f.configured);
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="bg-secondary/20 rounded-sm px-4 py-3">
-        <p className="text-xs font-mono text-muted-foreground">
-          Set your OANDA credentials here. The <strong>API Key</strong> and <strong>Account ID</strong> are required to
-          activate the live price stream. Stream URL and Symbols are optional — defaults shown as placeholder text.
-          After saving, restart the server for stream changes to take effect.
-        </p>
+
+      {/* Status banner */}
+      <div className={`flex items-center justify-between rounded-sm px-4 py-3 ${allRequiredConfigured ? "bg-green-500/10 border border-green-500/20" : "bg-secondary/20"}`}>
+        <div className="flex items-center gap-2">
+          {allRequiredConfigured
+            ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+            : <XCircle className="w-4 h-4 text-muted-foreground" />}
+          <span className="text-xs font-mono">
+            {allRequiredConfigured
+              ? "All required credentials are configured"
+              : `${requiredFields.filter((f) => f.configured).length} of ${requiredFields.length} required fields set`}
+          </span>
+        </div>
+        {docsUrl && (
+          <a href={docsUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors">
+            Docs <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
 
-      <div className="flex flex-col gap-4">
-        {(config ?? []).map((field) => {
-          const currentVal = values[field.key] ?? "";
-          const isVisible = showKey[field.key] ?? false;
-          const isSensitive = field.key === "market_data.oanda_api_key";
+      {/* Required fields */}
+      {requiredFields.length > 0 && (
+        <FieldGroup label="Required" fields={requiredFields} values={values} showField={showField} setValue={setValue} toggleShow={toggleShow} />
+      )}
 
-          return (
-            <div key={field.key} className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-mono font-medium">
-                  {field.label}
-                  {!field.optional && <span className="text-destructive ml-0.5">*</span>}
-                </Label>
-                {field.configured ? (
-                  <span className="flex items-center gap-1 text-[10px] font-mono text-green-500">
-                    <CheckCircle2 className="w-3 h-3" /> configured
-                    {field.maskedValue && (
-                      <span className="text-muted-foreground ml-1">{field.maskedValue}</span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
-                    <XCircle className="w-3 h-3" /> not set
-                  </span>
-                )}
-              </div>
-              <p className="text-[10px] font-mono text-muted-foreground">{field.description}</p>
-              <div className="relative flex items-center">
-                <Input
-                  type={isSensitive && !isVisible ? "password" : "text"}
-                  value={currentVal}
-                  onChange={(e) => setValue(field.key, e.target.value)}
-                  placeholder={
-                    field.configured
-                      ? "Enter new value to update…"
-                      : (field.defaultValue ?? `Enter ${field.label}…`)
-                  }
-                  className="rounded-sm font-mono text-xs h-8 pr-8"
-                />
-                {isSensitive && (
-                  <button
-                    type="button"
-                    onClick={() => toggleShow(field.key)}
-                    className="absolute right-2 text-muted-foreground hover:text-foreground"
-                  >
-                    {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Optional fields */}
+      {optionalFields.length > 0 && (
+        <FieldGroup label="Optional" fields={optionalFields} values={values} showField={showField} setValue={setValue} toggleShow={toggleShow} />
+      )}
 
+      {/* Save button */}
       <div className="flex items-center gap-3">
         <Button
           onClick={handleSave}
-          disabled={save.isPending || Object.values(values).every((v) => !v.trim())}
+          disabled={save.isPending || !hasChanges}
           className="rounded-sm font-mono text-xs gap-1.5 h-8"
         >
           <Save className="w-3.5 h-3.5" />
           {save.isPending ? "Saving…" : "Save Changes"}
         </Button>
         <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
-          <Lock className="w-3 h-3" /> Values are encrypted at rest
+          <Lock className="w-3 h-3" /> Encrypted at rest (AES-256-GCM)
         </span>
       </div>
     </div>
   );
 }
 
-// ─── OANDA streaming status panel ─────────────────────────────────────────────
+function FieldGroup({
+  label, fields, values, showField, setValue, toggleShow,
+}: {
+  label: string;
+  fields: any[];
+  values: Record<string, string>;
+  showField: Record<string, boolean>;
+  setValue: (key: string, val: string) => void;
+  toggleShow: (key: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{label}</p>
+      {fields.map((field) => {
+        const currentVal = values[field.key] ?? "";
+        const isVisible = showField[field.key] ?? false;
+        const inputType = field.sensitive && !isVisible ? "password" : "text";
+        const placeholder = field.configured
+          ? "Enter new value to update…"
+          : (field.placeholder ?? field.defaultValue ?? `Enter ${field.label}…`);
+
+        return (
+          <div key={field.key} className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Label className="text-xs font-mono font-medium">
+                {field.label}
+                {!field.optional && <span className="text-destructive ml-0.5">*</span>}
+              </Label>
+              {field.configured ? (
+                <span className="flex items-center gap-1 text-[10px] font-mono text-green-500">
+                  <CheckCircle2 className="w-3 h-3" />
+                  configured
+                  {field.maskedValue && (
+                    <span className="text-muted-foreground ml-1 font-mono">{field.maskedValue}</span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+                  <XCircle className="w-3 h-3" /> not set
+                </span>
+              )}
+              {field.defaultValue && !field.configured && (
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  default: <code className="bg-secondary px-1 rounded">{field.defaultValue}</code>
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">{field.description}</p>
+            <div className="relative flex items-center">
+              <Input
+                type={inputType}
+                value={currentVal}
+                onChange={(e) => setValue(field.key, e.target.value)}
+                placeholder={placeholder}
+                className="rounded-sm font-mono text-xs h-8 pr-8"
+              />
+              {field.sensitive && (
+                <button
+                  type="button"
+                  onClick={() => toggleShow(field.key)}
+                  className="absolute right-2 text-muted-foreground hover:text-foreground"
+                >
+                  {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── OANDA live stream panel ──────────────────────────────────────────────────
 
 function OandaStreamPanel() {
   const { data, isLoading, error } = useGetOandaStreamStatus({ refetchInterval: 10_000 });
 
-  if (isLoading) {
-    return <p className="text-xs font-mono text-muted-foreground">Loading stream status…</p>;
-  }
+  if (isLoading) return <p className="text-xs font-mono text-muted-foreground">Loading stream status…</p>;
 
   if (error || !data) {
-    return (
-      <p className="text-xs font-mono text-destructive">
-        Failed to load stream status. Ensure the API key and account ID are set in Admin → Managed Secrets.
-      </p>
-    );
+    return <p className="text-xs font-mono text-destructive">Failed to load stream status.</p>;
   }
 
   const { state, subscribedSymbols, tickCount, lastHeartbeatAt, lastTickAt, prices, errorMessage } = data;
+  const stateColor = state === "connected" ? "text-green-500" : state === "reconnecting" ? "text-yellow-500" : state === "disconnected" ? "text-destructive" : "text-muted-foreground";
+  const StateIcon = state === "connected" ? SignalHigh : state === "reconnecting" ? SignalLow : state === "disconnected" ? SignalZero : Signal;
 
-  const stateColor =
-    state === "connected" ? "text-green-500" :
-    state === "reconnecting" ? "text-yellow-500" :
-    state === "disconnected" ? "text-destructive" :
-    "text-muted-foreground";
-
-  const StateIcon =
-    state === "connected" ? SignalHigh :
-    state === "reconnecting" ? SignalLow :
-    state === "disconnected" ? SignalZero :
-    Signal;
-
-  function ageLabel(iso: string | null): string {
+  function ageLabel(iso: string | null) {
     if (!iso) return "—";
     const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
     if (secs < 60) return `${secs}s ago`;
@@ -458,103 +495,66 @@ function OandaStreamPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Connection state header */}
       <div className="flex items-center gap-4 bg-secondary/20 rounded-sm px-4 py-3">
         <span className={`flex items-center gap-1.5 font-mono text-sm font-medium ${stateColor}`}>
-          <StateIcon className="w-4 h-4" />
-          {state.toUpperCase()}
+          <StateIcon className="w-4 h-4" /> {state.toUpperCase()}
         </span>
-        <span className="text-xs font-mono text-muted-foreground">
-          {tickCount.toLocaleString()} ticks received
-        </span>
-        {lastTickAt && (
-          <span className="text-xs font-mono text-muted-foreground">
-            last tick: {ageLabel(lastTickAt)}
-          </span>
-        )}
-        {lastHeartbeatAt && (
-          <span className="text-xs font-mono text-muted-foreground">
-            heartbeat: {ageLabel(lastHeartbeatAt)}
-          </span>
-        )}
+        <span className="text-xs font-mono text-muted-foreground">{tickCount.toLocaleString()} ticks</span>
+        {lastTickAt && <span className="text-xs font-mono text-muted-foreground">last tick: {ageLabel(lastTickAt)}</span>}
+        {lastHeartbeatAt && <span className="text-xs font-mono text-muted-foreground">heartbeat: {ageLabel(lastHeartbeatAt)}</span>}
       </div>
 
-      {/* Error message */}
       {errorMessage && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-sm px-3 py-2">
           <p className="text-xs font-mono text-destructive">{errorMessage}</p>
         </div>
       )}
 
-      {/* Configuration hint when off */}
       {state === "off" && (
-        <div className="bg-secondary/20 rounded-sm px-4 py-3">
-          <p className="text-xs font-mono text-muted-foreground">
-            Stream is idle. Set <code className="bg-secondary px-1 rounded">market_data.oanda_api_key</code> and{" "}
-            <code className="bg-secondary px-1 rounded">market_data.oanda_account_id</code> in{" "}
-            <strong>Admin → Managed Secrets</strong>, then restart the API server.
-          </p>
-          <p className="text-xs font-mono text-muted-foreground mt-1">
-            Optionally set <code className="bg-secondary px-1 rounded">market_data.oanda_stream_symbols</code> (comma-separated, e.g.{" "}
-            <code className="bg-secondary px-1 rounded">EUR_USD,XAU_USD,GBP_USD</code>).
-          </p>
-        </div>
+        <p className="text-xs font-mono text-muted-foreground bg-secondary/20 rounded-sm px-4 py-3">
+          Stream idle — set API Key and Account ID in the <strong>Config</strong> tab, then restart the server.
+        </p>
       )}
 
-      {/* Subscribed symbols */}
       {subscribedSymbols.length > 0 && (
         <div>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
-            Subscribed Instruments
-          </p>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Subscribed Instruments</p>
           <div className="flex flex-wrap gap-1.5">
             {subscribedSymbols.map((sym) => (
-              <Badge key={sym} variant="secondary" className="font-mono text-[10px] px-2 py-0.5">
-                {sym}
-              </Badge>
+              <Badge key={sym} variant="secondary" className="font-mono text-[10px] px-2 py-0.5">{sym}</Badge>
             ))}
           </div>
         </div>
       )}
 
-      {/* Live price table */}
       {Object.keys(prices).length > 0 && (
         <div>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
-            Cached Prices
-          </p>
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Cached Prices</p>
           <div className="border border-border rounded-sm overflow-hidden">
             <table className="w-full text-xs font-mono">
               <thead>
                 <tr className="border-b border-border bg-secondary/30">
                   {["Instrument", "Bid", "Mid", "Ask", "Updated"].map((h) => (
-                    <th key={h} className="text-left px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                      {h}
-                    </th>
+                    <th key={h} className="text-left px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(prices)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([instrument, price]) => (
-                    <tr key={instrument} className="border-b border-border last:border-0 hover:bg-secondary/20">
-                      <td className="px-3 py-2 font-medium">{instrument}</td>
-                      <td className="px-3 py-2 text-blue-500">{price.bid.toFixed(5)}</td>
-                      <td className="px-3 py-2 text-foreground">{price.mid.toFixed(5)}</td>
-                      <td className="px-3 py-2 text-green-500">{price.ask.toFixed(5)}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{ageLabel(price.timestamp)}</td>
-                    </tr>
-                  ))}
+                {Object.entries(prices).sort(([a], [b]) => a.localeCompare(b)).map(([instrument, price]) => (
+                  <tr key={instrument} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                    <td className="px-3 py-2 font-medium">{instrument}</td>
+                    <td className="px-3 py-2 text-blue-500">{price.bid.toFixed(5)}</td>
+                    <td className="px-3 py-2">{price.mid.toFixed(5)}</td>
+                    <td className="px-3 py-2 text-green-500">{price.ask.toFixed(5)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{ageLabel(price.timestamp)}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
       )}
-
-      <p className="text-[10px] font-mono text-muted-foreground">
-        Auto-refreshes every 10 seconds · Stream URL: stream-fxpractice.oanda.com (demo)
-      </p>
+      <p className="text-[10px] font-mono text-muted-foreground">Auto-refreshes every 10 s</p>
     </div>
   );
 }
@@ -592,6 +592,9 @@ function CredentialsPanel({ providerId }: { providerId: number }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-[10px] font-mono text-muted-foreground">
+        Legacy credential store — use the <strong>Config</strong> tab for new providers. These credentials are not used by the built-in adapters.
+      </p>
       <div className="flex flex-wrap gap-2">
         <Input value={keyName} onChange={(e) => setKeyName(e.target.value)} placeholder="api_key" className="rounded-sm font-mono text-xs w-32 h-7" />
         <Input value={keyValue} onChange={(e) => setKeyValue(e.target.value)} placeholder="value" type="password" className="rounded-sm font-mono text-xs w-48 h-7" />
@@ -601,7 +604,7 @@ function CredentialsPanel({ providerId }: { providerId: number }) {
       {isLoading ? (
         <p className="text-xs text-muted-foreground font-mono">Loading…</p>
       ) : creds.length === 0 ? (
-        <p className="text-xs text-muted-foreground font-mono">No credentials configured.</p>
+        <p className="text-xs text-muted-foreground font-mono">No credentials.</p>
       ) : (
         <div className="flex flex-col gap-1">
           {creds.map((c: any) => (
@@ -610,7 +613,6 @@ function CredentialsPanel({ providerId }: { providerId: number }) {
               <span className="font-mono text-xs text-muted-foreground flex-1">{c.keyValueMasked}</span>
               {c.description && <span className="font-mono text-xs text-muted-foreground">{c.description}</span>}
               <Badge variant={c.isActive ? "default" : "secondary"} className="text-[10px] px-1.5 py-0 font-mono">{c.isActive ? "active" : "inactive"}</Badge>
-              {c.rotatedAt && <span className="text-[10px] text-muted-foreground font-mono">rotated {new Date(c.rotatedAt).toLocaleDateString()}</span>}
               <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-destructive" onClick={() => handleDelete(c.id)}>
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -629,21 +631,16 @@ function CapabilitiesPanel({ providerId }: { providerId: number }) {
   const { data: caps = [] } = useListProviderCapabilities(providerId);
   const upsert = useUpsertProviderCapability();
   const deleteCap = useDeleteProviderCapability();
-  const [selectedTfs, setSelectedTfs] = useState<Record<string, string[]>>({});
 
   const capMap = Object.fromEntries((caps as any[]).map((c: any) => [c.capabilityType, c]));
 
   async function handleToggleCap(type: string) {
     if (capMap[type]) {
-      try {
-        await deleteCap.mutateAsync({ id: providerId, type });
-        toast({ title: `${type} capability removed` });
-      } catch (err: any) { toast({ title: "Failed", description: err?.message, variant: "destructive" }); }
+      try { await deleteCap.mutateAsync({ id: providerId, type }); toast({ title: `${type} removed` }); }
+      catch (err: any) { toast({ title: "Failed", description: err?.message, variant: "destructive" }); }
     } else {
-      try {
-        await upsert.mutateAsync({ id: providerId, type: type as any, data: { supportedTimeframes: selectedTfs[type] ?? [] } });
-        toast({ title: `${type} capability added` });
-      } catch (err: any) { toast({ title: "Failed", description: err?.message, variant: "destructive" }); }
+      try { await upsert.mutateAsync({ id: providerId, type: type as any, data: { supportedTimeframes: [] } }); toast({ title: `${type} added` }); }
+      catch (err: any) { toast({ title: "Failed", description: err?.message, variant: "destructive" }); }
     }
   }
 
@@ -656,9 +653,7 @@ function CapabilitiesPanel({ providerId }: { providerId: number }) {
             key={type}
             onClick={() => handleToggleCap(type)}
             disabled={upsert.isPending || deleteCap.isPending}
-            className={`flex flex-col items-start gap-1 rounded-sm border px-3 py-2 text-xs font-mono transition-colors ${
-              cap ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-foreground/40"
-            }`}
+            className={`flex flex-col items-start gap-1 rounded-sm border px-3 py-2 text-xs font-mono transition-colors ${cap ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-foreground/40"}`}
           >
             <span className="font-medium">{type}</span>
             {cap?.supportedTimeframes && (
@@ -679,12 +674,8 @@ function StatusPanel({ providerId, apiEndpoint }: { providerId: number; apiEndpo
   const check = useCheckProviderConnectivity();
 
   async function handleCheck() {
-    try {
-      await check.mutateAsync({ id: providerId });
-      toast({ title: "Connectivity check complete" });
-    } catch (err: any) {
-      toast({ title: "Check failed", description: err?.message, variant: "destructive" });
-    }
+    try { await check.mutateAsync({ id: providerId }); toast({ title: "Check complete" }); }
+    catch (err: any) { toast({ title: "Check failed", description: err?.message, variant: "destructive" }); }
   }
 
   return (
@@ -694,9 +685,8 @@ function StatusPanel({ providerId, apiEndpoint }: { providerId: number; apiEndpo
           <RotateCw className={`w-3 h-3 ${check.isPending ? "animate-spin" : ""}`} />
           Run Connectivity Check
         </Button>
-        <span className="text-xs text-muted-foreground font-mono">Also checked automatically every 5 minutes</span>
+        <span className="text-xs text-muted-foreground font-mono">Also runs automatically every 5 minutes</span>
       </div>
-
       {isLoading ? (
         <p className="text-xs text-muted-foreground font-mono">Loading…</p>
       ) : !status ? (
@@ -704,25 +694,17 @@ function StatusPanel({ providerId, apiEndpoint }: { providerId: number; apiEndpo
       ) : (
         <div className="flex flex-col gap-1.5 bg-secondary/20 rounded-sm p-3">
           <div className="flex items-center gap-2">
-            {(status as any).isReachable ? (
-              <span className="flex items-center gap-1.5 text-xs font-mono text-primary"><Wifi className="w-3.5 h-3.5" /> Reachable</span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-xs font-mono text-destructive"><WifiOff className="w-3.5 h-3.5" /> Unreachable</span>
-            )}
-            {(status as any).latencyMs != null && (
-              <span className="text-xs font-mono text-muted-foreground">{(status as any).latencyMs}ms</span>
-            )}
+            {(status as any).isReachable
+              ? <span className="flex items-center gap-1.5 text-xs font-mono text-primary"><Wifi className="w-3.5 h-3.5" /> Reachable</span>
+              : <span className="flex items-center gap-1.5 text-xs font-mono text-destructive"><WifiOff className="w-3.5 h-3.5" /> Unreachable</span>}
+            {(status as any).latencyMs != null && <span className="text-xs font-mono text-muted-foreground">{(status as any).latencyMs}ms</span>}
             {(status as any).consecutiveFailures > 0 && (
-              <Badge variant="destructive" className="text-[10px] font-mono px-1.5 py-0">{(status as any).consecutiveFailures} consecutive failures</Badge>
+              <Badge variant="destructive" className="text-[10px] font-mono px-1.5 py-0">{(status as any).consecutiveFailures} failures</Badge>
             )}
           </div>
-          {(status as any).errorMessage && (
-            <p className="text-xs font-mono text-destructive">{(status as any).errorMessage}</p>
-          )}
+          {(status as any).errorMessage && <p className="text-xs font-mono text-destructive">{(status as any).errorMessage}</p>}
           {(status as any).lastCheckedAt && (
-            <p className="text-[10px] text-muted-foreground font-mono">
-              Last checked: {new Date((status as any).lastCheckedAt).toLocaleString()}
-            </p>
+            <p className="text-[10px] text-muted-foreground font-mono">Last checked: {new Date((status as any).lastCheckedAt).toLocaleString()}</p>
           )}
         </div>
       )}
@@ -769,7 +751,7 @@ function SymbolMappingsPanel({ providerId }: { providerId: number }) {
         <select
           value={canonicalId}
           onChange={(e) => setCanonicalId(e.target.value)}
-          className="h-7 rounded-sm border border-border bg-background font-mono text-xs px-2 text-sm"
+          className="h-7 rounded-sm border border-border bg-background font-mono text-xs px-2"
         >
           <option value="">select canonical</option>
           {(allSymbols as any[]).map((s: any) => (
@@ -778,7 +760,6 @@ function SymbolMappingsPanel({ providerId }: { providerId: number }) {
         </select>
         <Button size="sm" onClick={handleAdd} disabled={addMapping.isPending} className="h-7 text-xs font-mono rounded-sm">Add</Button>
       </div>
-
       {(mappings as any[]).length === 0 ? (
         <p className="text-xs text-muted-foreground font-mono">No symbol mappings configured.</p>
       ) : (
@@ -826,7 +807,7 @@ export default function AdminDataProviders() {
       <div className="border-b border-border px-8 py-6">
         <h1 className="text-xl font-bold font-mono tracking-tight">Data Providers</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage the registry of market-data feed sources — credentials, capabilities, symbol mappings, and live status.
+          Manage market-data feed sources — credentials, capabilities, symbol mappings, and live status.
         </p>
       </div>
 

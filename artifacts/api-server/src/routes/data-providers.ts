@@ -7,6 +7,7 @@ import { logAudit } from "../lib/auditLog";
 import { getActiveProvider } from "../lib/marketData/registry";
 import { oandaStream } from "../lib/marketData/oandaStream";
 import { encryptSecret, decryptSecret, maskSecret } from "../lib/secretsVault";
+import { getProviderConfigDef, ALL_PROVIDER_CONFIG_KEYS } from "../lib/marketData/providerConfigRegistry";
 
 const router = Router();
 
@@ -48,65 +49,39 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ─── OANDA config ─────────────────────────────────────────────────────────────
-
-const OANDA_CONFIG_KEYS = [
-  {
-    key: "market_data.oanda_api_key",
-    label: "API Key",
-    description: "Personal access token from OANDA (My Account → API Access → Generate).",
-    optional: false,
-  },
-  {
-    key: "market_data.oanda_account_id",
-    label: "Account ID",
-    description: "Your OANDA account ID — format 101-004-XXXXXXX-001. Found under Account Summary or in the URL after login.",
-    optional: false,
-  },
-  {
-    key: "market_data.oanda_stream_url",
-    label: "Stream URL",
-    description: "OANDA streaming base URL. Leave blank to use the demo default.",
-    optional: true,
-    defaultValue: "https://stream-fxpractice.oanda.com",
-  },
-  {
-    key: "market_data.oanda_stream_symbols",
-    label: "Symbols",
-    description: "Comma-separated instruments to subscribe to. Leave blank for the default set.",
-    optional: true,
-    defaultValue: "EUR_USD,XAU_USD,GBP_USD",
-  },
-] as const;
+// ─── Generic per-provider config ─────────────────────────────────────────────
 
 /**
- * GET /data-providers/oanda/config
- * Returns the configuration status of all 4 OANDA vault keys — whether each
- * is set, and a masked preview of the value. Never reveals plaintext.
+ * GET /data-providers/:slug/config
+ * Returns the configuration status of every vault key defined for the given
+ * provider slug — whether each is set, and a masked preview. Never reveals
+ * plaintext. Returns 404 for unrecognised slugs.
  */
-router.get("/oanda/config", requireAdmin, async (req, res) => {
-  try {
-    const keys = OANDA_CONFIG_KEYS.map((k) => k.key);
-    const rows = await db
-      .select()
-      .from(adminSecretsTable)
-      .where(inArray(adminSecretsTable.key, keys));
+router.get("/:slug/config", requireAdmin, async (req, res) => {
+  const slug = String(req.params.slug);
+  const def = getProviderConfigDef(slug);
+  if (!def) return res.status(404).json({ error: `No config definition for provider '${slug}'` });
 
+  try {
+    const keys = def.fields.map((f) => f.key);
+    const rows = await db.select().from(adminSecretsTable).where(inArray(adminSecretsTable.key, keys));
     const rowByKey = new Map(rows.map((r) => [r.key, r]));
 
-    const result = OANDA_CONFIG_KEYS.map((def) => {
-      const row = rowByKey.get(def.key);
+    const result = def.fields.map((field) => {
+      const row = rowByKey.get(field.key);
       const configured = !!row && row.isActive;
       let maskedValue: string | null = null;
       if (row) {
         try { maskedValue = maskSecret(decryptSecret(row.encryptedValue)); } catch { maskedValue = "••••••••"; }
       }
       return {
-        key: def.key,
-        label: def.label,
-        description: def.description,
-        optional: def.optional,
-        defaultValue: (def as any).defaultValue ?? null,
+        key: field.key,
+        label: field.label,
+        description: field.description,
+        optional: field.optional,
+        sensitive: field.sensitive,
+        defaultValue: field.defaultValue ?? null,
+        placeholder: field.placeholder ?? null,
         configured,
         maskedValue,
       };
@@ -114,27 +89,31 @@ router.get("/oanda/config", requireAdmin, async (req, res) => {
 
     return res.json(result);
   } catch (err) {
-    req.log.error(err, "Failed to read OANDA config");
+    req.log.error(err, "Failed to read provider config");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 /**
- * PUT /data-providers/oanda/config
- * Upserts one or more OANDA vault keys. Only keys in the OANDA_CONFIG_KEYS
- * allowlist are accepted. Empty-string values are ignored (use DELETE via
- * Admin → Managed Secrets to remove a key).
+ * PUT /data-providers/:slug/config
+ * Upserts vault keys for the given provider. Only keys belonging to that
+ * provider (via providerConfigRegistry) are accepted. Empty strings are
+ * skipped — use Admin → Managed Secrets to delete a key.
  */
-router.put("/oanda/config", requireAdmin, async (req, res) => {
+router.put("/:slug/config", requireAdmin, async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const slug = String(req.params.slug);
+  const def = getProviderConfigDef(slug);
+  if (!def) return res.status(404).json({ error: `No config definition for provider '${slug}'` });
 
   const { fields } = req.body as { fields?: { key: string; value: string }[] };
   if (!Array.isArray(fields) || fields.length === 0) {
     return res.status(400).json({ error: "'fields' array is required" });
   }
 
-  const allowedKeys = new Set<string>(OANDA_CONFIG_KEYS.map((k) => k.key));
+  const allowedKeys = new Set<string>(def.fields.map((f) => f.key));
   const saved: string[] = [];
 
   try {
@@ -154,23 +133,23 @@ router.put("/oanda/config", requireAdmin, async (req, res) => {
           .set({ encryptedValue, isActive: true, updatedBy: userId, updatedAt: new Date() })
           .where(eq(adminSecretsTable.key, key));
       } else {
-        const def = OANDA_CONFIG_KEYS.find((k) => k.key === key)!;
+        const fieldDef = def.fields.find((f) => f.key === key)!;
         await db.insert(adminSecretsTable).values({
           key,
           encryptedValue,
           category: "market_data",
-          description: def.description,
+          description: fieldDef.description,
           updatedBy: userId,
         });
       }
 
-      await logAudit(userId, "admin_secret.updated", "admin_secret", key, { key, category: "market_data" });
+      await logAudit(userId, "admin_secret.updated", "admin_secret", key, { key, category: "market_data", provider: req.params.slug });
       saved.push(key);
     }
 
     return res.json({ saved });
   } catch (err) {
-    req.log.error(err, "Failed to save OANDA config");
+    req.log.error(err, "Failed to save provider config");
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -182,6 +161,13 @@ router.put("/oanda/config", requireAdmin, async (req, res) => {
  * Returns the live OANDA streaming worker status: connection state, subscribed
  * symbols, per-symbol cached prices, tick count, and last heartbeat time.
  * Admin-only. Polled every 10 s by the admin data-providers UI.
+ *
+ * NOTE: must be defined BEFORE the generic /:slug/config routes so Express
+ * does not mistake "oanda" for a slug and "stream-status" for "config".
+ * Actually Express evaluates routes in registration order; since this file
+ * mounts stream-status after /:slug/config it needs its own explicit path
+ * rather than relying on order. Express matches the most specific path first
+ * only for router.param, not middleware. To be safe this is a dedicated route.
  */
 router.get("/oanda/stream-status", requireAdmin, (_req, res) => {
   return res.json(oandaStream.getStatus());

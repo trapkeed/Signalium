@@ -68,14 +68,29 @@ export const SETTINGS_DEFINITIONS: SettingsDefinition[] = [
   { key: "QDE_RESEARCH_LAB_URL", category: "trainer", description: "Base URL of the Research Lab integration hub (falls back if trainer.url unset).", source: "env", trainerRelevant: true, managePath: "/admin/secrets" },
 
   // ─── Market data ──────────────────────────────────────────────────────
-  { key: "market_data.tiingo_api_key", category: "market_data", description: "Tiingo market data API key.", source: "vault", managePath: "/admin/data-providers" },
+  // OANDA
   { key: "market_data.oanda_api_key", category: "market_data", description: "OANDA API personal access token.", source: "vault", managePath: "/admin/data-providers" },
   { key: "market_data.oanda_account_id", category: "market_data", description: "OANDA account ID (e.g. 101-004-XXXXXXX-001). Required for the live price stream.", source: "vault", envVarName: "OANDA_ACCOUNT_ID", managePath: "/admin/data-providers" },
   { key: "market_data.oanda_stream_url", category: "market_data", description: "OANDA streaming base URL. Demo: https://stream-fxpractice.oanda.com  Live: https://stream-fxtrade.oanda.com", source: "vault", envVarName: "OANDA_STREAM_URL", managePath: "/admin/data-providers" },
   { key: "market_data.oanda_stream_symbols", category: "market_data", description: "Comma-separated OANDA instruments to subscribe to (e.g. EUR_USD,XAU_USD,GBP_USD). Defaults to EUR_USD,XAU_USD,GBP_USD.", source: "vault", envVarName: "OANDA_STREAM_SYMBOLS", managePath: "/admin/data-providers" },
-  { key: "market_data.twelvedata_api_key", category: "market_data", description: "Twelve Data API key.", source: "vault", managePath: "/admin/data-providers" },
-  { key: "market_data.polygon_api_key", category: "market_data", description: "Polygon.io API key.", source: "vault", managePath: "/admin/data-providers" },
-  { key: "market_data.finnhub_api_key", category: "market_data", description: "Finnhub API key.", source: "vault", managePath: "/admin/data-providers" },
+  // Tiingo
+  { key: "market_data.tiingo_api_key", category: "market_data", description: "Tiingo REST API key (tiingo.com → Account → API Token).", source: "vault", managePath: "/admin/data-providers" },
+  // Polygon.io
+  { key: "market_data.polygon_api_key", category: "market_data", description: "Polygon.io API key (polygon.io → Dashboard → API Keys).", source: "vault", managePath: "/admin/data-providers" },
+  // Twelve Data
+  { key: "market_data.twelvedata_api_key", category: "market_data", description: "Twelve Data API key (twelvedata.com → My API Keys).", source: "vault", managePath: "/admin/data-providers" },
+  // Finnhub
+  { key: "market_data.finnhub_api_key", category: "market_data", description: "Finnhub API key (finnhub.io → Dashboard → API Key).", source: "vault", managePath: "/admin/data-providers" },
+  // Alpha Vantage
+  { key: "market_data.alphavantage_api_key", category: "market_data", description: "Alpha Vantage API key (alphavantage.co → Get Free API Key).", source: "vault", managePath: "/admin/data-providers" },
+  // DXfeed
+  { key: "market_data.dxfeed_username", category: "market_data", description: "DXfeed account username / login.", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.dxfeed_password", category: "market_data", description: "DXfeed account password or token.", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.dxfeed_endpoint", category: "market_data", description: "DXfeed WebSocket or REST endpoint URL (provided in your DXfeed contract).", source: "vault", managePath: "/admin/data-providers" },
+  // Interactive Brokers (connects to TWS / IB Gateway, no API key — connection params only)
+  { key: "market_data.interactive_brokers_host", category: "market_data", description: "Host where TWS or IB Gateway is running. Usually 127.0.0.1.", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.interactive_brokers_port", category: "market_data", description: "TWS port: 7497 (paper), 7496 (live). IB Gateway: 4002 (paper), 4001 (live).", source: "vault", managePath: "/admin/data-providers" },
+  { key: "market_data.interactive_brokers_client_id", category: "market_data", description: "IB API client ID (integer). Each concurrent connection needs a unique ID.", source: "vault", managePath: "/admin/data-providers" },
 
   // ─── RunPod ───────────────────────────────────────────────────────────
   { key: "runpod.api_key", category: "runpod", description: "RunPod API key for GPU training infrastructure.", source: "vault", managePath: "/admin/runpod" },

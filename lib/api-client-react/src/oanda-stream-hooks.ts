@@ -1,12 +1,12 @@
 /**
- * Custom (non-orval) hooks for OANDA-specific endpoints.
+ * Custom (non-orval) hooks for market-data provider endpoints.
  * These are hand-written because the endpoints were added after the last
  * orval code-generation run.
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { customFetch } from "./custom-fetch";
 
-// ─── Stream Status ────────────────────────────────────────────────────────────
+// ─── OANDA Stream Status ──────────────────────────────────────────────────────
 
 export type OandaStreamState = "connected" | "reconnecting" | "disconnected" | "off";
 
@@ -47,53 +47,76 @@ export function useGetOandaStreamStatus(options?: {
   });
 }
 
-// ─── OANDA Config ─────────────────────────────────────────────────────────────
+// ─── Generic Provider Config ──────────────────────────────────────────────────
 
-export interface OandaConfigField {
+export interface ProviderConfigField {
   key: string;
   label: string;
   description: string;
+  optional: boolean;
+  sensitive: boolean;
+  defaultValue: string | null;
+  placeholder: string | null;
   configured: boolean;
   maskedValue: string | null;
-  optional: boolean;
-  defaultValue?: string;
 }
 
-export type OandaConfigStatus = OandaConfigField[];
+export type ProviderConfigStatus = ProviderConfigField[];
 
-export const getOandaConfigUrl = () => `/api/data-providers/oanda/config`;
-export const getOandaConfigQueryKey = () => ["oanda-config"] as const;
+export const getProviderConfigUrl = (slug: string) =>
+  `/api/data-providers/${encodeURIComponent(slug)}/config`;
 
-export const getOandaConfig = (options?: RequestInit): Promise<OandaConfigStatus> =>
-  customFetch<OandaConfigStatus>(getOandaConfigUrl(), { method: "GET", ...options });
+export const getProviderConfigQueryKey = (slug: string) =>
+  ["provider-config", slug] as const;
 
-export function useGetOandaConfig() {
+export const getProviderConfig = (slug: string, options?: RequestInit): Promise<ProviderConfigStatus> =>
+  customFetch<ProviderConfigStatus>(getProviderConfigUrl(slug), { method: "GET", ...options });
+
+export function useGetProviderConfig(slug: string) {
   return useQuery({
-    queryKey: getOandaConfigQueryKey(),
-    queryFn: ({ signal }) => getOandaConfig({ signal }),
+    queryKey: getProviderConfigQueryKey(slug),
+    queryFn: ({ signal }) => getProviderConfig(slug, { signal }),
     staleTime: 30_000,
+    enabled: !!slug,
   });
 }
 
-export interface OandaConfigUpdate {
+export interface ProviderConfigUpdate {
   fields: { key: string; value: string }[];
 }
 
-export const setOandaConfig = (data: OandaConfigUpdate, options?: RequestInit): Promise<{ saved: string[] }> =>
-  customFetch<{ saved: string[] }>(getOandaConfigUrl(), {
+export const setProviderConfig = (
+  slug: string,
+  data: ProviderConfigUpdate,
+  options?: RequestInit,
+): Promise<{ saved: string[] }> =>
+  customFetch<{ saved: string[] }>(getProviderConfigUrl(slug), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
     ...options,
   });
 
-export function useSetOandaConfig() {
+export function useSetProviderConfig(slug: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: OandaConfigUpdate) => setOandaConfig(data),
+    mutationFn: (data: ProviderConfigUpdate) => setProviderConfig(slug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getOandaConfigQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getProviderConfigQueryKey(slug) });
+      // Also refresh stream status in case OANDA keys were updated
       queryClient.invalidateQueries({ queryKey: getOandaStreamStatusQueryKey() });
     },
   });
+}
+
+// ─── Backwards-compat aliases (OANDA-specific hooks now delegate to generic) ──
+
+/** @deprecated Use useGetProviderConfig("oanda") */
+export function useGetOandaConfig() {
+  return useGetProviderConfig("oanda");
+}
+
+/** @deprecated Use useSetProviderConfig("oanda") */
+export function useSetOandaConfig() {
+  return useSetProviderConfig("oanda");
 }
