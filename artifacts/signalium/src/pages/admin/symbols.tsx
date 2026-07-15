@@ -17,9 +17,11 @@ import {
   useCreateSymbolRegexPattern,
   useUpdateSymbolRegexPattern,
   useDeleteSymbolRegexPattern,
+  customFetch,
 } from "@workspace/api-client-react";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Coins, Plus, Trash2, ScrollText, Tags, CheckCircle2, XCircle, AlertTriangle, Regex } from "lucide-react";
+import { Coins, Plus, Trash2, ScrollText, Tags, CheckCircle2, XCircle, AlertTriangle, Regex, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -328,12 +330,21 @@ export default function AdminSymbols() {
   const { toast } = useToast();
   const [logFilter, setLogFilter] = useState<"all" | "unresolved">("all");
 
+  const reNormalize = useMutation({
+    mutationFn: () => customFetch<{ attempted: number; resolved: number }>("/api/symbols/admin/re-normalize", { method: "POST" }),
+    onSuccess: (data) => {
+      toast({ title: `Re-normalized: ${data.resolved} of ${data.attempted} resolved` });
+      refetchLog();
+    },
+    onError: (err: any) => toast({ title: "Re-normalize failed", description: err?.message, variant: "destructive" }),
+  });
+
   const { data: symbols = [], isLoading: symbolsLoading, refetch: refetchSymbols } = useListSymbols();
   const { data: categories = [] } = useListSymbolCategories();
   const { data: aliases = [], refetch: refetchAliases } = useListSymbolAliases();
   const { data: brokers = [] } = useListBrokers();
   const brokerNameById = new Map(brokers.map((b) => [b.id, b.name]));
-  const { data: log = [] } = useGetSymbolNormalizationLog(
+  const { data: log = [], refetch: refetchLog } = useGetSymbolNormalizationLog(
     logFilter === "unresolved" ? { unresolvedOnly: "true" } : undefined,
   );
   const [conflictFilter, setConflictFilter] = useState<"all" | "unresolved">("unresolved");
@@ -579,6 +590,17 @@ export default function AdminSymbols() {
                   Unresolved
                 </Button>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 font-mono text-xs rounded-sm"
+                disabled={reNormalize.isPending}
+                onClick={() => reNormalize.mutate()}
+                title="Re-run normalization on all unresolved entries using current aliases and regex rules"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${reNormalize.isPending ? "animate-spin" : ""}`} />
+                {reNormalize.isPending ? "Re-normalizing…" : "Re-normalize unresolved"}
+              </Button>
             </div>
             <div className="border border-border rounded-sm overflow-hidden">
               <table className="w-full text-sm">

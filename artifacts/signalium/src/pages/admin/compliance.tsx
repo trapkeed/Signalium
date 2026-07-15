@@ -4,6 +4,7 @@ import {
   useListComplianceDataRequests, useGetComplianceRetentionPolicy,
 } from "@workspace/api-client-react";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function AdminCompliance() {
+  const { toast } = useToast();
   const { data: chain, refetch: refetchChain, isFetching: verifying } = useVerifyComplianceAuditChain();
   const { data: requests } = useListComplianceDataRequests();
   const { data: retention } = useGetComplianceRetentionPolicy();
@@ -29,15 +31,19 @@ export default function AdminCompliance() {
   const [exported, setExported] = useState<{ rowCount: number; exportedAt: string } | null>(null);
 
   async function handleExport() {
-    const result = await exportMutation.mutateAsync();
-    setExported({ rowCount: result.rowCount, exportedAt: result.exportedAt });
-    const blob = new Blob([JSON.stringify(result.entries, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `audit-log-export-${new Date().toISOString()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const result = await exportMutation.mutateAsync();
+      setExported({ rowCount: result.rowCount, exportedAt: result.exportedAt });
+      const blob = new Blob([JSON.stringify(result.entries, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-log-export-${new Date().toISOString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Export failed", description: err?.message, variant: "destructive" });
+    }
   }
 
   return (

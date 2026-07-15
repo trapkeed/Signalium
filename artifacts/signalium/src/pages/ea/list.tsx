@@ -3,6 +3,7 @@ import { Download, Cpu, Lock, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getListEasQueryKey } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TIER_ORDER = { starter: 0, professional: 1, enterprise: 2 };
 const TIER_COLORS: Record<string, string> = {
@@ -20,6 +21,7 @@ export default function EaList() {
   const { data: eas, isLoading } = useListEas();
   const { data: subscription } = useGetMySubscription();
   const downloadToken = useGetEaDownloadToken();
+  const { toast } = useToast();
 
   const userTier = subscription?.plan?.tier ?? "none";
   const canAccess = (required: string) => {
@@ -32,7 +34,13 @@ export default function EaList() {
       { id: eaId },
       {
         onSuccess: (data) => {
-          alert(`Download token generated: ${data.token}\nExpires: ${new Date(data.expiresAt).toLocaleString()}`);
+          toast({
+            title: "Download token generated",
+            description: `Token: ${data.token} — expires ${new Date(data.expiresAt).toLocaleString()}`,
+          });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to generate download token", description: err?.message, variant: "destructive" });
         },
       }
     );

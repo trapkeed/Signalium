@@ -22,6 +22,7 @@ import {
   listSymbolsWithCategories,
   cacheAliasMapping,
 } from "../lib/symbolNormalizer";
+import { isNull } from "drizzle-orm";
 import { checkUserSymbolLimit } from "../lib/entitlementEngine";
 import { resolveAliasesViaTrainer, TrainerMappingUnavailableError } from "../lib/marketData/symbolDiscovery";
 import { logAudit } from "../lib/auditLog";
@@ -58,6 +59,19 @@ router.post("/discovery", requireApiKeyAuth, async (req, res) => {
       const local = await normalizeSymbol(raw);
       if (local.resolved) {
         results.set(raw, { canonicalSymbol: local.canonicalSymbol ?? null, symbolId: local.symbolId ?? null, source: local.source ?? "exact" });
+        // Auto-persist suffix_strip resolutions as permanent aliases so future
+        // lookups are O(1) from the in-memory cache rather than re-running the
+        // strip loop on every discovery call.
+        if (local.source === "suffix_strip" && local.symbolId) {
+          try {
+            await db.insert(symbolAliasesTable)
+              .values({ alias: raw.toLowerCase(), symbolId: local.symbolId, source: "auto" })
+              .onConflictDoNothing();
+            invalidateSymbolCache();
+          } catch {
+            // Non-fatal — next discovery will simply re-strip
+          }
+        }
       } else {
         unresolvedAfterLocal.push(raw);
       }
@@ -452,6 +466,60 @@ router.get("/admin/aliases", requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Admin: re-normalize unresolved ─────────────────────────────────────────
+// Re-runs the full normalization pipeline against every raw input that has
+// previously been recorded as unresolved. Resolves anything that suffix-strip,
+// new aliases, or new regex patterns now cover — no EA restart needed.
+// Also called automatically (fire-and-forget) whenever aliases or regex
+// patterns are added/updated, so the log self-heals without admin clicks.
+
+async function reNormalizeUnresolved(log: import("pino").Logger | null) {
+  const unresolved = await db
+    .select({ rawInput: symbolNormalizationLogTable.rawInput })
+    .from(symbolNormalizationLogTable)
+    .where(eq(symbolNormalizationLogTable.resolved, false))
+    .groupBy(symbolNormalizationLogTable.rawInput)
+    .limit(1000);
+
+  let resolved = 0;
+  for (const { rawInput } of unresolved) {
+    try {
+      const result = await normalizeSymbol(rawInput);
+      if (result.resolved && result.symbolId) {
+        await db
+          .update(symbolNormalizationLogTable)
+          .set({ resolved: true, resolvedSymbolId: result.symbolId })
+          .where(
+            and(
+              eq(symbolNormalizationLogTable.rawInput, rawInput),
+              eq(symbolNormalizationLogTable.resolved, false),
+            ),
+          );
+        // Auto-persist as an alias so future lookups hit the cache directly.
+        await db
+          .insert(symbolAliasesTable)
+          .values({ alias: rawInput.toLowerCase(), symbolId: result.symbolId, source: "auto" })
+          .onConflictDoNothing();
+        resolved++;
+      }
+    } catch (err) {
+      log?.warn(err, `re-normalize: failed for raw input "${rawInput}"`);
+    }
+  }
+  if (resolved > 0) invalidateSymbolCache();
+  return { attempted: unresolved.length, resolved };
+}
+
+router.post("/admin/re-normalize", requireAdmin, async (req, res) => {
+  try {
+    const result = await reNormalizeUnresolved(req.log);
+    return res.json(result);
+  } catch (err) {
+    req.log.error(err, "Failed to re-normalize unresolved symbols");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Add an alias mapping (e.g. "WallStreet30" -> "US30"), optionally
 // attributed to the broker that reports this raw symbol string.
 router.post("/admin/aliases", requireAdmin, async (req, res) => {
@@ -473,6 +541,8 @@ router.post("/admin/aliases", requireAdmin, async (req, res) => {
       createdBy: userId,
     }).returning();
     invalidateSymbolCache();
+    // Fire-and-forget: new alias may now resolve previously unresolved symbols.
+    reNormalizeUnresolved(req.log).catch(() => {});
     return res.status(201).json(created);
   } catch (err) {
     req.log.error(err, "Failed to create symbol alias");
@@ -655,6 +725,8 @@ router.post("/admin/regex-patterns", requireAdmin, async (req, res) => {
     }).returning();
     invalidateRegexPatternCache();
     if (userId) await logAudit(userId, "symbol_regex_pattern.created", "symbol_regex_pattern", String(created.id), { pattern, canonicalSymbol });
+    // Fire-and-forget: new regex may now resolve previously unresolved symbols.
+    reNormalizeUnresolved(req.log).catch(() => {});
     return res.status(201).json(created);
   } catch (err) {
     req.log.error(err, "Failed to create symbol regex pattern");

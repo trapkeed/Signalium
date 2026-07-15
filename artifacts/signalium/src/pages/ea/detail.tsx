@@ -1,6 +1,7 @@
 import { useParams, Link } from "wouter";
 import { useGetEa, useGetEaDownloadToken, getGetEaQueryKey } from "@workspace/api-client-react";
 import { Download, ArrowLeft, Cpu, Clock, Info } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TIER_COLORS: Record<string, string> = {
   starter: "text-success border-success/30 bg-success/10",
@@ -18,13 +19,20 @@ export default function EaDetail() {
   const eaId = Number(id);
   const { data: ea, isLoading } = useGetEa(eaId, { query: { enabled: !!eaId, queryKey: getGetEaQueryKey(eaId) } });
   const downloadToken = useGetEaDownloadToken();
+  const { toast } = useToast();
 
   const handleDownload = () => {
     downloadToken.mutate(
       { id: eaId },
       {
         onSuccess: (data) => {
-          alert(`Download token generated!\n\nToken: ${data.token}\nExpires: ${new Date(data.expiresAt).toLocaleString()}\n\nUse this token to authenticate your EA download.`);
+          toast({
+            title: "Download token generated",
+            description: `Token: ${data.token} — expires ${new Date(data.expiresAt).toLocaleString()}`,
+          });
+        },
+        onError: (err: any) => {
+          toast({ title: "Failed to generate download token", description: err?.message, variant: "destructive" });
         },
       }
     );

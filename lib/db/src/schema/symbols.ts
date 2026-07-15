@@ -31,7 +31,7 @@ export const symbolAliasesTable = pgTable("symbol_aliases", {
   id: serial("id").primaryKey(),
   alias: text("alias").notNull().unique(),
   symbolId: integer("symbol_id").notNull().references(() => symbolsTable.id),
-  source: text("source", { enum: ["admin", "ea", "broker"] }).notNull().default("admin"),
+  source: text("source", { enum: ["admin", "ea", "broker", "auto"] }).notNull().default("admin"),
   // Nullable: which broker reports this raw alias, if known. Lets symbol
   // normalization reference the brokers registry without requiring it.
   brokerId: integer("broker_id").references(() => brokersTable.id),

@@ -10,6 +10,7 @@
  */
 import { useState } from "react";
 import { useUser } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import {
   useGetResilienceBackups,
   usePostResilienceBackupsRun,
@@ -57,6 +58,7 @@ function useIsAdminLevel(): boolean {
 }
 
 function BackupsSection() {
+  const { toast } = useToast();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const { data, isLoading, refetch } = useGetResilienceBackups();
   const run = usePostResilienceBackupsRun();
@@ -69,7 +71,7 @@ function BackupsSection() {
       title="Database Backups"
       icon={DatabaseBackup}
       action={
-        <Button size="sm" variant="outline" disabled={run.isPending} onClick={() => run.mutate(undefined, { onSuccess: () => refetch() })}>
+        <Button size="sm" variant="outline" disabled={run.isPending} onClick={() => run.mutate(undefined, { onSuccess: () => refetch(), onError: (e: any) => toast({ title: "Backup failed", description: e?.message, variant: "destructive" }) })}>
           {run.isPending ? "Running…" : "Run backup now"}
         </Button>
       }
@@ -92,7 +94,7 @@ function BackupsSection() {
               <Badge variant={b.status === "completed" || b.status === "validated" ? "secondary" : b.status === "failed" || b.status === "validation_failed" ? "destructive" : "outline"}>
                 {b.status}
               </Badge>
-              <Button size="sm" variant="ghost" className="h-6 text-xs" disabled={validate.isPending} onClick={() => validate.mutate({ id: b.id }, { onSuccess: () => refetch() })}>
+              <Button size="sm" variant="ghost" className="h-6 text-xs" disabled={validate.isPending} onClick={() => validate.mutate({ id: b.id }, { onSuccess: () => refetch(), onError: (e: any) => toast({ title: "Validation failed", description: e?.message, variant: "destructive" }) })}>
                 Validate
               </Button>
               <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => { setSelectedId(b.id); setTimeout(() => refetchPlan(), 0); }}>
@@ -113,6 +115,7 @@ function BackupsSection() {
 }
 
 function JobQueueSection() {
+  const { toast } = useToast();
   const { data: stats } = useGetResilienceQueueStats();
   const { data: deadLetter, refetch: refetchDl } = useGetResilienceQueueDeadLetter();
   const requeue = usePostResilienceQueueIdRequeue();
@@ -137,7 +140,7 @@ function JobQueueSection() {
         {jobs.map((j: any) => (
           <div key={j.id} className="flex items-center justify-between text-sm gap-2 p-2 rounded-md bg-background/60 border border-border/50">
             <div className="truncate text-muted-foreground">#{j.id} {j.queueName} — {j.lastError}</div>
-            <Button size="sm" variant="ghost" className="h-6 text-xs shrink-0" disabled={requeue.isPending} onClick={() => requeue.mutate({ id: j.id }, { onSuccess: () => refetchDl() })}>
+            <Button size="sm" variant="ghost" className="h-6 text-xs shrink-0" disabled={requeue.isPending} onClick={() => requeue.mutate({ id: j.id }, { onSuccess: () => refetchDl(), onError: (e: any) => toast({ title: "Requeue failed", description: e?.message, variant: "destructive" }) })}>
               Requeue
             </Button>
           </div>
@@ -167,6 +170,7 @@ function CircuitBreakersSection() {
 }
 
 function SecretRotationSection() {
+  const { toast } = useToast();
   const { data, refetch } = useGetResilienceSecretRotation();
   const markRotated = usePostResilienceSecretRotationSecretNameMarkRotated();
   const secrets = ((data as any)?.secrets ?? []) as any[];
@@ -187,7 +191,7 @@ function SecretRotationSection() {
               <Badge variant={s.status === "overdue" ? "destructive" : s.status === "due_soon" ? "outline" : "secondary"}>
                 {s.status.replace("_", " ")}
               </Badge>
-              <Button size="sm" variant="ghost" className="h-6 text-xs" disabled={markRotated.isPending} onClick={() => markRotated.mutate({ secretName: s.secretName }, { onSuccess: () => refetch() })}>
+              <Button size="sm" variant="ghost" className="h-6 text-xs" disabled={markRotated.isPending} onClick={() => markRotated.mutate({ secretName: s.secretName }, { onSuccess: () => refetch(), onError: (e: any) => toast({ title: "Failed to mark rotated", description: e?.message, variant: "destructive" }) })}>
                 Mark rotated
               </Button>
             </div>

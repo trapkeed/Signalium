@@ -43,7 +43,10 @@ export default function AdminEas() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListEasQueryKey() });
 
   const handleSubmit = () => {
-    if (!form.name || !form.version) return;
+    if (!form.name || !form.version) {
+      toast({ title: "Name and version are required", variant: "destructive" });
+      return;
+    }
     if (editingId !== null) {
       updateEa.mutate(
         { id: editingId, data: form },
@@ -78,11 +81,17 @@ export default function AdminEas() {
 
   const handleDelete = (id: number) => {
     if (!confirm("Delete this EA?")) return;
-    deleteEa.mutate({ id }, { onSuccess: invalidate });
+    deleteEa.mutate({ id }, {
+      onSuccess: invalidate,
+      onError: (err: any) => toast({ title: "Failed to delete EA", description: err?.message, variant: "destructive" }),
+    });
   };
 
   const handleToggleActive = (ea: any) => {
-    updateEa.mutate({ id: ea.id, data: { isActive: !ea.isActive } }, { onSuccess: invalidate });
+    updateEa.mutate({ id: ea.id, data: { isActive: !ea.isActive } }, {
+      onSuccess: invalidate,
+      onError: (err: any) => toast({ title: "Failed to update EA", description: err?.message, variant: "destructive" }),
+    });
   };
 
   return (
