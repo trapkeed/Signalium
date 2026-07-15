@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   useListMyEaBuilds,
   useGenerateEaBuild,
@@ -198,8 +198,8 @@ export default function EaBuilds({ embedded = false }: { embedded?: boolean } = 
                 </tr>
               ) : (
                 builds.map((build) => (
-                  <>
-                    <tr key={build.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                  <Fragment key={build.id}>
+                  <tr className="border-b border-border last:border-0 hover:bg-secondary/20">
                       <td className="px-4 py-3 font-medium">
                         <button
                           className="flex items-center gap-1.5 text-sm font-medium"
@@ -261,7 +261,7 @@ export default function EaBuilds({ embedded = false }: { embedded?: boolean } = 
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))
               )}
             </tbody>

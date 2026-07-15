@@ -108,7 +108,7 @@ export function deriveUsername(user: { firstName?: string | null; lastName?: str
  * key a given binary was compiled with just from its filename.
  */
 export function buildFileName(username: string, apiKeyHash: string): string {
-  return `Signalium_${username}_${apiKeyHash.slice(0, 16)}.ex5`;
+  return `Signalium_${username}_${apiKeyHash.slice(0, 16)}.mq5`;
 }
 
 /**
@@ -154,15 +154,21 @@ string SIGNALIUM_ALIAS_MAP_CANONICAL[${allAliases.length || 1}] = {${aliasCanoni
 // embedded tables above.  Returns the empty string if no mapping is found;
 // the EA must then fall back to the 24h server discovery scan result.
 string SignaliumNormaliseSymbol(string raw) {
-   string lower = StringToLower(raw);
+   // MQL5: StringToLower modifies in place and returns bool — copy first.
+   string lower = raw;
+   StringToLower(lower);
    // Last-match-wins: broker-specific overrides are at the tail of the array.
    for (int i = SIGNALIUM_ALIAS_COUNT - 1; i >= 0; i--) {
-      if (lower == StringToLower(SIGNALIUM_ALIAS_MAP_RAW[i]))
+      string aliasLower = SIGNALIUM_ALIAS_MAP_RAW[i];
+      StringToLower(aliasLower);
+      if (lower == aliasLower)
          return SIGNALIUM_ALIAS_MAP_CANONICAL[i];
    }
    // Check canonical symbols directly (e.g. EA already uses canonical name).
    for (int i = 0; i < SIGNALIUM_CANONICAL_COUNT; i++) {
-      if (lower == StringToLower(SIGNALIUM_CANONICAL_SYMBOLS[i]))
+      string canonLower = SIGNALIUM_CANONICAL_SYMBOLS[i];
+      StringToLower(canonLower);
+      if (lower == canonLower)
          return SIGNALIUM_CANONICAL_SYMBOLS[i];
    }
    return ""; // unresolved — server discovery scan will handle it

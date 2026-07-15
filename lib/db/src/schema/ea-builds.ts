@@ -20,6 +20,8 @@ export const eaBuildsTable = pgTable("ea_builds", {
     subscriptionTier: string;
     generationTimestamp: string;
     platformVersion: string;
+    /** MQL5 source embedded here when object storage is unavailable at build time. */
+    mql5Source?: string;
   }>().notNull(),
   storageObjectPath: text("storage_object_path").notNull(),
   checksum: text("checksum").notNull(),

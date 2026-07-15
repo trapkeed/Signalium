@@ -14,7 +14,6 @@ import {
   deriveUsername,
   buildFileName,
   generateMql5Source,
-  compileToEx5,
   checksumOf,
   storeEaBuild,
   getEaBuildFile,
@@ -114,16 +113,23 @@ router.post("/generate", async (req, res) => {
     // so the EA has an offline fallback before its first 24h discovery scan.
     const symbolMap = await buildSymbolMapForEa();
     const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" }, symbolMap);
-    const binary = compileToEx5(source, metadata);
-    const checksum = checksumOf(binary);
-    // S29 — checksum alone only detects accidental corruption; it doesn't
-    // prove the artifact came from this server unmodified, since anyone
-    // could recompute a checksum for a tampered file. Sign it with a server
-    // secret (SESSION_SECRET-keyed, see requestSigning.ts) so
-    // `verifyEaBuildSignature` below can be used at connect-time to reject
-    // tampered/re-packaged binaries.
+    const sourceBuffer = Buffer.from(source, "utf-8");
+
+    // Checksum and sign the source text itself (not a wrapper binary).
+    const checksum = checksumOf(sourceBuffer);
+    // S29 — HMAC signature over the checksum so the gateway can reject
+    // tampered/re-packaged binaries at connect time.
     const signature = signArtifact(checksum);
-    const storageObjectPath = await storeEaBuild(buildId, binary);
+
+    // Try object storage; fall back to embedding the source in metadata so
+    // generation never fails just because object storage isn't provisioned.
+    let storageObjectPath: string;
+    try {
+      storageObjectPath = await storeEaBuild(buildId, sourceBuffer);
+    } catch (storageErr) {
+      req.log.warn(storageErr, "EA build: object storage unavailable — embedding source in build record");
+      storageObjectPath = `db:${buildId}`;
+    }
 
     const [build] = await db.insert(eaBuildsTable).values({
       userId,
@@ -134,11 +140,13 @@ router.post("/generate", async (req, res) => {
       platformVersion: "MT5",
       subscriptionTier: tier,
       status: "active",
-      metadata,
+      // Store the mql5Source in metadata so the download route can serve it
+      // directly when object storage is unavailable (storageObjectPath "db:*").
+      metadata: { ...metadata, mql5Source: source } as typeof metadata,
       storageObjectPath,
       checksum,
       signature,
-      fileSizeBytes: binary.length,
+      fileSizeBytes: sourceBuffer.length,
     }).returning();
 
     await logAudit(build.id, userId, "generated", { fileName, checksum, signed: true });
@@ -199,7 +207,7 @@ router.get("/admin/audit", requireAdmin, async (req, res) => {
   }
 });
 
-// Download a build's .ex5 file (owner or admin).
+// Download a build's .mq5 source file (owner or admin).
 router.get("/:buildId/download", async (req, res) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -215,27 +223,39 @@ router.get("/:buildId/download", async (req, res) => {
       return res.status(410).json({ error: "This build has been revoked. Regenerate to get a fresh EA." });
     }
 
-    const file = await getEaBuildFile(build.storageObjectPath);
-    const [metadata] = await file.getMetadata();
-
     await db.update(eaBuildsTable)
       .set({ downloadCount: build.downloadCount + 1, lastDownloadedAt: new Date() })
       .where(eq(eaBuildsTable.id, build.id));
     await logAudit(build.id, userId, "downloaded", { fileName: build.fileName });
 
-    res.setHeader("Content-Type", "application/octet-stream");
+    // Set common headers shared by both delivery paths.
     res.setHeader("Content-Disposition", `attachment; filename="${build.fileName}"`);
-    if (metadata.size) res.setHeader("Content-Length", String(metadata.size));
     res.setHeader("X-Ea-Build-Checksum", build.checksum);
-    // S29 — signature over the checksum, verifiable with signArtifact-style
-    // HMAC against the same checksum (see requestSigning.ts). Lets a
-    // downloading client (or the gateway on next connect) prove this build
-    // was produced by this server and not re-packaged in transit.
+    // S29 — HMAC signature so the EA gateway can reject tampered builds.
     if (build.signature) res.setHeader("X-Ea-Build-Signature", build.signature);
 
+    // DB-embedded path: source was stored in metadata because object storage
+    // was unavailable at generation time (storageObjectPath = "db:<buildId>").
+    if (build.storageObjectPath.startsWith("db:")) {
+      const mql5Source = (build.metadata as Record<string, unknown>)?.mql5Source;
+      if (typeof mql5Source !== "string" || !mql5Source) {
+        return res.status(404).json({ error: "Build source not found — regenerate this build." });
+      }
+      const buf = Buffer.from(mql5Source, "utf-8");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Content-Length", String(buf.length));
+      return res.send(buf);
+    }
+
+    // Object-storage path: stream file from GCS bucket.
+    const file = await getEaBuildFile(build.storageObjectPath);
+    const [storageMeta] = await file.getMetadata();
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    if (storageMeta.size) res.setHeader("Content-Length", String(storageMeta.size));
+
     const stream = file.createReadStream();
-    stream.on("error", (err) => {
-      req.log.error(err, "Failed to stream EA build");
+    stream.on("error", (streamErr) => {
+      req.log.error(streamErr, "Failed to stream EA build");
       if (!res.headersSent) res.status(500).json({ error: "Failed to stream file" });
     });
     stream.pipe(res);
@@ -281,10 +301,17 @@ router.post("/:buildId/regenerate", async (req, res) => {
 
     const symbolMap = await buildSymbolMapForEa();
     const source = generateMql5Source(metadata, { apiKey: rawKey, hardwareBindingHint: "bound on first EA connect" }, symbolMap);
-    const binary = compileToEx5(source, metadata);
-    const checksum = checksumOf(binary);
+    const sourceBuffer = Buffer.from(source, "utf-8");
+    const checksum = checksumOf(sourceBuffer);
     const signature = signArtifact(checksum);
-    const storageObjectPath = await storeEaBuild(newBuildId, binary);
+
+    let storageObjectPath: string;
+    try {
+      storageObjectPath = await storeEaBuild(newBuildId, sourceBuffer);
+    } catch (storageErr) {
+      req.log.warn(storageErr, "EA regenerate: object storage unavailable — embedding source in build record");
+      storageObjectPath = `db:${newBuildId}`;
+    }
 
     const [newBuild] = await db.insert(eaBuildsTable).values({
       userId: existing.userId,
@@ -295,11 +322,11 @@ router.post("/:buildId/regenerate", async (req, res) => {
       platformVersion: "MT5",
       subscriptionTier: tier,
       status: "active",
-      metadata,
+      metadata: { ...metadata, mql5Source: source } as typeof metadata,
       storageObjectPath,
       checksum,
       signature,
-      fileSizeBytes: binary.length,
+      fileSizeBytes: sourceBuffer.length,
     }).returning();
 
     await db.update(eaBuildsTable).set({ status: "superseded" }).where(eq(eaBuildsTable.id, existing.id));

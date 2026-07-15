@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useListEas, useCreateEa, useUpdateEa, useDeleteEa, getListEasQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Cpu, Pencil, Trash2, Check, X } from "lucide-react";
 
 const TIER_COLORS: Record<string, string> = {
@@ -30,6 +31,7 @@ const EMPTY_FORM: EaForm = {
 export default function AdminEas() {
   const { data: eas, isLoading } = useListEas();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const createEa = useCreateEa();
   const updateEa = useUpdateEa();
   const deleteEa = useDeleteEa();
@@ -43,9 +45,21 @@ export default function AdminEas() {
   const handleSubmit = () => {
     if (!form.name || !form.version) return;
     if (editingId !== null) {
-      updateEa.mutate({ id: editingId, data: form }, { onSuccess: () => { invalidate(); setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); } });
+      updateEa.mutate(
+        { id: editingId, data: form },
+        {
+          onSuccess: () => { invalidate(); setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); },
+          onError: (err: any) => toast({ title: "Failed to update EA", description: err?.message, variant: "destructive" }),
+        }
+      );
     } else {
-      createEa.mutate({ data: form }, { onSuccess: () => { invalidate(); setShowForm(false); setForm(EMPTY_FORM); } });
+      createEa.mutate(
+        { data: form },
+        {
+          onSuccess: () => { invalidate(); setShowForm(false); setForm(EMPTY_FORM); toast({ title: "EA created" }); },
+          onError: (err: any) => toast({ title: "Failed to create EA", description: err?.message, variant: "destructive" }),
+        }
+      );
     }
   };
 
